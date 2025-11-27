@@ -60,25 +60,13 @@ jobs:
         env:
           VITE_BASE: /${{ github.event.repository.name }}/pr-${{ steps.pr.outputs.number }}/
 
-      - name: Checkout gh-pages branch
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages
-
-      - name: Copy build to PR sub-path
-        run: |
-          mkdir -p gh-pages/pr-${{ steps.pr.outputs.number }}
-          cp -r dist/. gh-pages/pr-${{ steps.pr.outputs.number }}/
-
       - name: Deploy to GitHub Pages
-        run: |
-          cd gh-pages
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Deploy PR #${{ steps.pr.outputs.number }} preview" || echo "No changes to commit"
-          git push
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: pr-${{ steps.pr.outputs.number }}
+          keep_files: true
 
       - name: Add comment with preview URL
         if: success()
