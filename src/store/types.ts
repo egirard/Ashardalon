@@ -55,14 +55,21 @@ export const AVAILABLE_HEROES: Hero[] = [
 ];
 
 /**
- * Valid starting positions around the staircase on the Start Tile.
+ * All 8 valid starting positions around the staircase on the Start Tile.
  * The Start Tile is a double-height tile with valid spaces from x: 1-4, y: 0-7.
- * These positions are adjacent to the staircase.
+ * These positions are adjacent to the staircase. At game start, 5 of these 8
+ * positions are randomly chosen for player placement.
  */
 export const START_TILE_POSITIONS: Position[] = [
+  // Row 2 (above staircase)
   { x: 1, y: 2 },
   { x: 2, y: 2 },
   { x: 3, y: 2 },
+  // Right side of staircase
   { x: 3, y: 3 },
   { x: 3, y: 4 },
+  // Bottom section (column 4)
+  { x: 4, y: 1 },
+  { x: 4, y: 2 },
+  { x: 4, y: 3 },
 ];
