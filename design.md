@@ -60,7 +60,7 @@ Wrath of Ashardalon is a cooperative dungeon-crawling adventure where 1-5 player
 | Technology | Purpose |
 |------------|---------|
 | **TypeScript** | Primary programming language for type-safe development |
-| **React** | UI component library for rendering the presentation layer |
+| **Svelte** | UI framework for rendering the presentation layer |
 | **Redux** | State management for game state, actions, and events |
 | **Vite** | Build tool and development server |
 | **Playwright** | End-to-end testing framework |
@@ -76,7 +76,7 @@ Wrath of Ashardalon is a cooperative dungeon-crawling adventure where 1-5 player
 
 ### Architecture Layers
 
-1. **Presentation Layer**: React components for UI rendering
+1. **Presentation Layer**: Svelte components for UI rendering
 2. **State Management Layer**: Redux store, reducers, and selectors
 3. **Game Logic Layer**: Pure functions implementing game rules
 4. **Asset Layer**: Images, sounds, and static data
@@ -159,7 +159,7 @@ Powerful unique monsters:
 
 Tiles are categorized by:
 - **Color**: Black (dangerous) vs White (normal)
-- **Size**: x2, x3, x4 (number of squares)
+- **Exits**: x2, x3, x4 (number of exits/unexplored edges)
 - **Type**: Normal, Named, Chamber, Start
 
 Named tiles include:
