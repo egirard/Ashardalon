@@ -6,6 +6,9 @@ import gameReducer, {
   showMovement,
   hideMovement,
   moveHero,
+  endHeroPhase,
+  endExplorationPhase,
+  endVillainPhase,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS } from "./types";
@@ -478,6 +481,257 @@ describe("gameSlice", () => {
 
       // State should remain unchanged
       expect(state.heroTokens).toEqual(stateWithMovement.heroTokens);
+    });
+  });
+
+  describe("endHeroPhase", () => {
+    it("should transition from hero phase to exploration phase", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endHeroPhase());
+      expect(state.turnState.currentPhase).toBe("exploration-phase");
+    });
+
+    it("should not transition if not in hero phase", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endHeroPhase());
+      expect(state.turnState.currentPhase).toBe("exploration-phase");
+    });
+  });
+
+  describe("endExplorationPhase", () => {
+    it("should transition from exploration phase to villain phase", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endExplorationPhase());
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+    });
+
+    it("should not transition if not in exploration phase", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endExplorationPhase());
+      expect(state.turnState.currentPhase).toBe("hero-phase");
+    });
+  });
+
+  describe("endVillainPhase", () => {
+    it("should transition from villain phase to hero phase", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endVillainPhase());
+      expect(state.turnState.currentPhase).toBe("hero-phase");
+    });
+
+    it("should advance to next hero", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endVillainPhase());
+      expect(state.turnState.currentHeroIndex).toBe(1);
+    });
+
+    it("should wrap back to first hero and increment turn number", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 1,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endVillainPhase());
+      expect(state.turnState.currentHeroIndex).toBe(0);
+      expect(state.turnState.turnNumber).toBe(2);
+    });
+
+    it("should not transition if not in villain phase", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      };
+      const state = gameReducer(gameInProgress, endVillainPhase());
+      expect(state.turnState.currentPhase).toBe("hero-phase");
+      expect(state.turnState.currentHeroIndex).toBe(0);
+    });
+  });
+
+  describe("dungeon state", () => {
+    it("should initialize dungeon with start tile on game start", () => {
+      const state = gameReducer(
+        initialState,
+        startGame({ heroIds: ["quinn"] }),
+      );
+      expect(state.dungeon.tiles).toHaveLength(1);
+      expect(state.dungeon.tiles[0].id).toBe("start-tile");
+    });
+
+    it("should initialize tile deck on game start", () => {
+      const state = gameReducer(
+        initialState,
+        startGame({ heroIds: ["quinn"] }),
+      );
+      expect(state.dungeon.tileDeck.length).toBe(8);
+    });
+
+    it("should have unexplored edges on start tile", () => {
+      const state = gameReducer(
+        initialState,
+        startGame({ heroIds: ["quinn"] }),
+      );
+      expect(state.dungeon.unexploredEdges).toHaveLength(4);
+    });
+
+    it("should reset dungeon state on game reset", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [],
+        showingMovement: false,
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "open", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+            {
+              id: "tile-1",
+              tileType: "tile-2exit-a",
+              position: { col: 0, row: -1 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "open", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [{ tileId: "tile-1", direction: "north" }],
+          tileDeck: ["tile-3exit-a"],
+        },
+      };
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.dungeon.tiles).toHaveLength(1);
+      expect(state.dungeon.tiles[0].id).toBe("start-tile");
+      expect(state.dungeon.unexploredEdges).toHaveLength(4);
+      expect(state.dungeon.tileDeck).toHaveLength(0);
     });
   });
 });
