@@ -113,7 +113,8 @@ export function getValidMoveSquares(
   visited.add(`${heroPos.x},${heroPos.y}`);
   
   while (queue.length > 0) {
-    const current = queue.shift()!;
+    const current = queue.shift();
+    if (!current) break;
     
     // If we're at a position other than the starting position and it's not occupied, it's valid
     if (current.distance > 0 && !isOccupied(current.pos, heroTokens, heroId)) {

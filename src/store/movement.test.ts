@@ -251,7 +251,7 @@ describe("movement utilities", () => {
 
     it("should allow diagonal movement within tile", () => {
       expect(canMoveTo({ x: 2, y: 2 }, { x: 1, y: 1 }, heroTokens, "quinn")).toBe(true);
-      expect(canMoveTo({ x: 2, y: 2 }, { x: 1, y: 1 }, heroTokens, "quinn")).toBe(true);
+      expect(canMoveTo({ x: 2, y: 2 }, { x: 3, y: 1 }, heroTokens, "quinn")).toBe(true);
     });
 
     it("should not allow movement to occupied square", () => {
