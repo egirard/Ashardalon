@@ -1,0 +1,52 @@
+/**
+ * Hero type representing a playable character
+ */
+export interface Hero {
+  id: string;
+  name: string;
+  heroClass: 'Cleric' | 'Fighter' | 'Paladin' | 'Rogue' | 'Wizard';
+  imagePath: string;
+}
+
+/**
+ * Position on the game board
+ */
+export interface Position {
+  x: number;
+  y: number;
+}
+
+/**
+ * Hero token on the game board
+ */
+export interface HeroToken {
+  heroId: string;
+  position: Position;
+}
+
+/**
+ * Game screen states
+ */
+export type GameScreen = 'character-select' | 'game-board';
+
+/**
+ * All available heroes in the game
+ */
+export const AVAILABLE_HEROES: Hero[] = [
+  { id: 'quinn', name: 'Quinn', heroClass: 'Cleric', imagePath: 'assets/Hero_Cleric_Quinn.png' },
+  { id: 'vistra', name: 'Vistra', heroClass: 'Fighter', imagePath: 'assets/Hero_Fighter_Vistra.png' },
+  { id: 'keyleth', name: 'Keyleth', heroClass: 'Paladin', imagePath: 'assets/Hero_Paladin_Keyleth.png' },
+  { id: 'tarak', name: 'Tarak', heroClass: 'Rogue', imagePath: 'assets/Hero_Rogue_Tarak.png' },
+  { id: 'haskan', name: 'Haskan', heroClass: 'Wizard', imagePath: 'assets/Hero_Wizard_Haskan.png' },
+];
+
+/**
+ * Valid starting positions around the staircase on the Start Tile
+ */
+export const START_TILE_POSITIONS: Position[] = [
+  { x: 2, y: 2 },
+  { x: 3, y: 2 },
+  { x: 4, y: 2 },
+  { x: 2, y: 3 },
+  { x: 4, y: 3 },
+];
