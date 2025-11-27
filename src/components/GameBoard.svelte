@@ -4,6 +4,16 @@
   import type { HeroToken, Hero, TurnState, GamePhase } from '../store/types';
   import { assetPath } from '../utils';
   
+  // Tile dimension constants (based on 140px grid cells)
+  const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
+  const TILE_GRID_WIDTH = 4;  // Number of cells wide
+  const TILE_GRID_HEIGHT = 8; // Number of cells tall
+  const TILE_WIDTH = TILE_CELL_SIZE * TILE_GRID_WIDTH;   // 560px
+  const TILE_HEIGHT = TILE_CELL_SIZE * TILE_GRID_HEIGHT; // 1120px
+  const CONTAINER_PADDING = 32; // 1rem padding on each side (16px * 2)
+  const MIN_SCALE = 0.3; // Minimum scale for legibility
+  const MAX_SCALE = 1;   // Maximum scale (no upscaling)
+  
   let heroTokens: HeroToken[] = $state([]);
   let selectedHeroes: Hero[] = $state([]);
   let turnState: TurnState = $state({ currentHeroIndex: 0, currentPhase: 'hero-phase', turnNumber: 1 });
@@ -35,21 +45,17 @@
         const container = boardContainerRef;
         if (!container) return;
         
-        // The start tile is approximately 560x1120 pixels (4x8 grid of 140px cells)
-        const tileWidth = 560;
-        const tileHeight = 1120;
-        
         // Get available space (accounting for padding)
-        const availableWidth = container.clientWidth - 32; // 1rem padding on each side
-        const availableHeight = container.clientHeight - 32;
+        const availableWidth = container.clientWidth - CONTAINER_PADDING;
+        const availableHeight = container.clientHeight - CONTAINER_PADDING;
         
         // Calculate scale to fit both dimensions
-        const scaleX = availableWidth / tileWidth;
-        const scaleY = availableHeight / tileHeight;
+        const scaleX = availableWidth / TILE_WIDTH;
+        const scaleY = availableHeight / TILE_HEIGHT;
         
-        // Use the smaller scale to ensure it fits
-        const newScale = Math.min(scaleX, scaleY, 1); // Cap at 1 (no upscaling)
-        mapScale = Math.max(newScale, 0.3); // Minimum scale of 0.3 for legibility
+        // Use the smaller scale to ensure it fits, capped between MIN and MAX
+        const newScale = Math.min(scaleX, scaleY, MAX_SCALE);
+        mapScale = Math.max(newScale, MIN_SCALE);
       };
       
       calculateScale();
@@ -86,14 +92,14 @@
     store.dispatch(resetGame());
   }
   
+  // Token positioning constants
+  const TOKEN_OFFSET_X = 36; // Offset from left edge of start tile
+  const TOKEN_OFFSET_Y = 36; // Offset from top edge of start tile
+  
   // Calculate pixel position from grid position
   function getTokenStyle(position: { x: number; y: number }): string {
-    const tileSize = 140; // Size of each grid square in pixels (140x140)
-    const offsetX = 36; // Offset from left edge of start tile
-    const offsetY = 36; // Offset from top edge of start tile
-    // Position token at the center of the grid cell
-    const cellCenterOffset = tileSize / 2;
-    return `left: ${offsetX + position.x * tileSize + cellCenterOffset}px; top: ${offsetY + position.y * tileSize + cellCenterOffset}px;`;
+    const cellCenterOffset = TILE_CELL_SIZE / 2;
+    return `left: ${TOKEN_OFFSET_X + position.x * TILE_CELL_SIZE + cellCenterOffset}px; top: ${TOKEN_OFFSET_Y + position.y * TILE_CELL_SIZE + cellCenterOffset}px;`;
   }
   
   // Get the edge index for the active player (0=bottom, 1=right, 2=top, 3=left)
