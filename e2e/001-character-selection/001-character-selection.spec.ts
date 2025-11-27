@@ -83,6 +83,12 @@ test.describe('001 - Character Selection to Game Board', () => {
         // Verify turn indicator shows first player
         await expect(page.locator('[data-testid="turn-indicator"]')).toContainText('Quinn');
         
+        // Verify phase display shows Hero Phase
+        await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+        
+        // Verify active hero token has the 'active' class
+        await expect(page.locator('[data-testid="hero-token"].active')).toBeVisible();
+        
         // Verify Redux store state
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -92,6 +98,10 @@ test.describe('001 - Character Selection to Game Board', () => {
         expect(storeState.game.heroTokens[0].heroId).toBe('quinn');
         // Verify the position was set deterministically
         expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+        // Verify turn state
+        expect(storeState.game.turnState.currentHeroIndex).toBe(0);
+        expect(storeState.game.turnState.currentPhase).toBe('hero-phase');
+        expect(storeState.game.turnState.turnNumber).toBe(1);
       }
     });
   });

@@ -1,14 +1,20 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { GameScreen, HeroToken, Position, START_TILE_POSITIONS } from './types';
+import { GameScreen, HeroToken, Position, START_TILE_POSITIONS, TurnState } from './types';
 
 export interface GameState {
   currentScreen: GameScreen;
   heroTokens: HeroToken[];
+  turnState: TurnState;
 }
 
 const initialState: GameState = {
   currentScreen: 'character-select',
   heroTokens: [],
+  turnState: {
+    currentHeroIndex: 0,
+    currentPhase: 'hero-phase',
+    turnNumber: 1,
+  },
 };
 
 /**
@@ -48,6 +54,13 @@ export const gameSlice = createSlice({
         position: assignedPositions[index],
       }));
       
+      // Initialize turn state
+      state.turnState = {
+        currentHeroIndex: 0,
+        currentPhase: 'hero-phase',
+        turnNumber: 1,
+      };
+      
       state.currentScreen = 'game-board';
     },
     setHeroPosition: (state, action: PayloadAction<{ heroId: string; position: Position }>) => {
@@ -59,6 +72,11 @@ export const gameSlice = createSlice({
     resetGame: (state) => {
       state.currentScreen = 'character-select';
       state.heroTokens = [];
+      state.turnState = {
+        currentHeroIndex: 0,
+        currentPhase: 'hero-phase',
+        turnNumber: 1,
+      };
     },
   },
 });

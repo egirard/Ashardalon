@@ -1,11 +1,12 @@
 <script lang="ts">
   import { store } from '../store';
   import { resetGame } from '../store/gameSlice';
-  import type { HeroToken, Hero } from '../store/types';
+  import type { HeroToken, Hero, TurnState, GamePhase } from '../store/types';
   import { assetPath } from '../utils';
   
   let heroTokens: HeroToken[] = $state([]);
   let selectedHeroes: Hero[] = $state([]);
+  let turnState: TurnState = $state({ currentHeroIndex: 0, currentPhase: 'hero-phase', turnNumber: 1 });
   
   // Subscribe to store updates
   $effect(() => {
@@ -13,18 +14,36 @@
       const state = store.getState();
       heroTokens = state.game.heroTokens;
       selectedHeroes = state.heroes.selectedHeroes;
+      turnState = state.game.turnState;
     });
     
     // Initialize state
     const state = store.getState();
     heroTokens = state.game.heroTokens;
     selectedHeroes = state.heroes.selectedHeroes;
+    turnState = state.game.turnState;
     
     return unsubscribe;
   });
   
   function getHeroInfo(heroId: string): Hero | undefined {
     return selectedHeroes.find(h => h.id === heroId);
+  }
+  
+  function getCurrentHeroId(): string | undefined {
+    const currentToken = heroTokens[turnState.currentHeroIndex];
+    return currentToken?.heroId;
+  }
+  
+  function formatPhase(phase: GamePhase): string {
+    switch (phase) {
+      case 'hero-phase':
+        return 'Hero Phase';
+      case 'exploration-phase':
+        return 'Exploration Phase';
+      case 'villain-phase':
+        return 'Villain Phase';
+    }
   }
   
   function handleReset() {
@@ -56,9 +75,11 @@
       
       {#each heroTokens as token (token.heroId)}
         {@const hero = getHeroInfo(token.heroId)}
+        {@const isActive = token.heroId === getCurrentHeroId()}
         {#if hero}
           <div 
             class="hero-token" 
+            class:active={isActive}
             data-testid="hero-token"
             data-hero-id={token.heroId}
             style={getTokenStyle(token.position)}
@@ -73,8 +94,12 @@
   
   <div class="turn-indicator" data-testid="turn-indicator">
     {#if heroTokens.length > 0}
-      {@const firstHero = getHeroInfo(heroTokens[0].heroId)}
-      <span>Current Turn: <strong>{firstHero?.name}</strong></span>
+      {@const currentHero = getHeroInfo(getCurrentHeroId() ?? '')}
+      <div class="turn-info">
+        <span class="turn-number">Turn {turnState.turnNumber}</span>
+        <span class="turn-hero"><strong>{currentHero?.name}</strong>'s Turn</span>
+        <span class="turn-phase" data-testid="turn-phase">Phase: {formatPhase(turnState.currentPhase)}</span>
+      </div>
     {/if}
   </div>
 </div>
@@ -145,6 +170,16 @@
     z-index: 10;
   }
   
+  .hero-token.active .token-image {
+    box-shadow: 0 0 10px 3px gold;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 10px 3px gold; }
+    50% { box-shadow: 0 0 15px 5px gold; }
+  }
+  
   .token-image {
     width: 40px;
     height: 40px;
@@ -170,7 +205,28 @@
     text-align: center;
   }
   
-  .turn-indicator strong {
+  .turn-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: center;
+  }
+  
+  .turn-number {
+    font-size: 0.9rem;
+    color: #aaa;
+  }
+  
+  .turn-hero {
+    font-size: 1.1rem;
+  }
+  
+  .turn-hero strong {
     color: #ffd700;
+  }
+  
+  .turn-phase {
+    font-size: 0.9rem;
+    color: #8ecae6;
   }
 </style>

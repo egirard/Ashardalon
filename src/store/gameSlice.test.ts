@@ -6,6 +6,11 @@ describe('gameSlice', () => {
   const initialState: GameState = {
     currentScreen: 'character-select',
     heroTokens: [],
+    turnState: {
+      currentHeroIndex: 0,
+      currentPhase: 'hero-phase',
+      turnNumber: 1,
+    },
   };
 
   describe('initial state', () => {
@@ -13,6 +18,21 @@ describe('gameSlice', () => {
       const state = gameReducer(undefined, { type: 'unknown' });
       expect(state.currentScreen).toBe('character-select');
       expect(state.heroTokens).toEqual([]);
+    });
+
+    it('should initialize turn state with first hero active', () => {
+      const state = gameReducer(undefined, { type: 'unknown' });
+      expect(state.turnState.currentHeroIndex).toBe(0);
+    });
+
+    it('should initialize turn state in Hero Phase', () => {
+      const state = gameReducer(undefined, { type: 'unknown' });
+      expect(state.turnState.currentPhase).toBe('hero-phase');
+    });
+
+    it('should initialize turn number at 1', () => {
+      const state = gameReducer(undefined, { type: 'unknown' });
+      expect(state.turnState.turnNumber).toBe(1);
     });
   });
 
@@ -78,6 +98,27 @@ describe('gameSlice', () => {
       expect(state.heroTokens[0].position).toEqual({ x: 2, y: 2 });
       expect(state.heroTokens[1].position).toEqual({ x: 3, y: 3 });
     });
+
+    it('should initialize turn state to first hero active', () => {
+      const heroIds = ['quinn', 'vistra'];
+      const state = gameReducer(initialState, startGame({ heroIds }));
+      
+      expect(state.turnState.currentHeroIndex).toBe(0);
+    });
+
+    it('should initialize turn state in Hero Phase', () => {
+      const heroIds = ['quinn'];
+      const state = gameReducer(initialState, startGame({ heroIds }));
+      
+      expect(state.turnState.currentPhase).toBe('hero-phase');
+    });
+
+    it('should initialize turn number at 1', () => {
+      const heroIds = ['quinn'];
+      const state = gameReducer(initialState, startGame({ heroIds }));
+      
+      expect(state.turnState.turnNumber).toBe(1);
+    });
   });
 
   describe('setHeroPosition', () => {
@@ -87,6 +128,11 @@ describe('gameSlice', () => {
         { heroId: 'quinn', position: { x: 2, y: 2 } },
         { heroId: 'vistra', position: { x: 3, y: 2 } },
       ],
+      turnState: {
+        currentHeroIndex: 0,
+        currentPhase: 'hero-phase',
+        turnNumber: 1,
+      },
     };
 
     it('should update hero position', () => {
@@ -126,6 +172,11 @@ describe('gameSlice', () => {
       const gameInProgress: GameState = {
         currentScreen: 'game-board',
         heroTokens: [{ heroId: 'quinn', position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: 'hero-phase',
+          turnNumber: 1,
+        },
       };
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.currentScreen).toBe('character-select');
@@ -138,9 +189,30 @@ describe('gameSlice', () => {
           { heroId: 'quinn', position: { x: 2, y: 2 } },
           { heroId: 'vistra', position: { x: 3, y: 2 } },
         ],
+        turnState: {
+          currentHeroIndex: 1,
+          currentPhase: 'exploration-phase',
+          turnNumber: 3,
+        },
       };
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.heroTokens).toEqual([]);
+    });
+
+    it('should reset turn state', () => {
+      const gameInProgress: GameState = {
+        currentScreen: 'game-board',
+        heroTokens: [{ heroId: 'quinn', position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 2,
+          currentPhase: 'villain-phase',
+          turnNumber: 5,
+        },
+      };
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.turnState.currentHeroIndex).toBe(0);
+      expect(state.turnState.currentPhase).toBe('hero-phase');
+      expect(state.turnState.turnNumber).toBe(1);
     });
   });
 });
