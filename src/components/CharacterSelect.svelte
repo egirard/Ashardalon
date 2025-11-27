@@ -1,12 +1,13 @@
 <script lang="ts">
   import { store } from '../store';
-  import { toggleHeroSelection } from '../store/heroesSlice';
+  import { selectHeroFromEdge, type EdgePosition } from '../store/heroesSlice';
   import { startGame } from '../store/gameSlice';
   import type { Hero } from '../store/types';
   import { assetPath } from '../utils';
   
   let selectedHeroes: Hero[] = $state([]);
   let availableHeroes: Hero[] = $state([]);
+  let heroEdgeMap: Record<string, EdgePosition> = $state({});
   
   // Subscribe to store updates
   $effect(() => {
@@ -14,12 +15,14 @@
       const state = store.getState();
       selectedHeroes = state.heroes.selectedHeroes;
       availableHeroes = state.heroes.availableHeroes;
+      heroEdgeMap = state.heroes.heroEdgeMap;
     });
     
     // Initialize state
     const state = store.getState();
     selectedHeroes = state.heroes.selectedHeroes;
     availableHeroes = state.heroes.availableHeroes;
+    heroEdgeMap = state.heroes.heroEdgeMap;
     
     return unsubscribe;
   });
@@ -28,8 +31,21 @@
     return selectedHeroes.some(h => h.id === heroId);
   }
   
-  function handleHeroClick(heroId: string) {
-    store.dispatch(toggleHeroSelection(heroId));
+  function isSelectedOnEdge(heroId: string, edge: EdgePosition): boolean {
+    return heroEdgeMap[heroId] === edge;
+  }
+  
+  function isSelectedOnOtherEdge(heroId: string, currentEdge: EdgePosition): boolean {
+    const selectedEdge = heroEdgeMap[heroId];
+    return selectedEdge !== undefined && selectedEdge !== currentEdge;
+  }
+  
+  function handleHeroClick(heroId: string, edge: EdgePosition) {
+    // Don't allow clicking if hero is already selected on a different edge
+    if (isSelectedOnOtherEdge(heroId, edge)) {
+      return;
+    }
+    store.dispatch(selectHeroFromEdge({ heroId, edge }));
   }
   
   function handleStartGame() {
@@ -50,9 +66,11 @@
       {#each availableHeroes as hero (hero.id)}
         <button
           class="hero-card"
-          class:selected={isSelected(hero.id)}
+          class:selected={isSelectedOnEdge(hero.id, 'top')}
+          class:unavailable={isSelectedOnOtherEdge(hero.id, 'top')}
           data-testid="hero-{hero.id}-top"
-          onclick={() => handleHeroClick(hero.id)}
+          onclick={() => handleHeroClick(hero.id, 'top')}
+          disabled={isSelectedOnOtherEdge(hero.id, 'top')}
         >
           <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
           <div class="hero-info">
@@ -72,9 +90,11 @@
         {#each availableHeroes as hero (hero.id)}
           <button
             class="hero-card"
-            class:selected={isSelected(hero.id)}
+            class:selected={isSelectedOnEdge(hero.id, 'left')}
+            class:unavailable={isSelectedOnOtherEdge(hero.id, 'left')}
             data-testid="hero-{hero.id}-left"
-            onclick={() => handleHeroClick(hero.id)}
+            onclick={() => handleHeroClick(hero.id, 'left')}
+            disabled={isSelectedOnOtherEdge(hero.id, 'left')}
           >
             <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
             <div class="hero-info">
@@ -112,9 +132,11 @@
         {#each availableHeroes as hero (hero.id)}
           <button
             class="hero-card"
-            class:selected={isSelected(hero.id)}
+            class:selected={isSelectedOnEdge(hero.id, 'right')}
+            class:unavailable={isSelectedOnOtherEdge(hero.id, 'right')}
             data-testid="hero-{hero.id}-right"
-            onclick={() => handleHeroClick(hero.id)}
+            onclick={() => handleHeroClick(hero.id, 'right')}
+            disabled={isSelectedOnOtherEdge(hero.id, 'right')}
           >
             <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
             <div class="hero-info">
@@ -133,9 +155,11 @@
       {#each availableHeroes as hero (hero.id)}
         <button
           class="hero-card"
-          class:selected={isSelected(hero.id)}
+          class:selected={isSelectedOnEdge(hero.id, 'bottom')}
+          class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom')}
           data-testid="hero-{hero.id}"
-          onclick={() => handleHeroClick(hero.id)}
+          onclick={() => handleHeroClick(hero.id, 'bottom')}
+          disabled={isSelectedOnOtherEdge(hero.id, 'bottom')}
         >
           <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
           <div class="hero-info">
@@ -244,7 +268,7 @@
     min-width: 80px;
   }
   
-  .hero-card:hover {
+  .hero-card:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.15);
     transform: scale(1.05);
   }
@@ -253,6 +277,16 @@
     border-color: #ffd700;
     background: rgba(255, 215, 0, 0.2);
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+  }
+  
+  .hero-card.unavailable {
+    opacity: 0.3;
+    cursor: not-allowed;
+    filter: grayscale(100%);
+  }
+  
+  .hero-card:disabled {
+    cursor: not-allowed;
   }
   
   .hero-image {

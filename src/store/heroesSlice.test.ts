@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import heroesReducer, { toggleHeroSelection, clearSelection, HeroesState } from './heroesSlice';
+import heroesReducer, { toggleHeroSelection, selectHeroFromEdge, clearSelection, HeroesState } from './heroesSlice';
 import { AVAILABLE_HEROES } from './types';
 
 describe('heroesSlice', () => {
   const initialState: HeroesState = {
     availableHeroes: AVAILABLE_HEROES,
     selectedHeroes: [],
+    heroEdgeMap: {},
   };
 
   describe('initial state', () => {
@@ -13,6 +14,7 @@ describe('heroesSlice', () => {
       const state = heroesReducer(undefined, { type: 'unknown' });
       expect(state.availableHeroes).toEqual(AVAILABLE_HEROES);
       expect(state.selectedHeroes).toEqual([]);
+      expect(state.heroEdgeMap).toEqual({});
     });
   });
 
@@ -28,6 +30,7 @@ describe('heroesSlice', () => {
       const stateWithSelection: HeroesState = {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0]], // Quinn
+        heroEdgeMap: {},
       };
       const state = heroesReducer(stateWithSelection, toggleHeroSelection('quinn'));
       expect(state.selectedHeroes).toHaveLength(0);
@@ -51,6 +54,7 @@ describe('heroesSlice', () => {
       const stateWith5Selected: HeroesState = {
         ...initialState,
         selectedHeroes: [...AVAILABLE_HEROES],
+        heroEdgeMap: {},
       };
       // Try to select a 6th hero (but all are already selected, so try again with same)
       const state = heroesReducer(stateWith5Selected, toggleHeroSelection('quinn'));
@@ -66,6 +70,7 @@ describe('heroesSlice', () => {
           { id: 'extra', name: 'Extra', heroClass: 'Fighter', imagePath: 'assets/extra.png' },
         ],
         selectedHeroes: [...AVAILABLE_HEROES], // 5 heroes
+        heroEdgeMap: {},
       };
       // Try to select the extra hero when already at max
       const state = heroesReducer(stateWith5Selected, toggleHeroSelection('extra'));
@@ -82,10 +87,55 @@ describe('heroesSlice', () => {
       const stateWithMultiple: HeroesState = {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0], AVAILABLE_HEROES[1]], // Quinn and Vistra
+        heroEdgeMap: {},
       };
       const state = heroesReducer(stateWithMultiple, toggleHeroSelection('quinn'));
       expect(state.selectedHeroes).toHaveLength(1);
       expect(state.selectedHeroes[0].id).toBe('vistra');
+    });
+  });
+
+  describe('selectHeroFromEdge', () => {
+    it('should select a hero and track the edge', () => {
+      const state = heroesReducer(initialState, selectHeroFromEdge({ heroId: 'quinn', edge: 'bottom' }));
+      expect(state.selectedHeroes).toHaveLength(1);
+      expect(state.selectedHeroes[0].id).toBe('quinn');
+      expect(state.heroEdgeMap['quinn']).toBe('bottom');
+    });
+
+    it('should deselect a hero when clicked from the same edge', () => {
+      const stateWithSelection: HeroesState = {
+        ...initialState,
+        selectedHeroes: [AVAILABLE_HEROES[0]], // Quinn
+        heroEdgeMap: { quinn: 'bottom' },
+      };
+      const state = heroesReducer(stateWithSelection, selectHeroFromEdge({ heroId: 'quinn', edge: 'bottom' }));
+      expect(state.selectedHeroes).toHaveLength(0);
+      expect(state.heroEdgeMap['quinn']).toBeUndefined();
+    });
+
+    it('should not deselect a hero when clicked from a different edge', () => {
+      const stateWithSelection: HeroesState = {
+        ...initialState,
+        selectedHeroes: [AVAILABLE_HEROES[0]], // Quinn
+        heroEdgeMap: { quinn: 'bottom' },
+      };
+      const state = heroesReducer(stateWithSelection, selectHeroFromEdge({ heroId: 'quinn', edge: 'top' }));
+      // Should still be selected since it was clicked from a different edge
+      expect(state.selectedHeroes).toHaveLength(1);
+      expect(state.heroEdgeMap['quinn']).toBe('bottom');
+    });
+
+    it('should allow multiple heroes from different edges', () => {
+      let state = initialState;
+      state = heroesReducer(state, selectHeroFromEdge({ heroId: 'quinn', edge: 'bottom' }));
+      state = heroesReducer(state, selectHeroFromEdge({ heroId: 'vistra', edge: 'top' }));
+      state = heroesReducer(state, selectHeroFromEdge({ heroId: 'keyleth', edge: 'left' }));
+      
+      expect(state.selectedHeroes).toHaveLength(3);
+      expect(state.heroEdgeMap['quinn']).toBe('bottom');
+      expect(state.heroEdgeMap['vistra']).toBe('top');
+      expect(state.heroEdgeMap['keyleth']).toBe('left');
     });
   });
 
@@ -94,14 +144,17 @@ describe('heroesSlice', () => {
       const stateWithSelection: HeroesState = {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0], AVAILABLE_HEROES[1]],
+        heroEdgeMap: { quinn: 'bottom', vistra: 'top' },
       };
       const state = heroesReducer(stateWithSelection, clearSelection());
       expect(state.selectedHeroes).toHaveLength(0);
+      expect(state.heroEdgeMap).toEqual({});
     });
 
     it('should do nothing when no heroes are selected', () => {
       const state = heroesReducer(initialState, clearSelection());
       expect(state.selectedHeroes).toHaveLength(0);
+      expect(state.heroEdgeMap).toEqual({});
     });
   });
 });
