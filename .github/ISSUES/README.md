@@ -63,16 +63,24 @@ These issue files can be used to create GitHub Issues for tracking development p
 ## Dependency Graph
 
 ```
-001 → 002 → 003 → 004 → 005 → 006 ─┬→ 007 → 008 → 009 → 011 ─┬→ 012
-                                   │                         │
-                                   │                         └→ 016
-                                   │
-                                   └→ 010 ─┬→ 014 → 018
-                                           │
-                                           └→ 013 → 015
+Linear chain:
+001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009
 
-017 requires: 005, 006, 010, 013
-019 requires: 008, 011
+From 009:
+├→ 010 → 013 → 015 (also requires 011)
+│   ├→ 014 → 018 (also requires 017)
+│   └─────────────→ 017 (also requires 005)
+│
+└→ 011 → 012
+    ├→ 016 (also requires 009)
+    └→ 019 (also requires 008)
+
+Summary of complex dependencies:
+- 015: requires 013, 011
+- 016: requires 009, 011
+- 017: requires 005, 010
+- 018: requires 014, 017
+- 019: requires 011, 008
 ```
 
 ## Creating GitHub Issues
