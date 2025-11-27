@@ -61,8 +61,13 @@ test.describe('001 - Character Selection to Game Board', () => {
       });
     });
     
-    // Wait for the UI to update
-    await page.waitForTimeout(100);
+    // Wait for the position to be applied by checking Redux state
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+    }).toPass();
 
     await screenshots.capture(page, 'game-board', {
       programmaticCheck: async () => {
