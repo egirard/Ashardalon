@@ -3,6 +3,9 @@ import gameReducer, {
   startGame,
   setHeroPosition,
   resetGame,
+  showMovement,
+  hideMovement,
+  moveHero,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS } from "./types";
@@ -317,6 +320,164 @@ describe("gameSlice", () => {
       expect(state.turnState.currentHeroIndex).toBe(0);
       expect(state.turnState.currentPhase).toBe("hero-phase");
       expect(state.turnState.turnNumber).toBe(1);
+    });
+
+    it("should clear movement state", () => {
+      const gameInProgress: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 3, y: 2 }],
+        showingMovement: true,
+      };
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.validMoveSquares).toEqual([]);
+      expect(state.showingMovement).toBe(false);
+    });
+  });
+
+  describe("showMovement", () => {
+    const stateWithTokens: GameState = {
+      currentScreen: "game-board",
+      heroTokens: [
+        { heroId: "quinn", position: { x: 2, y: 2 } },
+        { heroId: "vistra", position: { x: 3, y: 3 } },
+      ],
+      turnState: {
+        currentHeroIndex: 0,
+        currentPhase: "hero-phase",
+        turnNumber: 1,
+      },
+      validMoveSquares: [],
+      showingMovement: false,
+    };
+
+    it("should calculate valid move squares for hero", () => {
+      const state = gameReducer(
+        stateWithTokens,
+        showMovement({ heroId: "quinn", speed: 5 }),
+      );
+
+      expect(state.validMoveSquares.length).toBeGreaterThan(0);
+      expect(state.showingMovement).toBe(true);
+    });
+
+    it("should not include occupied squares in valid moves", () => {
+      const state = gameReducer(
+        stateWithTokens,
+        showMovement({ heroId: "quinn", speed: 5 }),
+      );
+
+      // Vistra is at (3, 3), so it should not be in valid squares
+      expect(
+        state.validMoveSquares.some((s) => s.x === 3 && s.y === 3),
+      ).toBe(false);
+    });
+
+    it("should not include starting position in valid moves", () => {
+      const state = gameReducer(
+        stateWithTokens,
+        showMovement({ heroId: "quinn", speed: 5 }),
+      );
+
+      // Quinn's position (2, 2) should not be in valid squares
+      expect(
+        state.validMoveSquares.some((s) => s.x === 2 && s.y === 2),
+      ).toBe(false);
+    });
+
+    it("should do nothing for non-existent hero", () => {
+      const state = gameReducer(
+        stateWithTokens,
+        showMovement({ heroId: "nonexistent", speed: 5 }),
+      );
+
+      expect(state.validMoveSquares).toEqual([]);
+      expect(state.showingMovement).toBe(false);
+    });
+  });
+
+  describe("hideMovement", () => {
+    it("should clear valid move squares and hide overlay", () => {
+      const stateWithMovement: GameState = {
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 3, y: 2 }, { x: 1, y: 2 }],
+        showingMovement: true,
+      };
+
+      const state = gameReducer(stateWithMovement, hideMovement());
+
+      expect(state.validMoveSquares).toEqual([]);
+      expect(state.showingMovement).toBe(false);
+    });
+  });
+
+  describe("moveHero", () => {
+    const stateWithMovement: GameState = {
+      currentScreen: "game-board",
+      heroTokens: [
+        { heroId: "quinn", position: { x: 2, y: 2 } },
+      ],
+      turnState: {
+        currentHeroIndex: 0,
+        currentPhase: "hero-phase",
+        turnNumber: 1,
+      },
+      validMoveSquares: [{ x: 3, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 1 }],
+      showingMovement: true,
+    };
+
+    it("should move hero to a valid destination", () => {
+      const state = gameReducer(
+        stateWithMovement,
+        moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }),
+      );
+
+      const quinnToken = state.heroTokens.find((t) => t.heroId === "quinn");
+      expect(quinnToken?.position).toEqual({ x: 3, y: 2 });
+    });
+
+    it("should clear movement overlay after moving", () => {
+      const state = gameReducer(
+        stateWithMovement,
+        moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }),
+      );
+
+      expect(state.validMoveSquares).toEqual([]);
+      expect(state.showingMovement).toBe(false);
+    });
+
+    it("should not move hero to an invalid destination", () => {
+      const state = gameReducer(
+        stateWithMovement,
+        moveHero({ heroId: "quinn", position: { x: 5, y: 5 } }),
+      );
+
+      const quinnToken = state.heroTokens.find((t) => t.heroId === "quinn");
+      // Position should remain unchanged
+      expect(quinnToken?.position).toEqual({ x: 2, y: 2 });
+      // Movement overlay should still be showing
+      expect(state.showingMovement).toBe(true);
+    });
+
+    it("should not move non-existent hero", () => {
+      const state = gameReducer(
+        stateWithMovement,
+        moveHero({ heroId: "nonexistent", position: { x: 3, y: 2 } }),
+      );
+
+      // State should remain unchanged
+      expect(state.heroTokens).toEqual(stateWithMovement.heroTokens);
     });
   });
 });

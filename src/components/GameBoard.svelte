@@ -1,8 +1,9 @@
 <script lang="ts">
   import { store } from '../store';
-  import { resetGame } from '../store/gameSlice';
-  import type { HeroToken, Hero, TurnState, GamePhase } from '../store/types';
+  import { resetGame, showMovement, hideMovement, moveHero } from '../store/gameSlice';
+  import type { HeroToken, Hero, TurnState, GamePhase, Position } from '../store/types';
   import { assetPath } from '../utils';
+  import MovementOverlay from './MovementOverlay.svelte';
   
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -14,9 +15,15 @@
   const MIN_SCALE = 0.3; // Minimum scale for legibility
   const MAX_SCALE = 1;   // Maximum scale (no upscaling)
   
+  // Token positioning constants
+  const TOKEN_OFFSET_X = 36; // Offset from left edge of start tile
+  const TOKEN_OFFSET_Y = 36; // Offset from top edge of start tile
+  
   let heroTokens: HeroToken[] = $state([]);
   let selectedHeroes: Hero[] = $state([]);
   let turnState: TurnState = $state({ currentHeroIndex: 0, currentPhase: 'hero-phase', turnNumber: 1 });
+  let validMoveSquares: Position[] = $state([]);
+  let showingMovement: boolean = $state(false);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
   
@@ -27,6 +34,8 @@
       heroTokens = state.game.heroTokens;
       selectedHeroes = state.heroes.selectedHeroes;
       turnState = state.game.turnState;
+      validMoveSquares = state.game.validMoveSquares;
+      showingMovement = state.game.showingMovement;
     });
     
     // Initialize state
@@ -34,6 +43,8 @@
     heroTokens = state.game.heroTokens;
     selectedHeroes = state.heroes.selectedHeroes;
     turnState = state.game.turnState;
+    validMoveSquares = state.game.validMoveSquares;
+    showingMovement = state.game.showingMovement;
     
     return unsubscribe;
   });
@@ -92,10 +103,6 @@
     store.dispatch(resetGame());
   }
   
-  // Token positioning constants
-  const TOKEN_OFFSET_X = 36; // Offset from left edge of start tile
-  const TOKEN_OFFSET_Y = 36; // Offset from top edge of start tile
-  
   // Calculate pixel position from grid position
   function getTokenStyle(position: { x: number; y: number }): string {
     const cellCenterOffset = TILE_CELL_SIZE / 2;
@@ -108,6 +115,36 @@
     const edgeIndex = turnState.currentHeroIndex % 4;
     const edges = ['bottom', 'right', 'top', 'left'];
     return edges[edgeIndex];
+  }
+  
+  // Handle tile click to show movement options
+  function handleTileClick(event: MouseEvent) {
+    // Only respond to clicks during hero phase
+    if (turnState.currentPhase !== 'hero-phase') {
+      return;
+    }
+    
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return;
+    
+    const currentHero = getHeroInfo(currentHeroId);
+    if (!currentHero) return;
+    
+    // If movement is already showing, hide it (toggle behavior)
+    if (showingMovement) {
+      store.dispatch(hideMovement());
+    } else {
+      // Show movement options for the current hero
+      store.dispatch(showMovement({ heroId: currentHeroId, speed: currentHero.speed }));
+    }
+  }
+  
+  // Handle click on a valid movement square
+  function handleMoveSquareClick(position: Position) {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return;
+    
+    store.dispatch(moveHero({ heroId: currentHeroId, position }));
   }
 </script>
 
@@ -152,8 +189,26 @@
 
     <!-- Center board area -->
     <div class="board-container" bind:this={boardContainerRef}>
-      <div class="start-tile" data-testid="start-tile" style="transform: scale({mapScale});">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div 
+        class="start-tile" 
+        data-testid="start-tile" 
+        style="transform: scale({mapScale});"
+        onclick={handleTileClick}
+      >
         <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
+        
+        <!-- Movement overlay -->
+        {#if showingMovement && validMoveSquares.length > 0}
+          <MovementOverlay
+            validMoveSquares={validMoveSquares}
+            tileOffsetX={TOKEN_OFFSET_X}
+            tileOffsetY={TOKEN_OFFSET_Y}
+            cellSize={TILE_CELL_SIZE}
+            onSquareClick={handleMoveSquareClick}
+          />
+        {/if}
         
         {#each heroTokens as token (token.heroId)}
           {@const hero = getHeroInfo(token.heroId)}
