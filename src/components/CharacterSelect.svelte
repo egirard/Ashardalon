@@ -3,6 +3,7 @@
   import { toggleHeroSelection } from '../store/heroesSlice';
   import { startGame } from '../store/gameSlice';
   import type { Hero } from '../store/types';
+  import { assetPath } from '../utils';
   
   let selectedHeroes: Hero[] = $state([]);
   let availableHeroes: Hero[] = $state([]);
@@ -54,7 +55,7 @@
         data-testid="hero-{hero.id}"
         onclick={() => handleHeroClick(hero.id)}
       >
-        <img src={hero.imagePath} alt={hero.name} class="hero-image" />
+        <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
         <div class="hero-info">
           <span class="hero-name" data-testid="hero-name">{hero.name}</span>
           <span class="hero-class">{hero.heroClass}</span>
