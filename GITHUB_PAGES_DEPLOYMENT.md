@@ -52,10 +52,21 @@ PR preview deployments allow reviewers to test and verify changes in a pull requ
 
 ### Trigger
 
-PR preview deployment is triggered **manually** via GitHub Actions workflow dispatch. This allows:
-- Reviewers to request a preview when needed
-- Authors to deploy their PR for testing
-- Controlled resource usage (not every PR is automatically deployed)
+PR preview deployment can be triggered in two ways:
+
+1. **Automatic (Label-based)**: Add the `deploy-preview` label to a PR. The workflow will automatically deploy whenever:
+   - The label is added
+   - New commits are pushed to the PR branch (while the label is present)
+
+2. **Manual (Workflow dispatch)**: Navigate to Actions → Deploy PR Preview → Run workflow and enter the PR number
+
+### How to Use
+
+1. Go to your Pull Request
+2. Add the label `deploy-preview` to the PR
+3. The workflow will automatically run and deploy your changes
+4. A comment will be added with the preview URL
+5. Subsequent pushes to the PR will automatically re-deploy (as long as the label is present)
 
 ### URL Structure
 
@@ -158,6 +169,8 @@ Create `.github/workflows/deploy-pr-preview.yml`:
 name: Deploy PR Preview
 
 on:
+  pull_request:
+    types: [labeled, synchronize]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -169,24 +182,39 @@ permissions:
   contents: write
   pages: write
   id-token: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    # Run if: workflow_dispatch OR (pull_request with 'deploy-preview' label)
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
     steps:
-      - name: Get PR branch
+      - name: Get PR info
         id: pr
         uses: actions/github-script@v7
         with:
           script: |
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: parseInt('${{ inputs.pr_number }}')
-            });
-            core.setOutput('ref', pr.data.head.ref);
-            core.setOutput('sha', pr.data.head.sha);
+            let prNumber, ref, sha;
+            if (context.eventName === 'workflow_dispatch') {
+              const pr = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: parseInt('${{ inputs.pr_number }}')
+              });
+              prNumber = pr.data.number;
+              ref = pr.data.head.ref;
+              sha = pr.data.head.sha;
+            } else {
+              prNumber = context.payload.pull_request.number;
+              ref = context.payload.pull_request.head.ref;
+              sha = context.payload.pull_request.head.sha;
+            }
+            core.setOutput('number', prNumber);
+            core.setOutput('ref', ref);
+            core.setOutput('sha', sha);
 
       - name: Checkout PR branch
         uses: actions/checkout@v4
@@ -202,7 +230,7 @@ jobs:
       - name: Build with PR base path
         run: bun run build
         env:
-          VITE_BASE: /${{ github.event.repository.name }}/pr-${{ inputs.pr_number }}/
+          VITE_BASE: /${{ github.event.repository.name }}/pr-${{ steps.pr.outputs.number }}/
 
       - name: Checkout gh-pages branch
         uses: actions/checkout@v4
@@ -212,8 +240,8 @@ jobs:
 
       - name: Copy build to PR sub-path
         run: |
-          mkdir -p gh-pages/pr-${{ inputs.pr_number }}
-          cp -r dist/. gh-pages/pr-${{ inputs.pr_number }}/
+          mkdir -p gh-pages/pr-${{ steps.pr.outputs.number }}
+          cp -r dist/. gh-pages/pr-${{ steps.pr.outputs.number }}/
 
       - name: Deploy to GitHub Pages
         run: |
@@ -221,8 +249,45 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Deploy PR #${{ inputs.pr_number }} preview" || echo "No changes to commit"
+          git commit -m "Deploy PR #${{ steps.pr.outputs.number }} preview" || echo "No changes to commit"
           git push
+
+      - name: Add comment with preview URL
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.pr.outputs.number }};
+            const previewUrl = `https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-${prNumber}/`;
+            const body = `🚀 **Preview deployed!**\n\n📱 Preview URL: ${previewUrl}\n\n_This preview was automatically deployed from commit ${{ steps.pr.outputs.sha }}_`;
+            
+            // Check if a comment already exists
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+            
+            const existingComment = comments.data.find(c => 
+              c.user.login === 'github-actions[bot]' && 
+              c.body.includes('Preview deployed!')
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: body
+              });
+            }
 ```
 
 > **Note**: This workflow requires a `gh-pages` branch to exist for storing PR previews. If you prefer to use the default GitHub Pages Actions deployment approach (using `actions/upload-pages-artifact` and `actions/deploy-pages`), you would need to implement a custom solution that downloads the existing pages artifact, adds the PR preview content, and re-uploads the combined artifact. The `gh-pages` branch approach shown here is simpler and allows PR previews to coexist with the production deployment.
@@ -305,7 +370,7 @@ jobs:
 
 | Feature | Production | PR Preview |
 |---------|------------|------------|
-| Trigger | Automatic (push to main) | Manual (workflow dispatch) |
+| Trigger | Automatic (push to main) | Label-based (`deploy-preview`) or manual (workflow dispatch) |
 | URL | Root (`/`) | Sub-path (`/pr-###/`) |
 | Workflow | `deploy.yml` | `deploy-pr-preview.yml` |
 | Base Path | `./` | `/Ashardalon/pr-###/` |
