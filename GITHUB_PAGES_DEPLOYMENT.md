@@ -166,7 +166,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
   pull-requests: read
@@ -204,13 +204,28 @@ jobs:
         env:
           VITE_BASE: /Ashardalon/pr-${{ inputs.pr_number }}/
 
-      - name: Deploy to PR sub-path
-        # Note: This step requires additional configuration
-        # to deploy to a sub-path while preserving existing content
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Copy build to PR sub-path
         run: |
-          echo "Deploying to /pr-${{ inputs.pr_number }}/"
-          # Implementation depends on your GitHub Pages setup
+          mkdir -p gh-pages/pr-${{ inputs.pr_number }}
+          cp -r dist/* gh-pages/pr-${{ inputs.pr_number }}/
+
+      - name: Deploy to GitHub Pages
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Deploy PR #${{ inputs.pr_number }} preview" || echo "No changes to commit"
+          git push
 ```
+
+> **Note**: This workflow requires the `gh-pages` branch to exist. If using the default GitHub Pages Actions deployment (without a `gh-pages` branch), the PR preview deployment will need to use the `actions/upload-pages-artifact` approach with custom artifact handling.
 
 ## Repository Settings
 
@@ -258,14 +273,32 @@ on:
   pull_request:
     types: [closed]
 
+permissions:
+  contents: write
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Remove PR preview
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove PR preview directory
         run: |
-          echo "Cleaning up preview for PR #${{ github.event.pull_request.number }}"
-          # Implementation depends on your GitHub Pages setup
+          PR_DIR="pr-${{ github.event.pull_request.number }}"
+          if [ -d "$PR_DIR" ]; then
+            rm -rf "$PR_DIR"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "Remove PR #${{ github.event.pull_request.number }} preview" || echo "No changes to commit"
+            git push
+            echo "Cleaned up preview for PR #${{ github.event.pull_request.number }}"
+          else
+            echo "No preview directory found for PR #${{ github.event.pull_request.number }}"
+          fi
 ```
 
 ## Summary
