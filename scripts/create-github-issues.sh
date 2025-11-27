@@ -137,7 +137,7 @@ process_issues() {
     echo ""
     
     for file in "${files[@]}"; do
-        ((count++))
+        ((count++)) || true
         
         local filename
         filename=$(basename "$file")
