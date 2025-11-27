@@ -6,6 +6,7 @@ import {
   START_TILE_POSITIONS,
   TurnState,
 } from "./types";
+import { getValidMoveSquares, isValidMoveDestination } from "./movement";
 
 /**
  * Default turn state for the beginning of a game
@@ -22,12 +23,18 @@ export interface GameState {
   turnState: TurnState;
   /** Seed used for random number generation, enables reproducible game states */
   randomSeed?: number;
+  /** Valid movement squares for the current hero (when showing movement overlay) */
+  validMoveSquares: Position[];
+  /** Whether the movement overlay is currently shown */
+  showingMovement: boolean;
 }
 
 const initialState: GameState = {
   currentScreen: "character-select",
   heroTokens: [],
   turnState: { ...DEFAULT_TURN_STATE },
+  validMoveSquares: [],
+  showingMovement: false,
 };
 
 /**
@@ -100,6 +107,10 @@ export const gameSlice = createSlice({
       // Initialize turn state
       state.turnState = { ...DEFAULT_TURN_STATE };
 
+      // Clear any movement state
+      state.validMoveSquares = [];
+      state.showingMovement = false;
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -113,14 +124,65 @@ export const gameSlice = createSlice({
         token.position = action.payload.position;
       }
     },
+    /**
+     * Show valid movement squares for the specified hero
+     */
+    showMovement: (
+      state,
+      action: PayloadAction<{ heroId: string; speed: number }>,
+    ) => {
+      const { heroId, speed } = action.payload;
+      const token = state.heroTokens.find((t) => t.heroId === heroId);
+      
+      if (token) {
+        state.validMoveSquares = getValidMoveSquares(
+          token.position,
+          speed,
+          state.heroTokens,
+          heroId,
+        );
+        state.showingMovement = true;
+      }
+    },
+    /**
+     * Hide the movement overlay
+     */
+    hideMovement: (state) => {
+      state.validMoveSquares = [];
+      state.showingMovement = false;
+    },
+    /**
+     * Move the current hero to a new position (must be a valid move square)
+     */
+    moveHero: (
+      state,
+      action: PayloadAction<{ heroId: string; position: Position }>,
+    ) => {
+      const { heroId, position } = action.payload;
+      
+      // Verify this is a valid move destination
+      if (!isValidMoveDestination(position, state.validMoveSquares)) {
+        return;
+      }
+      
+      const token = state.heroTokens.find((t) => t.heroId === heroId);
+      if (token) {
+        token.position = position;
+        // Clear movement overlay after moving
+        state.validMoveSquares = [];
+        state.showingMovement = false;
+      }
+    },
     resetGame: (state) => {
       state.currentScreen = "character-select";
       state.heroTokens = [];
       state.turnState = { ...DEFAULT_TURN_STATE };
       state.randomSeed = undefined;
+      state.validMoveSquares = [];
+      state.showingMovement = false;
     },
   },
 });
 
-export const { startGame, setHeroPosition, resetGame } = gameSlice.actions;
+export const { startGame, setHeroPosition, showMovement, hideMovement, moveHero, resetGame } = gameSlice.actions;
 export default gameSlice.reducer;
