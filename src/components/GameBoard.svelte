@@ -1,9 +1,11 @@
 <script lang="ts">
   import { store } from '../store';
-  import { resetGame, showMovement, hideMovement, moveHero } from '../store/gameSlice';
-  import type { HeroToken, Hero, TurnState, GamePhase, Position } from '../store/types';
+  import { resetGame, showMovement, hideMovement, moveHero, endHeroPhase, endExplorationPhase, endVillainPhase } from '../store/gameSlice';
+  import type { HeroToken, Hero, TurnState, GamePhase, Position, DungeonState, TileEdge } from '../store/types';
   import { assetPath } from '../utils';
   import MovementOverlay from './MovementOverlay.svelte';
+  import TileDeckCounter from './TileDeckCounter.svelte';
+  import UnexploredEdgeIndicator from './UnexploredEdgeIndicator.svelte';
   
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -24,6 +26,7 @@
   let turnState: TurnState = $state({ currentHeroIndex: 0, currentPhase: 'hero-phase', turnNumber: 1 });
   let validMoveSquares: Position[] = $state([]);
   let showingMovement: boolean = $state(false);
+  let dungeon: DungeonState = $state({ tiles: [], unexploredEdges: [], tileDeck: [] });
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
   
@@ -36,6 +39,7 @@
       turnState = state.game.turnState;
       validMoveSquares = state.game.validMoveSquares;
       showingMovement = state.game.showingMovement;
+      dungeon = state.game.dungeon;
     });
     
     // Initialize state
@@ -45,6 +49,7 @@
     turnState = state.game.turnState;
     validMoveSquares = state.game.validMoveSquares;
     showingMovement = state.game.showingMovement;
+    dungeon = state.game.dungeon;
     
     return unsubscribe;
   });
@@ -154,6 +159,38 @@
       handleTileClick(event as unknown as MouseEvent);
     }
   }
+  
+  // Get unexplored edges for the start tile
+  function getStartTileUnexploredEdges(): TileEdge[] {
+    return dungeon.unexploredEdges.filter(e => e.tileId === 'start-tile');
+  }
+  
+  // Handle end phase button click
+  function handleEndPhase() {
+    switch (turnState.currentPhase) {
+      case 'hero-phase':
+        store.dispatch(endHeroPhase());
+        break;
+      case 'exploration-phase':
+        store.dispatch(endExplorationPhase());
+        break;
+      case 'villain-phase':
+        store.dispatch(endVillainPhase());
+        break;
+    }
+  }
+  
+  // Get button text based on current phase
+  function getEndPhaseButtonText(): string {
+    switch (turnState.currentPhase) {
+      case 'hero-phase':
+        return 'End Hero Phase';
+      case 'exploration-phase':
+        return 'End Exploration';
+      case 'villain-phase':
+        return 'End Villain Phase';
+    }
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -209,6 +246,16 @@
       >
         <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
         
+        <!-- Unexplored edge indicators -->
+        {#each getStartTileUnexploredEdges() as edge (edge.direction)}
+          <UnexploredEdgeIndicator
+            direction={edge.direction}
+            cellSize={TILE_CELL_SIZE}
+            tileWidth={TILE_WIDTH}
+            tileHeight={TILE_HEIGHT}
+          />
+        {/each}
+        
         <!-- Movement overlay -->
         {#if showingMovement && validMoveSquares.length > 0}
           <MovementOverlay
@@ -238,10 +285,16 @@
         {/each}
       </div>
       
-      <!-- Reset button positioned centrally but small and unobtrusive -->
-      <button class="reset-button" data-testid="reset-button" onclick={handleReset}>
-        ↩ Return to Character Select
-      </button>
+      <!-- Board controls -->
+      <div class="board-controls">
+        <TileDeckCounter tileCount={dungeon.tileDeck.length} />
+        <button class="end-phase-button" data-testid="end-phase-button" onclick={handleEndPhase}>
+          {getEndPhaseButtonText()}
+        </button>
+        <button class="reset-button" data-testid="reset-button" onclick={handleReset}>
+          ↩ Return to Character Select
+        </button>
+      </div>
     </div>
 
     <!-- Right edge player zone -->
@@ -448,11 +501,37 @@
     color: #aaa;
   }
   
-  /* Reset button - positioned subtly */
-  .reset-button {
+  /* Board controls container */
+  .board-controls {
     position: absolute;
     bottom: 0.5rem;
     right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  
+  /* End phase button */
+  .end-phase-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(46, 125, 50, 0.9);
+    color: #fff;
+    border: 1px solid #4caf50;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .end-phase-button:hover {
+    background: rgba(76, 175, 80, 0.9);
+  }
+  
+  /* Reset button - positioned subtly */
+  .reset-button {
     padding: 0.4rem 0.8rem;
     font-size: 0.75rem;
     background: rgba(68, 68, 68, 0.8);

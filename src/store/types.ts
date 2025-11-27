@@ -75,3 +75,112 @@ export const START_TILE_POSITIONS: Position[] = [
   { x: 2, y: 5 },
   { x: 3, y: 5 },
 ];
+
+/**
+ * Cardinal directions for tile edges
+ */
+export type Direction = 'north' | 'south' | 'east' | 'west';
+
+/**
+ * Type of tile edge - wall blocks passage, open connects to other tiles, unexplored can be explored
+ */
+export type EdgeType = 'wall' | 'open' | 'unexplored';
+
+/**
+ * Reference to a specific edge on a tile
+ */
+export interface TileEdge {
+  tileId: string;
+  direction: Direction;
+}
+
+/**
+ * Grid position for tiles in the dungeon layout
+ */
+export interface GridPosition {
+  col: number;
+  row: number;
+}
+
+/**
+ * A tile placed on the dungeon board
+ */
+export interface PlacedTile {
+  id: string;
+  tileType: string;
+  position: GridPosition;
+  rotation: number; // 0, 90, 180, or 270 degrees
+  edges: {
+    north: EdgeType;
+    south: EdgeType;
+    east: EdgeType;
+    west: EdgeType;
+  };
+}
+
+/**
+ * Tile definition describing a tile type before placement
+ */
+export interface TileDefinition {
+  tileType: string;
+  imagePath: string;
+  /** Default edges before rotation - describes which edges are open/walls */
+  defaultEdges: {
+    north: EdgeType;
+    south: EdgeType;
+    east: EdgeType;
+    west: EdgeType;
+  };
+}
+
+/**
+ * Dungeon state for tracking placed tiles and exploration
+ */
+export interface DungeonState {
+  tiles: PlacedTile[];
+  unexploredEdges: TileEdge[];
+  tileDeck: string[]; // Array of tile type IDs remaining in the deck
+}
+
+/**
+ * Available tile definitions
+ * Based on the assets available: 2-exit, 3-exit, and 4-exit tiles
+ */
+export const TILE_DEFINITIONS: TileDefinition[] = [
+  // 2-exit tiles (north and south open)
+  { tileType: 'tile-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  { tileType: 'tile-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  { tileType: 'tile-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  // 3-exit tiles
+  { tileType: 'tile-3exit-a', imagePath: 'assets/Tile_Black_x3_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  { tileType: 'tile-3exit-b', imagePath: 'assets/Tile_Black_x3_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  { tileType: 'tile-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  // 4-exit tiles
+  { tileType: 'tile-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  { tileType: 'tile-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+];
+
+/**
+ * Initial tile deck for the game (tile type IDs)
+ */
+export const INITIAL_TILE_DECK: string[] = [
+  'tile-2exit-a', 'tile-2exit-b', 'tile-2exit-c',
+  'tile-3exit-a', 'tile-3exit-b', 'tile-3exit-c',
+  'tile-4exit-a', 'tile-4exit-b',
+];
+
+/**
+ * Start tile definition - double height tile with 4 unexplored edges
+ */
+export const START_TILE: PlacedTile = {
+  id: 'start-tile',
+  tileType: 'start',
+  position: { col: 0, row: 0 },
+  rotation: 0,
+  edges: {
+    north: 'unexplored',
+    south: 'unexplored',
+    east: 'unexplored',
+    west: 'unexplored',
+  },
+};

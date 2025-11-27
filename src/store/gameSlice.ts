@@ -5,8 +5,19 @@ import {
   Position,
   START_TILE_POSITIONS,
   TurnState,
+  DungeonState,
+  TileEdge,
+  INITIAL_TILE_DECK,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination } from "./movement";
+import {
+  initializeDungeon,
+  initializeTileDeck,
+  checkExploration,
+  placeTile,
+  drawTile,
+  updateDungeonAfterExploration,
+} from "./exploration";
 
 /**
  * Default turn state for the beginning of a game
@@ -27,6 +38,8 @@ export interface GameState {
   validMoveSquares: Position[];
   /** Whether the movement overlay is currently shown */
   showingMovement: boolean;
+  /** Dungeon state for tile management and exploration */
+  dungeon: DungeonState;
 }
 
 const initialState: GameState = {
@@ -35,6 +48,7 @@ const initialState: GameState = {
   turnState: { ...DEFAULT_TURN_STATE },
   validMoveSquares: [],
   showingMovement: false,
+  dungeon: initializeDungeon(),
 };
 
 /**
@@ -90,10 +104,10 @@ export const gameSlice = createSlice({
 
       // Use provided positions or randomly assign from shuffled START_TILE_POSITIONS
       let assignedPositions: Position[];
+      const randomFn = createSeededRandom(gameSeed);
       if (positions) {
         assignedPositions = positions;
       } else {
-        const randomFn = createSeededRandom(gameSeed);
         const shuffledPositions = shuffleArray(START_TILE_POSITIONS, randomFn);
         // Take only the first 5 positions (for up to 5 heroes)
         assignedPositions = shuffledPositions.slice(0, 5);
@@ -110,6 +124,11 @@ export const gameSlice = createSlice({
       // Clear any movement state
       state.validMoveSquares = [];
       state.showingMovement = false;
+
+      // Initialize dungeon with start tile and shuffled tile deck
+      const dungeon = initializeDungeon();
+      dungeon.tileDeck = initializeTileDeck([...INITIAL_TILE_DECK], randomFn);
+      state.dungeon = dungeon;
 
       state.currentScreen = "game-board";
     },
@@ -180,9 +199,89 @@ export const gameSlice = createSlice({
       state.randomSeed = undefined;
       state.validMoveSquares = [];
       state.showingMovement = false;
+      state.dungeon = initializeDungeon();
+    },
+    /**
+     * End the hero phase and trigger exploration if hero is on an unexplored edge
+     */
+    endHeroPhase: (state) => {
+      if (state.turnState.currentPhase !== "hero-phase") {
+        return;
+      }
+      
+      // Get current hero
+      const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
+      if (!currentToken) {
+        return;
+      }
+      
+      // Check if hero is on an unexplored edge
+      const exploredEdge = checkExploration(currentToken, state.dungeon);
+      
+      if (exploredEdge && state.dungeon.tileDeck.length > 0) {
+        // Draw a tile from the deck
+        const { drawnTile, remainingDeck } = drawTile(state.dungeon.tileDeck);
+        
+        if (drawnTile) {
+          // Place the new tile
+          const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
+          
+          if (newTile) {
+            // Update dungeon state
+            state.dungeon = updateDungeonAfterExploration(
+              state.dungeon,
+              exploredEdge,
+              newTile
+            );
+            state.dungeon.tileDeck = remainingDeck;
+          }
+        }
+      }
+      
+      // Transition to exploration phase
+      state.turnState.currentPhase = "exploration-phase";
+    },
+    /**
+     * End the exploration phase and move to villain phase
+     */
+    endExplorationPhase: (state) => {
+      if (state.turnState.currentPhase !== "exploration-phase") {
+        return;
+      }
+      state.turnState.currentPhase = "villain-phase";
+    },
+    /**
+     * End the villain phase and move to the next hero's turn
+     */
+    endVillainPhase: (state) => {
+      if (state.turnState.currentPhase !== "villain-phase") {
+        return;
+      }
+      
+      // Move to next hero
+      state.turnState.currentHeroIndex = 
+        (state.turnState.currentHeroIndex + 1) % state.heroTokens.length;
+      
+      // If we've cycled back to the first hero, increment turn number
+      if (state.turnState.currentHeroIndex === 0) {
+        state.turnState.turnNumber += 1;
+      }
+      
+      // Start new hero phase
+      state.turnState.currentPhase = "hero-phase";
     },
   },
 });
 
-export const { startGame, setHeroPosition, showMovement, hideMovement, moveHero, resetGame } = gameSlice.actions;
+export const { 
+  startGame, 
+  setHeroPosition, 
+  showMovement, 
+  hideMovement, 
+  moveHero, 
+  resetGame,
+  endHeroPhase,
+  endExplorationPhase,
+  endVillainPhase,
+} = gameSlice.actions;
 export default gameSlice.reducer;
