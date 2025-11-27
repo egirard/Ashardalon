@@ -41,10 +41,6 @@
   }
   
   function handleHeroClick(heroId: string, edge: EdgePosition) {
-    // Don't allow clicking if hero is already selected on a different edge
-    if (isSelectedOnOtherEdge(heroId, edge)) {
-      return;
-    }
     store.dispatch(selectHeroFromEdge({ heroId, edge }));
   }
   
