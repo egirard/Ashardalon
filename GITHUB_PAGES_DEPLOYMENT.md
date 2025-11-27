@@ -52,21 +52,21 @@ PR preview deployments allow reviewers to test and verify changes in a pull requ
 
 ### Trigger
 
-PR preview deployment can be triggered in two ways:
+PR preview deployment triggers automatically on all pull requests:
 
-1. **Automatic (Label-based)**: Add the `deploy-preview` label to a PR. The workflow will automatically deploy whenever:
-   - The label is added
-   - New commits are pushed to the PR branch (while the label is present)
+1. **Automatic**: The workflow runs automatically when:
+   - A new PR is opened
+   - New commits are pushed to any PR branch
+   - A PR is reopened
 
 2. **Manual (Workflow dispatch)**: Navigate to Actions → Deploy PR Preview → Run workflow and enter the PR number
 
 ### How to Use
 
-1. Go to your Pull Request
-2. Add the label `deploy-preview` to the PR
-3. The workflow will automatically run and deploy your changes
-4. A comment will be added with the preview URL
-5. Subsequent pushes to the PR will automatically re-deploy (as long as the label is present)
+1. Open or push to a Pull Request
+2. The workflow will automatically run and deploy your changes
+3. A comment will be added with the preview URL
+4. Subsequent pushes to the PR will automatically re-deploy
 
 ### URL Structure
 
@@ -170,7 +170,7 @@ name: Deploy PR Preview
 
 on:
   pull_request:
-    types: [labeled, synchronize]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -187,10 +187,6 @@ permissions:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
-    # Run if: workflow_dispatch OR (pull_request with 'deploy-preview' label)
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
     steps:
       - name: Get PR info
         id: pr
@@ -370,7 +366,7 @@ jobs:
 
 | Feature | Production | PR Preview |
 |---------|------------|------------|
-| Trigger | Automatic (push to main) | Label-based (`deploy-preview`) or manual (workflow dispatch) |
+| Trigger | Automatic (push to main) | Automatic (all PRs) or manual (workflow dispatch) |
 | URL | Root (`/`) | Sub-path (`/pr-###/`) |
 | Workflow | `deploy.yml` | `deploy-pr-preview.yml` |
 | Base Path | `./` | `/Ashardalon/pr-###/` |
