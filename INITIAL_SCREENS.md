@@ -2,6 +2,20 @@
 
 This document specifies the barebones startup flow for the Wrath of Ashardalon web implementation.
 
+## Implementation Status
+
+✅ **IMPLEMENTED** - See the implementation in:
+- `src/components/CharacterSelect.svelte` - Character selection screen
+- `src/components/GameBoard.svelte` - Game board with Start Tile
+- `src/store/heroesSlice.ts` - Hero selection state management
+- `src/store/gameSlice.ts` - Game state management
+
+### Screenshots
+
+| Character Selection | Game Board |
+|---------------------|------------|
+| ![Character Selection](https://github.com/user-attachments/assets/af375510-13df-491d-9990-4e533a59b00f) | ![Game Board](https://github.com/user-attachments/assets/f972d21a-3f97-4caa-a834-a50f054944e3) |
+
 ---
 
 ## Screen Flow
@@ -82,19 +96,19 @@ Display the initial dungeon layout with the Start Tile and position hero tokens.
 
 ### Character Selection Screen
 
-1. Display hero portraits/cards from assets
-2. Toggle selection state on click
-3. Track number of selected heroes (1-5)
-4. Enable/disable start button based on selection
-5. Store selected heroes in Redux state
+1. ✅ Display hero portraits/cards from assets
+2. ✅ Toggle selection state on click
+3. ✅ Track number of selected heroes (1-5)
+4. ✅ Enable/disable start button based on selection
+5. ✅ Store selected heroes in Redux state
 
 ### Game Board Screen
 
-1. Render Start Tile image (`assets/StartTile.png`)
-2. Calculate valid starting positions around staircase
-3. Randomly assign heroes to unique positions
-4. Render hero tokens at assigned positions
-5. Display turn indicator for first player
+1. ✅ Render Start Tile image (`assets/StartTile.png`)
+2. ✅ Calculate valid starting positions around staircase
+3. ✅ Randomly assign heroes to unique positions
+4. ✅ Render hero tokens at assigned positions
+5. ✅ Display turn indicator for first player
 
 ---
 

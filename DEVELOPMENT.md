@@ -142,10 +142,42 @@ Ashardalon/
 ├── flake.nix                 # Nix flake (defines dev environment)
 ├── flake.lock                # Locked dependencies (auto-generated)
 ├── DEVELOPMENT.md            # This file
+├── E2E_TEST_GUIDELINES.md    # E2E testing guidelines
 ├── README.md                 # Project overview
 ├── CONTRIBUTING.md           # Contribution guidelines
 ├── VISION.md                 # Project vision and roadmap
-└── assets/                   # Game assets (images, etc.)
+├── assets/                   # Game assets (images, etc.)
+└── tests/
+    ├── e2e/                  # End-to-end tests (Playwright)
+    └── unit/                 # Unit tests
+```
+
+## Testing
+
+### E2E Tests
+
+This project uses Playwright for E2E testing. See [E2E_TEST_GUIDELINES.md](E2E_TEST_GUIDELINES.md) for detailed guidelines on writing E2E tests that:
+
+- Are numbered (001, 002, etc.)
+- Tell user stories through screenshot sequences
+- Are human-verifiable via a README.md with linked screenshots
+
+```bash
+# Run E2E tests
+bun run test:e2e
+
+# Run a specific E2E test
+bun run test:e2e -- --grep "001"
+```
+
+### Unit Tests
+
+```bash
+# Run unit tests
+bun run test:unit
+
+# Run with coverage
+bun run test:unit:coverage
 ```
 
 ## Troubleshooting
