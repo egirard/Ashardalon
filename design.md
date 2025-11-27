@@ -238,6 +238,7 @@ The hero must perform exactly ONE of the following action combinations:
 ### Attack Actions
 
 When attacking:
+- Select an attack card to use
 - Choose a valid target within range
 - Roll a d20
 - Add attack bonus
@@ -262,10 +263,9 @@ Exploration occurs when the hero ends movement on a tile with an unexplored edge
 
 1. **Draw Tile**: Draw the top tile from the Dungeon Tile stack
 2. **Place Tile**: Connect the new tile to the unexplored edge
-3. **Check for Black Arrow**: If the new tile has a black arrow:
-   - Draw a Monster card
-   - Place the monster figure on the new tile
-4. **Draw Monster Card**: The exploring hero's controller takes control of the placed monster
+3. **Draw Monster Card**: Draw a Monster card and place the monster figure on the new tile
+   - If the drawn monster card is already in front of the player, discard it and draw another (repeat until a unique monster card is drawn)
+   - The exploring hero's controller takes control of the placed monster
 
 ### Long Hallway Special Rule
 
@@ -382,6 +382,12 @@ Each Monster card specifies:
 - The player who drew a Monster card controls that monster
 - When a monster is defeated, discard its card
 - Monster cards may be placed in the Experience pile
+
+### Multiple Matching Monsters
+
+When multiple players control monsters with the same name:
+- **Activation**: All matching monsters activate (move and attack) whenever any player activates their copy of the monster card
+- **Defeating**: When a player defeats one of the matching monsters, they may choose any of the matching monster cards (from any player) to discard
 
 ---
 
