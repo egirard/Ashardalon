@@ -32,10 +32,12 @@
   
   // Calculate pixel position from grid position
   function getTokenStyle(position: { x: number; y: number }): string {
-    const tileSize = 50; // Size of each grid square in pixels
-    const offsetX = 100; // Offset from left edge of start tile
-    const offsetY = 100; // Offset from top edge of start tile
-    return `left: ${offsetX + position.x * tileSize}px; top: ${offsetY + position.y * tileSize}px;`;
+    const tileSize = 140; // Size of each grid square in pixels (140x140)
+    const offsetX = 36; // Offset from left edge of start tile
+    const offsetY = 36; // Offset from top edge of start tile
+    // Position token at the center of the grid cell
+    const cellCenterOffset = tileSize / 2;
+    return `left: ${offsetX + position.x * tileSize + cellCenterOffset}px; top: ${offsetY + position.y * tileSize + cellCenterOffset}px;`;
   }
 </script>
 
@@ -128,7 +130,6 @@
   
   .tile-image {
     display: block;
-    max-width: 400px;
     height: auto;
     border: 3px solid #444;
     border-radius: 8px;
