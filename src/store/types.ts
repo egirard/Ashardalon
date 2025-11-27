@@ -55,12 +55,15 @@ export const AVAILABLE_HEROES: Hero[] = [
 ];
 
 /**
- * Valid starting positions around the staircase on the Start Tile
+ * Valid starting positions around the staircase on the Start Tile.
+ * The Start Tile grid is 4 columns (x: 0-3) by 8 rows (y: 0-7).
+ * The staircase occupies approximately x: 1-2, y: 3-4.
+ * These positions are adjacent to the staircase.
  */
 export const START_TILE_POSITIONS: Position[] = [
+  { x: 1, y: 2 },
   { x: 2, y: 2 },
-  { x: 3, y: 2 },
-  { x: 4, y: 2 },
-  { x: 2, y: 3 },
-  { x: 4, y: 3 },
+  { x: 0, y: 3 },
+  { x: 3, y: 3 },
+  { x: 0, y: 4 },
 ];

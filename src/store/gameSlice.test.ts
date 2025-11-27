@@ -2,6 +2,30 @@ import { describe, it, expect, vi } from 'vitest';
 import gameReducer, { startGame, setHeroPosition, resetGame, GameState } from './gameSlice';
 import { START_TILE_POSITIONS } from './types';
 
+// Start tile grid dimensions (4 columns x 8 rows)
+const START_TILE_GRID = { columns: 4, rows: 8 };
+
+describe('START_TILE_POSITIONS', () => {
+  it('should have exactly 5 positions for up to 5 heroes', () => {
+    expect(START_TILE_POSITIONS).toHaveLength(5);
+  });
+
+  it('should have all positions within valid grid bounds', () => {
+    START_TILE_POSITIONS.forEach((pos, index) => {
+      expect(pos.x, `Position ${index} x=${pos.x} should be >= 0`).toBeGreaterThanOrEqual(0);
+      expect(pos.x, `Position ${index} x=${pos.x} should be < ${START_TILE_GRID.columns}`).toBeLessThan(START_TILE_GRID.columns);
+      expect(pos.y, `Position ${index} y=${pos.y} should be >= 0`).toBeGreaterThanOrEqual(0);
+      expect(pos.y, `Position ${index} y=${pos.y} should be < ${START_TILE_GRID.rows}`).toBeLessThan(START_TILE_GRID.rows);
+    });
+  });
+
+  it('should have all unique positions', () => {
+    const positionStrings = START_TILE_POSITIONS.map(p => `${p.x},${p.y}`);
+    const uniquePositions = new Set(positionStrings);
+    expect(uniquePositions.size).toBe(START_TILE_POSITIONS.length);
+  });
+});
+
 describe('gameSlice', () => {
   const initialState: GameState = {
     currentScreen: 'character-select',
