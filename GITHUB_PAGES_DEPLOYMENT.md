@@ -202,7 +202,7 @@ jobs:
       - name: Build with PR base path
         run: bun run build
         env:
-          VITE_BASE: /Ashardalon/pr-${{ inputs.pr_number }}/
+          VITE_BASE: /${{ github.event.repository.name }}/pr-${{ inputs.pr_number }}/
 
       - name: Checkout gh-pages branch
         uses: actions/checkout@v4
