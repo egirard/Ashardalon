@@ -7,8 +7,8 @@ import gameReducer, {
 } from "./gameSlice";
 import { START_TILE_POSITIONS } from "./types";
 
-// Start tile grid dimensions - double-height tile with valid spaces x: 1-4, y: 0-7
-const START_TILE_GRID = { minX: 1, maxX: 4, minY: 0, maxY: 7 };
+// Start tile grid dimensions - double-height tile with valid spaces x: 1-3, y: 0-7
+const START_TILE_GRID = { minX: 1, maxX: 3, minY: 0, maxY: 7 };
 
 describe("START_TILE_POSITIONS", () => {
   it("should have exactly 8 possible positions around the staircase", () => {
