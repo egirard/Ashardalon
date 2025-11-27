@@ -39,7 +39,7 @@ The production build uses the default base path configured in `vite.config.ts`:
 
 ```typescript
 export default defineConfig({
-  base: './',
+  base: process.env.VITE_BASE || './',
   // ...
 });
 ```
@@ -80,8 +80,8 @@ The PR preview deployment workflow performs the following steps:
 For PR preview builds, the base path must be set dynamically:
 
 ```bash
-# Build with PR-specific base path
-VITE_BASE=/Ashardalon/pr-<number>/ bun run build
+# Build with PR-specific base path (example for PR #42)
+VITE_BASE=/Ashardalon/pr-42/ bun run build
 ```
 
 Or configure in the build script:
@@ -213,7 +213,7 @@ jobs:
       - name: Copy build to PR sub-path
         run: |
           mkdir -p gh-pages/pr-${{ inputs.pr_number }}
-          cp -r dist/* gh-pages/pr-${{ inputs.pr_number }}/
+          cp -r dist/. gh-pages/pr-${{ inputs.pr_number }}/
 
       - name: Deploy to GitHub Pages
         run: |
@@ -225,7 +225,7 @@ jobs:
           git push
 ```
 
-> **Note**: This workflow requires the `gh-pages` branch to exist. If using the default GitHub Pages Actions deployment (without a `gh-pages` branch), the PR preview deployment will need to use the `actions/upload-pages-artifact` approach with custom artifact handling.
+> **Note**: This workflow requires a `gh-pages` branch to exist for storing PR previews. If you prefer to use the default GitHub Pages Actions deployment approach (using `actions/upload-pages-artifact` and `actions/deploy-pages`), you would need to implement a custom solution that downloads the existing pages artifact, adds the PR preview content, and re-uploads the combined artifact. The `gh-pages` branch approach shown here is simpler and allows PR previews to coexist with the production deployment.
 
 ## Repository Settings
 
