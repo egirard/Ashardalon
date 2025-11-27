@@ -111,8 +111,16 @@ create_labels() {
         if [[ "$DRY_RUN" == true ]]; then
             echo "  [DRY-RUN] Would create label: $label (color: $color)"
         else
-            # Try to create label, ignore if it already exists
-            gh label create "$label" --color "${color#\#}" --description "$description" 2>/dev/null || true
+            # Try to create label, ignore if it already exists (exit code 1 with "already exists" message)
+            local output
+            if output=$(gh label create "$label" --color "${color#\#}" --description "$description" 2>&1); then
+                echo "  Created label: $label"
+            elif echo "$output" | grep -q "already exists"; then
+                # Label already exists, that's fine
+                :
+            else
+                echo "  Warning: Failed to create label '$label': $output"
+            fi
         fi
     done
     
@@ -150,8 +158,15 @@ process_issues() {
         else
             # Create the issue
             local issue_url
-            issue_url=$(gh issue create --title "$title" --body-file "$file" --label "$labels" 2>&1)
-            echo "  Created: $issue_url"
+            local exit_code=0
+            issue_url=$(gh issue create --title "$title" --body-file "$file" --label "$labels") || exit_code=$?
+            
+            if [[ $exit_code -eq 0 ]]; then
+                echo "  Created: $issue_url"
+            else
+                echo "  ERROR: Failed to create issue (exit code: $exit_code)"
+                echo "  Output: $issue_url"
+            fi
         fi
         
         echo ""
