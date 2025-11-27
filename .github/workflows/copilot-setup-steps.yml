@@ -1,0 +1,168 @@
+# copilot-setup-steps.yml - GitHub Copilot Runner Environment Setup
+#
+# This workflow is AUTOMATICALLY invoked by GitHub Copilot when it needs to
+# perform tasks in your repository. It runs BEFORE Copilot starts working on
+# your issue or PR, preparing the environment with the tools and dependencies
+# Copilot will need.
+#
+# KEY CONCEPTS:
+# 1. This workflow runs in a GitHub-hosted runner, same as other Actions
+# 2. Copilot's coding agent receives the environment AFTER this setup completes
+# 3. Anything installed/configured here is available to Copilot during its work
+# 4. This workflow must have specific permissions and name to be recognized
+#
+# REQUIREMENTS:
+# - Must be named exactly: copilot-setup-steps.yml
+# - Must be in: .github/workflows/
+# - Must have: workflow_dispatch trigger for Copilot to invoke it
+# - Should be fast: Copilot waits for this to complete before starting
+
+name: "Copilot Setup Steps"
+
+# TRIGGER: workflow_dispatch allows Copilot to invoke this workflow
+# When Copilot is assigned to an issue or PR, it calls this workflow first
+on:
+  workflow_dispatch:
+
+# PERMISSIONS: Define what GitHub token capabilities are available
+# These permissions flow through to Copilot's environment
+permissions:
+  # Read repository contents (code, files, etc.)
+  contents: read
+  # Read pull request metadata (labels, comments, etc.)
+  pull-requests: read
+
+# JOBS: Setup steps that prepare the environment
+jobs:
+  # ============================================================================
+  # SETUP JOB: This is where environment preparation happens
+  # The job MUST be named 'copilot-setup-steps' for Copilot to recognize it
+  # ============================================================================
+  copilot-setup-steps:
+    # Runner type - this is the machine Copilot will use
+    runs-on: ubuntu-latest
+
+    # =========================================================================
+    # STEPS: Each step prepares part of the environment
+    # =========================================================================
+    steps:
+      # -----------------------------------------------------------------------
+      # STEP 1: Checkout the repository
+      # This is essential - it provides access to your code
+      # Without this, Copilot would have an empty workspace
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for better git operations
+          fetch-depth: 0
+
+      # -----------------------------------------------------------------------
+      # STEP 2: Install Nix package manager
+      # Nix provides reproducible development environments
+      # This allows using nix-shell, nix develop, and flakes
+      # -----------------------------------------------------------------------
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+        with:
+          # Enable flakes and nix-command experimental features
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # -----------------------------------------------------------------------
+      # STEP 3: Install and configure direnv
+      # direnv automatically loads environment variables from .envrc files
+      # Combined with Nix, it provides automatic environment activation
+      # -----------------------------------------------------------------------
+      - name: Install direnv
+        run: |
+          # Install direnv using nix
+          nix profile install nixpkgs#direnv
+          
+          # Verify installation
+          echo "direnv version: $(direnv --version)"
+
+      # -----------------------------------------------------------------------
+      # STEP 4: Allow direnv in the repository
+      # This pre-authorizes the .envrc file so Copilot doesn't need to
+      # -----------------------------------------------------------------------
+      - name: Allow direnv in repository
+        run: |
+          # Allow direnv for this repository
+          direnv allow . || echo "No .envrc file found (this is OK if the project doesn't use one yet)"
+          
+          # If .envrc exists, load it to set up the environment
+          if [ -f .envrc ]; then
+            echo "Found .envrc, loading environment..."
+            eval "$(direnv export bash)" || echo "Note: direnv export had non-zero exit (may be normal if .envrc has no exports)"
+          fi
+
+      # -----------------------------------------------------------------------
+      # Display runner environment info
+      # This helps understand what's available in the runner
+      # -----------------------------------------------------------------------
+      - name: Display runner environment info
+        run: |
+          echo "=== RUNNER INFORMATION ==="
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Runner Arch: ${{ runner.arch }}"
+          echo "Runner Name: ${{ runner.name }}"
+          echo ""
+          echo "=== GITHUB CONTEXT ==="
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo ""
+          echo "=== DIRECTORY STRUCTURE ==="
+          echo "Current directory: $(pwd)"
+          echo "Home directory: $HOME"
+          echo "Workspace: ${{ github.workspace }}"
+          ls -la
+
+      # -----------------------------------------------------------------------
+      # List pre-installed tools
+      # Ubuntu runners come with many tools pre-installed
+      # -----------------------------------------------------------------------
+      - name: List pre-installed development tools
+        run: |
+          echo "=== PRE-INSTALLED LANGUAGES & RUNTIMES ==="
+          echo "Node.js: $(node --version 2>/dev/null || echo 'not installed')"
+          echo "npm: $(npm --version 2>/dev/null || echo 'not installed')"
+          echo "Python: $(python3 --version 2>/dev/null || echo 'not installed')"
+          echo "Go: $(go version 2>/dev/null || echo 'not installed')"
+          echo ""
+          echo "=== NIX & DIRENV ==="
+          echo "Nix: $(nix --version 2>/dev/null || echo 'not installed')"
+          echo "direnv: $(direnv --version 2>/dev/null || echo 'not installed')"
+
+      # -----------------------------------------------------------------------
+      # Set environment variables
+      # These will be available to Copilot's coding agent
+      # -----------------------------------------------------------------------
+      - name: Set custom environment variables
+        run: |
+          echo "PROJECT_ROOT=${{ github.workspace }}" >> $GITHUB_ENV
+          echo "BUILD_TIME=$(date -Iseconds)" >> $GITHUB_ENV
+          echo ""
+          echo "Environment variables set:"
+          echo "PROJECT_ROOT=${{ github.workspace }}"
+          echo "BUILD_TIME=$(date -Iseconds)"
+
+      # -----------------------------------------------------------------------
+      # FINAL: Verify setup completion
+      # -----------------------------------------------------------------------
+      - name: Setup verification complete
+        run: |
+          echo "=============================================="
+          echo "  COPILOT SETUP STEPS COMPLETED SUCCESSFULLY  "
+          echo "=============================================="
+          echo ""
+          echo "The runner environment is now ready for Copilot."
+          echo "Copilot will have access to:"
+          echo "  - All checked out repository files"
+          echo "  - Nix package manager with flakes enabled"
+          echo "  - direnv for automatic environment activation"
+          echo "  - Bun runtime (via nix flake)"
+          echo "  - All pre-installed tools listed above"
