@@ -136,6 +136,7 @@ direnv reload  # or exit and re-enter the directory
 Ashardalon/
 ├── .envrc                    # direnv configuration (use flake)
 ├── .github/
+│   ├── copilot-instructions.md      # Instructions for GitHub Copilot
 │   └── workflows/
 │       └── copilot-setup-steps.yml  # Copilot environment setup
 ├── flake.nix                 # Nix flake (defines dev environment)
