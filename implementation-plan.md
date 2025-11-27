@@ -44,10 +44,13 @@ This implementation plan breaks down the complete Wrath of Ashardalon web implem
 |------------|---------|
 | TypeScript | Type-safe development |
 | Svelte | UI framework |
-| Redux | State management |
+| Redux | State management (integrated with Svelte via custom stores) |
 | Vite | Build tool and development server |
+| Bun | JavaScript runtime and package manager |
 | Playwright | End-to-end testing |
 | GitHub Pages | Deployment platform |
+
+**Note on State Management**: While Redux is traditionally used with React, this project integrates Redux with Svelte through custom Svelte stores that wrap Redux state. This approach provides Redux's powerful state management patterns (actions, reducers, middleware) while maintaining Svelte's reactive programming model. Step 3.2 details this integration approach.
 
 ---
 
@@ -1271,9 +1274,9 @@ The minimum implementation for a playable game follows this sequence:
 
 The following can be developed in parallel after their dependencies are met:
 
-- **Phase 9 (Combat)** and **Phase 7 (Exploration)** can be developed in parallel after Phase 6
-- **Phase 11 (Advanced Features)** can be partially developed alongside Phase 10
-- **Phase 12 (Polish)** items like Game Log and Sound Effects can begin after Phase 5
+- **Combat logic (Phase 9)** and **Exploration logic (Phase 7)** game logic components can be developed in parallel once Phase 6 establishes the turn structure, as they operate on independent state slices
+- **Phase 11 (Advanced Features)** can be partially developed alongside Phase 10, particularly door mechanics and named tile effects
+- **Phase 12 (Polish)** items like Game Log and Sound Effects can begin after Phase 5 is complete, as they primarily observe state rather than modify core gameplay
 
 ---
 
