@@ -146,6 +146,14 @@
     
     store.dispatch(moveHero({ heroId: currentHeroId, position }));
   }
+  
+  // Handle keyboard events for accessibility
+  function handleTileKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleTileClick(event as unknown as MouseEvent);
+    }
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -189,13 +197,15 @@
 
     <!-- Center board area -->
     <div class="board-container" bind:this={boardContainerRef}>
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div 
         class="start-tile" 
         data-testid="start-tile" 
         style="transform: scale({mapScale});"
         onclick={handleTileClick}
+        onkeydown={handleTileKeydown}
+        role="button"
+        tabindex="0"
+        aria-label={showingMovement ? "Click to hide movement options" : "Click to show movement options for current hero"}
       >
         <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
         
