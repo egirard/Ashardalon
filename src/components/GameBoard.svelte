@@ -94,12 +94,15 @@
   
   <div class="turn-indicator" data-testid="turn-indicator">
     {#if heroTokens.length > 0}
-      {@const currentHero = getHeroInfo(getCurrentHeroId() ?? '')}
-      <div class="turn-info">
-        <span class="turn-number">Turn {turnState.turnNumber}</span>
-        <span class="turn-hero"><strong>{currentHero?.name}</strong>'s Turn</span>
-        <span class="turn-phase" data-testid="turn-phase">Phase: {formatPhase(turnState.currentPhase)}</span>
-      </div>
+      {@const currentHeroId = getCurrentHeroId()}
+      {@const currentHero = currentHeroId ? getHeroInfo(currentHeroId) : undefined}
+      {#if currentHero}
+        <div class="turn-info">
+          <span class="turn-number">Turn {turnState.turnNumber}</span>
+          <span class="turn-hero"><strong>{currentHero.name}</strong>'s Turn</span>
+          <span class="turn-phase" data-testid="turn-phase">Phase: {formatPhase(turnState.currentPhase)}</span>
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
