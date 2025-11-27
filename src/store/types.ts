@@ -67,10 +67,10 @@ export const START_TILE_POSITIONS: Position[] = [
   { x: 3, y: 2 },
   // Right side of staircase
   { x: 3, y: 3 },
-  // Row 4 (below staircase)
-  { x: 1, y: 4 },
-  { x: 2, y: 4 },
-  { x: 3, y: 4 },
+  // Row 5 (below staircase)
+  { x: 1, y: 5 },
+  { x: 2, y: 5 },
+  { x: 3, y: 5 },
   // Left side of staircase
   { x: 1, y: 3 },
 ];
