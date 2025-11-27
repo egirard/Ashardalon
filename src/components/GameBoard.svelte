@@ -59,48 +59,116 @@
     const cellCenterOffset = tileSize / 2;
     return `left: ${offsetX + position.x * tileSize + cellCenterOffset}px; top: ${offsetY + position.y * tileSize + cellCenterOffset}px;`;
   }
+  
+  // Get the edge index for the active player (0=bottom, 1=right, 2=top, 3=left)
+  // For now, map player index to edge: player 0->bottom, player 1->right, etc.
+  function getActivePlayerEdge(): string {
+    const edgeIndex = turnState.currentHeroIndex % 4;
+    const edges = ['bottom', 'right', 'top', 'left'];
+    return edges[edgeIndex];
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
-  <header class="game-header">
-    <h1>Wrath of Ashardalon</h1>
-    <button class="reset-button" data-testid="reset-button" onclick={handleReset}>
-      Return to Character Select
-    </button>
-  </header>
-  
-  <div class="board-container">
-    <div class="start-tile" data-testid="start-tile">
-      <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
-      
-      {#each heroTokens as token (token.heroId)}
-        {@const hero = getHeroInfo(token.heroId)}
-        {@const isActive = token.heroId === getCurrentHeroId()}
-        {#if hero}
-          <div 
-            class="hero-token" 
-            class:active={isActive}
-            data-testid="hero-token"
-            data-hero-id={token.heroId}
-            style={getTokenStyle(token.position)}
-          >
-            <img src={assetPath(hero.imagePath)} alt={hero.name} class="token-image" />
-            <span class="token-label">{hero.name}</span>
-          </div>
-        {/if}
-      {/each}
-    </div>
-  </div>
-  
-  <div class="turn-indicator" data-testid="turn-indicator">
-    {#if heroTokens.length > 0}
+  <!-- Top edge player zone -->
+  <div class="edge-zone edge-top" class:active-edge={getActivePlayerEdge() === 'top'} data-testid="player-zone-top">
+    {#if getActivePlayerEdge() === 'top'}
       {@const currentHeroId = getCurrentHeroId()}
       {@const currentHero = currentHeroId ? getHeroInfo(currentHeroId) : undefined}
       {#if currentHero}
-        <div class="turn-info">
-          <span class="turn-number">Turn {turnState.turnNumber}</span>
-          <span class="turn-hero"><strong>{currentHero.name}</strong>'s Turn</span>
-          <span class="turn-phase" data-testid="turn-phase">Phase: {formatPhase(turnState.currentPhase)}</span>
+        <div class="player-info" data-testid="turn-indicator">
+          <img src={assetPath(currentHero.imagePath)} alt={currentHero.name} class="player-avatar" />
+          <div class="turn-details">
+            <span class="player-name">{currentHero.name}'s Turn</span>
+            <span class="turn-phase" data-testid="turn-phase">{formatPhase(turnState.currentPhase)}</span>
+            <span class="turn-number">Turn {turnState.turnNumber}</span>
+          </div>
+        </div>
+      {/if}
+    {/if}
+  </div>
+
+  <!-- Middle section with left edge, center board, and right edge -->
+  <div class="middle-section">
+    <!-- Left edge player zone -->
+    <div class="edge-zone edge-left" class:active-edge={getActivePlayerEdge() === 'left'} data-testid="player-zone-left">
+      {#if getActivePlayerEdge() === 'left'}
+        {@const currentHeroId = getCurrentHeroId()}
+        {@const currentHero = currentHeroId ? getHeroInfo(currentHeroId) : undefined}
+        {#if currentHero}
+          <div class="player-info">
+            <img src={assetPath(currentHero.imagePath)} alt={currentHero.name} class="player-avatar" />
+            <div class="turn-details">
+              <span class="player-name">{currentHero.name}'s Turn</span>
+              <span class="turn-phase">{formatPhase(turnState.currentPhase)}</span>
+              <span class="turn-number">Turn {turnState.turnNumber}</span>
+            </div>
+          </div>
+        {/if}
+      {/if}
+    </div>
+
+    <!-- Center board area -->
+    <div class="board-container">
+      <div class="start-tile" data-testid="start-tile">
+        <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
+        
+        {#each heroTokens as token (token.heroId)}
+          {@const hero = getHeroInfo(token.heroId)}
+          {@const isActive = token.heroId === getCurrentHeroId()}
+          {#if hero}
+            <div 
+              class="hero-token" 
+              class:active={isActive}
+              data-testid="hero-token"
+              data-hero-id={token.heroId}
+              style={getTokenStyle(token.position)}
+            >
+              <img src={assetPath(hero.imagePath)} alt={hero.name} class="token-image" />
+              <span class="token-label">{hero.name}</span>
+            </div>
+          {/if}
+        {/each}
+      </div>
+      
+      <!-- Reset button positioned centrally but small and unobtrusive -->
+      <button class="reset-button" data-testid="reset-button" onclick={handleReset}>
+        ↩ Return to Character Select
+      </button>
+    </div>
+
+    <!-- Right edge player zone -->
+    <div class="edge-zone edge-right" class:active-edge={getActivePlayerEdge() === 'right'} data-testid="player-zone-right">
+      {#if getActivePlayerEdge() === 'right'}
+        {@const currentHeroId = getCurrentHeroId()}
+        {@const currentHero = currentHeroId ? getHeroInfo(currentHeroId) : undefined}
+        {#if currentHero}
+          <div class="player-info">
+            <img src={assetPath(currentHero.imagePath)} alt={currentHero.name} class="player-avatar" />
+            <div class="turn-details">
+              <span class="player-name">{currentHero.name}'s Turn</span>
+              <span class="turn-phase">{formatPhase(turnState.currentPhase)}</span>
+              <span class="turn-number">Turn {turnState.turnNumber}</span>
+            </div>
+          </div>
+        {/if}
+      {/if}
+    </div>
+  </div>
+
+  <!-- Bottom edge player zone -->
+  <div class="edge-zone edge-bottom" class:active-edge={getActivePlayerEdge() === 'bottom'} data-testid="player-zone-bottom">
+    {#if getActivePlayerEdge() === 'bottom'}
+      {@const currentHeroId = getCurrentHeroId()}
+      {@const currentHero = currentHeroId ? getHeroInfo(currentHeroId) : undefined}
+      {#if currentHero}
+        <div class="player-info" data-testid="turn-indicator">
+          <img src={assetPath(currentHero.imagePath)} alt={currentHero.name} class="player-avatar" />
+          <div class="turn-details">
+            <span class="player-name">{currentHero.name}'s Turn</span>
+            <span class="turn-phase" data-testid="turn-phase">{formatPhase(turnState.currentPhase)}</span>
+            <span class="turn-number">Turn {turnState.turnNumber}</span>
+          </div>
         </div>
       {/if}
     {/if}
@@ -111,50 +179,77 @@
   .game-board {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
     background: #1a1a2e;
     color: #fff;
+    overflow: hidden;
   }
   
-  .game-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 2px solid #333;
-  }
-  
-  .game-header h1 {
-    font-size: 1.5rem;
-    margin: 0;
-  }
-  
-  .reset-button {
-    padding: 0.5rem 1rem;
-    background: #444;
-    color: #fff;
-    border: 1px solid #666;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .reset-button:hover {
-    background: #555;
-  }
-  
-  .board-container {
-    flex: 1;
+  /* Edge zones for player UI */
+  .edge-zone {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    min-height: 80px;
+    transition: all 0.3s ease-out;
+  }
+  
+  .edge-zone.active-edge {
+    background: rgba(255, 215, 0, 0.15);
+    box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.2);
+  }
+  
+  /* Rotate edge zones so content faces players at each edge */
+  .edge-top {
+    transform: rotate(180deg);
+    border-bottom: 2px solid #333;
+  }
+  
+  .edge-left {
+    transform: rotate(90deg);
+    border-right: 2px solid #333;
+    min-width: 80px;
+    min-height: auto;
+    writing-mode: vertical-lr;
+  }
+  
+  .edge-right {
+    transform: rotate(-90deg);
+    border-left: 2px solid #333;
+    min-width: 80px;
+    min-height: auto;
+    writing-mode: vertical-lr;
+  }
+  
+  .edge-bottom {
+    border-top: 2px solid #333;
+  }
+  
+  /* Middle section layout */
+  .middle-section {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+  }
+  
+  /* Board container */
+  .board-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    position: relative;
   }
   
   .start-tile {
     position: relative;
     display: inline-block;
+    transition: transform 0.3s ease-out;
   }
   
   .tile-image {
@@ -171,6 +266,7 @@
     align-items: center;
     transform: translate(-50%, -50%);
     z-index: 10;
+    transition: all 0.3s ease-out;
   }
   
   .hero-token.active .token-image {
@@ -190,10 +286,11 @@
     border-radius: 50%;
     border: 2px solid #ffd700;
     background: rgba(0, 0, 0, 0.7);
+    transition: box-shadow 0.3s ease-out;
   }
   
   .token-label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     background: rgba(0, 0, 0, 0.8);
     padding: 2px 6px;
     border-radius: 4px;
@@ -201,35 +298,65 @@
     white-space: nowrap;
   }
   
-  .turn-indicator {
-    padding: 1rem 2rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-top: 2px solid #333;
-    text-align: center;
+  /* Player info display in edge zones */
+  .player-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
   }
   
-  .turn-info {
+  .player-avatar {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 2px solid #ffd700;
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .turn-details {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    align-items: center;
+    gap: 0.15rem;
   }
   
-  .turn-number {
-    font-size: 0.9rem;
-    color: #aaa;
-  }
-  
-  .turn-hero {
-    font-size: 1.1rem;
-  }
-  
-  .turn-hero strong {
+  .player-name {
+    font-size: 1rem;
+    font-weight: bold;
     color: #ffd700;
   }
   
   .turn-phase {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #8ecae6;
+  }
+  
+  .turn-number {
+    font-size: 0.75rem;
+    color: #aaa;
+  }
+  
+  /* Reset button - positioned subtly */
+  .reset-button {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    background: rgba(68, 68, 68, 0.8);
+    color: #ccc;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .reset-button:hover {
+    background: rgba(85, 85, 85, 0.9);
+    color: #fff;
   }
 </style>
