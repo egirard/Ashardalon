@@ -44,99 +44,223 @@
 </script>
 
 <div class="character-select" data-testid="character-select">
-  <h1>Select Your Heroes</h1>
-  <p class="instructions">Choose 1-5 heroes for your adventure</p>
-  
-  <div class="hero-grid" data-testid="hero-grid">
-    {#each availableHeroes as hero (hero.id)}
+  <!-- Top edge - heroes rotated 180° for player sitting at top -->
+  <div class="edge-zone edge-top" data-testid="edge-top">
+    <div class="hero-row" data-testid="hero-grid">
+      {#each availableHeroes as hero (hero.id)}
+        <button
+          class="hero-card"
+          class:selected={isSelected(hero.id)}
+          data-testid="hero-{hero.id}-top"
+          onclick={() => handleHeroClick(hero.id)}
+        >
+          <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+          <div class="hero-info">
+            <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+            <span class="hero-class">{hero.heroClass}</span>
+          </div>
+        </button>
+      {/each}
+    </div>
+  </div>
+
+  <!-- Middle section with left and right edges and center content -->
+  <div class="middle-section">
+    <!-- Left edge - heroes rotated 270° (90° counter-clockwise) for player sitting at left -->
+    <div class="edge-zone edge-left" data-testid="edge-left">
+      <div class="hero-column">
+        {#each availableHeroes as hero (hero.id)}
+          <button
+            class="hero-card"
+            class:selected={isSelected(hero.id)}
+            data-testid="hero-{hero.id}-left"
+            onclick={() => handleHeroClick(hero.id)}
+          >
+            <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+            <div class="hero-info">
+              <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+              <span class="hero-class">{hero.heroClass}</span>
+            </div>
+          </button>
+        {/each}
+      </div>
+    </div>
+
+    <!-- Center area with instructions and start button -->
+    <div class="center-zone" data-testid="center-zone">
+      <h1>Select Your Heroes</h1>
+      <p class="instructions">Choose 1-5 heroes for your adventure</p>
+      <p class="instructions">Tap a hero from your edge of the table</p>
+      
+      <div class="selection-info">
+        <span data-testid="selected-count">{selectedHeroes.length} heroes selected</span>
+      </div>
+      
       <button
-        class="hero-card"
-        class:selected={isSelected(hero.id)}
-        data-testid="hero-{hero.id}"
-        onclick={() => handleHeroClick(hero.id)}
+        class="start-button"
+        data-testid="start-game-button"
+        onclick={handleStartGame}
+        disabled={!canStartGame()}
       >
-        <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
-        <div class="hero-info">
-          <span class="hero-name" data-testid="hero-name">{hero.name}</span>
-          <span class="hero-class">{hero.heroClass}</span>
-        </div>
+        Start Adventure
       </button>
-    {/each}
+    </div>
+
+    <!-- Right edge - heroes rotated 90° clockwise for player sitting at right -->
+    <div class="edge-zone edge-right" data-testid="edge-right">
+      <div class="hero-column">
+        {#each availableHeroes as hero (hero.id)}
+          <button
+            class="hero-card"
+            class:selected={isSelected(hero.id)}
+            data-testid="hero-{hero.id}-right"
+            onclick={() => handleHeroClick(hero.id)}
+          >
+            <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+            <div class="hero-info">
+              <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+              <span class="hero-class">{hero.heroClass}</span>
+            </div>
+          </button>
+        {/each}
+      </div>
+    </div>
   </div>
-  
-  <div class="selection-info">
-    <span data-testid="selected-count">{selectedHeroes.length} heroes selected</span>
+
+  <!-- Bottom edge - heroes at 0° for player sitting at bottom (standard orientation) -->
+  <div class="edge-zone edge-bottom" data-testid="edge-bottom">
+    <div class="hero-row">
+      {#each availableHeroes as hero (hero.id)}
+        <button
+          class="hero-card"
+          class:selected={isSelected(hero.id)}
+          data-testid="hero-{hero.id}"
+          onclick={() => handleHeroClick(hero.id)}
+        >
+          <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+          <div class="hero-info">
+            <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+            <span class="hero-class">{hero.heroClass}</span>
+          </div>
+        </button>
+      {/each}
+    </div>
   </div>
-  
-  <button
-    class="start-button"
-    data-testid="start-game-button"
-    onclick={handleStartGame}
-    disabled={!canStartGame()}
-  >
-    Start Adventure
-  </button>
 </div>
 
 <style>
   .character-select {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 2rem;
-    min-height: 100vh;
+    height: 100vh;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     color: #fff;
+    overflow: hidden;
+  }
+  
+  /* Edge zones for each side of the table */
+  .edge-zone {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+  }
+  
+  .edge-top {
+    transform: rotate(180deg);
+  }
+  
+  .edge-left {
+    transform: rotate(90deg);
+  }
+  
+  .edge-right {
+    transform: rotate(-90deg);
+  }
+  
+  .edge-bottom {
+    /* No rotation - standard orientation */
+  }
+  
+  /* Hero row for top and bottom edges */
+  .hero-row {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Hero column for left and right edges */
+  .hero-column {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Middle section containing left edge, center, and right edge */
+  .middle-section {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+  }
+  
+  /* Center zone for shared content */
+  .center-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
   }
   
   h1 {
-    font-size: 2.5rem;
+    font-size: 2rem;
     margin-bottom: 0.5rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   }
   
   .instructions {
     color: #aaa;
-    margin-bottom: 2rem;
-  }
-  
-  .hero-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1.5rem;
-    max-width: 900px;
-    width: 100%;
-    margin-bottom: 2rem;
+    margin: 0.25rem 0;
+    text-align: center;
   }
   
   .hero-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem;
+    padding: 0.5rem;
     background: rgba(255, 255, 255, 0.1);
-    border: 3px solid transparent;
-    border-radius: 12px;
+    border: 2px solid transparent;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease-out;
+    min-width: 80px;
   }
   
   .hero-card:hover {
     background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-4px);
+    transform: scale(1.05);
   }
   
   .hero-card.selected {
     border-color: #ffd700;
     background: rgba(255, 215, 0, 0.2);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
   }
   
   .hero-image {
-    width: 100px;
-    height: 100px;
+    width: 60px;
+    height: 60px;
     object-fit: contain;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    transition: transform 0.3s ease-out;
   }
   
   .hero-info {
@@ -147,29 +271,32 @@
   
   .hero-name {
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 0.8rem;
   }
   
   .hero-class {
     color: #aaa;
-    font-size: 0.9rem;
+    font-size: 0.7rem;
   }
   
   .selection-info {
-    margin-bottom: 1.5rem;
+    margin: 1rem 0;
     color: #aaa;
+    font-size: 1.1rem;
   }
   
   .start-button {
-    padding: 1rem 3rem;
-    font-size: 1.2rem;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
     font-weight: bold;
     background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
     color: #1a1a2e;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
   }
   
   .start-button:hover:not(:disabled) {
