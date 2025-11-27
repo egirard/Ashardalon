@@ -7,6 +7,8 @@
   let heroTokens: HeroToken[] = $state([]);
   let selectedHeroes: Hero[] = $state([]);
   let turnState: TurnState = $state({ currentHeroIndex: 0, currentPhase: 'hero-phase', turnNumber: 1 });
+  let boardContainerRef: HTMLDivElement | null = $state(null);
+  let mapScale: number = $state(1);
   
   // Subscribe to store updates
   $effect(() => {
@@ -24,6 +26,40 @@
     turnState = state.game.turnState;
     
     return unsubscribe;
+  });
+  
+  // Calculate scale to fit the map in the available space
+  $effect(() => {
+    if (boardContainerRef) {
+      const calculateScale = () => {
+        const container = boardContainerRef;
+        if (!container) return;
+        
+        // The start tile is approximately 560x1120 pixels (4x8 grid of 140px cells)
+        const tileWidth = 560;
+        const tileHeight = 1120;
+        
+        // Get available space (accounting for padding)
+        const availableWidth = container.clientWidth - 32; // 1rem padding on each side
+        const availableHeight = container.clientHeight - 32;
+        
+        // Calculate scale to fit both dimensions
+        const scaleX = availableWidth / tileWidth;
+        const scaleY = availableHeight / tileHeight;
+        
+        // Use the smaller scale to ensure it fits
+        const newScale = Math.min(scaleX, scaleY, 1); // Cap at 1 (no upscaling)
+        mapScale = Math.max(newScale, 0.3); // Minimum scale of 0.3 for legibility
+      };
+      
+      calculateScale();
+      
+      // Recalculate on resize
+      const resizeObserver = new ResizeObserver(calculateScale);
+      resizeObserver.observe(boardContainerRef);
+      
+      return () => resizeObserver.disconnect();
+    }
   });
   
   function getHeroInfo(heroId: string): Hero | undefined {
@@ -109,8 +145,8 @@
     </div>
 
     <!-- Center board area -->
-    <div class="board-container">
-      <div class="start-tile" data-testid="start-tile">
+    <div class="board-container" bind:this={boardContainerRef}>
+      <div class="start-tile" data-testid="start-tile" style="transform: scale({mapScale});">
         <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
         
         {#each heroTokens as token (token.heroId)}
@@ -233,6 +269,7 @@
     display: flex;
     flex-direction: row;
     min-height: 0;
+    overflow: hidden;
   }
   
   /* Board container */
@@ -244,12 +281,14 @@
     align-items: center;
     padding: 1rem;
     position: relative;
+    overflow: hidden;
   }
   
   .start-tile {
     position: relative;
     display: inline-block;
     transition: transform 0.3s ease-out;
+    transform-origin: center center;
   }
   
   .tile-image {
