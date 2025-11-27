@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import gameReducer, { startGame, setHeroPosition, resetGame, GameState } from './gameSlice';
 import { START_TILE_POSITIONS } from './types';
 
-// Start tile grid dimensions (4 columns x 8 rows)
-const START_TILE_GRID = { columns: 4, rows: 8 };
+// Start tile grid dimensions - double-height tile with valid spaces x: 1-4, y: 0-7
+const START_TILE_GRID = { minX: 1, maxX: 4, minY: 0, maxY: 7 };
 
 describe('START_TILE_POSITIONS', () => {
   it('should have exactly 5 positions for up to 5 heroes', () => {
@@ -12,10 +12,10 @@ describe('START_TILE_POSITIONS', () => {
 
   it('should have all positions within valid grid bounds', () => {
     START_TILE_POSITIONS.forEach((pos, index) => {
-      expect(pos.x, `Position ${index} x=${pos.x} should be >= 0`).toBeGreaterThanOrEqual(0);
-      expect(pos.x, `Position ${index} x=${pos.x} should be < ${START_TILE_GRID.columns}`).toBeLessThan(START_TILE_GRID.columns);
-      expect(pos.y, `Position ${index} y=${pos.y} should be >= 0`).toBeGreaterThanOrEqual(0);
-      expect(pos.y, `Position ${index} y=${pos.y} should be < ${START_TILE_GRID.rows}`).toBeLessThan(START_TILE_GRID.rows);
+      expect(pos.x, `Position ${index} x=${pos.x} should be >= ${START_TILE_GRID.minX}`).toBeGreaterThanOrEqual(START_TILE_GRID.minX);
+      expect(pos.x, `Position ${index} x=${pos.x} should be <= ${START_TILE_GRID.maxX}`).toBeLessThanOrEqual(START_TILE_GRID.maxX);
+      expect(pos.y, `Position ${index} y=${pos.y} should be >= ${START_TILE_GRID.minY}`).toBeGreaterThanOrEqual(START_TILE_GRID.minY);
+      expect(pos.y, `Position ${index} y=${pos.y} should be <= ${START_TILE_GRID.maxY}`).toBeLessThanOrEqual(START_TILE_GRID.maxY);
     });
   });
 
