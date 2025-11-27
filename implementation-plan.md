@@ -9,27 +9,26 @@ This document provides a detailed implementation plan organized around user stor
 ## Table of Contents
 
 1. [Document Overview](#document-overview)
-2. [User Story 1: View Application](#user-story-1-view-application)
-3. [User Story 2: View Hero Selection Screen](#user-story-2-view-hero-selection-screen)
-4. [User Story 3: Select Heroes for Game](#user-story-3-select-heroes-for-game)
-5. [User Story 4: Start Game and See Board](#user-story-4-start-game-and-see-board)
-6. [User Story 5: See Hero Positions on Start Tile](#user-story-5-see-hero-positions-on-start-tile)
-7. [User Story 6: See Current Turn Indicator](#user-story-6-see-current-turn-indicator)
-8. [User Story 7: Move a Hero](#user-story-7-move-a-hero)
-9. [User Story 8: Explore and Place New Tile](#user-story-8-explore-and-place-new-tile)
-10. [User Story 9: Spawn Monster on Exploration](#user-story-9-spawn-monster-on-exploration)
-11. [User Story 10: Hero Attacks Monster](#user-story-10-hero-attacks-monster)
-12. [User Story 11: Monster Attacks Hero](#user-story-11-monster-attacks-hero)
-13. [User Story 12: Defeat Monster and Gain XP](#user-story-12-defeat-monster-and-gain-xp)
-14. [User Story 13: Draw Treasure on Monster Defeat](#user-story-13-draw-treasure-on-monster-defeat)
-15. [User Story 14: Draw Encounter Card](#user-story-14-draw-encounter-card)
-16. [User Story 15: Use Healing Surge](#user-story-15-use-healing-surge)
-17. [User Story 16: Cancel Encounter with XP](#user-story-16-cancel-encounter-with-xp)
-18. [User Story 17: Level Up Hero](#user-story-17-level-up-hero)
-19. [User Story 18: Complete Turn Cycle](#user-story-18-complete-turn-cycle)
-20. [User Story 19: Party Defeat](#user-story-19-party-defeat)
-21. [User Story 20: Win Adventure](#user-story-20-win-adventure)
-22. [Future User Stories](#future-user-stories)
+2. [User Story 1: View Hero Selection Screen](#user-story-1-view-hero-selection-screen)
+3. [User Story 2: Select Heroes for Game](#user-story-2-select-heroes-for-game)
+4. [User Story 3: Start Game and See Board](#user-story-3-start-game-and-see-board)
+5. [User Story 4: See Hero Positions on Start Tile](#user-story-4-see-hero-positions-on-start-tile)
+6. [User Story 5: See Current Turn Indicator](#user-story-5-see-current-turn-indicator)
+7. [User Story 6: Move a Hero](#user-story-6-move-a-hero)
+8. [User Story 7: Explore and Place New Tile](#user-story-7-explore-and-place-new-tile)
+9. [User Story 8: Spawn Monster on Exploration](#user-story-8-spawn-monster-on-exploration)
+10. [User Story 9: Hero Attacks Monster](#user-story-9-hero-attacks-monster)
+11. [User Story 10: Monster Attacks Hero](#user-story-10-monster-attacks-hero)
+12. [User Story 11: Defeat Monster and Gain XP](#user-story-11-defeat-monster-and-gain-xp)
+13. [User Story 12: Draw Treasure on Monster Defeat](#user-story-12-draw-treasure-on-monster-defeat)
+14. [User Story 13: Draw Encounter Card](#user-story-13-draw-encounter-card)
+15. [User Story 14: Use Healing Surge](#user-story-14-use-healing-surge)
+16. [User Story 15: Cancel Encounter with XP](#user-story-15-cancel-encounter-with-xp)
+17. [User Story 16: Level Up Hero](#user-story-16-level-up-hero)
+18. [User Story 17: Complete Turn Cycle](#user-story-17-complete-turn-cycle)
+19. [User Story 18: Party Defeat](#user-story-18-party-defeat)
+20. [User Story 19: Win Adventure](#user-story-19-win-adventure)
+21. [Future User Stories](#future-user-stories)
 
 ---
 
@@ -60,49 +59,15 @@ This implementation plan uses user stories to define small, cohesive vertical sl
 
 ---
 
-## User Story 1: View Application
+## User Story 1: View Hero Selection Screen
 
 ### Story
 
-> As a user, I can open the application in my browser and see a welcome screen, so that I know the application is working.
+> As a user, I can open the application and see the hero selection screen with all five heroes displayed, so that I can choose which heroes to play.
 
 ### Acceptance Criteria
 
-- Application loads at the root URL
-- A welcome screen is displayed with the game title "Wrath of Ashardalon"
-- A "New Game" button is visible
-
-### Implementation Scope
-
-**Introduce**:
-- Vite project with Svelte and TypeScript
-- Basic App.svelte component
-- Playwright test configuration
-
-**Build**:
-- Welcome screen with title text
-- "New Game" button (not yet functional)
-- Basic CSS styling
-
-### E2E Test
-
-```
-Given I navigate to the application URL
-Then I see the title "Wrath of Ashardalon"
-And I see a "New Game" button
-```
-
----
-
-## User Story 2: View Hero Selection Screen
-
-### Story
-
-> As a user, I can click "New Game" and see the hero selection screen with all five heroes displayed, so that I can choose which heroes to play.
-
-### Acceptance Criteria
-
-- Clicking "New Game" navigates to hero selection screen
+- Application loads at the root URL showing the hero selection screen
 - All 5 heroes are displayed with their images
 - Each hero shows their name and class
 - Heroes appear unselected initially
@@ -110,19 +75,19 @@ And I see a "New Game" button
 ### Implementation Scope
 
 **Introduce**:
-- Simple routing (can be basic state-based, no router library needed)
+- Vite project with Svelte and TypeScript
+- Basic App.svelte component
+- Playwright test configuration
 - Hero data (just names, classes, and image paths for these 5 heroes)
 
 **Build**:
 - Hero selection screen layout
 - Hero card component showing image, name, and class
-- Navigation from welcome screen
 
 ### E2E Test
 
 ```
-Given I am on the welcome screen
-When I click "New Game"
+Given I navigate to the application URL
 Then I see the hero selection screen
 And I see 5 hero cards
 And each card shows the hero's image, name, and class
@@ -131,7 +96,7 @@ And all heroes appear unselected
 
 ---
 
-## User Story 3: Select Heroes for Game
+## User Story 2: Select Heroes for Game
 
 ### Story
 
@@ -175,7 +140,7 @@ And I see "1/5 selected"
 
 ---
 
-## User Story 4: Start Game and See Board
+## User Story 3: Start Game and See Board
 
 ### Story
 
@@ -210,7 +175,7 @@ And I see the Start Tile displayed
 
 ---
 
-## User Story 5: See Hero Positions on Start Tile
+## User Story 4: See Hero Positions on Start Tile
 
 ### Story
 
@@ -247,7 +212,7 @@ And both tokens are near the staircase
 
 ---
 
-## User Story 6: See Current Turn Indicator
+## User Story 5: See Current Turn Indicator
 
 ### Story
 
@@ -280,7 +245,7 @@ And the first hero's token is highlighted on the board
 
 ---
 
-## User Story 7: Move a Hero
+## User Story 6: Move a Hero
 
 ### Story
 
@@ -320,7 +285,7 @@ And Quinn's token is now in the new position
 
 ---
 
-## User Story 8: Explore and Place New Tile
+## User Story 7: Explore and Place New Tile
 
 ### Story
 
@@ -357,7 +322,7 @@ And the unexplored edge is now explored
 
 ---
 
-## User Story 9: Spawn Monster on Exploration
+## User Story 8: Spawn Monster on Exploration
 
 ### Story
 
@@ -392,7 +357,7 @@ And the monster card shows AC and HP values
 
 ---
 
-## User Story 10: Hero Attacks Monster
+## User Story 9: Hero Attacks Monster
 
 ### Story
 
@@ -431,7 +396,7 @@ Then the Kobold's HP decreases by Quinn's damage
 
 ---
 
-## User Story 11: Monster Attacks Hero
+## User Story 10: Monster Attacks Hero
 
 ### Story
 
@@ -473,7 +438,7 @@ Then Quinn's HP decreases
 
 ---
 
-## User Story 12: Defeat Monster and Gain XP
+## User Story 11: Defeat Monster and Gain XP
 
 ### Story
 
@@ -509,7 +474,7 @@ And I see the updated XP total
 
 ---
 
-## User Story 13: Draw Treasure on Monster Defeat
+## User Story 12: Draw Treasure on Monster Defeat
 
 ### Story
 
@@ -544,7 +509,7 @@ And the item appears in a hero's inventory
 
 ---
 
-## User Story 14: Draw Encounter Card
+## User Story 13: Draw Encounter Card
 
 ### Story
 
@@ -580,7 +545,7 @@ And I see the effect description
 
 ---
 
-## User Story 15: Use Healing Surge
+## User Story 14: Use Healing Surge
 
 ### Story
 
@@ -619,7 +584,7 @@ And the healing surge count is now 1
 
 ---
 
-## User Story 16: Cancel Encounter with XP
+## User Story 15: Cancel Encounter with XP
 
 ### Story
 
@@ -656,7 +621,7 @@ And the party XP is now 1
 
 ---
 
-## User Story 17: Level Up Hero
+## User Story 16: Level Up Hero
 
 ### Story
 
@@ -694,7 +659,7 @@ And the party XP is now 0
 
 ---
 
-## User Story 18: Complete Turn Cycle
+## User Story 17: Complete Turn Cycle
 
 ### Story
 
@@ -732,7 +697,7 @@ Then it becomes Quinn's turn again
 
 ---
 
-## User Story 19: Party Defeat
+## User Story 18: Party Defeat
 
 ### Story
 
@@ -767,7 +732,7 @@ And I see a "New Game" button
 
 ---
 
-## User Story 20: Win Adventure
+## User Story 19: Win Adventure
 
 ### Story
 
@@ -838,44 +803,42 @@ The following user stories represent additional features to implement after the 
 ## Story Dependencies
 
 ```
-Story 1: View Application
+Story 1: View Hero Selection Screen
     │
-    └─→ Story 2: View Hero Selection
+    └─→ Story 2: Select Heroes
             │
-            └─→ Story 3: Select Heroes
+            └─→ Story 3: Start Game and See Board
                     │
-                    └─→ Story 4: Start Game and See Board
+                    └─→ Story 4: See Hero Positions
                             │
-                            └─→ Story 5: See Hero Positions
+                            └─→ Story 5: See Turn Indicator
                                     │
-                                    └─→ Story 6: See Turn Indicator
+                                    └─→ Story 6: Move a Hero
                                             │
-                                            └─→ Story 7: Move a Hero
+                                            ├─→ Story 7: Explore and Place Tile
+                                            │       │
+                                            │       └─→ Story 8: Spawn Monster
+                                            │               │
+                                            │               └─→ Story 9: Hero Attacks Monster
+                                            │                       │
+                                            │                       └─→ Story 11: Defeat Monster & XP
+                                            │                               │
+                                            │                               ├─→ Story 12: Draw Treasure
+                                            │                               │
+                                            │                               └─→ Story 16: Level Up Hero
+                                            │
+                                            └─→ Story 10: Monster Attacks Hero
                                                     │
-                                                    ├─→ Story 8: Explore and Place Tile
+                                                    ├─→ Story 14: Use Healing Surge
                                                     │       │
-                                                    │       └─→ Story 9: Spawn Monster
-                                                    │               │
-                                                    │               └─→ Story 10: Hero Attacks Monster
-                                                    │                       │
-                                                    │                       └─→ Story 12: Defeat Monster & XP
-                                                    │                               │
-                                                    │                               ├─→ Story 13: Draw Treasure
-                                                    │                               │
-                                                    │                               └─→ Story 17: Level Up Hero
+                                                    │       └─→ Story 18: Party Defeat
                                                     │
-                                                    └─→ Story 11: Monster Attacks Hero
+                                                    └─→ Story 13: Draw Encounter
                                                             │
-                                                            ├─→ Story 15: Use Healing Surge
-                                                            │       │
-                                                            │       └─→ Story 19: Party Defeat
-                                                            │
-                                                            └─→ Story 14: Draw Encounter
-                                                                    │
-                                                                    └─→ Story 16: Cancel Encounter
+                                                            └─→ Story 15: Cancel Encounter
 
-Story 18: Complete Turn Cycle (requires Stories 7, 11, 14)
-Story 20: Win Adventure (requires Story 12)
+Story 17: Complete Turn Cycle (requires Stories 6, 10, 13)
+Story 19: Win Adventure (requires Story 11)
 ```
 
 ---
@@ -884,11 +847,11 @@ Story 20: Win Adventure (requires Story 12)
 
 This implementation plan delivers the game through small, user-visible increments:
 
-1. **Stories 1-6**: Get to a visible game board with heroes positioned
-2. **Stories 7-9**: Enable basic exploration and dungeon building
-3. **Stories 10-13**: Implement core combat loop
-4. **Stories 14-17**: Add resource management mechanics
-5. **Stories 18-20**: Complete the game flow with turn cycling and win/lose conditions
+1. **Stories 1-5**: Get to a visible game board with heroes positioned
+2. **Stories 6-8**: Enable basic exploration and dungeon building
+3. **Stories 9-12**: Implement core combat loop
+4. **Stories 13-16**: Add resource management mechanics
+5. **Stories 17-19**: Complete the game flow with turn cycling and win/lose conditions
 
 Each story introduces only what is needed at that moment—no premature abstractions, no unused types. The result is a series of vertical slices that can be demonstrated and tested independently.
 
