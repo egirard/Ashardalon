@@ -30,6 +30,20 @@ export interface HeroToken {
 export type GameScreen = 'character-select' | 'game-board';
 
 /**
+ * Game phase types
+ */
+export type GamePhase = 'hero-phase' | 'exploration-phase' | 'villain-phase';
+
+/**
+ * Turn state for tracking current turn
+ */
+export interface TurnState {
+  currentHeroIndex: number;
+  currentPhase: GamePhase;
+  turnNumber: number;
+}
+
+/**
  * All available heroes in the game
  */
 export const AVAILABLE_HEROES: Hero[] = [
