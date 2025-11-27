@@ -29,6 +29,8 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          VITE_BASE: /Ashardalon/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -2,6 +2,7 @@
   import { store } from '../store';
   import { resetGame } from '../store/gameSlice';
   import type { HeroToken, Hero } from '../store/types';
+  import { assetPath } from '../utils';
   
   let heroTokens: HeroToken[] = $state([]);
   let selectedHeroes: Hero[] = $state([]);
@@ -51,7 +52,7 @@
   
   <div class="board-container">
     <div class="start-tile" data-testid="start-tile">
-      <img src="assets/StartTile.png" alt="Start Tile" class="tile-image" />
+      <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
       
       {#each heroTokens as token (token.heroId)}
         {@const hero = getHeroInfo(token.heroId)}
@@ -62,7 +63,7 @@
             data-hero-id={token.heroId}
             style={getTokenStyle(token.position)}
           >
-            <img src={hero.imagePath} alt={hero.name} class="token-image" />
+            <img src={assetPath(hero.imagePath)} alt={hero.name} class="token-image" />
             <span class="token-label">{hero.name}</span>
           </div>
         {/if}
