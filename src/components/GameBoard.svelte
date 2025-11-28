@@ -58,8 +58,8 @@
   // Buffer space (in px) to prevent map clipping during CSS transform scaling.
   // The map uses transform: scale() with transform-origin: center, which maintains
   // original element dimensions for layout while visually scaling the content.
-  // This larger buffer (vs the 32px CSS padding) ensures no edges are clipped.
-  const CONTAINER_PADDING = 100;
+  // This larger buffer ensures all tile edges including connector tabs are visible.
+  const CONTAINER_PADDING = 140;
   const MIN_SCALE = 0.15; // Minimum scale for legibility (lower to fit more tiles)
   const MAX_SCALE = 1; // Maximum scale (no upscaling)
 
