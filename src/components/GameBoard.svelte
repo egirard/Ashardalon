@@ -78,7 +78,13 @@
   });
   
   // Calculate the bounds of all placed tiles (pure function for use with $derived)
-  // Returns the total map dimensions using full image sizes (including connectors)
+  // Returns the total map dimensions accounting for tile overlap.
+  //
+  // OVERLAP CALCULATION:
+  // - Tiles are positioned at grid-width intervals (560px) but images are larger (632px)
+  // - First tile contributes its full image width (632px)
+  // - Each additional tile only adds grid width (560px) because it overlaps the previous
+  // - Example: 2 tiles = 632 + 560 = 1192px (not 632*2=1264px)
   function getMapBoundsFromDungeon(d: DungeonState): { minCol: number; maxCol: number; minRow: number; maxRow: number; width: number; height: number } {
     if (d.tiles.length === 0) {
       return { minCol: 0, maxCol: 0, minRow: 0, maxRow: 0, width: TILE_IMAGE_WIDTH, height: START_TILE_IMAGE_HEIGHT };
@@ -94,21 +100,14 @@
       maxRow = Math.max(maxRow, tile.position.row);
     }
     
-    // Calculate total width using image dimensions
-    // First tile contributes full width, subsequent tiles only add the non-overlapping portion
+    // Width: first tile full image + remaining tiles add grid width (due to overlap)
     const numCols = maxCol - minCol + 1;
-    // Width = first tile image + (remaining tiles * grid width since they overlap)
     const width = TILE_IMAGE_WIDTH + (numCols - 1) * TILE_WIDTH;
     
-    // Calculate total height using image dimensions
-    // North tiles (row < 0) are above start tile
-    // Start tile (row 0) is the anchor
-    // South tiles (row > 0) are below start tile
+    // Height: similar calculation but accounting for start tile's double height
     const northTileCount = Math.max(0, -minRow);
     const southTileCount = Math.max(0, maxRow);
-    
-    // Height calculation: start tile image + adjacent tiles (with overlap)
-    // Each adjacent tile adds its grid height (not image height) due to overlap
+    // Start tile image + adjacent tiles add grid height (due to overlap)
     const height = START_TILE_IMAGE_HEIGHT + (northTileCount * NORMAL_TILE_HEIGHT) + (southTileCount * NORMAL_TILE_HEIGHT);
     
     return { 
@@ -122,25 +121,29 @@
   }
   
   // Get pixel position for a tile based on its grid position
-  // Tiles are positioned so their playable grids align, with overlapping connectors
+  // Tiles are positioned so their playable grids align, with overlapping connectors.
+  // 
+  // HOW OVERLAP WORKS:
+  // - Tile images are 632px wide/tall but the playable grid is only 560px
+  // - The extra 72px (36px per side) is the border/connector area
+  // - By positioning tiles at TILE_WIDTH (560px) intervals while rendering 632px images,
+  //   adjacent tiles automatically overlap by 72px (632-560), creating the interlocking effect
+  // - Example: Tile 1 at x=0 spans 0-632, Tile 2 at x=560 spans 560-1192
+  //   This creates a 72px overlap zone (560-632) where connectors interlock
   function getTilePixelPosition(tile: PlacedTile, bounds: ReturnType<typeof getMapBoundsFromDungeon>): { x: number; y: number } {
-    // X position: tiles overlap by TILE_OVERLAP on each side
-    // The leftmost tile (minCol) starts at x=0
-    // Each subsequent column is offset by the grid width (TILE_WIDTH), not image width
+    // X position: position at grid width intervals to create automatic overlap
+    // Since images are wider than grid, this creates the connector overlap
     const x = (tile.position.col - bounds.minCol) * TILE_WIDTH;
     
     // Y position depends on the row
     // Row layout: [north tiles...] [start tile at row 0] [south tiles...]
-    // Tiles overlap vertically at their connectors
+    // Same overlap principle applies vertically
     let y = 0;
     
     if (tile.position.row < 0) {
       // North tiles: positioned above the start tile
-      // The most northern tile (minRow) starts at y=0
-      // Each row going south adds NORMAL_TILE_HEIGHT (accounting for overlap)
-      const northTileCount = Math.max(0, -bounds.minRow);
-      // Position relative to where the start tile will be
-      // North tiles stack from top, overlapping with the tile below
+      // Each row is spaced by NORMAL_TILE_HEIGHT (grid height, not image height)
+      // This creates the vertical overlap for connector interlocking
       y = (tile.position.row - bounds.minRow) * NORMAL_TILE_HEIGHT;
     } else if (tile.position.row === 0) {
       // Start tile: positioned after all north tiles
@@ -149,7 +152,6 @@
     } else {
       // South tiles: positioned after north tiles + start tile
       const northTileCount = Math.max(0, -bounds.minRow);
-      // South tiles start after north tiles + start tile grid height
       y = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + ((tile.position.row - 1) * NORMAL_TILE_HEIGHT);
     }
     
