@@ -55,7 +55,7 @@
   const TILE_WIDTH = TILE_CELL_SIZE * TILE_GRID_WIDTH; // 560px (playable grid)
   const START_TILE_HEIGHT = TILE_CELL_SIZE * START_TILE_GRID_HEIGHT; // 1120px (playable grid)
   const NORMAL_TILE_HEIGHT = TILE_CELL_SIZE * NORMAL_TILE_GRID_HEIGHT; // 560px (playable grid)
-  const CONTAINER_PADDING = 32; // 1rem padding on each side (16px * 2)
+  const CONTAINER_PADDING = 100; // Extra padding to ensure map fits within viewport after scaling
   const MIN_SCALE = 0.15; // Minimum scale for legibility (lower to fit more tiles)
   const MAX_SCALE = 1; // Maximum scale (no upscaling)
 
