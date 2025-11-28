@@ -1,5 +1,5 @@
 import type { HeroAttack, AttackResult, Position, MonsterState } from './types';
-import { MONSTERS } from './types';
+import { getMonsterById } from './monsters';
 
 /**
  * Roll a d20 (1-20)
@@ -52,8 +52,7 @@ export function arePositionsAdjacent(pos1: Position, pos2: Position): boolean {
  * Get the AC for a monster by its ID
  */
 export function getMonsterAC(monsterId: string): number | undefined {
-  const monster = MONSTERS.find(m => m.id === monsterId);
-  return monster?.ac;
+  return getMonsterById(monsterId)?.ac;
 }
 
 /**

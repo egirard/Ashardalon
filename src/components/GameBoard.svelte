@@ -362,11 +362,13 @@
     return getTilePixelPosition(tile, mapBounds);
   }
   
+  // Default tile ID for heroes (start tile) - heroes currently only exist on the start tile
+  const DEFAULT_HERO_TILE_ID = 'start-tile';
+  
   // Get the current hero's tile ID (for adjacency checks)
+  // TODO: Extend this when heroes can move between tiles
   function getCurrentHeroTileId(): string {
-    // For now, heroes are on the start tile. This would need to be extended
-    // when heroes can move between tiles.
-    return 'start-tile';
+    return DEFAULT_HERO_TILE_ID;
   }
   
   // Get monsters adjacent to the current hero

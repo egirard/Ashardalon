@@ -43,7 +43,7 @@
     class:critical={result.isCritical}
     onclick={(e) => e.stopPropagation()}
     onkeydown={(e) => e.stopPropagation()}
-    role="article"
+    role="document"
     data-testid="combat-result"
   >
     <div class="result-header">
