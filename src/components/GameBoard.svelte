@@ -40,6 +40,7 @@
     getAdjacentMonsters,
     getMonsterAC,
   } from "../store/combat";
+  import { findTileAtPosition } from "../store/movement";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -469,13 +470,21 @@
     return getTilePixelPosition(tile, mapBounds);
   }
 
-  // Default tile ID for heroes (start tile) - heroes currently only exist on the start tile
+  // Default tile ID for heroes (start tile) - fallback when position can't be determined
   const DEFAULT_HERO_TILE_ID = "start-tile";
 
   // Get the current hero's tile ID (for adjacency checks)
-  // TODO: Extend this when heroes can move between tiles
+  // Dynamically determines which tile the hero is on based on position
   function getCurrentHeroTileId(): string {
-    return DEFAULT_HERO_TILE_ID;
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return DEFAULT_HERO_TILE_ID;
+
+    const currentToken = heroTokens.find((t) => t.heroId === currentHeroId);
+    if (!currentToken) return DEFAULT_HERO_TILE_ID;
+
+    // Find which tile the hero is on based on their position
+    const tile = findTileAtPosition(currentToken.position, dungeon);
+    return tile?.id ?? DEFAULT_HERO_TILE_ID;
   }
 
   // Get monsters adjacent to the current hero
@@ -487,7 +496,7 @@
     if (!currentToken) return [];
 
     const tileId = getCurrentHeroTileId();
-    return getAdjacentMonsters(currentToken.position, monsters, tileId);
+    return getAdjacentMonsters(currentToken.position, monsters, tileId, dungeon);
   }
 
   // Get the full hero object from AVAILABLE_HEROES by ID
