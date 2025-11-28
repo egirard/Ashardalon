@@ -8,6 +8,8 @@ import {
   DungeonState,
   TileEdge,
   INITIAL_TILE_DECK,
+  MonsterDeck,
+  MonsterState,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination } from "./movement";
 import {
@@ -18,6 +20,12 @@ import {
   drawTile,
   updateDungeonAfterExploration,
 } from "./exploration";
+import {
+  initializeMonsterDeck,
+  drawMonster,
+  createMonsterInstance,
+  getTileMonsterSpawnPosition,
+} from "./monsters";
 
 /**
  * Default turn state for the beginning of a game
@@ -40,6 +48,14 @@ export interface GameState {
   showingMovement: boolean;
   /** Dungeon state for tile management and exploration */
   dungeon: DungeonState;
+  /** Monster deck for drawing monsters */
+  monsterDeck: MonsterDeck;
+  /** Active monsters on the board */
+  monsters: MonsterState[];
+  /** Counter for generating unique monster instance IDs */
+  monsterInstanceCounter: number;
+  /** ID of recently spawned monster (for displaying monster card) */
+  recentlySpawnedMonsterId: string | null;
 }
 
 const initialState: GameState = {
@@ -49,6 +65,10 @@ const initialState: GameState = {
   validMoveSquares: [],
   showingMovement: false,
   dungeon: initializeDungeon(),
+  monsterDeck: { drawPile: [], discardPile: [] },
+  monsters: [],
+  monsterInstanceCounter: 0,
+  recentlySpawnedMonsterId: null,
 };
 
 /**
@@ -130,6 +150,12 @@ export const gameSlice = createSlice({
       dungeon.tileDeck = initializeTileDeck([...INITIAL_TILE_DECK], randomFn);
       state.dungeon = dungeon;
 
+      // Initialize monster deck
+      state.monsterDeck = initializeMonsterDeck(randomFn);
+      state.monsters = [];
+      state.monsterInstanceCounter = 0;
+      state.recentlySpawnedMonsterId = null;
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -200,6 +226,10 @@ export const gameSlice = createSlice({
       state.validMoveSquares = [];
       state.showingMovement = false;
       state.dungeon = initializeDungeon();
+      state.monsterDeck = { drawPile: [], discardPile: [] };
+      state.monsters = [];
+      state.monsterInstanceCounter = 0;
+      state.recentlySpawnedMonsterId = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -208,6 +238,9 @@ export const gameSlice = createSlice({
       if (state.turnState.currentPhase !== "hero-phase") {
         return;
       }
+      
+      // Clear any previously spawned monster display
+      state.recentlySpawnedMonsterId = null;
       
       // Get current hero
       const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
@@ -234,6 +267,29 @@ export const gameSlice = createSlice({
               newTile
             );
             state.dungeon.tileDeck = remainingDeck;
+            
+            // Draw and spawn a monster on the new tile
+            const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+            
+            if (drawnMonsterId) {
+              // Create monster instance at tile center
+              const monsterPosition = getTileMonsterSpawnPosition();
+              const monsterInstance = createMonsterInstance(
+                drawnMonsterId,
+                monsterPosition,
+                currentToken.heroId, // Monster is controlled by the exploring hero
+                newTile.id,
+                state.monsterInstanceCounter
+              );
+              
+              if (monsterInstance) {
+                state.monsters.push(monsterInstance);
+                state.monsterInstanceCounter += 1;
+                state.recentlySpawnedMonsterId = monsterInstance.instanceId;
+              }
+              
+              state.monsterDeck = updatedMonsterDeck;
+            }
           }
         }
       }
@@ -270,6 +326,12 @@ export const gameSlice = createSlice({
       // Start new hero phase
       state.turnState.currentPhase = "hero-phase";
     },
+    /**
+     * Dismiss the monster card display
+     */
+    dismissMonsterCard: (state) => {
+      state.recentlySpawnedMonsterId = null;
+    },
   },
 });
 
@@ -283,5 +345,6 @@ export const {
   endHeroPhase,
   endExplorationPhase,
   endVillainPhase,
+  dismissMonsterCard,
 } = gameSlice.actions;
 export default gameSlice.reducer;

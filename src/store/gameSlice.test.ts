@@ -9,12 +9,34 @@ import gameReducer, {
   endHeroPhase,
   endExplorationPhase,
   endVillainPhase,
+  dismissMonsterCard,
   GameState,
 } from "./gameSlice";
-import { START_TILE_POSITIONS } from "./types";
+import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK } from "./types";
 
 // Start tile grid dimensions - double-height tile with valid spaces x: 1-3, y: 0-7
 const START_TILE_GRID = { minX: 1, maxX: 3, minY: 0, maxY: 7 };
+
+// Helper to create a base GameState with all required fields
+function createGameState(overrides: Partial<GameState> = {}): GameState {
+  return {
+    currentScreen: "character-select",
+    heroTokens: [],
+    turnState: {
+      currentHeroIndex: 0,
+      currentPhase: "hero-phase",
+      turnNumber: 1,
+    },
+    validMoveSquares: [],
+    showingMovement: false,
+    dungeon: { tiles: [], unexploredEdges: [], tileDeck: [] },
+    monsterDeck: { drawPile: [], discardPile: [] },
+    monsters: [],
+    monsterInstanceCounter: 0,
+    recentlySpawnedMonsterId: null,
+    ...overrides,
+  };
+}
 
 describe("START_TILE_POSITIONS", () => {
   it("should have exactly 8 possible positions around the staircase", () => {
@@ -50,15 +72,7 @@ describe("START_TILE_POSITIONS", () => {
 });
 
 describe("gameSlice", () => {
-  const initialState: GameState = {
-    currentScreen: "character-select",
-    heroTokens: [],
-    turnState: {
-      currentHeroIndex: 0,
-      currentPhase: "hero-phase",
-      turnNumber: 1,
-    },
-  };
+  const initialState = createGameState();
 
   describe("initial state", () => {
     it("should return the initial state", () => {
@@ -696,16 +710,9 @@ describe("gameSlice", () => {
     });
 
     it("should reset dungeon state on game reset", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
-        turnState: {
-          currentHeroIndex: 0,
-          currentPhase: "hero-phase",
-          turnNumber: 1,
-        },
-        validMoveSquares: [],
-        showingMovement: false,
         dungeon: {
           tiles: [
             {
@@ -726,12 +733,304 @@ describe("gameSlice", () => {
           unexploredEdges: [{ tileId: "tile-1", direction: "north" }],
           tileDeck: ["tile-3exit-a"],
         },
-      };
+        monsters: [
+          {
+            monsterId: "kobold",
+            instanceId: "kobold-0",
+            position: { x: 2, y: 2 },
+            currentHp: 1,
+            controllerId: "quinn",
+            tileId: "tile-1",
+          },
+        ],
+        monsterInstanceCounter: 1,
+      });
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.dungeon.tiles).toHaveLength(1);
       expect(state.dungeon.tiles[0].id).toBe("start-tile");
       expect(state.dungeon.unexploredEdges).toHaveLength(4);
       expect(state.dungeon.tileDeck).toHaveLength(0);
+      expect(state.monsters).toHaveLength(0);
+      expect(state.monsterInstanceCounter).toBe(0);
+    });
+  });
+
+  describe("monster spawning", () => {
+    it("should initialize monster deck on game start", () => {
+      const state = gameReducer(
+        initialState,
+        startGame({ heroIds: ["quinn"], seed: 12345 }),
+      );
+      expect(state.monsterDeck.drawPile.length).toBe(INITIAL_MONSTER_DECK.length);
+      expect(state.monsterDeck.discardPile).toHaveLength(0);
+    });
+
+    it("should spawn monster when tile is placed during exploration", () => {
+      // Create state where hero is on north edge with tiles and monsters available
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }], // On north edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-2exit-a", "tile-2exit-b"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold", "snake", "cultist"],
+          discardPile: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // Should have spawned a monster
+      expect(state.monsters).toHaveLength(1);
+      expect(state.monsters[0].monsterId).toBe("kobold"); // First in deck
+      expect(state.monsters[0].controllerId).toBe("quinn"); // Controlled by exploring hero
+      expect(state.monsters[0].instanceId).toBe("kobold-0");
+      expect(state.monsterInstanceCounter).toBe(1);
+      expect(state.recentlySpawnedMonsterId).toBe("kobold-0");
+    });
+
+    it("should not spawn monster when no tile is placed (hero not on edge)", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }], // Center, not on edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-2exit-a"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold"],
+          discardPile: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // No monster should be spawned
+      expect(state.monsters).toHaveLength(0);
+      expect(state.recentlySpawnedMonsterId).toBeNull();
+    });
+
+    it("should update monster deck after drawing", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-2exit-a"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold", "snake", "cultist"],
+          discardPile: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // Monster deck should have one less monster
+      expect(state.monsterDeck.drawPile).toEqual(["snake", "cultist"]);
+    });
+
+    it("should assign monster to correct tile", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-2exit-a"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold"],
+          discardPile: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // Monster should be on the new tile (tile-1 is the first placed after start-tile)
+      expect(state.monsters[0].tileId).toBe("tile-1");
+    });
+
+    it("should place monster at tile center position", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-2exit-a"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold"],
+          discardPile: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // Monster should be at center (2, 2)
+      expect(state.monsters[0].position).toEqual({ x: 2, y: 2 });
+    });
+
+    it("should clear recently spawned monster ID on next endHeroPhase when no exploration", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }], // Not on edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-2exit-a"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold"],
+          discardPile: [],
+        },
+        recentlySpawnedMonsterId: "kobold-0", // Previously spawned
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // Recently spawned monster ID should be cleared
+      expect(state.recentlySpawnedMonsterId).toBeNull();
+    });
+  });
+
+  describe("dismissMonsterCard", () => {
+    it("should clear recently spawned monster ID", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        recentlySpawnedMonsterId: "kobold-0",
+      });
+
+      const state = gameReducer(gameInProgress, dismissMonsterCard());
+
+      expect(state.recentlySpawnedMonsterId).toBeNull();
     });
   });
 });

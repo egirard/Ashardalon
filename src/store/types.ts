@@ -26,6 +26,57 @@ export interface HeroToken {
 }
 
 /**
+ * Monster definition representing a monster type
+ */
+export interface Monster {
+  id: string;
+  name: string;
+  ac: number;     // Armor Class
+  hp: number;     // Hit Points
+  maxHp: number;
+  xp: number;     // Experience Points value
+  imagePath: string;
+}
+
+/**
+ * Monster instance on the game board
+ */
+export interface MonsterState {
+  monsterId: string;     // Reference to Monster.id
+  instanceId: string;    // Unique instance ID
+  position: Position;
+  currentHp: number;
+  controllerId: string;  // Hero ID who controls this monster
+  tileId: string;        // Tile where the monster was spawned
+}
+
+/**
+ * Monster deck for drawing monsters during exploration
+ */
+export interface MonsterDeck {
+  drawPile: string[];    // Monster IDs
+  discardPile: string[];
+}
+
+/**
+ * Available monsters in the game
+ */
+export const MONSTERS: Monster[] = [
+  { id: 'kobold', name: 'Kobold Dragonshield', ac: 14, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_KoboldDragonshield.png' },
+  { id: 'snake', name: 'Snake', ac: 12, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_Snake.png' },
+  { id: 'cultist', name: 'Cultist', ac: 13, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_Cultist.png' },
+];
+
+/**
+ * Initial monster deck (monster IDs that can be drawn)
+ */
+export const INITIAL_MONSTER_DECK: string[] = [
+  'kobold', 'kobold', 'kobold',
+  'snake', 'snake', 'snake',
+  'cultist', 'cultist', 'cultist',
+];
+
+/**
  * Game screen states
  */
 export type GameScreen = 'character-select' | 'game-board';
