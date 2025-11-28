@@ -198,10 +198,18 @@
     store.dispatch(resetGame());
   }
   
-  // Calculate pixel position from grid position
+  // Calculate pixel position from grid position relative to a tile
   function getTokenStyle(position: { x: number; y: number }): string {
     const cellCenterOffset = TILE_CELL_SIZE / 2;
     return `left: ${TOKEN_OFFSET_X + position.x * TILE_CELL_SIZE + cellCenterOffset}px; top: ${TOKEN_OFFSET_Y + position.y * TILE_CELL_SIZE + cellCenterOffset}px;`;
+  }
+  
+  // Calculate full hero token style including tile offset
+  function getHeroTokenStyle(tokenPosition: { x: number; y: number }, tileOffset: { x: number; y: number }): string {
+    const cellCenterOffset = TILE_CELL_SIZE / 2;
+    const absoluteLeft = tileOffset.x + TOKEN_OFFSET_X + tokenPosition.x * TILE_CELL_SIZE + cellCenterOffset;
+    const absoluteTop = tileOffset.y + TOKEN_OFFSET_Y + tokenPosition.y * TILE_CELL_SIZE + cellCenterOffset;
+    return `left: ${absoluteLeft}px; top: ${absoluteTop}px;`;
   }
   
   // Get the edge index for the active player (0=bottom, 1=right, 2=top, 3=left)
@@ -389,7 +397,7 @@
               class:active={isActive}
               data-testid="hero-token"
               data-hero-id={token.heroId}
-              style="left: {startTilePos.x}px; top: {startTilePos.y}px; {getTokenStyle(token.position)}"
+              style={getHeroTokenStyle(token.position, startTilePos)}
             >
               <img src={assetPath(hero.imagePath)} alt={hero.name} class="token-image" />
               <span class="token-label">{hero.name}</span>
@@ -540,6 +548,7 @@
     display: block;
     width: 100%;
     height: 100%;
+    object-fit: contain;
     border: 3px solid #444;
     border-radius: 8px;
   }
