@@ -434,12 +434,6 @@
   
   .hero-token.active .token-image {
     box-shadow: 0 0 10px 3px gold;
-    animation: pulse 2s infinite;
-  }
-  
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 10px 3px gold; }
-    50% { box-shadow: 0 0 15px 5px gold; }
   }
   
   .token-image {
