@@ -31,12 +31,13 @@
   const NORMAL_TILE_IMAGE_HEIGHT = 632; // Actual normal tile image height
   const START_TILE_IMAGE_HEIGHT = 1195; // Actual start tile image height
   
-  // Start tile has slightly different vertical offset due to image dimensions
-  // Start tile: 1195px image - 1120px grid = 75px total, so 37.5px per side
-  // However, we need to use 38px (rounded up) since we can't have half pixels
-  // The extra 2px (38 vs 36) needs to be accounted for when tiles connect vertically
-  const START_TILE_OFFSET_Y = 38; // Rounded 37.5px offset for start tile
-  const START_TILE_OFFSET_DIFF = START_TILE_OFFSET_Y - TOKEN_OFFSET_Y; // 2px difference
+  // Start tile has asymmetric vertical borders due to image dimensions
+  // Start tile: 1195px image - 1120px grid = 75px total (not divisible by 2)
+  // Expected: 560+560+72 = 1192px, Actual: 1195px, Difference: 3px
+  // This 3px is distributed asymmetrically: 2px extra on north, 1px extra on south
+  // North edge: 38px border (36 + 2), South edge: 37px border (36 + 1)
+  const START_TILE_NORTH_OFFSET_DIFF = 2; // Extra pixels on north edge vs normal 36px
+  const START_TILE_SOUTH_OFFSET_DIFF = 1; // Extra pixels on south edge vs normal 36px
   
   // Tile overlap - tiles need to overlap by this amount to interlock puzzle connectors
   // This equals the border/connector area on each side
@@ -139,8 +140,8 @@
   //   This creates a 72px overlap zone (560-632) where connectors interlock
   // 
   // VERTICAL ADJUSTMENT:
-  // - Start tile has 38px vertical offset vs 36px for normal tiles (2px difference)
-  // - North/south tiles adjacent to start tile need a 2px adjustment
+  // - Start tile has asymmetric vertical borders (38px north, 37px south vs 36px for normal tiles)
+  // - North tiles need 2px adjustment, south tiles need 1px adjustment
   function getTilePixelPosition(tile: PlacedTile, bounds: ReturnType<typeof getMapBoundsFromDungeon>): { x: number; y: number } {
     // X position: position at grid width intervals to create automatic overlap
     // Since images are wider than grid, this creates the connector overlap
@@ -148,27 +149,25 @@
     
     // Y position depends on the row
     // Row layout: [north tiles...] [start tile at row 0] [south tiles...]
-    // Same overlap principle applies vertically, with adjustment for start tile offset
+    // Same overlap principle applies vertically, with asymmetric adjustment for start tile
     let y = 0;
     
     if (tile.position.row < 0) {
       // North tiles: positioned above the start tile
       // Each row is spaced by NORMAL_TILE_HEIGHT (grid height, not image height)
-      // The tile closest to start tile (row -1) needs to be 2px closer to account for
-      // start tile's larger border (38px vs 36px for normal tiles)
       y = (tile.position.row - bounds.minRow) * NORMAL_TILE_HEIGHT;
     } else if (tile.position.row === 0) {
       // Start tile: positioned after all north tiles
       const northTileCount = Math.max(0, -bounds.minRow);
       // Move start tile 2px closer to north tiles to close the gap
-      // caused by start tile's 38px border vs normal tile's 36px border
-      y = northTileCount * NORMAL_TILE_HEIGHT - START_TILE_OFFSET_DIFF;
+      // caused by start tile's 38px north border vs normal tile's 36px border
+      y = northTileCount * NORMAL_TILE_HEIGHT - START_TILE_NORTH_OFFSET_DIFF;
     } else {
       // South tiles: positioned after north tiles + start tile
       const northTileCount = Math.max(0, -bounds.minRow);
-      // Account for start tile's larger bottom border (38px vs 36px)
-      // by positioning south tiles 2px closer to start tile
-      y = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + ((tile.position.row - 1) * NORMAL_TILE_HEIGHT) - START_TILE_OFFSET_DIFF;
+      // Account for start tile's 37px south border vs normal tile's 36px border
+      // North adjustment affects base position, south adjustment affects south tiles
+      y = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + ((tile.position.row - 1) * NORMAL_TILE_HEIGHT) - START_TILE_NORTH_OFFSET_DIFF - START_TILE_SOUTH_OFFSET_DIFF;
     }
     
     return { x, y };
