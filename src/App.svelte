@@ -2,6 +2,8 @@
   import { store } from './store';
   import CharacterSelect from './components/CharacterSelect.svelte';
   import GameBoard from './components/GameBoard.svelte';
+  import VictoryScreen from './components/VictoryScreen.svelte';
+  import DefeatScreen from './components/DefeatScreen.svelte';
   import type { GameScreen } from './store/types';
   
   let currentScreen: GameScreen = $state('character-select');
@@ -26,6 +28,10 @@
     <CharacterSelect />
   {:else if currentScreen === 'game-board'}
     <GameBoard />
+  {:else if currentScreen === 'victory'}
+    <VictoryScreen />
+  {:else if currentScreen === 'defeat'}
+    <DefeatScreen />
   {/if}
 </main>
 

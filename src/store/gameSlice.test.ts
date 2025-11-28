@@ -47,6 +47,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     monsterAttackerId: null,
     villainPhaseMonsterIndex: 0,
     heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
+    scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
     ...overrides,
   };
 }
@@ -1663,6 +1664,230 @@ describe("gameSlice", () => {
       expect(state.attackResult).toBeNull();
       // Monster HP should be unchanged
       expect(state.monsters[0].currentHp).toBe(1);
+    });
+  });
+
+  describe("Scenario State (MVP: Defeat 2 Monsters)", () => {
+    it("should initialize scenario state on game start", () => {
+      const state = gameReducer(undefined, startGame({
+        heroIds: ["quinn"],
+        seed: 12345,
+      }));
+
+      expect(state.scenario.monstersDefeated).toBe(0);
+      expect(state.scenario.monstersToDefeat).toBe(2);
+      expect(state.scenario.objective).toBe("Defeat 2 monsters");
+    });
+
+    it("should increment monstersDefeated when monster is killed", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.scenario.monstersDefeated).toBe(1);
+    });
+
+    it("should not increment monstersDefeated when attack misses", () => {
+      const attackResult: AttackResult = {
+        roll: 5,
+        attackBonus: 6,
+        total: 11,
+        targetAC: 14,
+        isHit: false,
+        damage: 0,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.scenario.monstersDefeated).toBe(0);
+    });
+
+    it("should transition to victory screen when 2 monsters are defeated", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-1", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        scenario: { monstersDefeated: 1, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-1",
+      }));
+
+      expect(state.scenario.monstersDefeated).toBe(2);
+      expect(state.currentScreen).toBe("victory");
+    });
+
+    it("should not transition to victory screen when less than 2 monsters defeated", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.scenario.monstersDefeated).toBe(1);
+      expect(state.currentScreen).toBe("game-board");
+    });
+
+    it("should transition to defeat screen when all heroes are at 0 HP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "open", south: "open", east: "open", west: "open" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 1, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+      });
+
+      // Use a deterministic random function that will result in a hit and damage
+      const state = gameReducer(initialState, activateNextMonster({
+        randomFn: () => 0.95, // High roll to ensure hit
+      }));
+
+      // Hero should be defeated
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
+      expect(state.currentScreen).toBe("defeat");
+    });
+
+    it("should not transition to defeat screen if at least one hero has HP remaining", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 3 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "open", south: "open", east: "open", west: "open" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [
+          { heroId: "quinn", currentHp: 1, maxHp: 8 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10 },
+        ],
+        villainPhaseMonsterIndex: 0,
+        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+      });
+
+      // Use a deterministic random function that will result in a hit and damage
+      const state = gameReducer(initialState, activateNextMonster({
+        randomFn: () => 0.95, // High roll to ensure hit
+      }));
+
+      // Quinn should be at 0 HP but Vistra still has HP
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
+      expect(state.heroHp.find(h => h.heroId === "vistra")?.currentHp).toBe(10);
+      expect(state.currentScreen).toBe("game-board");
+    });
+
+    it("should reset scenario state on game reset", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        scenario: { monstersDefeated: 5, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+      });
+
+      const state = gameReducer(gameInProgress, resetGame());
+
+      expect(state.scenario.monstersDefeated).toBe(0);
+      expect(state.scenario.monstersToDefeat).toBe(2);
+      expect(state.scenario.objective).toBe("Defeat 2 monsters");
     });
   });
 });

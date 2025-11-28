@@ -123,7 +123,20 @@ export const INITIAL_MONSTER_DECK: string[] = [
 /**
  * Game screen states
  */
-export type GameScreen = 'character-select' | 'game-board';
+export type GameScreen = 'character-select' | 'game-board' | 'victory' | 'defeat';
+
+/**
+ * Scenario state for tracking win/loss conditions
+ * MVP scenario: Defeat 2 monsters to win
+ */
+export interface ScenarioState {
+  /** Number of monsters defeated */
+  monstersDefeated: number;
+  /** Monsters needed to win (MVP: 2) */
+  monstersToDefeat: number;
+  /** Objective description */
+  objective: string;
+}
 
 /**
  * Game phase types
