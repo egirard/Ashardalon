@@ -187,14 +187,13 @@ export function isOnTileEdge(pos: Position, tile: PlacedTile, direction: Directi
 /**
  * Check if movement between two tiles is allowed via their connected edges.
  * Movement between tiles is only allowed in cardinal directions (not diagonal)
- * and only if the edges are 'open' (connected).
+ * and only if both tiles have 'open' edges on the connecting sides.
  */
 export function canMoveBetweenTiles(
   fromTile: PlacedTile,
   toTile: PlacedTile,
   fromPos: Position,
-  toPos: Position,
-  dungeon: DungeonState
+  toPos: Position
 ): boolean {
   // Calculate direction of movement
   const dx = toPos.x - fromPos.x;
@@ -207,18 +206,27 @@ export function canMoveBetweenTiles(
   
   // Determine which direction we're moving
   let fromDirection: Direction;
+  let toDirection: Direction;
   if (dy < 0) {
     fromDirection = 'north';
+    toDirection = 'south';
   } else if (dy > 0) {
     fromDirection = 'south';
+    toDirection = 'north';
   } else if (dx > 0) {
     fromDirection = 'east';
+    toDirection = 'west';
   } else {
     fromDirection = 'west';
+    toDirection = 'east';
   }
   
-  // Check if the 'from' tile has an open edge in that direction
+  // Check if both tiles have open edges on the connecting sides
   if (fromTile.edges[fromDirection] !== 'open') {
+    return false;
+  }
+  
+  if (toTile.edges[toDirection] !== 'open') {
     return false;
   }
   
@@ -267,15 +275,17 @@ export function getAdjacentPositions(pos: Position, dungeon?: DungeonState): Pos
   for (const dir of directions) {
     const newPos = { x: pos.x + dir.dx, y: pos.y + dir.dy };
     
-    // Check if the new position is valid on any tile
-    if (!isValidSquare(newPos, dungeon)) {
-      continue;
-    }
-    
-    // Find which tile the new position is on
+    // Find which tile the new position is on (returns null if not on any tile)
     const targetTile = findTileAtPosition(newPos, dungeon);
     if (!targetTile) {
       continue;
+    }
+    
+    // Check validity based on tile-specific rules (staircase, walls, etc.)
+    if (targetTile.tileType === 'start') {
+      if (isOnStaircase(newPos) || newPos.x < 1) {
+        continue;
+      }
     }
     
     // If same tile, movement is allowed (including diagonal)
@@ -290,7 +300,7 @@ export function getAdjacentPositions(pos: Position, dungeon?: DungeonState): Pos
     }
     
     // Check if the tiles are connected via open edges
-    if (canMoveBetweenTiles(currentTile, targetTile, pos, newPos, dungeon)) {
+    if (canMoveBetweenTiles(currentTile, targetTile, pos, newPos)) {
       adjacent.push(newPos);
     }
   }
