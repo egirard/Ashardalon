@@ -24,12 +24,19 @@
   
   // Token positioning constants - offset from image edge to playable grid
   const TOKEN_OFFSET_X = 36; // Offset from left edge of tile image to playable grid
-  const TOKEN_OFFSET_Y = 36; // Offset from top edge of tile image to playable grid
+  const TOKEN_OFFSET_Y = 36; // Offset from top edge of normal tile image to playable grid
   
   // Tile image dimensions (includes border and puzzle connectors)
   const TILE_IMAGE_WIDTH = 632;  // Actual image width
   const NORMAL_TILE_IMAGE_HEIGHT = 632; // Actual normal tile image height
   const START_TILE_IMAGE_HEIGHT = 1195; // Actual start tile image height
+  
+  // Start tile has slightly different vertical offset due to image dimensions
+  // Start tile: 1195px image - 1120px grid = 75px total, so 37.5px per side
+  // However, we need to use 38px (rounded up) since we can't have half pixels
+  // The extra 2px (38 vs 36) needs to be accounted for when tiles connect vertically
+  const START_TILE_OFFSET_Y = 38; // Rounded 37.5px offset for start tile
+  const START_TILE_OFFSET_DIFF = START_TILE_OFFSET_Y - TOKEN_OFFSET_Y; // 2px difference
   
   // Tile overlap - tiles need to overlap by this amount to interlock puzzle connectors
   // This equals the border/connector area on each side
@@ -130,6 +137,10 @@
   //   adjacent tiles automatically overlap by 72px (632-560), creating the interlocking effect
   // - Example: Tile 1 at x=0 spans 0-632, Tile 2 at x=560 spans 560-1192
   //   This creates a 72px overlap zone (560-632) where connectors interlock
+  // 
+  // VERTICAL ADJUSTMENT:
+  // - Start tile has 38px vertical offset vs 36px for normal tiles (2px difference)
+  // - North/south tiles adjacent to start tile need a 2px adjustment
   function getTilePixelPosition(tile: PlacedTile, bounds: ReturnType<typeof getMapBoundsFromDungeon>): { x: number; y: number } {
     // X position: position at grid width intervals to create automatic overlap
     // Since images are wider than grid, this creates the connector overlap
@@ -137,22 +148,27 @@
     
     // Y position depends on the row
     // Row layout: [north tiles...] [start tile at row 0] [south tiles...]
-    // Same overlap principle applies vertically
+    // Same overlap principle applies vertically, with adjustment for start tile offset
     let y = 0;
     
     if (tile.position.row < 0) {
       // North tiles: positioned above the start tile
       // Each row is spaced by NORMAL_TILE_HEIGHT (grid height, not image height)
-      // This creates the vertical overlap for connector interlocking
+      // The tile closest to start tile (row -1) needs to be 2px closer to account for
+      // start tile's larger border (38px vs 36px for normal tiles)
       y = (tile.position.row - bounds.minRow) * NORMAL_TILE_HEIGHT;
     } else if (tile.position.row === 0) {
       // Start tile: positioned after all north tiles
       const northTileCount = Math.max(0, -bounds.minRow);
-      y = northTileCount * NORMAL_TILE_HEIGHT;
+      // Move start tile 2px closer to north tiles to close the gap
+      // caused by start tile's 38px border vs normal tile's 36px border
+      y = northTileCount * NORMAL_TILE_HEIGHT - START_TILE_OFFSET_DIFF;
     } else {
       // South tiles: positioned after north tiles + start tile
       const northTileCount = Math.max(0, -bounds.minRow);
-      y = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + ((tile.position.row - 1) * NORMAL_TILE_HEIGHT);
+      // Account for start tile's larger bottom border (38px vs 36px)
+      // by positioning south tiles 2px closer to start tile
+      y = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + ((tile.position.row - 1) * NORMAL_TILE_HEIGHT) - START_TILE_OFFSET_DIFF;
     }
     
     return { x, y };
