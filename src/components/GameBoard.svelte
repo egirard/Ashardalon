@@ -363,6 +363,26 @@
     return edges[edgeIndex];
   }
 
+  // Get the rotation angle for a hero token based on the edge they were selected from.
+  // This makes the token face the player who controls it.
+  function getHeroTokenRotation(heroId: string): number {
+    const edge = heroEdgeMap[heroId];
+    if (!edge) return 0;
+    
+    switch (edge) {
+      case "bottom":
+        return 0;
+      case "top":
+        return 180;
+      case "left":
+        return 90;
+      case "right":
+        return -90;
+      default:
+        return 0;
+    }
+  }
+
   // Handle tile click to show movement options
   function handleTileClick(event: MouseEvent) {
     // Only respond to clicks during hero phase
@@ -648,6 +668,7 @@
           {@const hero = getHeroInfo(token.heroId)}
           {@const isActive = token.heroId === getCurrentHeroId()}
           {@const startTile = dungeon.tiles.find((t) => t.tileType === "start")}
+          {@const tokenRotation = getHeroTokenRotation(token.heroId)}
           {#if hero && startTile}
             {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
             <div
@@ -655,7 +676,7 @@
               class:active={isActive}
               data-testid="hero-token"
               data-hero-id={token.heroId}
-              style={getHeroTokenStyle(token.position, startTilePos)}
+              style="{getHeroTokenStyle(token.position, startTilePos)} --token-rotation: {tokenRotation}deg;"
             >
               <img
                 src={assetPath(hero.imagePath)}
@@ -843,19 +864,23 @@
   }
 
   .edge-left {
-    transform: rotate(90deg);
     border-right: 2px solid #333;
     min-width: 80px;
     min-height: auto;
-    writing-mode: vertical-lr;
+  }
+
+  .edge-left .player-info {
+    transform: rotate(90deg);
   }
 
   .edge-right {
-    transform: rotate(-90deg);
     border-left: 2px solid #333;
     min-width: 80px;
     min-height: auto;
-    writing-mode: vertical-lr;
+  }
+
+  .edge-right .player-info {
+    transform: rotate(-90deg);
   }
 
   .edge-bottom {
@@ -917,7 +942,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) rotate(var(--token-rotation, 0deg));
     z-index: 10;
     transition: all 0.3s ease-out;
   }
