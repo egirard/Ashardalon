@@ -77,7 +77,6 @@
     justify-content: center;
     align-items: center;
     z-index: 5;
-    animation: pulse-glow 2s ease-in-out infinite;
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
   }
   
@@ -86,16 +85,5 @@
     font-weight: bold;
     color: #1a1a2e;
     text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
-  }
-  
-  @keyframes pulse-glow {
-    0%, 100% {
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-      opacity: 0.8;
-    }
-    50% {
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-      opacity: 1;
-    }
   }
 </style>
