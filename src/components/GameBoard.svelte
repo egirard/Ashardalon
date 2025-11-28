@@ -351,7 +351,7 @@
   }
 
   // Get the edge for the active player based on the edge they selected their hero from.
-  // Falls back to 'bottom' if no edge is recorded.
+  // Falls back to cycling through edges based on player index if no edge is recorded.
   function getActivePlayerEdge(): string {
     const currentHeroId = getCurrentHeroId();
     if (currentHeroId && heroEdgeMap[currentHeroId]) {
