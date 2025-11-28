@@ -15,16 +15,25 @@
   const TILE_GRID_WIDTH = 4;  // Number of cells wide
   const START_TILE_GRID_HEIGHT = 8; // Start tile is double height (8 cells tall)
   const NORMAL_TILE_GRID_HEIGHT = 4; // Normal tiles are 4 cells tall
-  const TILE_WIDTH = TILE_CELL_SIZE * TILE_GRID_WIDTH;   // 560px
-  const START_TILE_HEIGHT = TILE_CELL_SIZE * START_TILE_GRID_HEIGHT; // 1120px
-  const NORMAL_TILE_HEIGHT = TILE_CELL_SIZE * NORMAL_TILE_GRID_HEIGHT; // 560px
+  const TILE_WIDTH = TILE_CELL_SIZE * TILE_GRID_WIDTH;   // 560px (playable grid)
+  const START_TILE_HEIGHT = TILE_CELL_SIZE * START_TILE_GRID_HEIGHT; // 1120px (playable grid)
+  const NORMAL_TILE_HEIGHT = TILE_CELL_SIZE * NORMAL_TILE_GRID_HEIGHT; // 560px (playable grid)
   const CONTAINER_PADDING = 32; // 1rem padding on each side (16px * 2)
   const MIN_SCALE = 0.15; // Minimum scale for legibility (lower to fit more tiles)
   const MAX_SCALE = 1;   // Maximum scale (no upscaling)
   
-  // Token positioning constants
-  const TOKEN_OFFSET_X = 36; // Offset from left edge of start tile
-  const TOKEN_OFFSET_Y = 36; // Offset from top edge of start tile
+  // Token positioning constants - offset from image edge to playable grid
+  const TOKEN_OFFSET_X = 36; // Offset from left edge of tile image to playable grid
+  const TOKEN_OFFSET_Y = 36; // Offset from top edge of tile image to playable grid
+  
+  // Tile image dimensions (includes border and puzzle connectors)
+  const TILE_IMAGE_WIDTH = 632;  // Actual image width
+  const NORMAL_TILE_IMAGE_HEIGHT = 632; // Actual normal tile image height
+  const START_TILE_IMAGE_HEIGHT = 1195; // Actual start tile image height
+  
+  // Tile overlap - tiles need to overlap by this amount to interlock puzzle connectors
+  // This equals the border/connector area on each side
+  const TILE_OVERLAP = TOKEN_OFFSET_X; // 36px overlap for interlocking
   
   let heroTokens: HeroToken[] = $state([]);
   let selectedHeroes: Hero[] = $state([]);
@@ -69,9 +78,10 @@
   });
   
   // Calculate the bounds of all placed tiles (pure function for use with $derived)
+  // Returns the total map dimensions using full image sizes (including connectors)
   function getMapBoundsFromDungeon(d: DungeonState): { minCol: number; maxCol: number; minRow: number; maxRow: number; width: number; height: number } {
     if (d.tiles.length === 0) {
-      return { minCol: 0, maxCol: 0, minRow: 0, maxRow: 0, width: TILE_WIDTH, height: START_TILE_HEIGHT };
+      return { minCol: 0, maxCol: 0, minRow: 0, maxRow: 0, width: TILE_IMAGE_WIDTH, height: START_TILE_IMAGE_HEIGHT };
     }
     
     let minCol = Infinity, maxCol = -Infinity;
@@ -84,40 +94,53 @@
       maxRow = Math.max(maxRow, tile.position.row);
     }
     
-    // Calculate total width
+    // Calculate total width using image dimensions
+    // First tile contributes full width, subsequent tiles only add the non-overlapping portion
     const numCols = maxCol - minCol + 1;
-    const width = numCols * TILE_WIDTH;
+    // Width = first tile image + (remaining tiles * grid width since they overlap)
+    const width = TILE_IMAGE_WIDTH + (numCols - 1) * TILE_WIDTH;
     
-    // Calculate total height
-    // North tiles (row < 0) are above start tile, each is NORMAL_TILE_HEIGHT
-    // Start tile (row 0) is START_TILE_HEIGHT
-    // South tiles (row > 0) are below start tile, each is NORMAL_TILE_HEIGHT
+    // Calculate total height using image dimensions
+    // North tiles (row < 0) are above start tile
+    // Start tile (row 0) is the anchor
+    // South tiles (row > 0) are below start tile
     const northTileCount = Math.max(0, -minRow);
     const southTileCount = Math.max(0, maxRow);
-    const height = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + (southTileCount * NORMAL_TILE_HEIGHT);
+    
+    // Height calculation: start tile image + adjacent tiles (with overlap)
+    // Each adjacent tile adds its grid height (not image height) due to overlap
+    const height = START_TILE_IMAGE_HEIGHT + (northTileCount * NORMAL_TILE_HEIGHT) + (southTileCount * NORMAL_TILE_HEIGHT);
     
     return { 
       minCol, 
       maxCol, 
       minRow, 
       maxRow,
-      width: Math.max(width, TILE_WIDTH), 
-      height: Math.max(height, START_TILE_HEIGHT)
+      width: Math.max(width, TILE_IMAGE_WIDTH), 
+      height: Math.max(height, START_TILE_IMAGE_HEIGHT)
     };
   }
   
   // Get pixel position for a tile based on its grid position
+  // Tiles are positioned so their playable grids align, with overlapping connectors
   function getTilePixelPosition(tile: PlacedTile, bounds: ReturnType<typeof getMapBoundsFromDungeon>): { x: number; y: number } {
-    // X position: relative to the leftmost column
+    // X position: tiles overlap by TILE_OVERLAP on each side
+    // The leftmost tile (minCol) starts at x=0
+    // Each subsequent column is offset by the grid width (TILE_WIDTH), not image width
     const x = (tile.position.col - bounds.minCol) * TILE_WIDTH;
     
     // Y position depends on the row
     // Row layout: [north tiles...] [start tile at row 0] [south tiles...]
+    // Tiles overlap vertically at their connectors
     let y = 0;
     
     if (tile.position.row < 0) {
-      // North tiles: count tiles from minRow to this row
-      // minRow is the most northern (most negative)
+      // North tiles: positioned above the start tile
+      // The most northern tile (minRow) starts at y=0
+      // Each row going south adds NORMAL_TILE_HEIGHT (accounting for overlap)
+      const northTileCount = Math.max(0, -bounds.minRow);
+      // Position relative to where the start tile will be
+      // North tiles stack from top, overlapping with the tile below
       y = (tile.position.row - bounds.minRow) * NORMAL_TILE_HEIGHT;
     } else if (tile.position.row === 0) {
       // Start tile: positioned after all north tiles
@@ -126,6 +149,7 @@
     } else {
       // South tiles: positioned after north tiles + start tile
       const northTileCount = Math.max(0, -bounds.minRow);
+      // South tiles start after north tiles + start tile grid height
       y = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + ((tile.position.row - 1) * NORMAL_TILE_HEIGHT);
     }
     
@@ -141,12 +165,12 @@
     return tileDef?.imagePath || 'assets/Tile_Black_x2_01.png';
   }
   
-  // Get tile dimensions
+  // Get tile dimensions (actual image dimensions, not grid dimensions)
   function getTileDimensions(tile: PlacedTile): { width: number; height: number } {
     if (tile.tileType === 'start') {
-      return { width: TILE_WIDTH, height: START_TILE_HEIGHT };
+      return { width: TILE_IMAGE_WIDTH, height: START_TILE_IMAGE_HEIGHT };
     }
-    return { width: TILE_WIDTH, height: NORMAL_TILE_HEIGHT };
+    return { width: TILE_IMAGE_WIDTH, height: NORMAL_TILE_IMAGE_HEIGHT };
   }
   
   // Calculate scale to fit the map in the available space
