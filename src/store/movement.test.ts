@@ -9,8 +9,10 @@ import {
   canMoveTo,
   isValidMoveDestination,
   START_TILE,
+  getTileBounds,
+  findTileAtPosition,
 } from "./movement";
-import type { HeroToken, Position } from "./types";
+import type { HeroToken, Position, DungeonState, PlacedTile } from "./types";
 
 describe("movement utilities", () => {
   describe("START_TILE constants", () => {
@@ -294,6 +296,254 @@ describe("movement utilities", () => {
     it("should return false for positions not in valid squares", () => {
       expect(isValidMoveDestination({ x: 2, y: 2 }, validSquares)).toBe(false);
       expect(isValidMoveDestination({ x: 5, y: 5 }, validSquares)).toBe(false);
+    });
+  });
+
+  describe("cross-tile movement", () => {
+    // Helper to create a dungeon with start tile and an adjacent tile
+    function createDungeonWithAdjacentTile(direction: 'north' | 'south' | 'east' | 'west'): DungeonState {
+      const startTile: PlacedTile = {
+        id: 'start-tile',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        rotation: 0,
+        edges: {
+          north: direction === 'north' ? 'open' : 'unexplored',
+          south: direction === 'south' ? 'open' : 'unexplored',
+          east: direction === 'east' ? 'open' : 'unexplored',
+          west: direction === 'west' ? 'open' : 'unexplored',
+        },
+      };
+
+      const adjacentTile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-2exit-a',
+        position: {
+          col: direction === 'east' ? 1 : direction === 'west' ? -1 : 0,
+          row: direction === 'north' ? -1 : direction === 'south' ? 1 : 0,
+        },
+        rotation: 0,
+        edges: {
+          north: direction === 'south' ? 'open' : 'unexplored',
+          south: direction === 'north' ? 'open' : 'unexplored',
+          east: direction === 'west' ? 'open' : 'unexplored',
+          west: direction === 'east' ? 'open' : 'unexplored',
+        },
+      };
+
+      return {
+        tiles: [startTile, adjacentTile],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+    }
+
+    describe("getTileBounds", () => {
+      it("should return correct bounds for start tile", () => {
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'unexplored' },
+        };
+        
+        const bounds = getTileBounds(startTile);
+        expect(bounds).toEqual({ minX: 0, maxX: 3, minY: 0, maxY: 7 });
+      });
+
+      it("should return correct bounds for tile east of start", () => {
+        const eastTile: PlacedTile = {
+          id: 'tile-1',
+          tileType: 'tile-2exit-a',
+          position: { col: 1, row: 0 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'open' },
+        };
+        
+        const bounds = getTileBounds(eastTile);
+        expect(bounds).toEqual({ minX: 4, maxX: 7, minY: 0, maxY: 3 });
+      });
+
+      it("should return correct bounds for tile north of start", () => {
+        const northTile: PlacedTile = {
+          id: 'tile-1',
+          tileType: 'tile-2exit-a',
+          position: { col: 0, row: -1 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
+        };
+        
+        const bounds = getTileBounds(northTile);
+        expect(bounds).toEqual({ minX: 0, maxX: 3, minY: -4, maxY: -1 });
+      });
+    });
+
+    describe("findTileAtPosition", () => {
+      it("should find start tile for positions within start tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        const tile = findTileAtPosition({ x: 2, y: 2 }, dungeon);
+        expect(tile?.id).toBe('start-tile');
+      });
+
+      it("should find adjacent tile for positions on that tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        // East tile starts at x=4
+        const tile = findTileAtPosition({ x: 5, y: 1 }, dungeon);
+        expect(tile?.id).toBe('tile-1');
+      });
+
+      it("should return null for positions not on any tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        // Position far outside any tile
+        const tile = findTileAtPosition({ x: 100, y: 100 }, dungeon);
+        expect(tile).toBeNull();
+      });
+    });
+
+    describe("isValidSquare with dungeon", () => {
+      it("should return true for valid position on start tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        expect(isValidSquare({ x: 2, y: 2 }, dungeon)).toBe(true);
+      });
+
+      it("should return false for staircase position on start tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        expect(isValidSquare({ x: 1, y: 3 }, dungeon)).toBe(false);
+        expect(isValidSquare({ x: 2, y: 4 }, dungeon)).toBe(false);
+      });
+
+      it("should return false for wall position (x=0) on start tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        expect(isValidSquare({ x: 0, y: 2 }, dungeon)).toBe(false);
+      });
+
+      it("should return true for valid position on adjacent tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        // East tile is at x: 4-7, y: 0-3
+        expect(isValidSquare({ x: 5, y: 1 }, dungeon)).toBe(true);
+      });
+
+      it("should return false for position not on any tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        expect(isValidSquare({ x: 100, y: 100 }, dungeon)).toBe(false);
+      });
+    });
+
+    describe("getAdjacentPositions with dungeon (cross-tile)", () => {
+      it("should include positions on adjacent tile when edges are open (east)", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        // Position at east edge of start tile (x=3, y=2)
+        const adjacent = getAdjacentPositions({ x: 3, y: 2 }, dungeon);
+        
+        // Should include x=4 (on the adjacent tile)
+        expect(adjacent.some(p => p.x === 4 && p.y === 2)).toBe(true);
+      });
+
+      it("should include positions on adjacent tile when edges are open (north)", () => {
+        const dungeon = createDungeonWithAdjacentTile('north');
+        
+        // Position at north edge of start tile (x=2, y=0)
+        const adjacent = getAdjacentPositions({ x: 2, y: 0 }, dungeon);
+        
+        // Should include y=-1 (on the adjacent tile)
+        expect(adjacent.some(p => p.x === 2 && p.y === -1)).toBe(true);
+      });
+
+      it("should NOT allow diagonal movement between tiles", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        // Position at east edge of start tile (x=3, y=2)
+        const adjacent = getAdjacentPositions({ x: 3, y: 2 }, dungeon);
+        
+        // Should NOT include diagonal positions on the adjacent tile
+        expect(adjacent.some(p => p.x === 4 && p.y === 1)).toBe(false);
+        expect(adjacent.some(p => p.x === 4 && p.y === 3)).toBe(false);
+      });
+
+      it("should allow diagonal movement within the same tile", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        
+        // Position in center of start tile (x=2, y=2)
+        const adjacent = getAdjacentPositions({ x: 2, y: 2 }, dungeon);
+        
+        // Should include diagonal positions within start tile
+        expect(adjacent.some(p => p.x === 1 && p.y === 1)).toBe(true);
+        expect(adjacent.some(p => p.x === 3 && p.y === 1)).toBe(true);
+      });
+
+      it("should NOT include cross-tile movement when edges are unexplored", () => {
+        // Create dungeon with unexplored east edge
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'unexplored' },
+        };
+        
+        const dungeon: DungeonState = {
+          tiles: [startTile],
+          unexploredEdges: [{ tileId: 'start-tile', direction: 'east' }],
+          tileDeck: [],
+        };
+        
+        // Position at east edge of start tile (x=3, y=2)
+        const adjacent = getAdjacentPositions({ x: 3, y: 2 }, dungeon);
+        
+        // Should NOT include x=4 (no tile there)
+        expect(adjacent.some(p => p.x === 4)).toBe(false);
+      });
+    });
+
+    describe("getValidMoveSquares with dungeon (cross-tile)", () => {
+      it("should include squares on adjacent tile within speed", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        const heroTokens: HeroToken[] = [
+          { heroId: 'quinn', position: { x: 3, y: 2 } }, // At east edge
+        ];
+        
+        // With speed 2, should be able to reach x=4 (1 step) and x=5 (2 steps)
+        const squares = getValidMoveSquares({ x: 3, y: 2 }, 2, heroTokens, 'quinn', dungeon);
+        
+        expect(squares.some(s => s.x === 4 && s.y === 2)).toBe(true);
+        expect(squares.some(s => s.x === 5 && s.y === 2)).toBe(true);
+      });
+
+      it("should include squares on adjacent tile (north)", () => {
+        const dungeon = createDungeonWithAdjacentTile('north');
+        const heroTokens: HeroToken[] = [
+          { heroId: 'quinn', position: { x: 2, y: 0 } }, // At north edge
+        ];
+        
+        // With speed 2, should be able to reach y=-1 (1 step) and y=-2 (2 steps)
+        const squares = getValidMoveSquares({ x: 2, y: 0 }, 2, heroTokens, 'quinn', dungeon);
+        
+        expect(squares.some(s => s.x === 2 && s.y === -1)).toBe(true);
+        expect(squares.some(s => s.x === 2 && s.y === -2)).toBe(true);
+      });
+
+      it("should allow movement through adjacent tile and back", () => {
+        const dungeon = createDungeonWithAdjacentTile('east');
+        const heroTokens: HeroToken[] = [
+          { heroId: 'quinn', position: { x: 3, y: 2 } },
+        ];
+        
+        // With speed 3, should be able to reach far into the adjacent tile
+        const squares = getValidMoveSquares({ x: 3, y: 2 }, 3, heroTokens, 'quinn', dungeon);
+        
+        // Should be able to reach x=6 (3 steps east)
+        expect(squares.some(s => s.x === 6 && s.y === 2)).toBe(true);
+      });
     });
   });
 });

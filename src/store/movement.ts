@@ -1,4 +1,4 @@
-import type { Position, HeroToken } from './types';
+import type { Position, HeroToken, DungeonState, PlacedTile, Direction } from './types';
 
 /**
  * Start Tile boundaries
@@ -20,6 +20,91 @@ export const START_TILE = {
 };
 
 /**
+ * Normal tile dimensions (4x4 grid)
+ */
+export const NORMAL_TILE_SIZE = 4;
+
+/**
+ * Start tile dimensions (4 wide, 8 tall)
+ */
+export const START_TILE_WIDTH = 4;
+export const START_TILE_HEIGHT = 8;
+
+/**
+ * Get the bounds of a tile in absolute coordinates based on its type and grid position.
+ * 
+ * Coordinate system:
+ * - Start tile at col=0, row=0 has positions x: 0-3, y: 0-7 (but walkable is x: 1-3)
+ * - Tiles to the east (col=1) start at x=4
+ * - Tiles to the west (col=-1) start at x=-4
+ * - Tiles to the north (row=-1) start at y=-4
+ * - Tiles to the south (row=1) start at y=8
+ */
+export function getTileBounds(tile: PlacedTile): { minX: number; maxX: number; minY: number; maxY: number } {
+  const { col, row } = tile.position;
+  
+  if (tile.tileType === 'start') {
+    // Start tile is at col=0, row=0 with special dimensions
+    // Walkable area is x: 1-3, y: 0-7 (the 0th column is wall)
+    return {
+      minX: 0,
+      maxX: 3,
+      minY: 0,
+      maxY: 7,
+    };
+  }
+  
+  // Normal tiles are 4x4 and positioned based on their grid position relative to start tile
+  // The start tile occupies col=0 and spans 4 columns (x: 0-3)
+  // The start tile occupies row=0 and spans 8 rows (y: 0-7)
+  
+  let minX: number, minY: number;
+  
+  if (col > 0) {
+    // Tiles to the east: start after the start tile (x >= 4)
+    minX = START_TILE_WIDTH + (col - 1) * NORMAL_TILE_SIZE;
+  } else if (col < 0) {
+    // Tiles to the west: start before x=0
+    minX = col * NORMAL_TILE_SIZE;
+  } else {
+    // col === 0: same column as start tile
+    minX = 0;
+  }
+  
+  if (row > 0) {
+    // Tiles to the south: start after the start tile (y >= 8)
+    minY = START_TILE_HEIGHT + (row - 1) * NORMAL_TILE_SIZE;
+  } else if (row < 0) {
+    // Tiles to the north: start before y=0
+    minY = row * NORMAL_TILE_SIZE;
+  } else {
+    // row === 0: same row as start tile (but different column)
+    minY = 0;
+  }
+  
+  return {
+    minX,
+    maxX: minX + NORMAL_TILE_SIZE - 1,
+    minY,
+    maxY: minY + NORMAL_TILE_SIZE - 1,
+  };
+}
+
+/**
+ * Find which tile a position is on, if any.
+ */
+export function findTileAtPosition(pos: Position, dungeon: DungeonState): PlacedTile | null {
+  for (const tile of dungeon.tiles) {
+    const bounds = getTileBounds(tile);
+    if (pos.x >= bounds.minX && pos.x <= bounds.maxX &&
+        pos.y >= bounds.minY && pos.y <= bounds.maxY) {
+      return tile;
+    }
+  }
+  return null;
+}
+
+/**
  * Check if a position is within the valid start tile bounds
  */
 export function isWithinStartTile(pos: Position): boolean {
@@ -39,10 +124,32 @@ export function isOnStaircase(pos: Position): boolean {
 }
 
 /**
- * Check if a position is a valid walkable square
+ * Check if a position is a valid walkable square on any tile in the dungeon.
+ * If no dungeon is provided, falls back to checking only the start tile.
  */
-export function isValidSquare(pos: Position): boolean {
-  return isWithinStartTile(pos) && !isOnStaircase(pos);
+export function isValidSquare(pos: Position, dungeon?: DungeonState): boolean {
+  if (!dungeon) {
+    // Fallback for backward compatibility - only check start tile
+    return isWithinStartTile(pos) && !isOnStaircase(pos);
+  }
+  
+  const tile = findTileAtPosition(pos, dungeon);
+  if (!tile) {
+    return false;
+  }
+  
+  // Check for staircase on start tile
+  if (tile.tileType === 'start') {
+    if (isOnStaircase(pos)) {
+      return false;
+    }
+    // On start tile, only x: 1-3 are walkable (x=0 is wall)
+    if (pos.x < 1) {
+      return false;
+    }
+  }
+  
+  return true;
 }
 
 /**
@@ -57,27 +164,133 @@ export function isOccupied(pos: Position, heroTokens: HeroToken[], excludeHeroId
 }
 
 /**
- * Get adjacent positions (orthogonal and diagonal within tile)
- * Diagonal movement is allowed within a tile but not between tiles
+ * Check if a position is on the edge of a tile in a specific direction
  */
-export function getAdjacentPositions(pos: Position): Position[] {
+export function isOnTileEdge(pos: Position, tile: PlacedTile, direction: Direction): boolean {
+  const bounds = getTileBounds(tile);
+  
+  // For start tile, walkable area starts at x=1, not x=0
+  const effectiveMinX = tile.tileType === 'start' ? 1 : bounds.minX;
+  
+  switch (direction) {
+    case 'north':
+      return pos.y === bounds.minY;
+    case 'south':
+      return pos.y === bounds.maxY;
+    case 'east':
+      return pos.x === bounds.maxX;
+    case 'west':
+      return pos.x === effectiveMinX;
+  }
+}
+
+/**
+ * Check if movement between two tiles is allowed via their connected edges.
+ * Movement between tiles is only allowed in cardinal directions (not diagonal)
+ * and only if the edges are 'open' (connected).
+ */
+export function canMoveBetweenTiles(
+  fromTile: PlacedTile,
+  toTile: PlacedTile,
+  fromPos: Position,
+  toPos: Position,
+  dungeon: DungeonState
+): boolean {
+  // Calculate direction of movement
+  const dx = toPos.x - fromPos.x;
+  const dy = toPos.y - fromPos.y;
+  
+  // Only cardinal movement allowed between tiles
+  if (dx !== 0 && dy !== 0) {
+    return false;
+  }
+  
+  // Determine which direction we're moving
+  let fromDirection: Direction;
+  if (dy < 0) {
+    fromDirection = 'north';
+  } else if (dy > 0) {
+    fromDirection = 'south';
+  } else if (dx > 0) {
+    fromDirection = 'east';
+  } else {
+    fromDirection = 'west';
+  }
+  
+  // Check if the 'from' tile has an open edge in that direction
+  if (fromTile.edges[fromDirection] !== 'open') {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Get adjacent positions (orthogonal and diagonal within tile)
+ * Diagonal movement is allowed within a tile but not between tiles.
+ * Cardinal movement between adjacent tiles is allowed if the tiles have connected edges.
+ * 
+ * If no dungeon is provided, falls back to only checking the start tile.
+ */
+export function getAdjacentPositions(pos: Position, dungeon?: DungeonState): Position[] {
   const adjacent: Position[] = [];
   
   // All 8 directions (orthogonal + diagonal)
   const directions = [
-    { dx: 0, dy: -1 },  // up
-    { dx: 0, dy: 1 },   // down
-    { dx: -1, dy: 0 },  // left
-    { dx: 1, dy: 0 },   // right
-    { dx: -1, dy: -1 }, // up-left
-    { dx: 1, dy: -1 },  // up-right
-    { dx: -1, dy: 1 },  // down-left
-    { dx: 1, dy: 1 },   // down-right
+    { dx: 0, dy: -1, cardinal: true },   // up (north)
+    { dx: 0, dy: 1, cardinal: true },    // down (south)
+    { dx: -1, dy: 0, cardinal: true },   // left (west)
+    { dx: 1, dy: 0, cardinal: true },    // right (east)
+    { dx: -1, dy: -1, cardinal: false }, // up-left
+    { dx: 1, dy: -1, cardinal: false },  // up-right
+    { dx: -1, dy: 1, cardinal: false },  // down-left
+    { dx: 1, dy: 1, cardinal: false },   // down-right
   ];
+  
+  // If no dungeon provided, use legacy behavior (start tile only)
+  if (!dungeon) {
+    for (const dir of directions) {
+      const newPos = { x: pos.x + dir.dx, y: pos.y + dir.dy };
+      if (isValidSquare(newPos)) {
+        adjacent.push(newPos);
+      }
+    }
+    return adjacent;
+  }
+  
+  // Find the tile the current position is on
+  const currentTile = findTileAtPosition(pos, dungeon);
+  if (!currentTile) {
+    return adjacent;
+  }
   
   for (const dir of directions) {
     const newPos = { x: pos.x + dir.dx, y: pos.y + dir.dy };
-    if (isValidSquare(newPos)) {
+    
+    // Check if the new position is valid on any tile
+    if (!isValidSquare(newPos, dungeon)) {
+      continue;
+    }
+    
+    // Find which tile the new position is on
+    const targetTile = findTileAtPosition(newPos, dungeon);
+    if (!targetTile) {
+      continue;
+    }
+    
+    // If same tile, movement is allowed (including diagonal)
+    if (currentTile.id === targetTile.id) {
+      adjacent.push(newPos);
+      continue;
+    }
+    
+    // If different tiles, only cardinal movement is allowed
+    if (!dir.cardinal) {
+      continue;
+    }
+    
+    // Check if the tiles are connected via open edges
+    if (canMoveBetweenTiles(currentTile, targetTile, pos, newPos, dungeon)) {
       adjacent.push(newPos);
     }
   }
@@ -98,13 +311,15 @@ export function getManhattanDistance(from: Position, to: Position): number {
  * @param speed - Movement speed in squares
  * @param heroTokens - All hero tokens on the board
  * @param heroId - ID of the hero being moved (to exclude from occupation check)
+ * @param dungeon - Optional dungeon state for multi-tile movement
  * @returns Array of valid destination positions
  */
 export function getValidMoveSquares(
   heroPos: Position,
   speed: number,
   heroTokens: HeroToken[],
-  heroId: string
+  heroId: string,
+  dungeon?: DungeonState
 ): Position[] {
   const validSquares: Position[] = [];
   const visited = new Set<string>();
@@ -123,7 +338,7 @@ export function getValidMoveSquares(
     
     // If we haven't reached max distance, explore adjacent squares
     if (current.distance < speed) {
-      const adjacent = getAdjacentPositions(current.pos);
+      const adjacent = getAdjacentPositions(current.pos, dungeon);
       for (const adjPos of adjacent) {
         const key = `${adjPos.x},${adjPos.y}`;
         if (!visited.has(key)) {
