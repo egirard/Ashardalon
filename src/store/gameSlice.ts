@@ -13,6 +13,7 @@ import {
   AttackResult,
   HeroHpState,
   AVAILABLE_HEROES,
+  HeroTurnActions,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -43,6 +44,15 @@ const DEFAULT_TURN_STATE: TurnState = {
   currentHeroIndex: 0,
   currentPhase: "hero-phase",
   turnNumber: 1,
+};
+
+/**
+ * Default hero turn actions at the start of a hero phase
+ */
+const DEFAULT_HERO_TURN_ACTIONS: HeroTurnActions = {
+  actionsTaken: [],
+  canMove: true,
+  canAttack: true,
 };
 
 export interface GameState {
@@ -79,6 +89,8 @@ export interface GameState {
   monsterAttackerId: string | null;
   /** Index of the monster currently being activated during villain phase */
   villainPhaseMonsterIndex: number;
+  /** Hero turn actions tracking for enforcing valid turn structure */
+  heroTurnActions: HeroTurnActions;
 }
 
 const initialState: GameState = {
@@ -99,7 +111,69 @@ const initialState: GameState = {
   monsterAttackTargetId: null,
   monsterAttackerId: null,
   villainPhaseMonsterIndex: 0,
+  heroTurnActions: { ...DEFAULT_HERO_TURN_ACTIONS },
 };
+
+import type { HeroSubAction } from "./types";
+
+/**
+ * Calculate the updated hero turn actions state after taking an action.
+ * 
+ * Valid action sequences:
+ * - Move only (can still move or attack after)
+ * - Move, then attack (turn ends)
+ * - Attack, then move (turn ends)
+ * - Move, move (turn ends)
+ * 
+ * Key rules:
+ * - No double attacks allowed
+ * - After any attack, only move is allowed (turn ends after that move)
+ * - After two moves, turn ends
+ */
+function computeHeroTurnActions(
+  currentActions: HeroTurnActions,
+  newAction: HeroSubAction
+): HeroTurnActions {
+  const newActionsTaken = [...currentActions.actionsTaken, newAction];
+  
+  // Count actions
+  const moveCount = newActionsTaken.filter(a => a === 'move').length;
+  const attackCount = newActionsTaken.filter(a => a === 'attack').length;
+  
+  // No double attacks ever
+  const canAttack = attackCount === 0;
+  
+  // Can move if: no moves yet, or only 1 move AND no attack yet
+  // After attack+move or move+attack or move+move, turn should end
+  const canMove = moveCount < 2 && !(moveCount === 1 && attackCount === 1);
+  
+  return {
+    actionsTaken: newActionsTaken,
+    canMove,
+    canAttack,
+  };
+}
+
+/**
+ * Check if the hero turn should automatically end based on actions taken.
+ * Turn ends when:
+ * - Move + Attack (in any order)
+ * - Move + Move (double move)
+ */
+function shouldAutoEndHeroTurn(heroTurnActions: HeroTurnActions): boolean {
+  const { actionsTaken } = heroTurnActions;
+  const moveCount = actionsTaken.filter(a => a === 'move').length;
+  const attackCount = actionsTaken.filter(a => a === 'attack').length;
+  
+  // Turn ends after any of these combinations:
+  // - Attack + Move (attack then move)
+  // - Move + Attack (move then attack)
+  // - Move + Move (double move)
+  return (
+    (moveCount >= 1 && attackCount >= 1) || // move+attack or attack+move
+    (moveCount >= 2) // double move
+  );
+}
 
 /**
  * Seeded random number generator using a simple LCG (Linear Congruential Generator)
@@ -204,6 +278,9 @@ export const gameSlice = createSlice({
       state.monsterAttackerId = null;
       state.villainPhaseMonsterIndex = 0;
 
+      // Initialize hero turn actions for the first hero
+      state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -224,6 +301,11 @@ export const gameSlice = createSlice({
       state,
       action: PayloadAction<{ heroId: string; speed: number }>,
     ) => {
+      // Only show movement options during hero phase when hero can move
+      if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canMove) {
+        return;
+      }
+      
       const { heroId, speed } = action.payload;
       const token = state.heroTokens.find((t) => t.heroId === heroId);
       
@@ -254,6 +336,11 @@ export const gameSlice = createSlice({
     ) => {
       const { heroId, position } = action.payload;
       
+      // Only allow move during hero phase and if hero can move
+      if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canMove) {
+        return;
+      }
+      
       // Verify this is a valid move destination
       if (!isValidMoveDestination(position, state.validMoveSquares)) {
         return;
@@ -265,6 +352,9 @@ export const gameSlice = createSlice({
         // Clear movement overlay after moving
         state.validMoveSquares = [];
         state.showingMovement = false;
+        
+        // Track the move action
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
       }
     },
     resetGame: (state) => {
@@ -286,6 +376,7 @@ export const gameSlice = createSlice({
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
       state.villainPhaseMonsterIndex = 0;
+      state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -391,8 +482,9 @@ export const gameSlice = createSlice({
         state.turnState.turnNumber += 1;
       }
       
-      // Start new hero phase
+      // Start new hero phase with fresh turn actions
       state.turnState.currentPhase = "hero-phase";
+      state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
     },
     /**
      * Dismiss the monster card display
@@ -407,6 +499,11 @@ export const gameSlice = createSlice({
       state,
       action: PayloadAction<{ result: AttackResult; targetInstanceId: string }>
     ) => {
+      // Only allow attack during hero phase and if hero can attack
+      if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canAttack) {
+        return;
+      }
+      
       const { result, targetInstanceId } = action.payload;
       state.attackResult = result;
       state.attackTargetId = targetInstanceId;
@@ -425,6 +522,9 @@ export const gameSlice = createSlice({
           }
         }
       }
+      
+      // Track the attack action
+      state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
     },
     /**
      * Dismiss the attack result display

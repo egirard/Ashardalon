@@ -28,6 +28,7 @@
     MonsterDeck,
     AttackResult,
     HeroHpState,
+    HeroTurnActions,
   } from "../store/types";
   import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES } from "../store/types";
   import { assetPath } from "../utils";
@@ -102,6 +103,7 @@
   let monsterAttackTargetId: string | null = $state(null);
   let monsterAttackerId: string | null = $state(null);
   let villainPhaseMonsterIndex: number = $state(0);
+  let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
 
@@ -128,6 +130,7 @@
       monsterAttackTargetId = state.game.monsterAttackTargetId;
       monsterAttackerId = state.game.monsterAttackerId;
       villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
+      heroTurnActions = state.game.heroTurnActions;
     });
 
     // Initialize state
@@ -148,8 +151,50 @@
     monsterAttackTargetId = state.game.monsterAttackTargetId;
     monsterAttackerId = state.game.monsterAttackerId;
     villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
+    heroTurnActions = state.game.heroTurnActions;
 
     return unsubscribe;
+  });
+
+  // Auto-advance hero phase when valid action sequence is complete
+  // Turn ends when: move+attack, attack+move, or move+move
+  $effect(() => {
+    if (turnState.currentPhase !== "hero-phase") return;
+    
+    const { actionsTaken } = heroTurnActions;
+    const moveCount = actionsTaken.filter(a => a === 'move').length;
+    const attackCount = actionsTaken.filter(a => a === 'attack').length;
+    
+    // Turn ends after any of these combinations:
+    // - Attack + Move (attack then move)
+    // - Move + Attack (move then attack)
+    // - Move + Move (double move)
+    const shouldEndTurn = (
+      (moveCount >= 1 && attackCount >= 1) || // move+attack or attack+move
+      (moveCount >= 2) // double move
+    );
+    
+    if (shouldEndTurn) {
+      store.dispatch(endHeroPhase());
+    }
+  });
+
+  // Auto-show movement options when hero phase starts and hero can move
+  $effect(() => {
+    if (turnState.currentPhase !== "hero-phase") return;
+    if (!heroTurnActions.canMove) return;
+    if (showingMovement) return; // Already showing
+    
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return;
+    
+    const currentHero = getHeroInfo(currentHeroId);
+    if (!currentHero) return;
+    
+    // Auto-show movement options for the current hero
+    store.dispatch(
+      showMovement({ heroId: currentHeroId, speed: currentHero.speed }),
+    );
   });
 
   // Calculate the bounds of all placed tiles (pure function for use with $derived)
@@ -809,8 +854,8 @@
           ↩ Return to Character Select
         </button>
 
-        <!-- Attack Button - only show during hero phase when adjacent to monster -->
-        {#if turnState.currentPhase === "hero-phase"}
+        <!-- Attack Button - only show during hero phase when adjacent to monster and can attack -->
+        {#if turnState.currentPhase === "hero-phase" && heroTurnActions.canAttack}
           {@const currentHeroId = getCurrentHeroId()}
           {@const fullHero = currentHeroId
             ? getFullHeroInfo(currentHeroId)

@@ -46,6 +46,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     monsterAttackTargetId: null,
     monsterAttackerId: null,
     villainPhaseMonsterIndex: 0,
+    heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
     ...overrides,
   };
 }
@@ -258,7 +259,7 @@ describe("gameSlice", () => {
   });
 
   describe("setHeroPosition", () => {
-    const stateWithTokens: GameState = {
+    const stateWithTokens = createGameState({
       currentScreen: "game-board",
       heroTokens: [
         { heroId: "quinn", position: { x: 2, y: 2 } },
@@ -269,7 +270,7 @@ describe("gameSlice", () => {
         currentPhase: "hero-phase",
         turnNumber: 1,
       },
-    };
+    });
 
     it("should update hero position", () => {
       const newPosition = { x: 4, y: 3 };
@@ -305,7 +306,7 @@ describe("gameSlice", () => {
 
   describe("resetGame", () => {
     it("should reset to character-select screen", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -313,13 +314,13 @@ describe("gameSlice", () => {
           currentPhase: "hero-phase",
           turnNumber: 1,
         },
-      };
+      });
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.currentScreen).toBe("character-select");
     });
 
     it("should clear all hero tokens", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [
           { heroId: "quinn", position: { x: 2, y: 2 } },
@@ -330,13 +331,13 @@ describe("gameSlice", () => {
           currentPhase: "exploration-phase",
           turnNumber: 3,
         },
-      };
+      });
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.heroTokens).toEqual([]);
     });
 
     it("should reset turn state", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -344,7 +345,7 @@ describe("gameSlice", () => {
           currentPhase: "villain-phase",
           turnNumber: 5,
         },
-      };
+      });
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.turnState.currentHeroIndex).toBe(0);
       expect(state.turnState.currentPhase).toBe("hero-phase");
@@ -352,7 +353,7 @@ describe("gameSlice", () => {
     });
 
     it("should clear movement state", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -362,7 +363,7 @@ describe("gameSlice", () => {
         },
         validMoveSquares: [{ x: 3, y: 2 }],
         showingMovement: true,
-      };
+      });
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.validMoveSquares).toEqual([]);
       expect(state.showingMovement).toBe(false);
@@ -370,7 +371,7 @@ describe("gameSlice", () => {
   });
 
   describe("showMovement", () => {
-    const stateWithTokens: GameState = {
+    const stateWithTokens = createGameState({
       currentScreen: "game-board",
       heroTokens: [
         { heroId: "quinn", position: { x: 2, y: 2 } },
@@ -383,7 +384,25 @@ describe("gameSlice", () => {
       },
       validMoveSquares: [],
       showingMovement: false,
-    };
+      dungeon: {
+        tiles: [
+          {
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          },
+        ],
+        unexploredEdges: [
+          { tileId: "start-tile", direction: "north" },
+          { tileId: "start-tile", direction: "south" },
+          { tileId: "start-tile", direction: "east" },
+          { tileId: "start-tile", direction: "west" },
+        ],
+        tileDeck: [],
+      },
+    });
 
     it("should calculate valid move squares for hero", () => {
       const state = gameReducer(
@@ -432,7 +451,7 @@ describe("gameSlice", () => {
 
   describe("hideMovement", () => {
     it("should clear valid move squares and hide overlay", () => {
-      const stateWithMovement: GameState = {
+      const stateWithMovement = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -442,7 +461,7 @@ describe("gameSlice", () => {
         },
         validMoveSquares: [{ x: 3, y: 2 }, { x: 1, y: 2 }],
         showingMovement: true,
-      };
+      });
 
       const state = gameReducer(stateWithMovement, hideMovement());
 
@@ -452,7 +471,7 @@ describe("gameSlice", () => {
   });
 
   describe("moveHero", () => {
-    const stateWithMovement: GameState = {
+    const stateWithMovement = createGameState({
       currentScreen: "game-board",
       heroTokens: [
         { heroId: "quinn", position: { x: 2, y: 2 } },
@@ -464,7 +483,7 @@ describe("gameSlice", () => {
       },
       validMoveSquares: [{ x: 3, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 1 }],
       showingMovement: true,
-    };
+    });
 
     it("should move hero to a valid destination", () => {
       const state = gameReducer(
@@ -512,7 +531,7 @@ describe("gameSlice", () => {
 
   describe("endHeroPhase", () => {
     it("should transition from hero phase to exploration phase", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -527,13 +546,13 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endHeroPhase());
       expect(state.turnState.currentPhase).toBe("exploration-phase");
     });
 
     it("should not transition if not in hero phase", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -548,7 +567,7 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endHeroPhase());
       expect(state.turnState.currentPhase).toBe("exploration-phase");
     });
@@ -556,7 +575,7 @@ describe("gameSlice", () => {
 
   describe("endExplorationPhase", () => {
     it("should transition from exploration phase to villain phase", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -571,13 +590,13 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endExplorationPhase());
       expect(state.turnState.currentPhase).toBe("villain-phase");
     });
 
     it("should not transition if not in exploration phase", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -592,7 +611,7 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endExplorationPhase());
       expect(state.turnState.currentPhase).toBe("hero-phase");
     });
@@ -600,7 +619,7 @@ describe("gameSlice", () => {
 
   describe("endVillainPhase", () => {
     it("should transition from villain phase to hero phase", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [
           { heroId: "quinn", position: { x: 2, y: 2 } },
@@ -618,13 +637,13 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endVillainPhase());
       expect(state.turnState.currentPhase).toBe("hero-phase");
     });
 
     it("should advance to next hero", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [
           { heroId: "quinn", position: { x: 2, y: 2 } },
@@ -642,13 +661,13 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endVillainPhase());
       expect(state.turnState.currentHeroIndex).toBe(1);
     });
 
     it("should wrap back to first hero and increment turn number", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [
           { heroId: "quinn", position: { x: 2, y: 2 } },
@@ -666,14 +685,14 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endVillainPhase());
       expect(state.turnState.currentHeroIndex).toBe(0);
       expect(state.turnState.turnNumber).toBe(2);
     });
 
     it("should not transition if not in villain phase", () => {
-      const gameInProgress: GameState = {
+      const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         turnState: {
@@ -688,7 +707,7 @@ describe("gameSlice", () => {
           unexploredEdges: [],
           tileDeck: [],
         },
-      };
+      });
       const state = gameReducer(gameInProgress, endVillainPhase());
       expect(state.turnState.currentPhase).toBe("hero-phase");
       expect(state.turnState.currentHeroIndex).toBe(0);
@@ -1379,6 +1398,271 @@ describe("gameSlice", () => {
       expect(state.monsterAttackResult).toBeNull();
       expect(state.monsterAttackTargetId).toBeNull();
       expect(state.monsterAttackerId).toBeNull();
+    });
+  });
+
+  describe("heroTurnActions", () => {
+    it("should initialize with canMove and canAttack both true", () => {
+      const state = gameReducer(undefined, startGame({
+        heroIds: ["quinn"],
+        seed: 12345,
+      }));
+
+      expect(state.heroTurnActions.actionsTaken).toEqual([]);
+      expect(state.heroTurnActions.canMove).toBe(true);
+      expect(state.heroTurnActions.canAttack).toBe(true);
+    });
+
+    it("should track move action and still allow attack after first move", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 3, y: 2 }],
+        showingMovement: true,
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      });
+
+      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }));
+
+      expect(state.heroTurnActions.actionsTaken).toEqual(["move"]);
+      expect(state.heroTurnActions.canMove).toBe(true); // Can still move (for double move)
+      expect(state.heroTurnActions.canAttack).toBe(true); // Can still attack
+    });
+
+    it("should track attack action and disable further attacks", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+      });
+
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.heroTurnActions.actionsTaken).toEqual(["attack"]);
+      expect(state.heroTurnActions.canMove).toBe(true); // Can still move after attack
+      expect(state.heroTurnActions.canAttack).toBe(false); // No double attacks
+    });
+
+    it("should not allow move after move+attack sequence", () => {
+      // Start with a move already taken
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 3, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroTurnActions: { actionsTaken: ["move"], canMove: true, canAttack: true },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "vistra", tileId: "start-tile" },
+        ],
+      });
+
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.heroTurnActions.actionsTaken).toEqual(["move", "attack"]);
+      expect(state.heroTurnActions.canMove).toBe(false); // Turn should end
+      expect(state.heroTurnActions.canAttack).toBe(false); // No double attacks
+    });
+
+    it("should not allow attack after attack+move sequence", () => {
+      // Start with an attack already taken
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroTurnActions: { actionsTaken: ["attack"], canMove: true, canAttack: false },
+        validMoveSquares: [{ x: 3, y: 2 }],
+        showingMovement: true,
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      });
+
+      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }));
+
+      expect(state.heroTurnActions.actionsTaken).toEqual(["attack", "move"]);
+      expect(state.heroTurnActions.canMove).toBe(false); // Turn should end
+      expect(state.heroTurnActions.canAttack).toBe(false); // Can't attack after attack+move
+    });
+
+    it("should not allow more moves after double move", () => {
+      // Start with a move already taken
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 3, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroTurnActions: { actionsTaken: ["move"], canMove: true, canAttack: true },
+        validMoveSquares: [{ x: 3, y: 3 }],
+        showingMovement: true,
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      });
+
+      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 3 } }));
+
+      expect(state.heroTurnActions.actionsTaken).toEqual(["move", "move"]);
+      expect(state.heroTurnActions.canMove).toBe(false); // Turn should end after double move
+      expect(state.heroTurnActions.canAttack).toBe(true); // Never attacked, but turn ends
+    });
+
+    it("should reset heroTurnActions when villain phase ends", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroTurnActions: { actionsTaken: ["move", "attack"], canMove: false, canAttack: false },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.heroTurnActions.actionsTaken).toEqual([]);
+      expect(state.heroTurnActions.canMove).toBe(true);
+      expect(state.heroTurnActions.canAttack).toBe(true);
+    });
+
+    it("should not allow move when canMove is false", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroTurnActions: { actionsTaken: ["move", "move"], canMove: false, canAttack: true },
+        validMoveSquares: [{ x: 3, y: 2 }],
+        showingMovement: true,
+      });
+
+      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }));
+
+      // Position should remain unchanged
+      const quinnToken = state.heroTokens.find((t) => t.heroId === "quinn");
+      expect(quinnToken?.position).toEqual({ x: 2, y: 2 });
+    });
+
+    it("should not allow attack when canAttack is false", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroTurnActions: { actionsTaken: ["attack"], canMove: true, canAttack: false },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      // Attack result should not be set
+      expect(state.attackResult).toBeNull();
+      // Monster HP should be unchanged
+      expect(state.monsters[0].currentHp).toBe(1);
     });
   });
 });

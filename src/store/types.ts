@@ -131,6 +131,28 @@ export type GameScreen = 'character-select' | 'game-board';
 export type GamePhase = 'hero-phase' | 'exploration-phase' | 'villain-phase';
 
 /**
+ * Hero turn sub-action types
+ * - move: hero moved to a new position
+ * - attack: hero attacked a monster
+ */
+export type HeroSubAction = 'move' | 'attack';
+
+/**
+ * Hero turn actions state for tracking what actions have been taken during hero phase
+ * Valid sequences:
+ * - Move only (can move again after)
+ * - Move, then attack (turn ends)
+ * - Attack, then move (turn ends)
+ * - Move twice (turn ends)
+ * No double attacks allowed
+ */
+export interface HeroTurnActions {
+  actionsTaken: HeroSubAction[];
+  canMove: boolean;
+  canAttack: boolean;
+}
+
+/**
  * Turn state for tracking current turn
  */
 export interface TurnState {
