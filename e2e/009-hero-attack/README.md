@@ -32,11 +32,14 @@
 
 ## Screenshot Gallery
 
-### Attack Hit Result
-![Attack Hit](screenshots/001-attack-hit-chromium-linux.png)
+### Hero Positioned
+![Hero Positioned](009-hero-attack.spec.ts-snapshots/000-hero-positioned-chromium-linux.png)
 
-### Attack Miss Result
-![Attack Miss](screenshots/003-attack-miss-chromium-linux.png)
+### Attack Hit Result
+![Attack Hit](009-hero-attack.spec.ts-snapshots/001-attack-hit-chromium-linux.png)
+
+### Result Dismissed
+![Result Dismissed](009-hero-attack.spec.ts-snapshots/002-result-dismissed-chromium-linux.png)
 
 ## Acceptance Criteria Verification
 

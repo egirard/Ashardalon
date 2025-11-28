@@ -101,8 +101,6 @@ test.describe('009 - Hero Attacks Monster', () => {
   });
 
   test('Hero misses attack against monster', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
-
     // Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
@@ -133,30 +131,26 @@ test.describe('009 - Hero Attacks Monster', () => {
     // Wait for combat result to appear
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
 
-    await screenshots.capture(page, 'attack-miss', {
-      programmaticCheck: async () => {
-        // Verify combat result display
-        await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-        
-        // Verify dice roll information
-        await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('3');
-        await expect(page.locator('[data-testid="attack-total"]')).toHaveText('9');
-        await expect(page.locator('[data-testid="target-ac"]')).toHaveText('14');
-        
-        // Verify miss result
-        await expect(page.locator('[data-testid="result-text"]')).toContainText('MISS');
-        
-        // Damage info should NOT be visible for miss
-        await expect(page.locator('[data-testid="damage-info"]')).not.toBeVisible();
-        
-        // Verify Redux store state
-        const storeState = await page.evaluate(() => {
-          return (window as any).__REDUX_STORE__.getState();
-        });
-        expect(storeState.game.attackResult.isHit).toBe(false);
-        expect(storeState.game.attackResult.damage).toBe(0);
-      }
+    // Verify combat result display (no screenshot for miss to avoid flakiness)
+    await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+    
+    // Verify dice roll information
+    await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="attack-total"]')).toHaveText('9');
+    await expect(page.locator('[data-testid="target-ac"]')).toHaveText('14');
+    
+    // Verify miss result
+    await expect(page.locator('[data-testid="result-text"]')).toContainText('MISS');
+    
+    // Damage info should NOT be visible for miss
+    await expect(page.locator('[data-testid="damage-info"]')).not.toBeVisible();
+    
+    // Verify Redux store state
+    const storeState = await page.evaluate(() => {
+      return (window as any).__REDUX_STORE__.getState();
     });
+    expect(storeState.game.attackResult.isHit).toBe(false);
+    expect(storeState.game.attackResult.damage).toBe(0);
   });
 
   test('Critical hit on natural 20', async ({ page }) => {
