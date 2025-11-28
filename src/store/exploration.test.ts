@@ -4,6 +4,7 @@ import {
   getOppositeDirection,
   checkExploration,
   getNewTilePosition,
+  calculateTileRotation,
   placeTile,
   initializeDungeon,
   initializeTileDeck,
@@ -63,6 +64,32 @@ describe("exploration", () => {
 
     it("should return east for west", () => {
       expect(getOppositeDirection("west")).toBe("east");
+    });
+  });
+
+  describe("calculateTileRotation", () => {
+    it("should return 0 when exploring north (arrow points south to hero)", () => {
+      // Hero explores north edge, new tile connects via its south edge
+      // Arrow should point south (toward hero) = 0 degrees rotation
+      expect(calculateTileRotation("north")).toBe(0);
+    });
+
+    it("should return 180 when exploring south (arrow points north to hero)", () => {
+      // Hero explores south edge, new tile connects via its north edge
+      // Arrow should point north (toward hero) = 180 degrees rotation
+      expect(calculateTileRotation("south")).toBe(180);
+    });
+
+    it("should return 90 when exploring east (arrow points west to hero)", () => {
+      // Hero explores east edge, new tile connects via its west edge
+      // Arrow should point west (toward hero) = 90 degrees rotation
+      expect(calculateTileRotation("east")).toBe(90);
+    });
+
+    it("should return 270 when exploring west (arrow points east to hero)", () => {
+      // Hero explores west edge, new tile connects via its east edge
+      // Arrow should point east (toward hero) = 270 degrees rotation
+      expect(calculateTileRotation("west")).toBe(270);
     });
   });
 
@@ -212,6 +239,46 @@ describe("exploration", () => {
       const result = placeTile(edge, "tile-2exit-a", dungeon);
       
       expect(result).toBeNull();
+    });
+
+    it("should set correct rotation when placing north (arrow points south)", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { tileId: "start-tile", direction: "north" };
+      
+      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.rotation).toBe(0);
+    });
+
+    it("should set correct rotation when placing south (arrow points north)", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { tileId: "start-tile", direction: "south" };
+      
+      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.rotation).toBe(180);
+    });
+
+    it("should set correct rotation when placing east (arrow points west)", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { tileId: "start-tile", direction: "east" };
+      
+      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.rotation).toBe(90);
+    });
+
+    it("should set correct rotation when placing west (arrow points east)", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { tileId: "start-tile", direction: "west" };
+      
+      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.rotation).toBe(270);
     });
   });
 

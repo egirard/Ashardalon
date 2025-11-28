@@ -486,7 +486,12 @@
             data-tile-id={tile.id}
             style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;"
           >
-            <img src={assetPath(getTileImagePath(tile))} alt={tile.tileType} class="tile-image" />
+            <img 
+              src={assetPath(getTileImagePath(tile))} 
+              alt={tile.tileType} 
+              class="tile-image" 
+              style={tile.rotation !== 0 ? `transform: rotate(${tile.rotation}deg);` : ''}
+            />
             
             <!-- Unexplored edge indicators for this tile -->
             {#each dungeon.unexploredEdges.filter(e => e.tileId === tile.id) as edge (edge.direction)}
