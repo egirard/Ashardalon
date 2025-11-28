@@ -1,12 +1,14 @@
 <script lang="ts">
   import { store } from '../store';
-  import { resetGame, showMovement, hideMovement, moveHero, endHeroPhase, endExplorationPhase, endVillainPhase } from '../store/gameSlice';
-  import type { HeroToken, Hero, TurnState, GamePhase, Position, DungeonState, TileEdge, PlacedTile } from '../store/types';
-  import { TILE_DEFINITIONS } from '../store/types';
+  import { resetGame, showMovement, hideMovement, moveHero, endHeroPhase, endExplorationPhase, endVillainPhase, dismissMonsterCard } from '../store/gameSlice';
+  import type { HeroToken, Hero, TurnState, GamePhase, Position, DungeonState, TileEdge, PlacedTile, MonsterState, MonsterDeck } from '../store/types';
+  import { TILE_DEFINITIONS, MONSTERS } from '../store/types';
   import { assetPath } from '../utils';
   import MovementOverlay from './MovementOverlay.svelte';
   import TileDeckCounter from './TileDeckCounter.svelte';
   import UnexploredEdgeIndicator from './UnexploredEdgeIndicator.svelte';
+  import MonsterToken from './MonsterToken.svelte';
+  import MonsterCard from './MonsterCard.svelte';
   
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -30,11 +32,20 @@
   let validMoveSquares: Position[] = $state([]);
   let showingMovement: boolean = $state(false);
   let dungeon: DungeonState = $state({ tiles: [], unexploredEdges: [], tileDeck: [] });
+  let monsters: MonsterState[] = $state([]);
+  let recentlySpawnedMonsterId: string | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
   
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
+  
+  // Get the monster ID for the recently spawned monster (for card display)
+  let recentlySpawnedMonster = $derived(() => {
+    if (!recentlySpawnedMonsterId) return null;
+    const monsterState = monsters.find(m => m.instanceId === recentlySpawnedMonsterId);
+    return monsterState?.monsterId || null;
+  });
   
   // Subscribe to store updates
   $effect(() => {
@@ -46,6 +57,8 @@
       validMoveSquares = state.game.validMoveSquares;
       showingMovement = state.game.showingMovement;
       dungeon = state.game.dungeon;
+      monsters = state.game.monsters;
+      recentlySpawnedMonsterId = state.game.recentlySpawnedMonsterId;
     });
     
     // Initialize state
@@ -56,6 +69,8 @@
     validMoveSquares = state.game.validMoveSquares;
     showingMovement = state.game.showingMovement;
     dungeon = state.game.dungeon;
+    monsters = state.game.monsters;
+    recentlySpawnedMonsterId = state.game.recentlySpawnedMonsterId;
     
     return unsubscribe;
   });
@@ -289,6 +304,20 @@
         return 'End Villain Phase';
     }
   }
+  
+  // Handle dismissing the monster card
+  function handleDismissMonsterCard() {
+    store.dispatch(dismissMonsterCard());
+  }
+  
+  // Get the tile pixel offset for a given tile ID (for positioning tokens on that tile)
+  function getTilePixelOffsetById(tileId: string): { x: number; y: number } {
+    const tile = dungeon.tiles.find(t => t.id === tileId);
+    if (!tile) {
+      return { x: 0, y: 0 };
+    }
+    return getTilePixelPosition(tile, mapBounds);
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -404,6 +433,17 @@
             </div>
           {/if}
         {/each}
+        
+        <!-- Monster tokens -->
+        {#each monsters as monsterState (monsterState.instanceId)}
+          <MonsterToken
+            monster={monsterState}
+            cellSize={TILE_CELL_SIZE}
+            tileOffsetX={TOKEN_OFFSET_X}
+            tileOffsetY={TOKEN_OFFSET_Y}
+            tilePixelOffset={getTilePixelOffsetById(monsterState.tileId)}
+          />
+        {/each}
       </div>
       
       <!-- Board controls -->
@@ -454,6 +494,14 @@
       {/if}
     {/if}
   </div>
+  
+  <!-- Monster Card Display (shown when monster spawns) -->
+  {#if recentlySpawnedMonster()}
+    <MonsterCard 
+      monsterId={recentlySpawnedMonster()!}
+      onDismiss={handleDismissMonsterCard}
+    />
+  {/if}
 </div>
 
 <style>
