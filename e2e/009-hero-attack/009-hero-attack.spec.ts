@@ -12,78 +12,106 @@ test.describe('009 - Hero Attacks Monster', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
-    // STEP 2: Set up the scenario - place a monster adjacent to the hero on start-tile
-    // First, move Quinn to a position where we can place a monster adjacent
+    // STEP 2: Set up the scenario - place Quinn and add a monster adjacent to hero on start-tile
+    // Position Quinn and add a monster adjacent to them
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
+      // Move Quinn to position (2, 3)
       store.dispatch({
         type: 'game/setHeroPosition',
         payload: { heroId: 'quinn', position: { x: 2, y: 3 } }
       });
     });
 
-    // Manually add a monster adjacent to Quinn on the start-tile
-    // Since monsters spawn on explored tiles, we'll dispatch an attack result directly
-    // to test the combat display functionality
-    await screenshots.capture(page, 'hero-positioned', {
+    // Add a monster adjacent to Quinn on the start-tile (position 2, 4 is adjacent to 2, 3)
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      const state = store.getState();
+      // Directly add a monster to the monsters array by dispatching a custom action
+      // We need to modify the state to include a monster on the start-tile
+      const newMonsters = [
+        ...state.game.monsters,
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-adjacent',
+          position: { x: 2, y: 4 },
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'start-tile'
+        }
+      ];
+      // Use internal Redux action to update state
+      store.dispatch({
+        type: 'game/setMonsters',
+        payload: newMonsters
+      });
+    });
+
+    // Wait a moment for UI to update and verify attack panel is visible
+    await page.waitForTimeout(100);
+    
+    // STEP 3: Capture screenshot showing the attack button is available
+    await screenshots.capture(page, 'attack-button-visible', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 3 });
         await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+        // Verify the attack panel is visible
+        await expect(page.locator('[data-testid="attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="attack-button"]')).toBeVisible();
       }
     });
 
-    // STEP 3: Dispatch an attack that hits
+    // STEP 4: Seed Math.random before clicking attack for deterministic result
+    // This ensures the dice roll is always the same for screenshot comparison
     await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({
-        type: 'game/setAttackResult',
-        payload: {
-          result: {
-            roll: 15,
-            attackBonus: 6,
-            total: 21,
-            targetAC: 14,
-            isHit: true,
-            damage: 2,
-            isCritical: false
-          },
-          targetInstanceId: 'kobold-test'
-        }
-      });
+      // Override Math.random to return a fixed value that will result in a roll of 15
+      // rollD20 uses: Math.floor(Math.random() * 20) + 1
+      // To get 15: Math.floor(x * 20) + 1 = 15, so x = 14/20 = 0.7
+      (window as any).__originalRandom = Math.random;
+      Math.random = () => 0.7; // This will give roll = floor(0.7 * 20) + 1 = 15
+    });
+    
+    // Click the attack button to initiate attack
+    await page.locator('[data-testid="attack-button"]').click();
+
+    // Restore Math.random after attack
+    await page.evaluate(() => {
+      if ((window as any).__originalRandom) {
+        Math.random = (window as any).__originalRandom;
+      }
     });
 
     // Wait for combat result to appear
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
 
-    await screenshots.capture(page, 'attack-hit', {
+    await screenshots.capture(page, 'attack-result', {
       programmaticCheck: async () => {
         // Verify combat result display is visible
         await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
         
-        // Verify dice roll information
+        // Verify dice roll information is displayed (roll should be 15 due to seeding)
         await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('15');
-        await expect(page.locator('[data-testid="attack-bonus"]')).toHaveText('6');
-        await expect(page.locator('[data-testid="attack-total"]')).toHaveText('21');
-        await expect(page.locator('[data-testid="target-ac"]')).toHaveText('14');
+        await expect(page.locator('[data-testid="attack-bonus"]')).toHaveText('6'); // Quinn's mace bonus
+        await expect(page.locator('[data-testid="attack-total"]')).toHaveText('21'); // 15 + 6
+        await expect(page.locator('[data-testid="target-ac"]')).toHaveText('14'); // Kobold AC
         
-        // Verify hit result
+        // Verify hit result (21 >= 14)
         await expect(page.locator('[data-testid="result-text"]')).toContainText('HIT');
-        await expect(page.locator('[data-testid="damage-info"]')).toBeVisible();
         
         // Verify Redux store state
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.game.attackResult).not.toBeNull();
+        expect(storeState.game.attackResult.roll).toBe(15);
         expect(storeState.game.attackResult.isHit).toBe(true);
-        expect(storeState.game.attackResult.damage).toBe(2);
       }
     });
 
-    // STEP 4: Dismiss the combat result
+    // STEP 5: Dismiss the combat result
     await page.locator('[data-testid="dismiss-combat-result"]').click();
     await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
 

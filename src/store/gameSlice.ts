@@ -378,6 +378,12 @@ export const gameSlice = createSlice({
       state.attackResult = null;
       state.attackTargetId = null;
     },
+    /**
+     * Set monsters directly (for testing purposes)
+     */
+    setMonsters: (state, action: PayloadAction<MonsterState[]>) => {
+      state.monsters = action.payload;
+    },
   },
 });
 
@@ -394,5 +400,6 @@ export const {
   dismissMonsterCard,
   setAttackResult,
   dismissAttackResult,
+  setMonsters,
 } = gameSlice.actions;
 export default gameSlice.reducer;
