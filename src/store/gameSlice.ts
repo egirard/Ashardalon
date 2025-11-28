@@ -10,6 +10,7 @@ import {
   INITIAL_TILE_DECK,
   MonsterDeck,
   MonsterState,
+  AttackResult,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination } from "./movement";
 import {
@@ -25,6 +26,7 @@ import {
   drawMonster,
   createMonsterInstance,
   getTileMonsterSpawnPosition,
+  discardMonster,
 } from "./monsters";
 
 /**
@@ -56,6 +58,10 @@ export interface GameState {
   monsterInstanceCounter: number;
   /** ID of recently spawned monster (for displaying monster card) */
   recentlySpawnedMonsterId: string | null;
+  /** Result of the most recent attack (for displaying combat result) */
+  attackResult: AttackResult | null;
+  /** Instance ID of the monster targeted in the attack */
+  attackTargetId: string | null;
 }
 
 const initialState: GameState = {
@@ -69,6 +75,8 @@ const initialState: GameState = {
   monsters: [],
   monsterInstanceCounter: 0,
   recentlySpawnedMonsterId: null,
+  attackResult: null,
+  attackTargetId: null,
 };
 
 /**
@@ -155,6 +163,8 @@ export const gameSlice = createSlice({
       state.monsters = [];
       state.monsterInstanceCounter = 0;
       state.recentlySpawnedMonsterId = null;
+      state.attackResult = null;
+      state.attackTargetId = null;
 
       state.currentScreen = "game-board";
     },
@@ -230,6 +240,8 @@ export const gameSlice = createSlice({
       state.monsters = [];
       state.monsterInstanceCounter = 0;
       state.recentlySpawnedMonsterId = null;
+      state.attackResult = null;
+      state.attackTargetId = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -332,6 +344,39 @@ export const gameSlice = createSlice({
     dismissMonsterCard: (state) => {
       state.recentlySpawnedMonsterId = null;
     },
+    /**
+     * Set the attack result and apply damage to the target monster
+     */
+    setAttackResult: (
+      state,
+      action: PayloadAction<{ result: AttackResult; targetInstanceId: string }>
+    ) => {
+      const { result, targetInstanceId } = action.payload;
+      state.attackResult = result;
+      state.attackTargetId = targetInstanceId;
+      
+      // Apply damage if hit
+      if (result.isHit && result.damage > 0) {
+        const monster = state.monsters.find(m => m.instanceId === targetInstanceId);
+        if (monster) {
+          monster.currentHp -= result.damage;
+          
+          // Remove defeated monsters
+          if (monster.currentHp <= 0) {
+            state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
+            // Discard the monster card
+            state.monsterDeck = discardMonster(state.monsterDeck, monster.monsterId);
+          }
+        }
+      }
+    },
+    /**
+     * Dismiss the attack result display
+     */
+    dismissAttackResult: (state) => {
+      state.attackResult = null;
+      state.attackTargetId = null;
+    },
   },
 });
 
@@ -346,5 +391,7 @@ export const {
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
+  setAttackResult,
+  dismissAttackResult,
 } = gameSlice.actions;
 export default gameSlice.reducer;

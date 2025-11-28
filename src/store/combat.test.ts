@@ -1,0 +1,220 @@
+import { describe, it, expect } from 'vitest';
+import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC } from './combat';
+import type { HeroAttack, MonsterState } from './types';
+
+describe('rollD20', () => {
+  it('should return values between 1 and 20', () => {
+    // Test with deterministic random function
+    for (let i = 0; i < 20; i++) {
+      const randomFn = () => i / 20; // 0, 0.05, 0.1, ... 0.95
+      const result = rollD20(randomFn);
+      expect(result).toBeGreaterThanOrEqual(1);
+      expect(result).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it('should return 1 when random returns 0', () => {
+    const randomFn = () => 0;
+    expect(rollD20(randomFn)).toBe(1);
+  });
+
+  it('should return 20 when random returns 0.999...', () => {
+    const randomFn = () => 0.999;
+    expect(rollD20(randomFn)).toBe(20);
+  });
+
+  it('should produce different results with different random values', () => {
+    const results = new Set<number>();
+    for (let i = 0; i < 20; i++) {
+      const randomFn = () => i / 20;
+      results.add(rollD20(randomFn));
+    }
+    // Should have at least a few different results
+    expect(results.size).toBeGreaterThan(1);
+  });
+});
+
+describe('resolveAttack', () => {
+  const quinnAttack: HeroAttack = { name: 'Mace', attackBonus: 6, damage: 2, range: 1 };
+  const koboldAC = 14;
+
+  it('should hit when roll + bonus >= AC', () => {
+    // Roll 10 + bonus 6 = 16 >= 14
+    const randomFn = () => 0.45; // (0.45 * 20) + 1 = 10
+    const result = resolveAttack(quinnAttack, koboldAC, randomFn);
+    
+    expect(result.roll).toBe(10);
+    expect(result.attackBonus).toBe(6);
+    expect(result.total).toBe(16);
+    expect(result.targetAC).toBe(14);
+    expect(result.isHit).toBe(true);
+    expect(result.damage).toBe(2);
+    expect(result.isCritical).toBe(false);
+  });
+
+  it('should miss when roll + bonus < AC', () => {
+    // Roll 2 + bonus 6 = 8 < 14
+    const randomFn = () => 0.05; // (0.05 * 20) + 1 = 2
+    const result = resolveAttack(quinnAttack, koboldAC, randomFn);
+    
+    expect(result.roll).toBe(2);
+    expect(result.total).toBe(8);
+    expect(result.isHit).toBe(false);
+    expect(result.damage).toBe(0);
+    expect(result.isCritical).toBe(false);
+  });
+
+  it('should always hit on natural 20 (critical hit)', () => {
+    const randomFn = () => 0.999; // Roll 20
+    const result = resolveAttack(quinnAttack, 30, randomFn); // AC higher than possible total
+    
+    expect(result.roll).toBe(20);
+    expect(result.isHit).toBe(true);
+    expect(result.isCritical).toBe(true);
+    expect(result.damage).toBe(2);
+  });
+
+  it('should hit when roll + bonus equals AC exactly', () => {
+    // Need roll + 6 = 14, so roll = 8
+    const randomFn = () => 0.35; // (0.35 * 20) + 1 = 8
+    const result = resolveAttack(quinnAttack, koboldAC, randomFn);
+    
+    expect(result.roll).toBe(8);
+    expect(result.total).toBe(14);
+    expect(result.isHit).toBe(true);
+    expect(result.damage).toBe(2);
+  });
+
+  it('should miss when total is one less than AC', () => {
+    // Need roll + 6 = 13, so roll = 7
+    const randomFn = () => 0.3; // (0.3 * 20) + 1 = 7
+    const result = resolveAttack(quinnAttack, koboldAC, randomFn);
+    
+    expect(result.roll).toBe(7);
+    expect(result.total).toBe(13);
+    expect(result.isHit).toBe(false);
+    expect(result.damage).toBe(0);
+  });
+
+  it('should handle different attack bonuses', () => {
+    const vistraAttack: HeroAttack = { name: 'Warhammer', attackBonus: 8, damage: 2, range: 1 };
+    // Roll 5 + bonus 8 = 13 < 14
+    const randomFn = () => 0.2; // (0.2 * 20) + 1 = 5
+    const result = resolveAttack(vistraAttack, koboldAC, randomFn);
+    
+    expect(result.roll).toBe(5);
+    expect(result.attackBonus).toBe(8);
+    expect(result.total).toBe(13);
+    expect(result.isHit).toBe(false);
+  });
+
+  it('should handle different damage values', () => {
+    const haskanAttack: HeroAttack = { name: 'Quarterstaff', attackBonus: 4, damage: 1, range: 1 };
+    // Roll 15 + bonus 4 = 19 >= 14
+    const randomFn = () => 0.7; // (0.7 * 20) + 1 = 15
+    const result = resolveAttack(haskanAttack, koboldAC, randomFn);
+    
+    expect(result.isHit).toBe(true);
+    expect(result.damage).toBe(1);
+  });
+});
+
+describe('arePositionsAdjacent', () => {
+  it('should return true for orthogonally adjacent positions', () => {
+    const center = { x: 2, y: 2 };
+    
+    expect(arePositionsAdjacent(center, { x: 2, y: 1 })).toBe(true); // North
+    expect(arePositionsAdjacent(center, { x: 2, y: 3 })).toBe(true); // South
+    expect(arePositionsAdjacent(center, { x: 1, y: 2 })).toBe(true); // West
+    expect(arePositionsAdjacent(center, { x: 3, y: 2 })).toBe(true); // East
+  });
+
+  it('should return true for diagonally adjacent positions', () => {
+    const center = { x: 2, y: 2 };
+    
+    expect(arePositionsAdjacent(center, { x: 1, y: 1 })).toBe(true); // NW
+    expect(arePositionsAdjacent(center, { x: 3, y: 1 })).toBe(true); // NE
+    expect(arePositionsAdjacent(center, { x: 1, y: 3 })).toBe(true); // SW
+    expect(arePositionsAdjacent(center, { x: 3, y: 3 })).toBe(true); // SE
+  });
+
+  it('should return false for the same position', () => {
+    const pos = { x: 2, y: 2 };
+    expect(arePositionsAdjacent(pos, { x: 2, y: 2 })).toBe(false);
+  });
+
+  it('should return false for non-adjacent positions', () => {
+    const center = { x: 2, y: 2 };
+    
+    expect(arePositionsAdjacent(center, { x: 4, y: 2 })).toBe(false); // 2 squares away
+    expect(arePositionsAdjacent(center, { x: 2, y: 4 })).toBe(false);
+    expect(arePositionsAdjacent(center, { x: 0, y: 0 })).toBe(false); // Diagonal 2 away
+    expect(arePositionsAdjacent(center, { x: 5, y: 5 })).toBe(false);
+  });
+
+  it('should be symmetric', () => {
+    const pos1 = { x: 2, y: 2 };
+    const pos2 = { x: 3, y: 3 };
+    
+    expect(arePositionsAdjacent(pos1, pos2)).toBe(arePositionsAdjacent(pos2, pos1));
+  });
+});
+
+describe('getMonsterAC', () => {
+  it('should return correct AC for Kobold', () => {
+    expect(getMonsterAC('kobold')).toBe(14);
+  });
+
+  it('should return correct AC for Snake', () => {
+    expect(getMonsterAC('snake')).toBe(12);
+  });
+
+  it('should return correct AC for Cultist', () => {
+    expect(getMonsterAC('cultist')).toBe(13);
+  });
+
+  it('should return undefined for unknown monster', () => {
+    expect(getMonsterAC('dragon')).toBeUndefined();
+  });
+});
+
+describe('getAdjacentMonsters', () => {
+  const monsters: MonsterState[] = [
+    { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+    { monsterId: 'snake', instanceId: 'snake-0', position: { x: 5, y: 5 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+    { monsterId: 'cultist', instanceId: 'cultist-0', position: { x: 3, y: 2 }, currentHp: 2, controllerId: 'quinn', tileId: 'tile-1' },
+    { monsterId: 'kobold', instanceId: 'kobold-1', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-2' },
+  ];
+
+  it('should return adjacent monsters on the same tile', () => {
+    const heroPos = { x: 2, y: 2 };
+    const adjacent = getAdjacentMonsters(heroPos, monsters, 'tile-1');
+    
+    expect(adjacent).toHaveLength(2);
+    expect(adjacent.map(m => m.instanceId)).toContain('kobold-0');
+    expect(adjacent.map(m => m.instanceId)).toContain('cultist-0');
+  });
+
+  it('should not return monsters on different tiles', () => {
+    const heroPos = { x: 2, y: 2 };
+    const adjacent = getAdjacentMonsters(heroPos, monsters, 'tile-2');
+    
+    // kobold-1 is at position {2,1} on tile-2, which is adjacent to {2,2}
+    expect(adjacent).toHaveLength(1);
+    expect(adjacent[0].instanceId).toBe('kobold-1');
+  });
+
+  it('should return empty array when no monsters are adjacent', () => {
+    const heroPos = { x: 0, y: 0 };
+    const adjacent = getAdjacentMonsters(heroPos, monsters, 'tile-1');
+    
+    expect(adjacent).toHaveLength(0);
+  });
+
+  it('should return empty array when there are no monsters', () => {
+    const heroPos = { x: 2, y: 2 };
+    const adjacent = getAdjacentMonsters(heroPos, [], 'tile-1');
+    
+    expect(adjacent).toHaveLength(0);
+  });
+});
