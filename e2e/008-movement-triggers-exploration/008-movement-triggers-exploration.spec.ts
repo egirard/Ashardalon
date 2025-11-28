@@ -6,6 +6,32 @@ const INITIAL_TILE_DECK_SIZE = 8;
 const TILE_DECK_SIZE_AFTER_EXPLORATION = 7;
 const INITIAL_UNEXPLORED_EDGE_COUNT = 4;
 
+/**
+ * Start Tile Edge Positions:
+ * The Start Tile is a double-height tile with valid squares from x: 1-3, y: 0-7.
+ * 
+ * Edge positions for exploration:
+ * - North edge: y=0 (positions (1,0), (2,0), (3,0))
+ * - South edge: y=7 (positions (1,7), (2,7), (3,7))
+ * - West edge: x=1 (positions (1,0), (1,1), (1,2), (1,5), (1,6), (1,7))
+ * - East edge: x=3 (positions (3,0), (3,1), (3,2), (3,5), (3,6), (3,7))
+ * 
+ * Non-edge positions (middle of tile, will NOT trigger exploration):
+ * - Any position where x=2 AND y is not 0 or 7
+ * - Example: (2,1), (2,2), (2,5), (2,6)
+ */
+const EDGE_POSITIONS = {
+  NORTH: { x: 2, y: 0 },  // North edge (y=0)
+  SOUTH: { x: 2, y: 7 },  // South edge (y=7)
+  EAST: { x: 3, y: 2 },   // East edge (x=3)
+  WEST: { x: 1, y: 2 },   // West edge (x=1)
+};
+
+const NON_EDGE_POSITIONS = {
+  CENTER: { x: 2, y: 2 },  // Center of tile
+  MID_NORTH: { x: 2, y: 1 },  // Between center and north edge
+};
+
 test.describe('008 - Movement Triggers Exploration', () => {
   test('Hero moves to edge using movement UI and triggers tile exploration', async ({ page }) => {
     const screenshots = createScreenshotHelper();
@@ -17,22 +43,23 @@ test.describe('008 - Movement Triggers Exploration', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
-    // Set deterministic position for Quinn at (2, 2) for predictable testing
+    // Set deterministic position for Quinn at center position for predictable testing
     // This is near the center, with enough movement to reach any edge
-    await page.evaluate(() => {
+    const startPosition = NON_EDGE_POSITIONS.CENTER;
+    await page.evaluate((pos) => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
         type: 'game/setHeroPosition',
-        payload: { heroId: 'quinn', position: { x: 2, y: 2 } }
+        payload: { heroId: 'quinn', position: pos }
       });
-    });
+    }, startPosition);
 
     // Wait for position to be applied
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
       });
-      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 2 });
+      expect(storeState.game.heroTokens[0].position).toEqual(startPosition);
     }).toPass();
 
     await screenshots.capture(page, 'initial-hero-position', {
@@ -55,7 +82,7 @@ test.describe('008 - Movement Triggers Exploration', () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
-        expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 2 });
+        expect(storeState.game.heroTokens[0].position).toEqual(startPosition);
         expect(storeState.game.dungeon.tiles).toHaveLength(1);
         expect(storeState.game.dungeon.tileDeck).toHaveLength(INITIAL_TILE_DECK_SIZE);
       }
@@ -64,6 +91,9 @@ test.describe('008 - Movement Triggers Exploration', () => {
     // STEP 2: Click on the board to show movement options
     await page.locator('[data-testid="start-tile"]').click();
     await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible' });
+
+    // Target the north edge for exploration
+    const targetEdge = EDGE_POSITIONS.NORTH;
 
     await screenshots.capture(page, 'movement-options-shown', {
       programmaticCheck: async () => {
@@ -75,9 +105,9 @@ test.describe('008 - Movement Triggers Exploration', () => {
         const squareCount = await moveSquares.count();
         expect(squareCount).toBeGreaterThan(0);
         
-        // Verify edge position (2, 0) is a valid move square - the north edge
-        // Quinn has speed 5, and from (2, 2) to (2, 0) is 2 squares, so it should be reachable
-        const edgeSquare = page.locator('[data-testid="move-square"][data-position-x="2"][data-position-y="0"]');
+        // Verify north edge position is a valid move square
+        // Quinn has speed 5, and from center (2,2) to north edge (2,0) is 2 squares, so it should be reachable
+        const edgeSquare = page.locator(`[data-testid="move-square"][data-position-x="${targetEdge.x}"][data-position-y="${targetEdge.y}"]`);
         await expect(edgeSquare).toBeVisible();
         
         // Verify Redux state shows movement
@@ -89,8 +119,8 @@ test.describe('008 - Movement Triggers Exploration', () => {
       }
     });
 
-    // STEP 3: Click on the north edge square (2, 0) to move hero to edge
-    const edgeSquare = page.locator('[data-testid="move-square"][data-position-x="2"][data-position-y="0"]');
+    // STEP 3: Click on the north edge square to move hero to edge
+    const edgeSquare = page.locator(`[data-testid="move-square"][data-position-x="${targetEdge.x}"][data-position-y="${targetEdge.y}"]`);
     await edgeSquare.click();
 
     // Wait for movement to complete (overlay should disappear)
@@ -108,7 +138,7 @@ test.describe('008 - Movement Triggers Exploration', () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
-        expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 0 });
+        expect(storeState.game.heroTokens[0].position).toEqual(targetEdge);
         expect(storeState.game.showingMovement).toBe(false);
         
         // Verify still in hero phase, no exploration yet
@@ -195,28 +225,33 @@ test.describe('008 - Movement Triggers Exploration', () => {
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
     // Set deterministic position for Quinn at (2, 5) - closer to south edge
-    await page.evaluate(() => {
+    // This position is NOT on an edge (x=2 is middle, y=5 is not 0 or 7)
+    const startPosition = { x: 2, y: 5 };
+    await page.evaluate((pos) => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
         type: 'game/setHeroPosition',
-        payload: { heroId: 'quinn', position: { x: 2, y: 5 } }
+        payload: { heroId: 'quinn', position: pos }
       });
-    });
+    }, startPosition);
 
     // Wait for position to be applied
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
       });
-      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 5 });
+      expect(storeState.game.heroTokens[0].position).toEqual(startPosition);
     }).toPass();
 
     // Click on the board to show movement options
     await page.locator('[data-testid="start-tile"]').click();
     await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible' });
 
-    // Click on the south edge square (2, 7) to move hero to edge
-    const southEdgeSquare = page.locator('[data-testid="move-square"][data-position-x="2"][data-position-y="7"]');
+    // Target the south edge for exploration
+    const targetEdge = EDGE_POSITIONS.SOUTH;
+
+    // Click on the south edge square to move hero to edge
+    const southEdgeSquare = page.locator(`[data-testid="move-square"][data-position-x="${targetEdge.x}"][data-position-y="${targetEdge.y}"]`);
     await expect(southEdgeSquare).toBeVisible();
     await southEdgeSquare.click();
 
@@ -227,7 +262,7 @@ test.describe('008 - Movement Triggers Exploration', () => {
     const storeState = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState();
     });
-    expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 7 });
+    expect(storeState.game.heroTokens[0].position).toEqual(targetEdge);
 
     // End hero phase to trigger exploration
     await page.locator('[data-testid="end-phase-button"]').click();
@@ -266,42 +301,42 @@ test.describe('008 - Movement Triggers Exploration', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
-    // Set deterministic position for Quinn at (2, 2)
-    await page.evaluate(() => {
+    // Set deterministic position for Quinn at center
+    const startPosition = NON_EDGE_POSITIONS.CENTER;
+    await page.evaluate((pos) => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
         type: 'game/setHeroPosition',
-        payload: { heroId: 'quinn', position: { x: 2, y: 2 } }
+        payload: { heroId: 'quinn', position: pos }
       });
-    });
+    }, startPosition);
 
     // Wait for position to be applied
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
       });
-      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 2 });
+      expect(storeState.game.heroTokens[0].position).toEqual(startPosition);
     }).toPass();
 
     // Click on the board to show movement options
     await page.locator('[data-testid="start-tile"]').click();
     await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible' });
 
-    // Click on a non-edge square (2, 1) to move hero
-    // Note: Edge positions are x=1 (west), x=3 (east), y=0 (north), y=7 (south)
-    // Position (2, 1) is NOT on any edge since x=2 is in the middle and y=1 is not 0 or 7
-    const nonEdgeSquare = page.locator('[data-testid="move-square"][data-position-x="2"][data-position-y="1"]');
+    // Move to a non-edge position - this will NOT trigger exploration
+    const targetNonEdge = NON_EDGE_POSITIONS.MID_NORTH;
+    const nonEdgeSquare = page.locator(`[data-testid="move-square"][data-position-x="${targetNonEdge.x}"][data-position-y="${targetNonEdge.y}"]`);
     await expect(nonEdgeSquare).toBeVisible();
     await nonEdgeSquare.click();
 
     // Wait for movement to complete
     await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
 
-    // Verify hero moved
+    // Verify hero moved to non-edge position
     const storeStateAfterMove = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState();
     });
-    expect(storeStateAfterMove.game.heroTokens[0].position).toEqual({ x: 2, y: 1 });
+    expect(storeStateAfterMove.game.heroTokens[0].position).toEqual(targetNonEdge);
 
     // End hero phase
     await page.locator('[data-testid="end-phase-button"]').click();
