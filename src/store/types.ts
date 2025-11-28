@@ -141,6 +141,8 @@ export interface TurnState {
 
 /**
  * Villain phase step types for tracking monster activations
+ * Note: This type is defined for future animation/logging features
+ * to track individual steps during monster activation.
  */
 export type VillainPhaseStep = 
   | { type: 'monster-activation'; monsterId: string }
