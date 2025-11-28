@@ -1,7 +1,8 @@
 <script lang="ts">
   import { store } from '../store';
   import { resetGame, showMovement, hideMovement, moveHero, endHeroPhase, endExplorationPhase, endVillainPhase } from '../store/gameSlice';
-  import type { HeroToken, Hero, TurnState, GamePhase, Position, DungeonState, TileEdge } from '../store/types';
+  import type { HeroToken, Hero, TurnState, GamePhase, Position, DungeonState, TileEdge, PlacedTile } from '../store/types';
+  import { TILE_DEFINITIONS } from '../store/types';
   import { assetPath } from '../utils';
   import MovementOverlay from './MovementOverlay.svelte';
   import TileDeckCounter from './TileDeckCounter.svelte';
@@ -10,11 +11,13 @@
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
   const TILE_GRID_WIDTH = 4;  // Number of cells wide
-  const TILE_GRID_HEIGHT = 8; // Number of cells tall
+  const START_TILE_GRID_HEIGHT = 8; // Start tile is double height (8 cells tall)
+  const NORMAL_TILE_GRID_HEIGHT = 4; // Normal tiles are 4 cells tall
   const TILE_WIDTH = TILE_CELL_SIZE * TILE_GRID_WIDTH;   // 560px
-  const TILE_HEIGHT = TILE_CELL_SIZE * TILE_GRID_HEIGHT; // 1120px
+  const START_TILE_HEIGHT = TILE_CELL_SIZE * START_TILE_GRID_HEIGHT; // 1120px
+  const NORMAL_TILE_HEIGHT = TILE_CELL_SIZE * NORMAL_TILE_GRID_HEIGHT; // 560px
   const CONTAINER_PADDING = 32; // 1rem padding on each side (16px * 2)
-  const MIN_SCALE = 0.3; // Minimum scale for legibility
+  const MIN_SCALE = 0.15; // Minimum scale for legibility (lower to fit more tiles)
   const MAX_SCALE = 1;   // Maximum scale (no upscaling)
   
   // Token positioning constants
@@ -29,6 +32,9 @@
   let dungeon: DungeonState = $state({ tiles: [], unexploredEdges: [], tileDeck: [] });
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
+  
+  // Derived map bounds - recalculates when dungeon changes
+  let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
   
   // Subscribe to store updates
   $effect(() => {
@@ -54,6 +60,87 @@
     return unsubscribe;
   });
   
+  // Calculate the bounds of all placed tiles (pure function for use with $derived)
+  function getMapBoundsFromDungeon(d: DungeonState): { minCol: number; maxCol: number; minRow: number; maxRow: number; width: number; height: number } {
+    if (d.tiles.length === 0) {
+      return { minCol: 0, maxCol: 0, minRow: 0, maxRow: 0, width: TILE_WIDTH, height: START_TILE_HEIGHT };
+    }
+    
+    let minCol = Infinity, maxCol = -Infinity;
+    let minRow = Infinity, maxRow = -Infinity;
+    
+    for (const tile of d.tiles) {
+      minCol = Math.min(minCol, tile.position.col);
+      maxCol = Math.max(maxCol, tile.position.col);
+      minRow = Math.min(minRow, tile.position.row);
+      maxRow = Math.max(maxRow, tile.position.row);
+    }
+    
+    // Calculate total width
+    const numCols = maxCol - minCol + 1;
+    const width = numCols * TILE_WIDTH;
+    
+    // Calculate total height
+    // North tiles (row < 0) are above start tile, each is NORMAL_TILE_HEIGHT
+    // Start tile (row 0) is START_TILE_HEIGHT
+    // South tiles (row > 0) are below start tile, each is NORMAL_TILE_HEIGHT
+    const northTileCount = Math.max(0, -minRow);
+    const southTileCount = Math.max(0, maxRow);
+    const height = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + (southTileCount * NORMAL_TILE_HEIGHT);
+    
+    return { 
+      minCol, 
+      maxCol, 
+      minRow, 
+      maxRow,
+      width: Math.max(width, TILE_WIDTH), 
+      height: Math.max(height, START_TILE_HEIGHT)
+    };
+  }
+  
+  // Get pixel position for a tile based on its grid position
+  function getTilePixelPosition(tile: PlacedTile, bounds: ReturnType<typeof getMapBoundsFromDungeon>): { x: number; y: number } {
+    // X position: relative to the leftmost column
+    const x = (tile.position.col - bounds.minCol) * TILE_WIDTH;
+    
+    // Y position depends on the row
+    // Row layout: [north tiles...] [start tile at row 0] [south tiles...]
+    let y = 0;
+    
+    if (tile.position.row < 0) {
+      // North tiles: count tiles from minRow to this row
+      // minRow is the most northern (most negative)
+      y = (tile.position.row - bounds.minRow) * NORMAL_TILE_HEIGHT;
+    } else if (tile.position.row === 0) {
+      // Start tile: positioned after all north tiles
+      const northTileCount = Math.max(0, -bounds.minRow);
+      y = northTileCount * NORMAL_TILE_HEIGHT;
+    } else {
+      // South tiles: positioned after north tiles + start tile
+      const northTileCount = Math.max(0, -bounds.minRow);
+      y = (northTileCount * NORMAL_TILE_HEIGHT) + START_TILE_HEIGHT + ((tile.position.row - 1) * NORMAL_TILE_HEIGHT);
+    }
+    
+    return { x, y };
+  }
+  
+  // Get the image path for a tile
+  function getTileImagePath(tile: PlacedTile): string {
+    if (tile.tileType === 'start') {
+      return 'assets/StartTile.png';
+    }
+    const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tile.tileType);
+    return tileDef?.imagePath || 'assets/Tile_Black_x2_01.png';
+  }
+  
+  // Get tile dimensions
+  function getTileDimensions(tile: PlacedTile): { width: number; height: number } {
+    if (tile.tileType === 'start') {
+      return { width: TILE_WIDTH, height: START_TILE_HEIGHT };
+    }
+    return { width: TILE_WIDTH, height: NORMAL_TILE_HEIGHT };
+  }
+  
   // Calculate scale to fit the map in the available space
   $effect(() => {
     if (boardContainerRef) {
@@ -65,9 +152,12 @@
         const availableWidth = container.clientWidth - CONTAINER_PADDING;
         const availableHeight = container.clientHeight - CONTAINER_PADDING;
         
+        // Use the derived mapBounds
+        const bounds = mapBounds;
+        
         // Calculate scale to fit both dimensions
-        const scaleX = availableWidth / TILE_WIDTH;
-        const scaleY = availableHeight / TILE_HEIGHT;
+        const scaleX = availableWidth / bounds.width;
+        const scaleY = availableHeight / bounds.height;
         
         // Use the smaller scale to ensure it fits, capped between MIN and MAX
         const newScale = Math.min(scaleX, scaleY, MAX_SCALE);
@@ -235,48 +325,71 @@
     <!-- Center board area -->
     <div class="board-container" bind:this={boardContainerRef}>
       <div 
-        class="start-tile" 
-        data-testid="start-tile" 
-        style="transform: scale({mapScale});"
+        class="dungeon-map" 
+        data-testid="dungeon-map"
+        style="transform: scale({mapScale}); width: {mapBounds.width}px; height: {mapBounds.height}px;"
         onclick={handleTileClick}
         onkeydown={handleTileKeydown}
         role="button"
         tabindex="0"
         aria-label={showingMovement ? "Click to hide movement options" : "Click to show movement options for current hero"}
       >
-        <img src={assetPath('assets/StartTile.png')} alt="Start Tile" class="tile-image" />
-        
-        <!-- Unexplored edge indicators -->
-        {#each getStartTileUnexploredEdges() as edge (edge.direction)}
-          <UnexploredEdgeIndicator
-            direction={edge.direction}
-            cellSize={TILE_CELL_SIZE}
-            tileWidth={TILE_WIDTH}
-            tileHeight={TILE_HEIGHT}
-          />
+        <!-- Render all tiles -->
+        {#each dungeon.tiles as tile (tile.id)}
+          {@const tilePos = getTilePixelPosition(tile, mapBounds)}
+          {@const tileDims = getTileDimensions(tile)}
+          <div 
+            class="placed-tile"
+            class:start-tile={tile.tileType === 'start'}
+            data-testid={tile.tileType === 'start' ? 'start-tile' : 'dungeon-tile'}
+            data-tile-id={tile.id}
+            style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;"
+          >
+            <img src={assetPath(getTileImagePath(tile))} alt={tile.tileType} class="tile-image" />
+            
+            <!-- Unexplored edge indicators for this tile -->
+            {#each dungeon.unexploredEdges.filter(e => e.tileId === tile.id) as edge (edge.direction)}
+              <UnexploredEdgeIndicator
+                direction={edge.direction}
+                cellSize={TILE_CELL_SIZE}
+                tileWidth={tileDims.width}
+                tileHeight={tileDims.height}
+              />
+            {/each}
+          </div>
         {/each}
         
-        <!-- Movement overlay -->
+        <!-- Movement overlay (only on start tile for now) -->
         {#if showingMovement && validMoveSquares.length > 0}
-          <MovementOverlay
-            validMoveSquares={validMoveSquares}
-            tileOffsetX={TOKEN_OFFSET_X}
-            tileOffsetY={TOKEN_OFFSET_Y}
-            cellSize={TILE_CELL_SIZE}
-            onSquareClick={handleMoveSquareClick}
-          />
+          {@const startTile = dungeon.tiles.find(t => t.tileType === 'start')}
+          {#if startTile}
+            {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
+            {@const startTileDims = getTileDimensions(startTile)}
+            <div class="movement-overlay-container" style="left: {startTilePos.x}px; top: {startTilePos.y}px; width: {startTileDims.width}px; height: {startTileDims.height}px;">
+              <MovementOverlay
+                validMoveSquares={validMoveSquares}
+                tileOffsetX={TOKEN_OFFSET_X}
+                tileOffsetY={TOKEN_OFFSET_Y}
+                cellSize={TILE_CELL_SIZE}
+                onSquareClick={handleMoveSquareClick}
+              />
+            </div>
+          {/if}
         {/if}
         
+        <!-- Hero tokens (positioned relative to start tile) -->
         {#each heroTokens as token (token.heroId)}
           {@const hero = getHeroInfo(token.heroId)}
           {@const isActive = token.heroId === getCurrentHeroId()}
-          {#if hero}
+          {@const startTile = dungeon.tiles.find(t => t.tileType === 'start')}
+          {#if hero && startTile}
+            {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
             <div 
               class="hero-token" 
               class:active={isActive}
               data-testid="hero-token"
               data-hero-id={token.heroId}
-              style={getTokenStyle(token.position)}
+              style="left: {startTilePos.x}px; top: {startTilePos.y}px; {getTokenStyle(token.position)}"
             >
               <img src={assetPath(hero.imagePath)} alt={hero.name} class="token-image" />
               <span class="token-label">{hero.name}</span>
@@ -408,18 +521,32 @@
     overflow: hidden;
   }
   
-  .start-tile {
+  .dungeon-map {
     position: relative;
-    display: inline-block;
     transition: transform 0.3s ease-out;
     transform-origin: center center;
   }
   
+  .placed-tile {
+    position: absolute;
+    display: inline-block;
+  }
+  
+  .placed-tile.start-tile {
+    z-index: 1;
+  }
+  
   .tile-image {
     display: block;
-    height: auto;
+    width: 100%;
+    height: 100%;
     border: 3px solid #444;
     border-radius: 8px;
+  }
+  
+  .movement-overlay-container {
+    position: absolute;
+    z-index: 5;
   }
   
   .hero-token {
