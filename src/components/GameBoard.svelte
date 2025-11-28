@@ -40,13 +40,6 @@
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
   
-  // Get the monster ID for the recently spawned monster (for card display)
-  let recentlySpawnedMonster = $derived(() => {
-    if (!recentlySpawnedMonsterId) return null;
-    const monsterState = monsters.find(m => m.instanceId === recentlySpawnedMonsterId);
-    return monsterState?.monsterId || null;
-  });
-  
   // Subscribe to store updates
   $effect(() => {
     const unsubscribe = store.subscribe(() => {
@@ -496,11 +489,14 @@
   </div>
   
   <!-- Monster Card Display (shown when monster spawns) -->
-  {#if recentlySpawnedMonster()}
-    <MonsterCard 
-      monsterId={recentlySpawnedMonster()!}
-      onDismiss={handleDismissMonsterCard}
-    />
+  {#if recentlySpawnedMonsterId}
+    {@const monsterState = monsters.find(m => m.instanceId === recentlySpawnedMonsterId)}
+    {#if monsterState}
+      <MonsterCard 
+        monsterId={monsterState.monsterId}
+        onDismiss={handleDismissMonsterCard}
+      />
+    {/if}
   {/if}
 </div>
 

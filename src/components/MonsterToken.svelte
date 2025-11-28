@@ -42,7 +42,12 @@
 {/if}
 
 <style>
+  /* Monster token color scheme */
   .monster-token {
+    --monster-color-primary: #cc3333;
+    --monster-color-dark: rgba(60, 0, 0, 0.8);
+    --monster-label-bg: rgba(100, 20, 20, 0.9);
+    
     position: absolute;
     display: flex;
     flex-direction: column;
@@ -56,13 +61,13 @@
     height: 36px;
     object-fit: contain;
     border-radius: 4px;
-    border: 2px solid #cc3333;
-    background: rgba(60, 0, 0, 0.8);
+    border: 2px solid var(--monster-color-primary);
+    background: var(--monster-color-dark);
   }
   
   .token-label {
     font-size: 0.65rem;
-    background: rgba(100, 20, 20, 0.9);
+    background: var(--monster-label-bg);
     color: #fff;
     padding: 2px 6px;
     border-radius: 4px;
@@ -71,6 +76,6 @@
     max-width: 80px;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: 1px solid #cc3333;
+    border: 1px solid var(--monster-color-primary);
   }
 </style>
