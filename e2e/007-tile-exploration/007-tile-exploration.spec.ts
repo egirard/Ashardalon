@@ -122,6 +122,15 @@ test.describe('007 - Explore and Place New Tile', () => {
         );
         expect(newTile).toBeDefined();
         expect(newTile.position.row).toBe(NORTH_TILE_ROW_POSITION);
+        
+        // **VISUAL VERIFICATION: Verify the new tile is rendered on the page**
+        // Should have 2 tiles visible: start-tile and dungeon-tile
+        await expect(page.locator('[data-testid="start-tile"]')).toBeVisible();
+        await expect(page.locator('[data-testid="dungeon-tile"]')).toBeVisible();
+        
+        // Verify there are exactly 2 placed tiles in the dungeon map
+        const placedTiles = page.locator('.placed-tile');
+        await expect(placedTiles).toHaveCount(2);
       }
     });
 

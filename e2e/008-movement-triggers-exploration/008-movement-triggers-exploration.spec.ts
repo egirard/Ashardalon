@@ -185,6 +185,15 @@ test.describe('008 - Movement Triggers Exploration', () => {
         
         // Verify tile deck counter shows decreased count
         await expect(page.locator('[data-testid="tile-deck-count"]')).toHaveText(String(TILE_DECK_SIZE_AFTER_EXPLORATION));
+        
+        // **VISUAL VERIFICATION: Verify the new tile is rendered on the page**
+        // Should have 2 tiles visible: start-tile and dungeon-tile
+        await expect(page.locator('[data-testid="start-tile"]')).toBeVisible();
+        await expect(page.locator('[data-testid="dungeon-tile"]')).toBeVisible();
+        
+        // Verify there are exactly 2 placed tiles in the dungeon map
+        const placedTiles = page.locator('.placed-tile');
+        await expect(placedTiles).toHaveCount(2);
       }
     });
 
