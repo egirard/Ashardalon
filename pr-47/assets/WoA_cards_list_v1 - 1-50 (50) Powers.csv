@@ -1,0 +1,107 @@
+Number,Name,Type,Extra information,Rule,Attack,Damage
+1,Healing Hymn,Cleric Utility Power,You sing a soothing song that seals the wounds of you and your allies.,"Use this power during your Hero Phase.
+You and one other Hero on your tile regain 2 Hit Points.",,
+2,Cleric's Shield,Cleric At-Will Power,You utter a minor defensive prayer as you strike your foe.,"Attack one adjacent Monster.
+Hit or Miss: Choose 1 Hero on your tile. That Hero gains a +2 bonus to AC until you use this power again.",+6,1
+3,Righteous Advance,Cleric At-Will Power,Your attack grants your ally time to advance.,"Attack one adjacent Monster.
+Hit or Miss: One Hero on your tile moves 2 squares.",+6,1
+4,Sacred Flame,Cleric At-Will Power,"Sacred light shines from above, searing a single enemy with holy radiance.","Attack one Monster within 1 tile of you.
+If you hit, choose yourself or one Hero on your tile. That Hero gains 1 Hit Point.",+6,1
+5,Blade Barrier,Cleric Daily Power,You conjure a wall of whirling blades to cut apart advancing foes.,"Choose a tile within 2 tiles of you. Place five Blade Barrier tokens on five different squares on that tile.
+When a Monster is placed on a square with a Blade Barrier token, remove that token and deal 1 damage to the Monster.",,
+6,Cause Fear,Cleric Daily Power,"Your holy symbol ignites with divine light, slamming your foes with uncontrollable terror.","Choose a tile within 1 tile of you. Each ally on that tile adjacent to a Monster can make an At-Will attack with a +2 bonus to the Attack roll.
+After the attacks, place each Monster remaining on a tile within 2 tiles of you.",,
+7,Wrathful Thunder,Cleric Daily Power,"When you strike, a shattering thunderclap fills the room.","Attack one adjacent Monster.
+After the attack, choose one Monster on your tile. Pass that Monster's card to the player on your right. That player now controls the Monster.",+6,"3
+Miss: 1 Damage"
+8,Astral Refuge,Cleric Utility Power,You send an ally to a safe refuge in the Astral Sea for a short time.,"Use this power at the start of any Villain Phase.
+Choose one Hero within 2 tiles of you. Remove that Hero from the tile. At the start of that player's next Hero Phase, that player places the Hero on any tile.",,
+9,Command,Cleric Utility Power,You utter a single word that your foe must obey.,"Use this power during your Hero Phase.
+Choose one Monster on your tile. Place that Monster on a tile within 2 tiles of you.",,
+10,Perseverance,Cleric Utility Power,A house does not stand with just a single wall.,"Use this power when any player draws an Encounter Card.
+The cost to cancel the Encounter Card is reduced by the number of Heroes on your tile, including your own Hero.",,
+11,Dwarven Resilience,Dwarf Utility Power,Your dwarven heritage grants you uncommonly strong health.,"Use this power during your Hero Phase instead of moving.
+You regain 4 Hit Points.",,
+12,Charge,Fighter At-Will Power,You rush into combat.,"Move up to your speed, then attack one adjacent Monster.",+8,1
+13,Reaping Strike,Fighter At-Will Power,You punctuate your scything attacks with wicked jabs and small cutting blows that slip through your enemy's defenses.,Attack one adjacent Monster twice.,+4,1
+14,Sure Strike,Fighter At-Will Power,You trade power for precision.,Attack one adjacent Monster.,+11,1
+15,Comeback Strike,Fighter Daily Power,A timely strike gives you the strength to fight on.,"Attack one adjacent Monster.
+If you hit, you regain 2 hit points.
+If you miss, do not flip this card over.",+7,2
+16,Into the Fray,Fighter Daily Power,You unleash a fierce battle cry as you leap boldly into battle.,Place your Hero adjacent to any Hero within 2 tiles of you. Attack one adjacent Monster.,+7,"3
+Miss: 1 Damage"
+17,Taunting Advance,Fighter Daily Power,You rush forward and call forth your enemy.,Move your speed. Then choose a Monster within 2 tiles of you. Place that Monster adjacent to your Hero and attack it.,+8,"3
+Miss: 1 Damage"
+18,Inspiring Advice,Fighter Utility Power,You encourage your teammate to fight on.,"Use when a Hero misses a Monster with an attack.
+The Hero rerolls the attack.
+If the attack misses, do not flip this card over.",,
+19,One for the Team,Fighter Utility Power,You protect your ally from the hazards of the dungeon.,"Use when any player draws an Encounter Card.
+Resolve the Encounter Card as if you drew it.",,
+20,To Arms!,Fighter Utility Power,You rally your companions to meet your foe head on.,"Use when a new Monster is placed on a tile.
+You and one Hero on your tile can move your speed.",,
+21,Lay On Hands,Paladin Utility Power,Your divine touch instantly heals wounds.,One adjacent Hero regains 2 hit points.,,
+22,Divine Challenge,Paladin At-Will Power,You boldly confront a nearby enemy.,"Choose one Monster within 1 tile of you. Place that Monster adjacent to your Hero.
+Attack one adjacent Monster.",+8,1
+23,Holy Strike,Paladin At-Will Power,"You strike an enemy, igniting it with holy light.","Attack one adjacent Monster.
+If you started your Hero Phase adjacent to the Monster, deal +1 damage if you hit.",+8,1
+24,Valiant Strike,Paladin At-Will Power,The odds against you add strength to your attack.,"Attack one adjacent Monster.
+When making this attack, you get a +1 bonus to attack for each Monster adjacent to your Hero.",+8,1
+25,Arcing Strike,Paladin Daily Power,You swing your weapon in a wide arc.,Attack one or two adjacent Monsters.,+9,"3
+Miss: 1 Damage"
+26,Benign Transposition,Paladin Daily Power,You call upon divine power to switch places with an ally to strike a foe.,"Choose 1 Hero within 2 tiles of you. You swap positions with that Hero.
+After swapping positions, attack one adjacent Monster.",+8,"3
+Miss: 1 Damage"
+27,Righteous Smite,Paladin Daily Power,Your righteous attack fills your party with preternatural resolve.,"Attack one adjacent Monster.
+Hit or Miss: All Heroes on your tile regain 1 Hit Point.",+9,"3
+Miss: 1 Damage"
+28,Bravery,Paladin Utility Power,Your bravery gives you the power to fight on.,"Use when a Monster within 1 tile of you activates during any player's Villain Phase.
+Place your Hero adjacent to that Monster. You regain 1 hit point.",,
+29,Noble Shield,Paladin Utility Power,"You quickly throw up your shield, protecting your friends from harm at your expense.","Use when a Monster targets you and at least one additional Hero with the same attack.
+You are the only target of the attack, but the attack roll against you is automatically a 20 and cannot be rerolled.",,
+30,Virtue's Touch,Paladin Utility Power,Your gentle touch removes affliction.,Choose one adjacent Hero. End one condition on that Hero.,,
+31,Furious Assault,Half-Orc Utility Power,"Your wrath burns inside you, giving strength to your next attack.","Use this power when you hit a Monster with an attack.
+The Monster takes +1 damage.",,
+32,Distracting Jab,Rogue At-Will Power,You escape the clutches of your foe as it reacts to your attack.,"Attack one adjacent Monster.
+If you hit, move the Monster 1 square.
+After the attack, move your speed.",+7,1
+33,Lucky Strike,Rogue At-Will Power,"They fall for it if you're lucky, and then they fall.","Attack one Monster within 1 tile of you.
+If you hit and your attack roll is an even number, deal +1 damage.",+7,1
+34,Positioning Shot,Rogue At-Will Power,"To avoid your vicious attack, your enemy leaps exactly where you want it to be.","Attack one Monster within 2 tiles of you.
+Hit or Miss: Place that Monster on any square on your tile or on an adjacent tile.",+7,1
+35,Acrobatic Onslaught,Rogue Daily Power,"After a quick strike, you leap through the air, lining up your next target.","Attack one adjacent Monster.
+Hit or Miss: Place your Hero on any tile within 2 tiles of where you started, and then use an At-Will power immediately.",+7,"2
+Miss: 1"
+36,King's Castle,Rogue Daily Power,It's hard to get the little guy when he's behind an ally who can crush plate armor in his teeth.,"Swap positions with one Hero within 1 tile of you.
+Attack 1 Monster within 2 tiles of you.",+7,"3
+Miss: 1 Damage"
+37,Tornado Strike,Rogue Daily Power,"Your weapon becomes a blur as you make swift, sweeping attacks.","Attack four times. Each attack can be against any Monster on your tile.
+After the attacks, place your Hero on any square on your tile.",+7,1
+38,Distant Diversion,Rogue Utility Power,The monster turns to investigate the sound of a thrown pebble.,"Choose one Monster within 3 tiles of you.
+Place that Monster onto an adjacent tile.",,
+39,Practiced Evasion,Rogue Utility Power,A quick flip and quicker fingers disables the trap.,"Use this power when you are hit by an attack from a Trap or Event Attack Encounter Card.
+The attack misses. If the attack was from a Trap Encounter Card, you get a free Disable check against that Trap.",,
+40,Tumbling Escape,Rogue Utility Power,You nimbly roll out of harm's way.,"Use this power when a Monster hits you with an attack.
+The attack misses. Place your Hero on any tile within 1 tile of where you started.",,
+41,Hurled Breath,Dragonborn Daily Power,"You hurl your draconic breath, engulfing your foes a short distance away.","Choose a tile within 2 tiles of you. Attack each Monster on that tile.
+This attack does not count as an attack action.",+5,1
+42,Arc Lightning,Wizard At-Will Power,"Lightning leaps from your outstretched hands, blasting your foes.",Attack up to two Monsters. Each monster can be on your tile or any tile within 1 tile of you.,+7,1
+43,Hypnotism,Wizard At-Will Power,Your enemy's mouth goes slack as your magic takes control.,"Choose a Monster within 1 tile of you. Move that Monster 1 tile. If it ends adjacent to another Monster, make an attack against the second Monster.",+9,1
+44,Ray of Frost,Wizard At-Will Power,"A blistering ray of white frost streaks to your target, slowing its reactions.",Attack one Monster on your tile or on any tile within 2 tiles of you.,+7,1
+45,Flaming Sphere,Wizard Daily Power,You conjure a rolling ball of fire and control where it goes.,"Place 3 Flaming Sphere tokens in a stack on any square within 1 tile of you.
+Instead of moving during your Hero phase, you can move the Flaming Sphere stack 1 tile.
+At the end of your Hero Phase, you can remove 1 Flaming Sphere token and deal 1 damage to each Monster on that tile.",,
+46,Shock Sphere,Wizard Daily Power,"You hurl a crackling orb of lightning, engulfing your foes in its electric embrace.",Choose a tile within 2 tiles of you. Attack each Monster on that tile.,+9,"2
+Miss: 1 Damage"
+47,Spectral Ram,Wizard Daily Power,You bash your foe with arcane force that sends it reeling.,"Attack one Monster within 2 tiles of you.
+Hit or Miss: Place the Monster onto any tile within 2 tiles of where it started.",+9,"3
+Miss: 1 Damage"
+48,Invisibility,Wizard Utility Power,You vanish from sight.,"Use this power during your Hero Phase.
+Until the start of your next Hero Phase, you do not count as the closest Hero for any Monster's tactics.
+Monster attacks that attack every Hero on a tile still attack you.",,
+49,Mirror Image,Wizard Utility Power,You create three duplicate images of yourself.,"Use this power during your Hero Phase.
+Place 3 Mirror Image tokens on your Hero Card.
+For each Mirror Image token on your Hero Card, you gain +2 AC. Whenever a Monster misses you with an attack, remove 1 Mirror Image token. ",,
+50,Wizard Eye,Wizard Utility Power,"You see through a magical hovering eye, allowing you to explore from a distance.","Use this power during your Hero Phase.
+Place the Wizard Eye token on a tile within 1 tile of you.
+Instead of moving during your Hero Phase, you can move the Wizard Eye marker 1 tile.
+During your Exploration Phase, you can explore as if your Hero was on any unexplored edge on the Wizard Eye's tile.",,
