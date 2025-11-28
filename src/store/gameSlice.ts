@@ -185,6 +185,7 @@ export const gameSlice = createSlice({
           speed,
           state.heroTokens,
           heroId,
+          state.dungeon,
         );
         state.showingMovement = true;
       }
