@@ -11,6 +11,8 @@
     dismissMonsterCard,
     setAttackResult,
     dismissAttackResult,
+    activateNextMonster,
+    dismissMonsterAttackResult,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -25,6 +27,7 @@
     MonsterState,
     MonsterDeck,
     AttackResult,
+    HeroHpState,
   } from "../store/types";
   import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES } from "../store/types";
   import { assetPath } from "../utils";
@@ -94,6 +97,11 @@
   let recentlySpawnedMonsterId: string | null = $state(null);
   let attackResult: AttackResult | null = $state(null);
   let attackTargetId: string | null = $state(null);
+  let heroHp: HeroHpState[] = $state([]);
+  let monsterAttackResult: AttackResult | null = $state(null);
+  let monsterAttackTargetId: string | null = $state(null);
+  let monsterAttackerId: string | null = $state(null);
+  let villainPhaseMonsterIndex: number = $state(0);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
 
@@ -115,6 +123,11 @@
       recentlySpawnedMonsterId = state.game.recentlySpawnedMonsterId;
       attackResult = state.game.attackResult;
       attackTargetId = state.game.attackTargetId;
+      heroHp = state.game.heroHp;
+      monsterAttackResult = state.game.monsterAttackResult;
+      monsterAttackTargetId = state.game.monsterAttackTargetId;
+      monsterAttackerId = state.game.monsterAttackerId;
+      villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
     });
 
     // Initialize state
@@ -130,6 +143,11 @@
     recentlySpawnedMonsterId = state.game.recentlySpawnedMonsterId;
     attackResult = state.game.attackResult;
     attackTargetId = state.game.attackTargetId;
+    heroHp = state.game.heroHp;
+    monsterAttackResult = state.game.monsterAttackResult;
+    monsterAttackTargetId = state.game.monsterAttackTargetId;
+    monsterAttackerId = state.game.monsterAttackerId;
+    villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
 
     return unsubscribe;
   });
@@ -320,6 +338,31 @@
       case "villain-phase":
         return "Villain Phase";
     }
+  }
+
+  // Get current HP for a hero
+  function getHeroCurrentHp(heroId: string): number {
+    const hp = heroHp.find((h) => h.heroId === heroId);
+    return hp?.currentHp ?? 0;
+  }
+
+  // Get max HP for a hero
+  function getHeroMaxHp(heroId: string): number {
+    const hp = heroHp.find((h) => h.heroId === heroId);
+    return hp?.maxHp ?? 0;
+  }
+
+  // Get monsters controlled by the current hero
+  function getControlledMonsters(): MonsterState[] {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return [];
+    return monsters.filter((m) => m.controllerId === currentHeroId);
+  }
+
+  // Check if all controlled monsters have been activated
+  function allMonstersActivated(): boolean {
+    const controlled = getControlledMonsters();
+    return villainPhaseMonsterIndex >= controlled.length;
   }
 
   function handleReset() {
@@ -538,6 +581,31 @@
     if (!attackTargetId) return undefined;
     return monsters.find((m) => m.instanceId === attackTargetId);
   }
+
+  // Handle activating the next monster in villain phase
+  function handleActivateMonster() {
+    store.dispatch(activateNextMonster({}));
+  }
+
+  // Handle dismissing the monster attack result
+  function handleDismissMonsterAttackResult() {
+    store.dispatch(dismissMonsterAttackResult());
+  }
+
+  // Get the hero name for monster attack target
+  function getMonsterAttackTargetName(): string {
+    if (!monsterAttackTargetId) return "Hero";
+    const hero = AVAILABLE_HEROES.find((h) => h.id === monsterAttackTargetId);
+    return hero?.name || "Hero";
+  }
+
+  // Get the monster name for the attacker
+  function getMonsterAttackerName(): string {
+    if (!monsterAttackerId) return "Monster";
+    const monster = monsters.find((m) => m.instanceId === monsterAttackerId);
+    if (!monster) return "Monster";
+    return getMonsterName(monster.monsterId);
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -552,7 +620,7 @@
       {@const currentHero = currentHeroId
         ? getHeroInfo(currentHeroId)
         : undefined}
-      {#if currentHero}
+      {#if currentHero && currentHeroId}
         <div class="player-info" data-testid="turn-indicator">
           <img
             src={assetPath(currentHero.imagePath)}
@@ -565,6 +633,7 @@
               >{formatPhase(turnState.currentPhase)}</span
             >
             <span class="turn-number">Turn {turnState.turnNumber}</span>
+            <span class="hero-hp" data-testid="hero-hp">HP: {getHeroCurrentHp(currentHeroId)}/{getHeroMaxHp(currentHeroId)}</span>
           </div>
         </div>
       {/if}
@@ -584,7 +653,7 @@
         {@const currentHero = currentHeroId
           ? getHeroInfo(currentHeroId)
           : undefined}
-        {#if currentHero}
+        {#if currentHero && currentHeroId}
           <div class="player-info">
             <img
               src={assetPath(currentHero.imagePath)}
@@ -597,6 +666,7 @@
                 >{formatPhase(turnState.currentPhase)}</span
               >
               <span class="turn-number">Turn {turnState.turnNumber}</span>
+              <span class="hero-hp">HP: {getHeroCurrentHp(currentHeroId)}/{getHeroMaxHp(currentHeroId)}</span>
             </div>
           </div>
         {/if}
@@ -712,6 +782,18 @@
       <!-- Board controls -->
       <div class="board-controls">
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
+        
+        <!-- Villain Phase: Activate Monster Button -->
+        {#if turnState.currentPhase === "villain-phase" && !allMonstersActivated() && !monsterAttackResult}
+          <button
+            class="activate-monster-button"
+            data-testid="activate-monster-button"
+            onclick={handleActivateMonster}
+          >
+            👹 Activate Monster ({villainPhaseMonsterIndex + 1}/{getControlledMonsters().length})
+          </button>
+        {/if}
+
         <button
           class="end-phase-button"
           data-testid="end-phase-button"
@@ -756,7 +838,7 @@
         {@const currentHero = currentHeroId
           ? getHeroInfo(currentHeroId)
           : undefined}
-        {#if currentHero}
+        {#if currentHero && currentHeroId}
           <div class="player-info">
             <img
               src={assetPath(currentHero.imagePath)}
@@ -769,6 +851,7 @@
                 >{formatPhase(turnState.currentPhase)}</span
               >
               <span class="turn-number">Turn {turnState.turnNumber}</span>
+              <span class="hero-hp">HP: {getHeroCurrentHp(currentHeroId)}/{getHeroMaxHp(currentHeroId)}</span>
             </div>
           </div>
         {/if}
@@ -787,7 +870,7 @@
       {@const currentHero = currentHeroId
         ? getHeroInfo(currentHeroId)
         : undefined}
-      {#if currentHero}
+      {#if currentHero && currentHeroId}
         <div class="player-info" data-testid="turn-indicator">
           <img
             src={assetPath(currentHero.imagePath)}
@@ -800,6 +883,7 @@
               >{formatPhase(turnState.currentPhase)}</span
             >
             <span class="turn-number">Turn {turnState.turnNumber}</span>
+            <span class="hero-hp" data-testid="hero-hp">HP: {getHeroCurrentHp(currentHeroId)}/{getHeroMaxHp(currentHeroId)}</span>
           </div>
         </div>
       {/if}
@@ -837,6 +921,17 @@
         onDismiss={handleDismissAttackResult}
       />
     {/if}
+  {/if}
+
+  <!-- Monster Attack Result Display (shown during villain phase) -->
+  {#if monsterAttackResult}
+    <CombatResultDisplay
+      result={monsterAttackResult}
+      attackerName={getMonsterAttackerName()}
+      attackName="Attack"
+      targetName={getMonsterAttackTargetName()}
+      onDismiss={handleDismissMonsterAttackResult}
+    />
   {/if}
 </div>
 
@@ -1019,6 +1114,16 @@
     color: #aaa;
   }
 
+  .hero-hp {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #e76f51;
+    background: rgba(231, 111, 81, 0.15);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid rgba(231, 111, 81, 0.3);
+  }
+
   /* Board controls container */
   .board-controls {
     position: absolute;
@@ -1028,6 +1133,24 @@
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-end;
+  }
+
+  /* Activate monster button */
+  .activate-monster-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(139, 69, 19, 0.9);
+    color: #fff;
+    border: 1px solid #cd853f;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .activate-monster-button:hover {
+    background: rgba(205, 133, 63, 0.9);
   }
 
   /* End phase button */

@@ -11,8 +11,10 @@ import {
   MonsterDeck,
   MonsterState,
   AttackResult,
+  HeroHpState,
+  AVAILABLE_HEROES,
 } from "./types";
-import { getValidMoveSquares, isValidMoveDestination } from "./movement";
+import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
   initializeDungeon,
   initializeTileDeck,
@@ -28,6 +30,11 @@ import {
   getTileMonsterSpawnPosition,
   discardMonster,
 } from "./monsters";
+import {
+  executeMonsterTurn,
+  globalToLocalPosition,
+  findTileForGlobalPosition,
+} from "./monsterAI";
 
 /**
  * Default turn state for the beginning of a game
@@ -62,6 +69,16 @@ export interface GameState {
   attackResult: AttackResult | null;
   /** Instance ID of the monster targeted in the attack */
   attackTargetId: string | null;
+  /** Hero HP state - tracks current HP for each hero */
+  heroHp: HeroHpState[];
+  /** Result of the most recent monster attack (for displaying villain combat result) */
+  monsterAttackResult: AttackResult | null;
+  /** ID of the hero targeted by monster attack */
+  monsterAttackTargetId: string | null;
+  /** ID of the monster that performed the attack */
+  monsterAttackerId: string | null;
+  /** Index of the monster currently being activated during villain phase */
+  villainPhaseMonsterIndex: number;
 }
 
 const initialState: GameState = {
@@ -77,6 +94,11 @@ const initialState: GameState = {
   recentlySpawnedMonsterId: null,
   attackResult: null,
   attackTargetId: null,
+  heroHp: [],
+  monsterAttackResult: null,
+  monsterAttackTargetId: null,
+  monsterAttackerId: null,
+  villainPhaseMonsterIndex: 0,
 };
 
 /**
@@ -166,6 +188,22 @@ export const gameSlice = createSlice({
       state.attackResult = null;
       state.attackTargetId = null;
 
+      // Initialize hero HP from hero definitions
+      state.heroHp = heroIds.map(heroId => {
+        const hero = AVAILABLE_HEROES.find(h => h.id === heroId);
+        return {
+          heroId,
+          currentHp: hero?.hp ?? 8,
+          maxHp: hero?.maxHp ?? 8,
+        };
+      });
+
+      // Clear villain phase state
+      state.monsterAttackResult = null;
+      state.monsterAttackTargetId = null;
+      state.monsterAttackerId = null;
+      state.villainPhaseMonsterIndex = 0;
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -243,6 +281,11 @@ export const gameSlice = createSlice({
       state.recentlySpawnedMonsterId = null;
       state.attackResult = null;
       state.attackTargetId = null;
+      state.heroHp = [];
+      state.monsterAttackResult = null;
+      state.monsterAttackTargetId = null;
+      state.monsterAttackerId = null;
+      state.villainPhaseMonsterIndex = 0;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -318,6 +361,12 @@ export const gameSlice = createSlice({
         return;
       }
       state.turnState.currentPhase = "villain-phase";
+      // Reset villain phase monster index to start activating from the first monster
+      state.villainPhaseMonsterIndex = 0;
+      // Clear any previous monster attack results
+      state.monsterAttackResult = null;
+      state.monsterAttackTargetId = null;
+      state.monsterAttackerId = null;
     },
     /**
      * End the villain phase and move to the next hero's turn
@@ -326,6 +375,12 @@ export const gameSlice = createSlice({
       if (state.turnState.currentPhase !== "villain-phase") {
         return;
       }
+      
+      // Clear villain phase state
+      state.villainPhaseMonsterIndex = 0;
+      state.monsterAttackResult = null;
+      state.monsterAttackTargetId = null;
+      state.monsterAttackerId = null;
       
       // Move to next hero
       state.turnState.currentHeroIndex = 
@@ -384,6 +439,105 @@ export const gameSlice = createSlice({
     setMonsters: (state, action: PayloadAction<MonsterState[]>) => {
       state.monsters = action.payload;
     },
+    /**
+     * Activate the next monster in the villain phase.
+     * The monster will either move toward the closest hero or attack if adjacent.
+     */
+    activateNextMonster: (state, action: PayloadAction<{ randomFn?: () => number }>) => {
+      if (state.turnState.currentPhase !== "villain-phase") {
+        return;
+      }
+
+      // Get monsters controlled by the current hero
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (!currentHeroId) return;
+
+      const controlledMonsters = state.monsters.filter(m => m.controllerId === currentHeroId);
+      
+      if (state.villainPhaseMonsterIndex >= controlledMonsters.length) {
+        // All monsters have been activated
+        return;
+      }
+
+      const monster = controlledMonsters[state.villainPhaseMonsterIndex];
+      if (!monster) return;
+
+      // Build hero HP and AC maps
+      const heroHpMap: Record<string, number> = {};
+      const heroAcMap: Record<string, number> = {};
+      for (const hp of state.heroHp) {
+        heroHpMap[hp.heroId] = hp.currentHp;
+      }
+      for (const token of state.heroTokens) {
+        const hero = AVAILABLE_HEROES.find(h => h.id === token.heroId);
+        if (hero) {
+          heroAcMap[token.heroId] = hero.ac;
+        }
+      }
+
+      // Execute the monster's turn
+      const randomFn = action.payload?.randomFn ?? Math.random;
+      const result = executeMonsterTurn(
+        monster,
+        state.heroTokens,
+        heroHpMap,
+        heroAcMap,
+        state.monsters,
+        state.dungeon,
+        randomFn
+      );
+
+      if (result.type === 'move') {
+        // Update monster position
+        const monsterToMove = state.monsters.find(m => m.instanceId === monster.instanceId);
+        if (monsterToMove) {
+          // Find which tile the destination is on
+          const newTileId = findTileForGlobalPosition(result.destination, state.dungeon);
+          if (newTileId) {
+            // Convert global position to local tile position
+            const localPos = globalToLocalPosition(result.destination, newTileId, state.dungeon);
+            if (localPos) {
+              monsterToMove.position = localPos;
+              monsterToMove.tileId = newTileId;
+            }
+          }
+        }
+      } else if (result.type === 'attack') {
+        // Store the attack result
+        state.monsterAttackResult = result.result;
+        state.monsterAttackTargetId = result.targetId;
+        state.monsterAttackerId = monster.instanceId;
+
+        // Apply damage to hero if hit
+        if (result.result.isHit && result.result.damage > 0) {
+          const heroHp = state.heroHp.find(h => h.heroId === result.targetId);
+          if (heroHp) {
+            heroHp.currentHp = Math.max(0, heroHp.currentHp - result.result.damage);
+          }
+        }
+      }
+
+      // Move to next monster
+      state.villainPhaseMonsterIndex += 1;
+    },
+    /**
+     * Dismiss the monster attack result display
+     */
+    dismissMonsterAttackResult: (state) => {
+      state.monsterAttackResult = null;
+      state.monsterAttackTargetId = null;
+      state.monsterAttackerId = null;
+    },
+    /**
+     * Set hero HP directly (for testing purposes)
+     */
+    setHeroHp: (state, action: PayloadAction<{ heroId: string; hp: number }>) => {
+      const { heroId, hp } = action.payload;
+      const heroHp = state.heroHp.find(h => h.heroId === heroId);
+      if (heroHp) {
+        heroHp.currentHp = Math.max(0, hp);
+      }
+    },
   },
 });
 
@@ -401,5 +555,8 @@ export const {
   setAttackResult,
   dismissAttackResult,
   setMonsters,
+  activateNextMonster,
+  dismissMonsterAttackResult,
+  setHeroHp,
 } = gameSlice.actions;
 export default gameSlice.reducer;

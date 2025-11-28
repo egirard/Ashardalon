@@ -9,6 +9,23 @@ export interface HeroAttack {
 }
 
 /**
+ * Monster's basic attack information
+ */
+export interface MonsterAttack {
+  attackBonus: number;
+  damage: number;
+}
+
+/**
+ * Monster attacks from cards (keyed by monster ID)
+ */
+export const MONSTER_ATTACKS: Record<string, MonsterAttack> = {
+  kobold: { attackBonus: 5, damage: 1 },
+  snake: { attackBonus: 4, damage: 1 },
+  cultist: { attackBonus: 5, damage: 1 },
+};
+
+/**
  * Hero type representing a playable character
  */
 export interface Hero {
@@ -18,6 +35,9 @@ export interface Hero {
   imagePath: string;
   speed: number; // Movement speed in squares
   attack: HeroAttack; // Hero's basic attack
+  hp: number; // Current hit points
+  maxHp: number; // Maximum hit points
+  ac: number; // Armor class
 }
 
 /**
@@ -120,15 +140,34 @@ export interface TurnState {
 }
 
 /**
+ * Villain phase step types for tracking monster activations
+ */
+export type VillainPhaseStep = 
+  | { type: 'monster-activation'; monsterId: string }
+  | { type: 'monster-move'; monsterId: string; destination: Position }
+  | { type: 'monster-attack'; monsterId: string; targetId: string; result: AttackResult }
+  | { type: 'phase-complete' };
+
+/**
+ * Hero HP state for tracking current HP during the game
+ */
+export interface HeroHpState {
+  heroId: string;
+  currentHp: number;
+  maxHp: number;
+}
+
+/**
  * All available heroes in the game
  * Quinn and Vistra have speed 5, others have speed 6
+ * HP, maxHp, and AC based on game design
  */
 export const AVAILABLE_HEROES: Hero[] = [
-  { id: 'quinn', name: 'Quinn', heroClass: 'Cleric', imagePath: 'assets/Hero_Cleric_Quinn.png', speed: 5, attack: { name: 'Mace', attackBonus: 6, damage: 2, range: 1 } },
-  { id: 'vistra', name: 'Vistra', heroClass: 'Fighter', imagePath: 'assets/Hero_Fighter_Vistra.png', speed: 5, attack: { name: 'Warhammer', attackBonus: 8, damage: 2, range: 1 } },
-  { id: 'keyleth', name: 'Keyleth', heroClass: 'Paladin', imagePath: 'assets/Hero_Paladin_Keyleth.png', speed: 6, attack: { name: 'Longsword', attackBonus: 7, damage: 2, range: 1 } },
-  { id: 'tarak', name: 'Tarak', heroClass: 'Rogue', imagePath: 'assets/Hero_Rogue_Tarak.png', speed: 6, attack: { name: 'Short Sword', attackBonus: 7, damage: 2, range: 1 } },
-  { id: 'haskan', name: 'Haskan', heroClass: 'Wizard', imagePath: 'assets/Hero_Wizard_Haskan.png', speed: 6, attack: { name: 'Quarterstaff', attackBonus: 4, damage: 1, range: 1 } },
+  { id: 'quinn', name: 'Quinn', heroClass: 'Cleric', imagePath: 'assets/Hero_Cleric_Quinn.png', speed: 5, attack: { name: 'Mace', attackBonus: 6, damage: 2, range: 1 }, hp: 8, maxHp: 8, ac: 17 },
+  { id: 'vistra', name: 'Vistra', heroClass: 'Fighter', imagePath: 'assets/Hero_Fighter_Vistra.png', speed: 5, attack: { name: 'Warhammer', attackBonus: 8, damage: 2, range: 1 }, hp: 10, maxHp: 10, ac: 18 },
+  { id: 'keyleth', name: 'Keyleth', heroClass: 'Paladin', imagePath: 'assets/Hero_Paladin_Keyleth.png', speed: 6, attack: { name: 'Longsword', attackBonus: 7, damage: 2, range: 1 }, hp: 10, maxHp: 10, ac: 18 },
+  { id: 'tarak', name: 'Tarak', heroClass: 'Rogue', imagePath: 'assets/Hero_Rogue_Tarak.png', speed: 6, attack: { name: 'Short Sword', attackBonus: 7, damage: 2, range: 1 }, hp: 8, maxHp: 8, ac: 17 },
+  { id: 'haskan', name: 'Haskan', heroClass: 'Wizard', imagePath: 'assets/Hero_Wizard_Haskan.png', speed: 6, attack: { name: 'Quarterstaff', attackBonus: 4, damage: 1, range: 1 }, hp: 6, maxHp: 6, ac: 14 },
 ];
 
 /**
