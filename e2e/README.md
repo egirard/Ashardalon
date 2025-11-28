@@ -22,6 +22,9 @@ e2e/
 | Test | Description |
 |------|-------------|
 | [001-character-selection](001-character-selection/README.md) | Character selection to game board flow |
+| [006-hero-movement](006-hero-movement/README.md) | Hero movement using the movement UI |
+| [007-tile-exploration](007-tile-exploration/README.md) | Tile exploration mechanics (programmatic) |
+| [008-movement-triggers-exploration](008-movement-triggers-exploration/README.md) | **Complete user experience**: movement UI triggers tile exploration |
 
 ## Running Tests
 
