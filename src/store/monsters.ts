@@ -109,9 +109,21 @@ export function createMonsterInstance(
 }
 
 /**
+ * Tile grid dimensions for monster placement
+ * Normal tiles are 4x4 grid
+ */
+const NORMAL_TILE_GRID_SIZE = 4;
+
+/**
+ * Center position of a normal tile
+ * Calculated as floor of grid size / 2
+ */
+const TILE_CENTER = Math.floor(NORMAL_TILE_GRID_SIZE / 2);
+
+/**
  * Get the center position of a tile for monster placement
  * For normal tiles (4x4), center is at (2, 2)
  */
 export function getTileMonsterSpawnPosition(): Position {
-  return { x: 2, y: 2 };
+  return { x: TILE_CENTER, y: TILE_CENTER };
 }
