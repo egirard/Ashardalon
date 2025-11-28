@@ -55,7 +55,11 @@
   const TILE_WIDTH = TILE_CELL_SIZE * TILE_GRID_WIDTH; // 560px (playable grid)
   const START_TILE_HEIGHT = TILE_CELL_SIZE * START_TILE_GRID_HEIGHT; // 1120px (playable grid)
   const NORMAL_TILE_HEIGHT = TILE_CELL_SIZE * NORMAL_TILE_GRID_HEIGHT; // 560px (playable grid)
-  const CONTAINER_PADDING = 100; // Extra padding to ensure map fits within viewport after scaling
+  // Buffer space (in px) to prevent map clipping during CSS transform scaling.
+  // The map uses transform: scale() with transform-origin: center, which maintains
+  // original element dimensions for layout while visually scaling the content.
+  // This larger buffer (vs the 32px CSS padding) ensures no edges are clipped.
+  const CONTAINER_PADDING = 100;
   const MIN_SCALE = 0.15; // Minimum scale for legibility (lower to fit more tiles)
   const MAX_SCALE = 1; // Maximum scale (no upscaling)
 
