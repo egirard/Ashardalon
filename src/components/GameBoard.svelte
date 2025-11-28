@@ -34,10 +34,10 @@
   // Start tile has asymmetric vertical borders due to image dimensions
   // Start tile: 1195px image - 1120px grid = 75px total (not divisible by 2)
   // Expected: 560+560+72 = 1192px, Actual: 1195px, Difference: 3px
-  // This 3px is distributed asymmetrically: 2px extra on north, 1px extra on south
-  // North edge: 38px border (36 + 2), South edge: 37px border (36 + 1)
-  const START_TILE_NORTH_OFFSET_DIFF = 2; // Extra pixels on north edge vs normal 36px
-  const START_TILE_SOUTH_OFFSET_DIFF = 1; // Extra pixels on south edge vs normal 36px
+  // This 3px is all on the north edge for proper connector alignment
+  // North edge: 39px border (36 + 3), South edge: 36px border (standard)
+  const START_TILE_NORTH_OFFSET_DIFF = 3; // Extra pixels on north edge vs normal 36px
+  const START_TILE_SOUTH_OFFSET_DIFF = 0; // No extra pixels on south edge
   
   // Tile overlap - tiles need to overlap by this amount to interlock puzzle connectors
   // This equals the border/connector area on each side
