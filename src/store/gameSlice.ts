@@ -15,6 +15,7 @@ import {
   AVAILABLE_HEROES,
   HeroTurnActions,
   HeroSubAction,
+  ScenarioState,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -56,6 +57,15 @@ const DEFAULT_HERO_TURN_ACTIONS: HeroTurnActions = {
   canAttack: true,
 };
 
+/**
+ * Default scenario state for MVP: Defeat 2 monsters
+ */
+const DEFAULT_SCENARIO_STATE: ScenarioState = {
+  monstersDefeated: 0,
+  monstersToDefeat: 2,
+  objective: "Defeat 2 monsters",
+};
+
 export interface GameState {
   currentScreen: GameScreen;
   heroTokens: HeroToken[];
@@ -92,6 +102,8 @@ export interface GameState {
   villainPhaseMonsterIndex: number;
   /** Hero turn actions tracking for enforcing valid turn structure */
   heroTurnActions: HeroTurnActions;
+  /** Scenario state for MVP win/loss tracking */
+  scenario: ScenarioState;
 }
 
 const initialState: GameState = {
@@ -113,6 +125,7 @@ const initialState: GameState = {
   monsterAttackerId: null,
   villainPhaseMonsterIndex: 0,
   heroTurnActions: { ...DEFAULT_HERO_TURN_ACTIONS },
+  scenario: { ...DEFAULT_SCENARIO_STATE },
 };
 
 /**
@@ -280,6 +293,9 @@ export const gameSlice = createSlice({
       // Initialize hero turn actions for the first hero
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
 
+      // Initialize scenario state (MVP: defeat 2 monsters)
+      state.scenario = { ...DEFAULT_SCENARIO_STATE };
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -376,6 +392,7 @@ export const gameSlice = createSlice({
       state.monsterAttackerId = null;
       state.villainPhaseMonsterIndex = 0;
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
+      state.scenario = { ...DEFAULT_SCENARIO_STATE };
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -518,6 +535,14 @@ export const gameSlice = createSlice({
             state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
             // Discard the monster card
             state.monsterDeck = discardMonster(state.monsterDeck, monster.monsterId);
+            
+            // Track monster defeated for scenario
+            state.scenario.monstersDefeated += 1;
+            
+            // Check for victory condition (MVP: defeat 2 monsters)
+            if (state.scenario.monstersDefeated >= state.scenario.monstersToDefeat) {
+              state.currentScreen = "victory";
+            }
           }
         }
       }
@@ -612,6 +637,12 @@ export const gameSlice = createSlice({
           const heroHp = state.heroHp.find(h => h.heroId === result.targetId);
           if (heroHp) {
             heroHp.currentHp = Math.max(0, heroHp.currentHp - result.result.damage);
+            
+            // Check for party defeat (all heroes at 0 HP)
+            const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+            if (allHeroesDefeated) {
+              state.currentScreen = "defeat";
+            }
           }
         }
       }

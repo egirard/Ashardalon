@@ -30,6 +30,7 @@
     AttackResult,
     HeroHpState,
     HeroTurnActions,
+    ScenarioState,
   } from "../store/types";
   import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES } from "../store/types";
   import { assetPath } from "../utils";
@@ -109,6 +110,7 @@
   let monsterAttackerId: string | null = $state(null);
   let villainPhaseMonsterIndex: number = $state(0);
   let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
+  let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" });
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
 
@@ -136,6 +138,7 @@
       monsterAttackerId = state.game.monsterAttackerId;
       villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
       heroTurnActions = state.game.heroTurnActions;
+      scenario = state.game.scenario;
     });
 
     // Initialize state
@@ -157,6 +160,7 @@
     monsterAttackerId = state.game.monsterAttackerId;
     villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
     heroTurnActions = state.game.heroTurnActions;
+    scenario = state.game.scenario;
 
     return unsubscribe;
   });
@@ -818,6 +822,15 @@
 
       <!-- Board controls -->
       <div class="board-controls">
+        <!-- Objective Display -->
+        <div class="objective-display" data-testid="objective-display">
+          <span class="objective-label">🎯 Objective:</span>
+          <span class="objective-text">{scenario.objective}</span>
+          <span class="objective-progress" data-testid="objective-progress">
+            {scenario.monstersDefeated} / {scenario.monstersToDefeat} defeated
+          </span>
+        </div>
+        
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
         
         <!-- Villain Phase: Activate Monster Button -->
@@ -1170,6 +1183,35 @@
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-end;
+  }
+
+  /* Objective display */
+  .objective-display {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #ffd700;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+
+  .objective-label {
+    font-size: 0.75rem;
+    color: #ffd700;
+    font-weight: bold;
+  }
+
+  .objective-text {
+    font-size: 0.85rem;
+    color: #fff;
+  }
+
+  .objective-progress {
+    font-size: 0.75rem;
+    color: #4ade80;
+    font-weight: bold;
   }
 
   /* Activate monster button */
