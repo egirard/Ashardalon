@@ -7,15 +7,21 @@
 ## Test Scenarios
 
 ### Test 1: Hero attacks adjacent monster and sees result
+Complete gameplay flow demonstrating the attack feature:
+
 1. Player starts game with Quinn
-2. Quinn is positioned on the game board
-3. A monster is placed adjacent to Quinn on the same tile
-4. **Attack button becomes visible** showing attack option with weapon stats
-5. Player clicks the attack button to initiate attack
-6. Combat result dialog shows the d20 roll, attack bonus, total, and target AC
-7. The result (HIT or MISS) is clearly displayed
-8. For hits, damage dealt is shown
-9. Dialog can be dismissed
+2. Quinn moves to the north edge of the start tile
+3. Player ends hero phase, triggering tile exploration
+4. A new tile is placed and a monster spawns (monster card shown)
+5. Player dismisses monster card
+6. Player completes the turn cycle (exploration phase → villain phase → hero phase)
+7. Monster is positioned adjacent to Quinn on start-tile
+8. **Attack button becomes visible** showing attack option with weapon stats
+9. Player clicks the attack button to initiate attack
+10. Combat result dialog shows the d20 roll, attack bonus, total, and target AC
+11. The result (HIT or MISS) is clearly displayed
+12. For hits, damage dealt is shown
+13. Dialog can be dismissed
 
 ### Test 2: Hero misses attack against monster
 1. Player starts game with Quinn
