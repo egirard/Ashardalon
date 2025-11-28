@@ -13,6 +13,7 @@
     dismissAttackResult,
     activateNextMonster,
     dismissMonsterAttackResult,
+    shouldAutoEndHeroTurn,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -161,20 +162,7 @@
   $effect(() => {
     if (turnState.currentPhase !== "hero-phase") return;
     
-    const { actionsTaken } = heroTurnActions;
-    const moveCount = actionsTaken.filter(a => a === 'move').length;
-    const attackCount = actionsTaken.filter(a => a === 'attack').length;
-    
-    // Turn ends after any of these combinations:
-    // - Attack + Move (attack then move)
-    // - Move + Attack (move then attack)
-    // - Move + Move (double move)
-    const shouldEndTurn = (
-      (moveCount >= 1 && attackCount >= 1) || // move+attack or attack+move
-      (moveCount >= 2) // double move
-    );
-    
-    if (shouldEndTurn) {
+    if (shouldAutoEndHeroTurn(heroTurnActions)) {
       store.dispatch(endHeroPhase());
     }
   });

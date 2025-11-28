@@ -14,6 +14,7 @@ import {
   HeroHpState,
   AVAILABLE_HEROES,
   HeroTurnActions,
+  HeroSubAction,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -114,8 +115,6 @@ const initialState: GameState = {
   heroTurnActions: { ...DEFAULT_HERO_TURN_ACTIONS },
 };
 
-import type { HeroSubAction } from "./types";
-
 /**
  * Calculate the updated hero turn actions state after taking an action.
  * 
@@ -160,7 +159,7 @@ function computeHeroTurnActions(
  * - Move + Attack (in any order)
  * - Move + Move (double move)
  */
-function shouldAutoEndHeroTurn(heroTurnActions: HeroTurnActions): boolean {
+export function shouldAutoEndHeroTurn(heroTurnActions: HeroTurnActions): boolean {
   const { actionsTaken } = heroTurnActions;
   const moveCount = actionsTaken.filter(a => a === 'move').length;
   const attackCount = actionsTaken.filter(a => a === 'attack').length;
