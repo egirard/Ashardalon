@@ -25,6 +25,7 @@ e2e/
 | [006-hero-movement](006-hero-movement/README.md) | Hero movement using the movement UI |
 | [007-tile-exploration](007-tile-exploration/README.md) | Tile exploration mechanics (programmatic) |
 | [008-movement-triggers-exploration](008-movement-triggers-exploration/README.md) | **Complete user experience**: movement UI triggers tile exploration |
+| [011-hero-turn-structure](011-hero-turn-structure/README.md) | Hero turn action enforcement: valid move/attack sequences |
 
 ## Running Tests
 
