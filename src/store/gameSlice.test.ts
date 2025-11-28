@@ -12,6 +12,9 @@ import gameReducer, {
   dismissMonsterCard,
   setAttackResult,
   dismissAttackResult,
+  activateNextMonster,
+  dismissMonsterAttackResult,
+  setHeroHp,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -38,6 +41,11 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     recentlySpawnedMonsterId: null,
     attackResult: null,
     attackTargetId: null,
+    heroHp: [],
+    monsterAttackResult: null,
+    monsterAttackTargetId: null,
+    monsterAttackerId: null,
+    villainPhaseMonsterIndex: 0,
     ...overrides,
   };
 }
@@ -1194,6 +1202,183 @@ describe("gameSlice", () => {
 
       expect(state.attackResult).toBeNull();
       expect(state.attackTargetId).toBeNull();
+    });
+  });
+
+  describe("Hero HP", () => {
+    it("should initialize hero HP when starting the game", () => {
+      const state = gameReducer(undefined, startGame({
+        heroIds: ["quinn", "vistra"],
+        seed: 12345,
+      }));
+
+      expect(state.heroHp).toHaveLength(2);
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(8);
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.maxHp).toBe(8);
+      expect(state.heroHp.find(h => h.heroId === "vistra")?.currentHp).toBe(10);
+      expect(state.heroHp.find(h => h.heroId === "vistra")?.maxHp).toBe(10);
+    });
+
+    it("should clear hero HP on reset", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroHp: [
+          { heroId: "quinn", currentHp: 8, maxHp: 8 },
+        ],
+      });
+
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.heroHp).toHaveLength(0);
+    });
+  });
+
+  describe("setHeroHp", () => {
+    it("should update hero HP", () => {
+      const initialState = createGameState({
+        heroHp: [
+          { heroId: "quinn", currentHp: 8, maxHp: 8 },
+        ],
+      });
+
+      const state = gameReducer(initialState, setHeroHp({ heroId: "quinn", hp: 5 }));
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(5);
+    });
+
+    it("should not reduce HP below 0", () => {
+      const initialState = createGameState({
+        heroHp: [
+          { heroId: "quinn", currentHp: 2, maxHp: 8 },
+        ],
+      });
+
+      const state = gameReducer(initialState, setHeroHp({ heroId: "quinn", hp: -5 }));
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
+    });
+  });
+
+  describe("activateNextMonster", () => {
+    it("should do nothing if not in villain phase", () => {
+      const initialState = createGameState({
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        villainPhaseMonsterIndex: 0,
+      });
+
+      const state = gameReducer(initialState, activateNextMonster({}));
+      expect(state.villainPhaseMonsterIndex).toBe(0);
+    });
+
+    it("should increment villainPhaseMonsterIndex after activation", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 5 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "open", south: "open", east: "open", west: "open" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+      });
+
+      const state = gameReducer(initialState, activateNextMonster({}));
+      expect(state.villainPhaseMonsterIndex).toBe(1);
+    });
+  });
+
+  describe("dismissMonsterAttackResult", () => {
+    it("should clear monster attack result", () => {
+      const initialState = createGameState({
+        monsterAttackResult: {
+          roll: 15,
+          attackBonus: 5,
+          total: 20,
+          targetAC: 17,
+          isHit: true,
+          damage: 1,
+          isCritical: false,
+        },
+        monsterAttackTargetId: "quinn",
+        monsterAttackerId: "kobold-0",
+      });
+
+      const state = gameReducer(initialState, dismissMonsterAttackResult());
+      expect(state.monsterAttackResult).toBeNull();
+      expect(state.monsterAttackTargetId).toBeNull();
+      expect(state.monsterAttackerId).toBeNull();
+    });
+  });
+
+  describe("endExplorationPhase with villain phase setup", () => {
+    it("should reset villain phase monster index when entering villain phase", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+        },
+        villainPhaseMonsterIndex: 5, // From previous villain phase
+      });
+
+      const state = gameReducer(initialState, endExplorationPhase());
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+      expect(state.villainPhaseMonsterIndex).toBe(0);
+    });
+  });
+
+  describe("endVillainPhase cleanup", () => {
+    it("should clear villain phase state when ending", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        villainPhaseMonsterIndex: 3,
+        monsterAttackResult: {
+          roll: 15,
+          attackBonus: 5,
+          total: 20,
+          targetAC: 17,
+          isHit: true,
+          damage: 1,
+          isCritical: false,
+        },
+        monsterAttackTargetId: "quinn",
+        monsterAttackerId: "kobold-0",
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+      expect(state.villainPhaseMonsterIndex).toBe(0);
+      expect(state.monsterAttackResult).toBeNull();
+      expect(state.monsterAttackTargetId).toBeNull();
+      expect(state.monsterAttackerId).toBeNull();
     });
   });
 });
