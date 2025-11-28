@@ -128,21 +128,34 @@ export function getNewTilePosition(
 }
 
 /**
- * Calculate the rotation needed for a new tile to connect properly
- * The connecting edge should face the opposite direction
+ * Calculate the rotation needed for a new tile so its arrow points
+ * toward the exit that the hero approached from.
+ * 
+ * In the tile images, arrows point south (down) by default.
+ * We rotate the tile so the arrow points to the connecting edge
+ * (where the hero is standing).
+ * 
+ * @param explorationDirection - The direction the hero explored from (on the existing tile)
  */
-export function calculateTileRotation(connectingDirection: Direction): number {
-  // For now, we always orient the new tile so its 'north' edge connects
-  // This is a simplified approach - a more complex system would consider
-  // the actual tile layout and available exits
+export function calculateTileRotation(explorationDirection: Direction): number {
+  // The connecting edge on the new tile is opposite to the exploration direction
+  const connectingEdge = getOppositeDirection(explorationDirection);
   
-  // When placing from north, new tile's south connects (rotation 0)
-  // When placing from south, new tile's north connects (rotation 0)
-  // When placing from east, new tile's west connects (rotation 0)
-  // When placing from west, new tile's east connects (rotation 0)
+  // Tile arrow points south by default. We need to rotate so arrow points
+  // toward the connecting edge (where the hero is standing).
+  // Rotation values (clockwise):
+  // - Arrow should point south (hero at south/connecting edge is south): 0°
+  // - Arrow should point west (hero at west/connecting edge is west): 90°
+  // - Arrow should point north (hero at north/connecting edge is north): 180°
+  // - Arrow should point east (hero at east/connecting edge is east): 270°
+  const rotations: Record<Direction, number> = {
+    south: 0,
+    west: 90,
+    north: 180,
+    east: 270,
+  };
   
-  // This is simplified - real implementation would depend on tile geometry
-  return 0;
+  return rotations[connectingEdge];
 }
 
 /**
