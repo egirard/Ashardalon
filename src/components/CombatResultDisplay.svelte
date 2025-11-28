@@ -62,7 +62,7 @@
     
     <div class="dice-roll-section">
       <div class="dice-container">
-        <span class="dice-icon">🎲</span>
+        <span class="d20-icon" aria-label="D20 die">D20</span>
         <span class="roll-value" data-testid="roll-value">{result.roll}</span>
       </div>
       
@@ -208,8 +208,14 @@
     gap: 0.25rem;
   }
   
-  .dice-icon {
-    font-size: 2rem;
+  .d20-icon {
+    font-size: 0.875rem;
+    font-weight: bold;
+    color: #8ecae6;
+    background: rgba(142, 202, 230, 0.15);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(142, 202, 230, 0.3);
   }
   
   .roll-value {
