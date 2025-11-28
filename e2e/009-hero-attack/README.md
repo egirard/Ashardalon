@@ -15,13 +15,15 @@ Complete gameplay flow demonstrating the attack feature:
 4. A new tile is placed and a monster spawns (monster card shown)
 5. Player dismisses monster card
 6. Player completes the turn cycle (exploration phase → villain phase → hero phase)
-7. Monster is positioned adjacent to Quinn on start-tile
-8. **Attack button becomes visible** showing attack option with weapon stats
+7. **Player moves Quinn to be adjacent to the monster** using the movement UI
+8. **Attack button appears** showing "Attack with Mace" and the monster name
 9. Player clicks the attack button to initiate attack
 10. Combat result dialog shows the d20 roll, attack bonus, total, and target AC
 11. The result (HIT or MISS) is clearly displayed
 12. For hits, damage dealt is shown
 13. Dialog can be dismissed
+
+**Note**: This test uses programmatic verification without screenshots because the tile type and monster spawned vary between runs due to the random deck draws.
 
 ### Test 2: Hero misses attack against monster
 1. Player starts game with Quinn
@@ -38,23 +40,6 @@ Complete gameplay flow demonstrating the attack feature:
 2. Attack that deals enough damage to reduce HP to 0
 3. Monster is removed from the game
 
-## Screenshot Gallery
-
-### Attack Button Visible
-Shows the attack panel that appears when a hero is adjacent to a monster during hero phase. The panel displays the weapon name, attack bonus, and damage, with a button to initiate the attack.
-
-![Attack Button Visible](009-hero-attack.spec.ts-snapshots/000-attack-button-visible-chromium-linux.png)
-
-### Attack Result
-Shows the combat result dialog after clicking the attack button. Displays the d20 roll, attack bonus, total vs AC, and hit/miss result.
-
-![Attack Result](009-hero-attack.spec.ts-snapshots/001-attack-result-chromium-linux.png)
-
-### Result Dismissed
-Shows the game state after dismissing the combat result dialog.
-
-![Result Dismissed](009-hero-attack.spec.ts-snapshots/002-result-dismissed-chromium-linux.png)
-
 ## Acceptance Criteria Verification
 
 - [x] When adjacent to a monster, an "Attack" option is available
@@ -63,9 +48,15 @@ Shows the game state after dismissing the combat result dialog.
 - [x] On hit, damage is applied and monster HP decreases
 - [x] Hit or miss result is clearly displayed
 
+## Key Implementation Notes
+
+- The adjacency check now uses **global coordinates** for both heroes and monsters, enabling cross-tile combat
+- Monsters spawn at local coordinates (2, 2) on their tile, which is converted to global coordinates for adjacency
+- Quinn can move to adjacent tiles using the movement UI and attack monsters on those tiles
+
 ## Manual Verification Checklist
 
-- [ ] Attack panel appears when hero is adjacent to monster
+- [ ] Attack panel appears when hero moves adjacent to monster
 - [ ] Attack button shows monster name to attack
 - [ ] Combat result dialog appears after attack
 - [ ] Dice roll, bonus, total, and AC are displayed correctly

@@ -1,5 +1,6 @@
-import type { HeroAttack, AttackResult, Position, MonsterState } from './types';
+import type { HeroAttack, AttackResult, Position, MonsterState, DungeonState, PlacedTile } from './types';
 import { getMonsterById } from './monsters';
+import { getTileBounds, findTileAtPosition } from './movement';
 
 /**
  * Roll a d20 (1-20)
@@ -56,14 +57,49 @@ export function getMonsterAC(monsterId: string): number | undefined {
 }
 
 /**
- * Find all monsters adjacent to a given position
+ * Convert a monster's local tile position to global coordinates
+ */
+export function getMonsterGlobalPosition(monster: MonsterState, dungeon: DungeonState): Position | null {
+  const tile = dungeon.tiles.find(t => t.id === monster.tileId);
+  if (!tile) return null;
+  
+  const bounds = getTileBounds(tile);
+  return {
+    x: bounds.minX + monster.position.x,
+    y: bounds.minY + monster.position.y,
+  };
+}
+
+/**
+ * Find all monsters adjacent to a given global position
+ * @param position Hero's global position
+ * @param monsters List of monsters (with local tile positions)
+ * @param dungeon Dungeon state for coordinate conversion
  */
 export function getAdjacentMonsters(
   position: Position,
   monsters: MonsterState[],
-  tileId: string
+  tileId: string,
+  dungeon?: DungeonState
 ): MonsterState[] {
-  return monsters.filter(monster => 
-    monster.tileId === tileId && arePositionsAdjacent(position, monster.position)
-  );
+  // Legacy behavior: if no dungeon provided, compare positions directly (for backward compatibility)
+  if (!dungeon) {
+    return monsters.filter(monster => 
+      monster.tileId === tileId && arePositionsAdjacent(position, monster.position)
+    );
+  }
+  
+  // Find which tile the hero is on
+  const heroTile = findTileAtPosition(position, dungeon);
+  if (!heroTile) return [];
+  
+  // Find monsters that are adjacent in global coordinates
+  return monsters.filter(monster => {
+    // Convert monster's local position to global coordinates
+    const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
+    if (!monsterGlobalPos) return false;
+    
+    // Check if the hero and monster are adjacent in global coordinates
+    return arePositionsAdjacent(position, monsterGlobalPos);
+  });
 }
