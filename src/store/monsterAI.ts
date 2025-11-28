@@ -1,7 +1,7 @@
 import type { MonsterState, Position, HeroToken, DungeonState, AttackResult, MonsterAttack } from './types';
 import { MONSTER_ATTACKS } from './types';
 import { arePositionsAdjacent, rollD20 } from './combat';
-import { getAdjacentPositions, findTileAtPosition, isOccupied, getTileBounds } from './movement';
+import { getAdjacentPositions, findTileAtPosition, getTileBounds } from './movement';
 
 /**
  * Result of a monster's turn - either move, attack, or no action
