@@ -10,9 +10,11 @@ import gameReducer, {
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
+  setAttackResult,
+  dismissAttackResult,
   GameState,
 } from "./gameSlice";
-import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK } from "./types";
+import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
 
 // Start tile grid dimensions - double-height tile with valid spaces x: 1-3, y: 0-7
 const START_TILE_GRID = { minX: 1, maxX: 3, minY: 0, maxY: 7 };
@@ -34,6 +36,8 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     monsters: [],
     monsterInstanceCounter: 0,
     recentlySpawnedMonsterId: null,
+    attackResult: null,
+    attackTargetId: null,
     ...overrides,
   };
 }
@@ -1031,6 +1035,165 @@ describe("gameSlice", () => {
       const state = gameReducer(gameInProgress, dismissMonsterCard());
 
       expect(state.recentlySpawnedMonsterId).toBeNull();
+    });
+  });
+
+  describe("setAttackResult", () => {
+    it("should set the attack result and target ID", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.attackResult).toEqual(attackResult);
+      expect(state.attackTargetId).toBe("kobold-0");
+    });
+
+    it("should apply damage to the target monster on hit", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "cultist", instanceId: "cultist-0", position: { x: 2, y: 2 }, currentHp: 5, controllerId: "quinn", tileId: "start-tile" },
+        ],
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "cultist-0",
+      }));
+
+      expect(state.monsters[0].currentHp).toBe(3);
+      expect(state.monsters).toHaveLength(1);
+    });
+
+    it("should remove defeated monsters", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.monsters).toHaveLength(0);
+    });
+
+    it("should discard defeated monster to discard pile", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        monsterDeck: { drawPile: ["snake"], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.monsterDeck.discardPile).toContain("kobold");
+    });
+
+    it("should not apply damage on miss", () => {
+      const attackResult: AttackResult = {
+        roll: 5,
+        attackBonus: 6,
+        total: 11,
+        targetAC: 14,
+        isHit: false,
+        damage: 0,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.monsters[0].currentHp).toBe(1);
+      expect(state.monsters).toHaveLength(1);
+    });
+  });
+
+  describe("dismissAttackResult", () => {
+    it("should clear the attack result and target ID", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        attackResult: {
+          roll: 15,
+          attackBonus: 6,
+          total: 21,
+          targetAC: 14,
+          isHit: true,
+          damage: 2,
+          isCritical: false,
+        },
+        attackTargetId: "kobold-0",
+      });
+
+      const state = gameReducer(initialState, dismissAttackResult());
+
+      expect(state.attackResult).toBeNull();
+      expect(state.attackTargetId).toBeNull();
     });
   });
 });

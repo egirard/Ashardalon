@@ -1,4 +1,14 @@
 /**
+ * Hero's basic attack information
+ */
+export interface HeroAttack {
+  name: string;
+  attackBonus: number;
+  damage: number;
+  range: number; // 1 for melee
+}
+
+/**
  * Hero type representing a playable character
  */
 export interface Hero {
@@ -7,6 +17,7 @@ export interface Hero {
   heroClass: 'Cleric' | 'Fighter' | 'Paladin' | 'Rogue' | 'Wizard';
   imagePath: string;
   speed: number; // Movement speed in squares
+  attack: HeroAttack; // Hero's basic attack
 }
 
 /**
@@ -48,6 +59,19 @@ export interface MonsterState {
   currentHp: number;
   controllerId: string;  // Hero ID who controls this monster
   tileId: string;        // Tile where the monster was spawned
+}
+
+/**
+ * Result of a hero's attack against a monster
+ */
+export interface AttackResult {
+  roll: number;        // d20 result (1-20)
+  attackBonus: number;
+  total: number;       // roll + bonus
+  targetAC: number;
+  isHit: boolean;
+  damage: number;      // 0 if miss
+  isCritical: boolean; // natural 20
 }
 
 /**
@@ -100,11 +124,11 @@ export interface TurnState {
  * Quinn and Vistra have speed 5, others have speed 6
  */
 export const AVAILABLE_HEROES: Hero[] = [
-  { id: 'quinn', name: 'Quinn', heroClass: 'Cleric', imagePath: 'assets/Hero_Cleric_Quinn.png', speed: 5 },
-  { id: 'vistra', name: 'Vistra', heroClass: 'Fighter', imagePath: 'assets/Hero_Fighter_Vistra.png', speed: 5 },
-  { id: 'keyleth', name: 'Keyleth', heroClass: 'Paladin', imagePath: 'assets/Hero_Paladin_Keyleth.png', speed: 6 },
-  { id: 'tarak', name: 'Tarak', heroClass: 'Rogue', imagePath: 'assets/Hero_Rogue_Tarak.png', speed: 6 },
-  { id: 'haskan', name: 'Haskan', heroClass: 'Wizard', imagePath: 'assets/Hero_Wizard_Haskan.png', speed: 6 },
+  { id: 'quinn', name: 'Quinn', heroClass: 'Cleric', imagePath: 'assets/Hero_Cleric_Quinn.png', speed: 5, attack: { name: 'Mace', attackBonus: 6, damage: 2, range: 1 } },
+  { id: 'vistra', name: 'Vistra', heroClass: 'Fighter', imagePath: 'assets/Hero_Fighter_Vistra.png', speed: 5, attack: { name: 'Warhammer', attackBonus: 8, damage: 2, range: 1 } },
+  { id: 'keyleth', name: 'Keyleth', heroClass: 'Paladin', imagePath: 'assets/Hero_Paladin_Keyleth.png', speed: 6, attack: { name: 'Longsword', attackBonus: 7, damage: 2, range: 1 } },
+  { id: 'tarak', name: 'Tarak', heroClass: 'Rogue', imagePath: 'assets/Hero_Rogue_Tarak.png', speed: 6, attack: { name: 'Short Sword', attackBonus: 7, damage: 2, range: 1 } },
+  { id: 'haskan', name: 'Haskan', heroClass: 'Wizard', imagePath: 'assets/Hero_Wizard_Haskan.png', speed: 6, attack: { name: 'Quarterstaff', attackBonus: 4, damage: 1, range: 1 } },
 ];
 
 /**

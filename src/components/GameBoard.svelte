@@ -1,14 +1,17 @@
 <script lang="ts">
   import { store } from '../store';
-  import { resetGame, showMovement, hideMovement, moveHero, endHeroPhase, endExplorationPhase, endVillainPhase, dismissMonsterCard } from '../store/gameSlice';
-  import type { HeroToken, Hero, TurnState, GamePhase, Position, DungeonState, TileEdge, PlacedTile, MonsterState, MonsterDeck } from '../store/types';
-  import { TILE_DEFINITIONS, MONSTERS } from '../store/types';
+  import { resetGame, showMovement, hideMovement, moveHero, endHeroPhase, endExplorationPhase, endVillainPhase, dismissMonsterCard, setAttackResult, dismissAttackResult } from '../store/gameSlice';
+  import type { HeroToken, Hero, TurnState, GamePhase, Position, DungeonState, TileEdge, PlacedTile, MonsterState, MonsterDeck, AttackResult } from '../store/types';
+  import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES } from '../store/types';
   import { assetPath } from '../utils';
   import MovementOverlay from './MovementOverlay.svelte';
   import TileDeckCounter from './TileDeckCounter.svelte';
   import UnexploredEdgeIndicator from './UnexploredEdgeIndicator.svelte';
   import MonsterToken from './MonsterToken.svelte';
   import MonsterCard from './MonsterCard.svelte';
+  import AttackButton from './AttackButton.svelte';
+  import CombatResultDisplay from './CombatResultDisplay.svelte';
+  import { resolveAttack, getAdjacentMonsters, getMonsterAC } from '../store/combat';
   
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -51,6 +54,8 @@
   let dungeon: DungeonState = $state({ tiles: [], unexploredEdges: [], tileDeck: [] });
   let monsters: MonsterState[] = $state([]);
   let recentlySpawnedMonsterId: string | null = $state(null);
+  let attackResult: AttackResult | null = $state(null);
+  let attackTargetId: string | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
   
@@ -69,6 +74,8 @@
       dungeon = state.game.dungeon;
       monsters = state.game.monsters;
       recentlySpawnedMonsterId = state.game.recentlySpawnedMonsterId;
+      attackResult = state.game.attackResult;
+      attackTargetId = state.game.attackTargetId;
     });
     
     // Initialize state
@@ -81,6 +88,8 @@
     dungeon = state.game.dungeon;
     monsters = state.game.monsters;
     recentlySpawnedMonsterId = state.game.recentlySpawnedMonsterId;
+    attackResult = state.game.attackResult;
+    attackTargetId = state.game.attackTargetId;
     
     return unsubscribe;
   });
@@ -352,6 +361,65 @@
     }
     return getTilePixelPosition(tile, mapBounds);
   }
+  
+  // Get the current hero's tile ID (for adjacency checks)
+  function getCurrentHeroTileId(): string {
+    // For now, heroes are on the start tile. This would need to be extended
+    // when heroes can move between tiles.
+    return 'start-tile';
+  }
+  
+  // Get monsters adjacent to the current hero
+  function getAdjacentMonstersForCurrentHero(): MonsterState[] {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return [];
+    
+    const currentToken = heroTokens.find(t => t.heroId === currentHeroId);
+    if (!currentToken) return [];
+    
+    const tileId = getCurrentHeroTileId();
+    return getAdjacentMonsters(currentToken.position, monsters, tileId);
+  }
+  
+  // Get the full hero object from AVAILABLE_HEROES by ID
+  function getFullHeroInfo(heroId: string): Hero | undefined {
+    return AVAILABLE_HEROES.find(h => h.id === heroId);
+  }
+  
+  // Handle attack action
+  function handleAttack(targetInstanceId: string) {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return;
+    
+    const hero = getFullHeroInfo(currentHeroId);
+    if (!hero) return;
+    
+    const monster = monsters.find(m => m.instanceId === targetInstanceId);
+    if (!monster) return;
+    
+    const monsterAC = getMonsterAC(monster.monsterId);
+    if (monsterAC === undefined) return;
+    
+    const result = resolveAttack(hero.attack, monsterAC);
+    store.dispatch(setAttackResult({ result, targetInstanceId }));
+  }
+  
+  // Handle dismissing the attack result
+  function handleDismissAttackResult() {
+    store.dispatch(dismissAttackResult());
+  }
+  
+  // Get monster name from instance
+  function getMonsterName(monsterId: string): string {
+    const monster = MONSTERS.find(m => m.id === monsterId);
+    return monster?.name || 'Monster';
+  }
+  
+  // Get attack target monster info for display
+  function getAttackTargetMonster(): MonsterState | undefined {
+    if (!attackTargetId) return undefined;
+    return monsters.find(m => m.instanceId === attackTargetId);
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -489,6 +557,20 @@
         <button class="reset-button" data-testid="reset-button" onclick={handleReset}>
           ↩ Return to Character Select
         </button>
+        
+        <!-- Attack Button - only show during hero phase when adjacent to monster -->
+        {#if turnState.currentPhase === 'hero-phase'}
+          {@const currentHeroId = getCurrentHeroId()}
+          {@const fullHero = currentHeroId ? getFullHeroInfo(currentHeroId) : undefined}
+          {@const adjacentMonsters = getAdjacentMonstersForCurrentHero()}
+          {#if fullHero && adjacentMonsters.length > 0}
+            <AttackButton
+              adjacentMonsters={adjacentMonsters}
+              heroAttack={fullHero.attack}
+              onAttack={handleAttack}
+            />
+          {/if}
+        {/if}
       </div>
     </div>
 
@@ -536,6 +618,22 @@
       <MonsterCard 
         monsterId={monsterState.monsterId}
         onDismiss={handleDismissMonsterCard}
+      />
+    {/if}
+  {/if}
+  
+  <!-- Combat Result Display (shown after attack) -->
+  {#if attackResult}
+    {@const currentHeroId = getCurrentHeroId()}
+    {@const fullHero = currentHeroId ? getFullHeroInfo(currentHeroId) : undefined}
+    {@const targetMonster = getAttackTargetMonster()}
+    {#if fullHero}
+      <CombatResultDisplay
+        result={attackResult}
+        attackerName={fullHero.name}
+        attackName={fullHero.attack.name}
+        targetName={targetMonster ? getMonsterName(targetMonster.monsterId) : 'Monster'}
+        onDismiss={handleDismissAttackResult}
       />
     {/if}
   {/if}
