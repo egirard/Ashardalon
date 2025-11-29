@@ -9,7 +9,7 @@ As a player, I expect:
 - Movement overlay only shows valid, legal moves
 - Diagonal movement is blocked when both connected edges have walls
 - Hero cannot move to the wall column (x=0) on the start tile
-- Hero cannot move to non-adjacent tiles (must traverse through connected tiles)
+- Hero cannot move diagonally to non-adjacent tiles (must use cardinal moves through connected tiles)
 
 ## Test Scenarios
 
@@ -36,20 +36,21 @@ As a player, I expect:
 - All valid movement squares are within start tile bounds (x: 1-3)
 - No diagonal moves to adjacent tile positions
 
-### Test 3: Hero cannot move to non-adjacent tile (requires three tiles)
+### Test 3: Hero cannot move diagonally to non-adjacent tile (north and east tiles)
 **Steps:**
 1. Start game with Quinn
 2. Explore north edge to create a north tile
-3. Explore south edge to create a south tile (now have 3 tiles: north, start, south)
-4. Position hero on south tile (y=9)
-5. Show movement options
-6. Verify hero cannot reach north tile
+3. Explore east edge to create an east tile (now have 3 tiles: start, north, east)
+4. Position hero at corner of east tile (x=4, y=0)
+5. Show movement options with speed=1 to test direct adjacency
+6. Verify hero cannot reach north tile via diagonal move
 
 **Expected Result:**
-- Three tiles exist: north tile (y: -4 to -1), start tile (y: 0-7), south tile (y: 8-11)
-- Hero on south tile can reach south tile and start tile squares
-- Hero cannot reach north tile squares (north and south tiles are not adjacent)
-- Movement must traverse through connected tiles only
+- Three tiles exist: north tile (y: -4 to -1), start tile (y: 0-7), east tile (x: 4-7)
+- Hero at (4, 0) on east tile is diagonally adjacent to (3, -1) on north tile
+- Hero CANNOT move diagonally to (3, -1) because north and east tiles are not directly connected
+- Hero CAN move to cardinal directions (start tile, within east tile)
+- This tests the rule: diagonal movement is not allowed between non-adjacent tiles
 
 ### Test 4: Movement squares respect tile boundaries and wall edges
 **Steps:**
@@ -73,9 +74,9 @@ As a player, I expect:
 ![000 - Hero at edge](013-wall-collision.spec.ts-snapshots/000-hero-at-edge-chromium-linux.png)
 ![001 - Movement at edge](013-wall-collision.spec.ts-snapshots/001-movement-at-edge-chromium-linux.png)
 
-### Test 3: Non-adjacent tile movement
-![000 - Three tiles hero on south](013-wall-collision.spec.ts-snapshots/000-three-tiles-hero-on-south-chromium-linux.png)
-![001 - Movement excludes non-adjacent tile](013-wall-collision.spec.ts-snapshots/001-movement-excludes-non-adjacent-tile-chromium-linux.png)
+### Test 3: Diagonal movement to non-adjacent tile (north and east)
+![000 - Three tiles hero on east](013-wall-collision.spec.ts-snapshots/000-three-tiles-north-east-hero-on-east-chromium-linux.png)
+![001 - Movement excludes diagonal to non-adjacent tile](013-wall-collision.spec.ts-snapshots/001-movement-excludes-diagonal-non-adjacent-tile-chromium-linux.png)
 
 ### Test 4: Movement at west wall
 ![000 - Hero at west edge](013-wall-collision.spec.ts-snapshots/000-hero-at-west-edge-chromium-linux.png)
@@ -89,4 +90,4 @@ As a player, I expect:
 - [ ] No movement squares appear on the wall column (x=0)
 - [ ] No movement squares appear on staircase squares
 - [ ] Clicking a valid movement square moves the hero
-- [ ] With three tiles, hero cannot move from one edge tile to the opposite edge tile
+- [ ] With north and east tiles, hero at east tile corner cannot move diagonally to north tile
