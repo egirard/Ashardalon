@@ -17,6 +17,7 @@
     dismissMonsterMoveAction,
     shouldAutoEndHeroTurn,
     dismissLevelUpNotification,
+    dismissHealingSurgeNotification,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -47,8 +48,10 @@
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
   import XPCounter from "./XPCounter.svelte";
+  import HealingSurgeCounter from "./HealingSurgeCounter.svelte";
   import DefeatAnimation from "./DefeatAnimation.svelte";
   import LevelUpAnimation from "./LevelUpAnimation.svelte";
+  import HealingSurgeAnimation from "./HealingSurgeAnimation.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -125,6 +128,8 @@
   let defeatedMonsterName: string | null = $state(null);
   let leveledUpHeroId: string | null = $state(null);
   let levelUpOldStats: HeroHpState | null = $state(null);
+  let healingSurgeUsedHeroId: string | null = $state(null);
+  let healingSurgeHpRestored: number | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
 
@@ -159,6 +164,8 @@
       defeatedMonsterName = state.game.defeatedMonsterName;
       leveledUpHeroId = state.game.leveledUpHeroId;
       levelUpOldStats = state.game.levelUpOldStats;
+      healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
+      healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     });
 
     // Initialize state
@@ -187,6 +194,8 @@
     defeatedMonsterName = state.game.defeatedMonsterName;
     leveledUpHeroId = state.game.leveledUpHeroId;
     levelUpOldStats = state.game.levelUpOldStats;
+    healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
+    healingSurgeHpRestored = state.game.healingSurgeHpRestored;
 
     return unsubscribe;
   });
@@ -726,6 +735,11 @@
     store.dispatch(dismissLevelUpNotification());
   }
 
+  // Handle dismissing the healing surge notification
+  function handleDismissHealingSurgeNotification() {
+    store.dispatch(dismissHealingSurgeNotification());
+  }
+
   // Get new stats for leveled up hero
   function getLeveledUpHeroStats(): HeroHpState | undefined {
     if (!leveledUpHeroId) return undefined;
@@ -921,6 +935,9 @@
         <!-- XP Counter -->
         <XPCounter xp={partyResources.xp} />
         
+        <!-- Healing Surge Counter -->
+        <HealingSurgeCounter surges={partyResources.healingSurges} />
+        
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
         <button
@@ -1095,6 +1112,15 @@
         onDismiss={handleDismissLevelUpNotification}
       />
     {/if}
+  {/if}
+
+  <!-- Healing Surge Animation/Notification (shown when hero uses surge at turn start) -->
+  {#if healingSurgeUsedHeroId && healingSurgeHpRestored !== null}
+    <HealingSurgeAnimation
+      heroId={healingSurgeUsedHeroId}
+      hpRestored={healingSurgeHpRestored}
+      onDismiss={handleDismissHealingSurgeNotification}
+    />
   {/if}
 </div>
 
