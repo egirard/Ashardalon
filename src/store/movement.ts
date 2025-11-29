@@ -185,6 +185,70 @@ export function isOnTileEdge(pos: Position, tile: PlacedTile, direction: Directi
 }
 
 /**
+ * Check if diagonal movement within a tile is blocked by walls at the tile edges.
+ * Diagonal movement is blocked if both connected edges have walls.
+ * 
+ * For example, moving diagonally from (3,0) to (4,1) requires checking:
+ * - If at north edge (y=minY) and moving south-east (dx=1, dy=1), check east edge
+ * - If at east edge (x=maxX) and moving south-east (dx=1, dy=1), check south edge
+ * 
+ * Returns true if movement is blocked, false if allowed.
+ */
+export function isDiagonalBlockedByWalls(
+  pos: Position,
+  dx: number,
+  dy: number,
+  tile: PlacedTile
+): boolean {
+  const bounds = getTileBounds(tile);
+  
+  // For start tile, walkable area starts at x=1, not x=0
+  const effectiveMinX = tile.tileType === 'start' ? 1 : bounds.minX;
+  
+  // Determine which edges the current position is on
+  const onNorthEdge = pos.y === bounds.minY;
+  const onSouthEdge = pos.y === bounds.maxY;
+  const onEastEdge = pos.x === bounds.maxX;
+  const onWestEdge = pos.x === effectiveMinX;
+  
+  // For diagonal movement, check if both connected edges have walls
+  // A diagonal move requires passage through two edges
+  
+  // Get the two cardinal directions that make up this diagonal
+  const verticalDir: Direction | null = dy < 0 ? 'north' : dy > 0 ? 'south' : null;
+  const horizontalDir: Direction | null = dx < 0 ? 'west' : dx > 0 ? 'east' : null;
+  
+  // Both directions must be present for diagonal movement
+  if (!verticalDir || !horizontalDir) {
+    return false; // Not a diagonal move
+  }
+  
+  // Check if we're moving toward a wall edge
+  let verticalWallBlocks = false;
+  let horizontalWallBlocks = false;
+  
+  // If moving north and already on north edge with wall, it's blocked
+  if (verticalDir === 'north' && onNorthEdge && tile.edges.north === 'wall') {
+    verticalWallBlocks = true;
+  }
+  // If moving south and already on south edge with wall, it's blocked
+  if (verticalDir === 'south' && onSouthEdge && tile.edges.south === 'wall') {
+    verticalWallBlocks = true;
+  }
+  // If moving east and already on east edge with wall, it's blocked
+  if (horizontalDir === 'east' && onEastEdge && tile.edges.east === 'wall') {
+    horizontalWallBlocks = true;
+  }
+  // If moving west and already on west edge with wall, it's blocked
+  if (horizontalDir === 'west' && onWestEdge && tile.edges.west === 'wall') {
+    horizontalWallBlocks = true;
+  }
+  
+  // Diagonal movement is blocked if BOTH connected edges have walls
+  return verticalWallBlocks && horizontalWallBlocks;
+}
+
+/**
  * Check if movement between two tiles is allowed via their connected edges.
  * Movement between tiles is only allowed in cardinal directions (not diagonal)
  * and only if both tiles have 'open' edges on the connecting sides.
@@ -288,8 +352,12 @@ export function getAdjacentPositions(pos: Position, dungeon?: DungeonState): Pos
       }
     }
     
-    // If same tile, movement is allowed (including diagonal)
+    // If same tile, movement is allowed (including diagonal) unless blocked by walls
     if (currentTile.id === targetTile.id) {
+      // For diagonal movement, check if both connected edges have walls
+      if (!dir.cardinal && isDiagonalBlockedByWalls(pos, dir.dx, dir.dy, currentTile)) {
+        continue;
+      }
       adjacent.push(newPos);
       continue;
     }
