@@ -31,17 +31,18 @@
   tabindex="0"
   data-testid="defeat-notification-overlay"
 >
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div 
     class="defeat-notification" 
     onclick={(e) => e.stopPropagation()}
     onkeydown={(e) => e.stopPropagation()}
-    role="document"
+    role="dialog"
+    aria-labelledby="defeat-title"
+    tabindex="-1"
     data-testid="defeat-notification"
   >
     <div class="defeat-header">
       <span class="defeat-icon">💀</span>
-      <h3 class="defeat-title" data-testid="defeat-title">{monsterName} Defeated!</h3>
+      <h3 class="defeat-title" id="defeat-title" data-testid="defeat-title">{monsterName} Defeated!</h3>
       <button 
         class="dismiss-button" 
         onclick={handleDismiss}
