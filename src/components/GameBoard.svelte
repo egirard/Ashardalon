@@ -13,6 +13,7 @@
     dismissAttackResult,
     activateNextMonster,
     dismissMonsterAttackResult,
+    dismissMonsterMoveAction,
     shouldAutoEndHeroTurn,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
@@ -41,6 +42,7 @@
   import MonsterCard from "./MonsterCard.svelte";
   import AttackButton from "./AttackButton.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
+  import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -109,6 +111,7 @@
   let monsterAttackTargetId: string | null = $state(null);
   let monsterAttackerId: string | null = $state(null);
   let villainPhaseMonsterIndex: number = $state(0);
+  let monsterMoveActionId: string | null = $state(null);
   let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
   let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" });
   let boardContainerRef: HTMLDivElement | null = $state(null);
@@ -137,6 +140,7 @@
       monsterAttackTargetId = state.game.monsterAttackTargetId;
       monsterAttackerId = state.game.monsterAttackerId;
       villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
+      monsterMoveActionId = state.game.monsterMoveActionId;
       heroTurnActions = state.game.heroTurnActions;
       scenario = state.game.scenario;
     });
@@ -159,6 +163,7 @@
     monsterAttackTargetId = state.game.monsterAttackTargetId;
     monsterAttackerId = state.game.monsterAttackerId;
     villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
+    monsterMoveActionId = state.game.monsterMoveActionId;
     heroTurnActions = state.game.heroTurnActions;
     scenario = state.game.scenario;
 
@@ -191,6 +196,29 @@
     store.dispatch(
       showMovement({ heroId: currentHeroId, speed: currentHero.speed }),
     );
+  });
+
+  // Auto-activate monsters during villain phase
+  // This effect triggers when:
+  // 1. Entering villain phase (to start the first monster)
+  // 2. After dismissing a monster action result (attack or move)
+  $effect(() => {
+    if (turnState.currentPhase !== "villain-phase") return;
+    
+    // Don't auto-activate if there's an action result being displayed
+    if (monsterAttackResult !== null || monsterMoveActionId !== null) return;
+    
+    const controlledMonsters = getControlledMonsters();
+    
+    // Check if all monsters have been activated
+    if (villainPhaseMonsterIndex >= controlledMonsters.length) {
+      // All monsters activated, auto-end villain phase
+      store.dispatch(endVillainPhase());
+      return;
+    }
+    
+    // Auto-activate the next monster
+    store.dispatch(activateNextMonster({}));
   });
 
   // Calculate the bounds of all placed tiles (pure function for use with $derived)
@@ -633,6 +661,11 @@
     store.dispatch(dismissMonsterAttackResult());
   }
 
+  // Handle dismissing the monster move action display
+  function handleDismissMonsterMoveAction() {
+    store.dispatch(dismissMonsterMoveAction());
+  }
+
   // Get the hero name for monster attack target
   function getMonsterAttackTargetName(): string {
     if (!monsterAttackTargetId) return "Hero";
@@ -644,6 +677,14 @@
   function getMonsterAttackerName(): string {
     if (!monsterAttackerId) return "Monster";
     const monster = monsters.find((m) => m.instanceId === monsterAttackerId);
+    if (!monster) return "Monster";
+    return getMonsterName(monster.monsterId);
+  }
+
+  // Get the monster name for move action display
+  function getMonsterMoveActionName(): string {
+    if (!monsterMoveActionId) return "Monster";
+    const monster = monsters.find((m) => m.instanceId === monsterMoveActionId);
     if (!monster) return "Monster";
     return getMonsterName(monster.monsterId);
   }
@@ -832,17 +873,6 @@
         </div>
         
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
-        
-        <!-- Villain Phase: Activate Monster Button -->
-        {#if turnState.currentPhase === "villain-phase" && !allMonstersActivated() && !monsterAttackResult}
-          <button
-            class="activate-monster-button"
-            data-testid="activate-monster-button"
-            onclick={handleActivateMonster}
-          >
-            👹 Activate Monster ({villainPhaseMonsterIndex + 1}/{getControlledMonsters().length})
-          </button>
-        {/if}
 
         <button
           class="end-phase-button"
@@ -981,6 +1011,14 @@
       attackName="Attack"
       targetName={getMonsterAttackTargetName()}
       onDismiss={handleDismissMonsterAttackResult}
+    />
+  {/if}
+
+  <!-- Monster Move Action Display (shown when monster moves but can't attack) -->
+  {#if monsterMoveActionId}
+    <MonsterMoveDisplay
+      monsterName={getMonsterMoveActionName()}
+      onDismiss={handleDismissMonsterMoveAction}
     />
   {/if}
 </div>
@@ -1212,24 +1250,6 @@
     font-size: 0.75rem;
     color: #4ade80;
     font-weight: bold;
-  }
-
-  /* Activate monster button */
-  .activate-monster-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    background: rgba(139, 69, 19, 0.9);
-    color: #fff;
-    border: 1px solid #cd853f;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .activate-monster-button:hover {
-    background: rgba(205, 133, 63, 0.9);
   }
 
   /* End phase button */

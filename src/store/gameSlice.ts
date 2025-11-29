@@ -100,6 +100,8 @@ export interface GameState {
   monsterAttackerId: string | null;
   /** Index of the monster currently being activated during villain phase */
   villainPhaseMonsterIndex: number;
+  /** ID of the monster that just moved but could not attack (for displaying move feedback) */
+  monsterMoveActionId: string | null;
   /** Hero turn actions tracking for enforcing valid turn structure */
   heroTurnActions: HeroTurnActions;
   /** Scenario state for MVP win/loss tracking */
@@ -124,6 +126,7 @@ const initialState: GameState = {
   monsterAttackTargetId: null,
   monsterAttackerId: null,
   villainPhaseMonsterIndex: 0,
+  monsterMoveActionId: null,
   heroTurnActions: { ...DEFAULT_HERO_TURN_ACTIONS },
   scenario: { ...DEFAULT_SCENARIO_STATE },
 };
@@ -391,6 +394,7 @@ export const gameSlice = createSlice({
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
       state.villainPhaseMonsterIndex = 0;
+      state.monsterMoveActionId = null;
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
       state.scenario = { ...DEFAULT_SCENARIO_STATE };
     },
@@ -470,10 +474,11 @@ export const gameSlice = createSlice({
       state.turnState.currentPhase = "villain-phase";
       // Reset villain phase monster index to start activating from the first monster
       state.villainPhaseMonsterIndex = 0;
-      // Clear any previous monster attack results
+      // Clear any previous monster action results
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+      state.monsterMoveActionId = null;
     },
     /**
      * End the villain phase and move to the next hero's turn
@@ -488,6 +493,7 @@ export const gameSlice = createSlice({
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+      state.monsterMoveActionId = null;
       
       // Move to next hero
       state.turnState.currentHeroIndex = 
@@ -626,6 +632,8 @@ export const gameSlice = createSlice({
             }
           }
         }
+        // Store the monster ID to show "moved but could not attack" message
+        state.monsterMoveActionId = monster.instanceId;
       } else if (result.type === 'attack') {
         // Store the attack result
         state.monsterAttackResult = result.result;
@@ -646,6 +654,7 @@ export const gameSlice = createSlice({
           }
         }
       }
+      // Note: For result.type === 'none', no visual feedback is needed - monster couldn't act
 
       // Move to next monster
       state.villainPhaseMonsterIndex += 1;
@@ -657,6 +666,12 @@ export const gameSlice = createSlice({
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+    },
+    /**
+     * Dismiss the monster move action display
+     */
+    dismissMonsterMoveAction: (state) => {
+      state.monsterMoveActionId = null;
     },
     /**
      * Set hero HP directly (for testing purposes)
@@ -687,6 +702,7 @@ export const {
   setMonsters,
   activateNextMonster,
   dismissMonsterAttackResult,
+  dismissMonsterMoveAction,
   setHeroHp,
 } = gameSlice.actions;
 export default gameSlice.reducer;
