@@ -594,9 +594,9 @@ export const gameSlice = createSlice({
             state.heroHp[heroHpIndex] = surgeResult.heroState;
             state.partyResources = surgeResult.resources;
             
-            // Set notification data for UI
+            // Set notification data for UI - use surge value as the HP restored amount
             state.healingSurgeUsedHeroId = currentHeroId;
-            state.healingSurgeHpRestored = surgeResult.heroState.currentHp;
+            state.healingSurgeHpRestored = heroHpState.surgeValue;
           }
         }
       }
