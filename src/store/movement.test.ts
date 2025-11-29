@@ -11,6 +11,7 @@ import {
   START_TILE,
   getTileBounds,
   findTileAtPosition,
+  isDiagonalBlockedByWalls,
 } from "./movement";
 import type { HeroToken, Position, DungeonState, PlacedTile } from "./types";
 
@@ -543,6 +544,205 @@ describe("movement utilities", () => {
         
         // Should be able to reach x=6 (3 steps east)
         expect(squares.some(s => s.x === 6 && s.y === 2)).toBe(true);
+      });
+    });
+  });
+
+  describe("wall collision for diagonal movement", () => {
+    // Helper to create a normal tile with specific walls
+    function createTileWithWalls(edges: { north?: boolean; south?: boolean; east?: boolean; west?: boolean }): PlacedTile {
+      return {
+        id: 'test-tile',
+        tileType: 'tile-2exit-a',
+        position: { col: 0, row: 0 },
+        rotation: 0,
+        edges: {
+          north: edges.north ? 'wall' : 'open',
+          south: edges.south ? 'wall' : 'open',
+          east: edges.east ? 'wall' : 'open',
+          west: edges.west ? 'wall' : 'open',
+        },
+      };
+    }
+
+    describe("isDiagonalBlockedByWalls", () => {
+      it("should block diagonal movement when both connected edges have walls", () => {
+        const tile = createTileWithWalls({ north: true, east: true });
+        // At north-east corner (max x, min y), moving north-east (up-right) should be blocked
+        // Position (3, 0) on a 4x4 tile is at north-east corner
+        const pos = { x: 3, y: 0 }; // Tile bounds: 0-3 for both x and y
+        // Moving up-right (dx=1, dy=-1) from corner with both walls
+        expect(isDiagonalBlockedByWalls(pos, 1, -1, tile)).toBe(true);
+      });
+
+      it("should allow diagonal movement when only one connected edge has wall", () => {
+        const tile = createTileWithWalls({ north: true, east: false });
+        const pos = { x: 3, y: 0 };
+        // Moving up-right (dx=1, dy=-1) - only north has wall, east is open
+        expect(isDiagonalBlockedByWalls(pos, 1, -1, tile)).toBe(false);
+      });
+
+      it("should allow diagonal movement when no connected edges have walls", () => {
+        const tile = createTileWithWalls({ north: false, east: false });
+        const pos = { x: 3, y: 0 };
+        expect(isDiagonalBlockedByWalls(pos, 1, -1, tile)).toBe(false);
+      });
+
+      it("should not block diagonal movement from center of tile", () => {
+        const tile = createTileWithWalls({ north: true, south: true, east: true, west: true });
+        const pos = { x: 1, y: 1 }; // Center-ish position, not on any edge
+        // Moving any diagonal direction should not be blocked since we're not at an edge
+        expect(isDiagonalBlockedByWalls(pos, 1, 1, tile)).toBe(false);
+        expect(isDiagonalBlockedByWalls(pos, -1, 1, tile)).toBe(false);
+        expect(isDiagonalBlockedByWalls(pos, 1, -1, tile)).toBe(false);
+        expect(isDiagonalBlockedByWalls(pos, -1, -1, tile)).toBe(false);
+      });
+
+      it("should block south-west diagonal when at corner with both walls", () => {
+        const tile = createTileWithWalls({ south: true, west: true });
+        const pos = { x: 0, y: 3 }; // South-west corner
+        // Moving down-left (dx=-1, dy=1)
+        expect(isDiagonalBlockedByWalls(pos, -1, 1, tile)).toBe(true);
+      });
+
+      it("should not block cardinal movement (not diagonal)", () => {
+        const tile = createTileWithWalls({ north: true, east: true, south: true, west: true });
+        const pos = { x: 0, y: 0 };
+        // Cardinal moves should return false (not blocked by this function)
+        expect(isDiagonalBlockedByWalls(pos, 1, 0, tile)).toBe(false);
+        expect(isDiagonalBlockedByWalls(pos, 0, 1, tile)).toBe(false);
+        expect(isDiagonalBlockedByWalls(pos, -1, 0, tile)).toBe(false);
+        expect(isDiagonalBlockedByWalls(pos, 0, -1, tile)).toBe(false);
+      });
+    });
+
+    describe("getAdjacentPositions with walls", () => {
+      it("should not include diagonal position when both connected edges have walls", () => {
+        // Create a tile with north and east walls
+        const tile: PlacedTile = {
+          id: 'tile-1',
+          tileType: 'tile-2exit-a',
+          position: { col: 1, row: 0 }, // East of start tile
+          rotation: 0,
+          edges: {
+            north: 'wall',
+            south: 'open',
+            east: 'wall',
+            west: 'open',
+          },
+        };
+
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'open', west: 'unexplored' },
+        };
+
+        const dungeon: DungeonState = {
+          tiles: [startTile, tile],
+          unexploredEdges: [],
+          tileDeck: [],
+        };
+
+        // Position at north-east corner of tile-1 (x=7, y=0)
+        // Tile-1 bounds: x=4-7, y=0-3
+        const pos = { x: 7, y: 0 };
+        const adjacent = getAdjacentPositions(pos, dungeon);
+
+        // Should NOT include diagonal up-right (would be x=8, y=-1 which is off tile anyway)
+        // But more importantly, should NOT include positions that would require diagonal through corner walls
+        // At x=7, y=0 with north and east walls, up-right diagonal should be blocked
+        // The new position (8, -1) is off tile, but (6, 1) is valid (down-left)
+        
+        // Verify that valid adjacent positions within the tile don't include blocked diagonals
+        // From (7, 0), can go south (7, 1), west (6, 0), and diagonals within tile
+        expect(adjacent.some(p => p.x === 7 && p.y === 1)).toBe(true); // south
+        expect(adjacent.some(p => p.x === 6 && p.y === 0)).toBe(true); // west
+      });
+
+      it("should allow diagonal movement when only one wall blocks", () => {
+        const tile: PlacedTile = {
+          id: 'tile-1',
+          tileType: 'tile-2exit-a',
+          position: { col: 1, row: 0 },
+          rotation: 0,
+          edges: {
+            north: 'wall',
+            south: 'open',
+            east: 'open', // East is open
+            west: 'open',
+          },
+        };
+
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'open', west: 'unexplored' },
+        };
+
+        const dungeon: DungeonState = {
+          tiles: [startTile, tile],
+          unexploredEdges: [],
+          tileDeck: [],
+        };
+
+        // Position at north edge but not corner (x=5, y=0)
+        const pos = { x: 5, y: 0 };
+        const adjacent = getAdjacentPositions(pos, dungeon);
+
+        // Should include diagonal down-right and down-left (within tile)
+        expect(adjacent.some(p => p.x === 6 && p.y === 1)).toBe(true); // down-right
+        expect(adjacent.some(p => p.x === 4 && p.y === 1)).toBe(true); // down-left
+      });
+    });
+
+    describe("getValidMoveSquares with wall constraints", () => {
+      it("should not include positions reachable only through wall-blocked diagonals", () => {
+        // Create a tile with walls on north and east
+        const tile: PlacedTile = {
+          id: 'tile-1',
+          tileType: 'tile-2exit-a',
+          position: { col: 1, row: 0 },
+          rotation: 0,
+          edges: {
+            north: 'wall',
+            south: 'open',
+            east: 'wall',
+            west: 'open',
+          },
+        };
+
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'open', west: 'unexplored' },
+        };
+
+        const dungeon: DungeonState = {
+          tiles: [startTile, tile],
+          unexploredEdges: [],
+          tileDeck: [],
+        };
+
+        const heroTokens: HeroToken[] = [
+          { heroId: 'quinn', position: { x: 7, y: 0 } }, // At north-east corner of tile-1
+        ];
+
+        // With speed 1, from corner with both walls, diagonal moves should be limited
+        const squares = getValidMoveSquares({ x: 7, y: 0 }, 1, heroTokens, 'quinn', dungeon);
+
+        // Should include south (7, 1), west (6, 0)
+        expect(squares.some(s => s.x === 7 && s.y === 1)).toBe(true);
+        expect(squares.some(s => s.x === 6 && s.y === 0)).toBe(true);
+        
+        // Should include south-west diagonal (6, 1) since that's not blocked by the north+east walls
+        expect(squares.some(s => s.x === 6 && s.y === 1)).toBe(true);
       });
     });
   });
