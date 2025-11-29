@@ -11,6 +11,7 @@
     dismissMonsterCard,
     setAttackResult,
     dismissAttackResult,
+    dismissDefeatNotification,
     activateNextMonster,
     dismissMonsterAttackResult,
     dismissMonsterMoveAction,
@@ -32,6 +33,7 @@
     HeroHpState,
     HeroTurnActions,
     ScenarioState,
+    PartyResources,
   } from "../store/types";
   import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES } from "../store/types";
   import { assetPath } from "../utils";
@@ -43,6 +45,8 @@
   import AttackButton from "./AttackButton.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
+  import XPCounter from "./XPCounter.svelte";
+  import DefeatAnimation from "./DefeatAnimation.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -114,6 +118,9 @@
   let monsterMoveActionId: string | null = $state(null);
   let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
   let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" });
+  let partyResources: PartyResources = $state({ xp: 0, healingSurges: 2 });
+  let defeatedMonsterXp: number | null = $state(null);
+  let defeatedMonsterName: string | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
 
@@ -143,6 +150,9 @@
       monsterMoveActionId = state.game.monsterMoveActionId;
       heroTurnActions = state.game.heroTurnActions;
       scenario = state.game.scenario;
+      partyResources = state.game.partyResources;
+      defeatedMonsterXp = state.game.defeatedMonsterXp;
+      defeatedMonsterName = state.game.defeatedMonsterName;
     });
 
     // Initialize state
@@ -166,6 +176,9 @@
     monsterMoveActionId = state.game.monsterMoveActionId;
     heroTurnActions = state.game.heroTurnActions;
     scenario = state.game.scenario;
+    partyResources = state.game.partyResources;
+    defeatedMonsterXp = state.game.defeatedMonsterXp;
+    defeatedMonsterName = state.game.defeatedMonsterName;
 
     return unsubscribe;
   });
@@ -688,6 +701,11 @@
     if (!monster) return "Monster";
     return getMonsterName(monster.monsterId);
   }
+
+  // Handle dismissing the defeat notification
+  function handleDismissDefeatNotification() {
+    store.dispatch(dismissDefeatNotification());
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -872,6 +890,9 @@
           </span>
         </div>
         
+        <!-- XP Counter -->
+        <XPCounter xp={partyResources.xp} />
+        
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
         <button
@@ -1019,6 +1040,15 @@
     <MonsterMoveDisplay
       monsterName={getMonsterMoveActionName()}
       onDismiss={handleDismissMonsterMoveAction}
+    />
+  {/if}
+
+  <!-- Defeat Animation/Notification (shown when monster is defeated and XP is gained) -->
+  {#if defeatedMonsterXp !== null && defeatedMonsterName !== null}
+    <DefeatAnimation
+      monsterName={defeatedMonsterName}
+      xpGained={defeatedMonsterXp}
+      onDismiss={handleDismissDefeatNotification}
     />
   {/if}
 </div>

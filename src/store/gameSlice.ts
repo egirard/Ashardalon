@@ -16,6 +16,7 @@ import {
   HeroTurnActions,
   HeroSubAction,
   ScenarioState,
+  PartyResources,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -32,6 +33,7 @@ import {
   createMonsterInstance,
   getTileMonsterSpawnPosition,
   discardMonster,
+  getMonsterById,
 } from "./monsters";
 import {
   executeMonsterTurn,
@@ -64,6 +66,14 @@ const DEFAULT_SCENARIO_STATE: ScenarioState = {
   monstersDefeated: 0,
   monstersToDefeat: 2,
   objective: "Defeat 2 monsters",
+};
+
+/**
+ * Default party resources at the start of a game
+ */
+const DEFAULT_PARTY_RESOURCES: PartyResources = {
+  xp: 0,
+  healingSurges: 2, // Starting healing surges for the party
 };
 
 export interface GameState {
@@ -106,6 +116,12 @@ export interface GameState {
   heroTurnActions: HeroTurnActions;
   /** Scenario state for MVP win/loss tracking */
   scenario: ScenarioState;
+  /** Party resources (XP, healing surges) */
+  partyResources: PartyResources;
+  /** XP gained from most recently defeated monster (for UI notification, null if no recent defeat) */
+  defeatedMonsterXp: number | null;
+  /** Name of the most recently defeated monster (for UI notification) */
+  defeatedMonsterName: string | null;
 }
 
 const initialState: GameState = {
@@ -129,6 +145,9 @@ const initialState: GameState = {
   monsterMoveActionId: null,
   heroTurnActions: { ...DEFAULT_HERO_TURN_ACTIONS },
   scenario: { ...DEFAULT_SCENARIO_STATE },
+  partyResources: { ...DEFAULT_PARTY_RESOURCES },
+  defeatedMonsterXp: null,
+  defeatedMonsterName: null,
 };
 
 /**
@@ -299,6 +318,11 @@ export const gameSlice = createSlice({
       // Initialize scenario state (MVP: defeat 2 monsters)
       state.scenario = { ...DEFAULT_SCENARIO_STATE };
 
+      // Initialize party resources (XP starts at 0)
+      state.partyResources = { ...DEFAULT_PARTY_RESOURCES };
+      state.defeatedMonsterXp = null;
+      state.defeatedMonsterName = null;
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -397,6 +421,9 @@ export const gameSlice = createSlice({
       state.monsterMoveActionId = null;
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
       state.scenario = { ...DEFAULT_SCENARIO_STATE };
+      state.partyResources = { ...DEFAULT_PARTY_RESOURCES };
+      state.defeatedMonsterXp = null;
+      state.defeatedMonsterName = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -530,15 +557,32 @@ export const gameSlice = createSlice({
       state.attackResult = result;
       state.attackTargetId = targetInstanceId;
       
+      // Clear any previous defeat notification
+      state.defeatedMonsterXp = null;
+      state.defeatedMonsterName = null;
+      
       // Apply damage if hit
       if (result.isHit && result.damage > 0) {
         const monster = state.monsters.find(m => m.instanceId === targetInstanceId);
         if (monster) {
           monster.currentHp -= result.damage;
           
-          // Remove defeated monsters
+          // Remove defeated monsters and award XP
           if (monster.currentHp <= 0) {
+            // Get monster definition to award XP
+            const monsterDef = getMonsterById(monster.monsterId);
+            const xpGained = monsterDef?.xp ?? 1;
+            
+            // Award XP to party
+            state.partyResources.xp += xpGained;
+            
+            // Set notification data for UI
+            state.defeatedMonsterXp = xpGained;
+            state.defeatedMonsterName = monsterDef?.name ?? monster.monsterId;
+            
+            // Remove defeated monster from board
             state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
+            
             // Discard the monster card
             state.monsterDeck = discardMonster(state.monsterDeck, monster.monsterId);
             
@@ -562,6 +606,13 @@ export const gameSlice = createSlice({
     dismissAttackResult: (state) => {
       state.attackResult = null;
       state.attackTargetId = null;
+    },
+    /**
+     * Dismiss the monster defeat/XP notification
+     */
+    dismissDefeatNotification: (state) => {
+      state.defeatedMonsterXp = null;
+      state.defeatedMonsterName = null;
     },
     /**
      * Set monsters directly (for testing purposes)
@@ -699,6 +750,7 @@ export const {
   dismissMonsterCard,
   setAttackResult,
   dismissAttackResult,
+  dismissDefeatNotification,
   setMonsters,
   activateNextMonster,
   dismissMonsterAttackResult,
