@@ -12,6 +12,7 @@ import gameReducer, {
   dismissMonsterCard,
   setAttackResult,
   dismissAttackResult,
+  dismissDefeatNotification,
   activateNextMonster,
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
@@ -50,6 +51,9 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     monsterMoveActionId: null,
     heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
     scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+    partyResources: { xp: 0, healingSurges: 2 },
+    defeatedMonsterXp: null,
+    defeatedMonsterName: null,
     ...overrides,
   };
 }
@@ -2011,6 +2015,192 @@ describe("gameSlice", () => {
       expect(state.scenario.monstersDefeated).toBe(0);
       expect(state.scenario.monstersToDefeat).toBe(2);
       expect(state.scenario.objective).toBe("Defeat 2 monsters");
+    });
+  });
+
+  describe("Party XP (Defeat Monster and Gain XP)", () => {
+    it("should initialize party resources with 0 XP on game start", () => {
+      const state = gameReducer(undefined, startGame({
+        heroIds: ["quinn"],
+        seed: 12345,
+      }));
+
+      expect(state.partyResources.xp).toBe(0);
+      expect(state.partyResources.healingSurges).toBe(2);
+    });
+
+    it("should award XP when monster is defeated", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      // Kobold has 1 XP value
+      expect(state.partyResources.xp).toBe(1);
+    });
+
+    it("should accumulate XP from multiple defeated monsters", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      // Start with some XP already earned
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-1", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        partyResources: { xp: 3, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-1",
+      }));
+
+      // Should add 1 XP to existing 3
+      expect(state.partyResources.xp).toBe(4);
+    });
+
+    it("should not award XP when attack misses", () => {
+      const attackResult: AttackResult = {
+        roll: 5,
+        attackBonus: 6,
+        total: 11,
+        targetAC: 14,
+        isHit: false,
+        damage: 0,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.partyResources.xp).toBe(0);
+      expect(state.monsters).toHaveLength(1); // Monster still alive
+    });
+
+    it("should not award XP when monster survives the hit", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 13,
+        isHit: true,
+        damage: 1,
+        isCritical: false,
+      };
+
+      // Cultist has 2 HP
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "cultist", instanceId: "cultist-0", position: { x: 2, y: 2 }, currentHp: 2, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "cultist-0",
+      }));
+
+      // No XP awarded - monster still alive at 1 HP
+      expect(state.partyResources.xp).toBe(0);
+      expect(state.monsters[0].currentHp).toBe(1);
+    });
+
+    it("should set defeatedMonsterXp and defeatedMonsterName on defeat", () => {
+      const attackResult: AttackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        defeatedMonsterXp: null,
+        defeatedMonsterName: null,
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+      }));
+
+      expect(state.defeatedMonsterXp).toBe(1);
+      expect(state.defeatedMonsterName).toBe("Kobold Dragonshield");
+    });
+
+    it("should clear defeat notification with dismissDefeatNotification", () => {
+      const initialState = createGameState({
+        defeatedMonsterXp: 1,
+        defeatedMonsterName: "Kobold Dragonshield",
+      });
+
+      const state = gameReducer(initialState, dismissDefeatNotification());
+
+      expect(state.defeatedMonsterXp).toBeNull();
+      expect(state.defeatedMonsterName).toBeNull();
+    });
+
+    it("should reset party resources on game reset", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        partyResources: { xp: 10, healingSurges: 0 },
+        defeatedMonsterXp: 1,
+        defeatedMonsterName: "Snake",
+      });
+
+      const state = gameReducer(gameInProgress, resetGame());
+
+      expect(state.partyResources.xp).toBe(0);
+      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.defeatedMonsterXp).toBeNull();
+      expect(state.defeatedMonsterName).toBeNull();
     });
   });
 });

@@ -121,6 +121,16 @@ export const INITIAL_MONSTER_DECK: string[] = [
 ];
 
 /**
+ * Party resources shared by all heroes
+ */
+export interface PartyResources {
+  /** Total experience points earned by defeating monsters */
+  xp: number;
+  /** Number of healing surges remaining for the party */
+  healingSurges: number;
+}
+
+/**
  * Game screen states
  */
 export type GameScreen = 'character-select' | 'game-board' | 'victory' | 'defeat';
