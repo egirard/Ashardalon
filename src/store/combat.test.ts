@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC } from './combat';
-import type { HeroAttack, MonsterState } from './types';
+import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC, canLevelUp, levelUpHero, calculateDamage } from './combat';
+import type { HeroAttack, MonsterState, HeroHpState, PartyResources } from './types';
 
 describe('rollD20', () => {
   it('should return values between 1 and 20', () => {
@@ -116,6 +116,196 @@ describe('resolveAttack', () => {
     
     expect(result.isHit).toBe(true);
     expect(result.damage).toBe(1);
+  });
+});
+
+describe('canLevelUp', () => {
+  const level1Hero: HeroHpState = {
+    heroId: 'quinn',
+    currentHp: 8,
+    maxHp: 8,
+    level: 1,
+    ac: 17,
+    surgeValue: 4,
+    attackBonus: 6,
+  };
+
+  const level2Hero: HeroHpState = {
+    heroId: 'quinn',
+    currentHp: 10,
+    maxHp: 10,
+    level: 2,
+    ac: 18,
+    surgeValue: 5,
+    attackBonus: 7,
+  };
+
+  it('should return true on nat 20 with 5+ XP for level 1 hero', () => {
+    const resources: PartyResources = { xp: 5, healingSurges: 2 };
+    expect(canLevelUp(level1Hero, 20, resources)).toBe(true);
+  });
+
+  it('should return true on nat 20 with more than 5 XP', () => {
+    const resources: PartyResources = { xp: 10, healingSurges: 2 };
+    expect(canLevelUp(level1Hero, 20, resources)).toBe(true);
+  });
+
+  it('should return false for level 2 heroes', () => {
+    const resources: PartyResources = { xp: 5, healingSurges: 2 };
+    expect(canLevelUp(level2Hero, 20, resources)).toBe(false);
+  });
+
+  it('should return false when XP < 5', () => {
+    const resources: PartyResources = { xp: 4, healingSurges: 2 };
+    expect(canLevelUp(level1Hero, 20, resources)).toBe(false);
+  });
+
+  it('should return false when XP is 0', () => {
+    const resources: PartyResources = { xp: 0, healingSurges: 2 };
+    expect(canLevelUp(level1Hero, 20, resources)).toBe(false);
+  });
+
+  it('should return false when roll is not 20', () => {
+    const resources: PartyResources = { xp: 5, healingSurges: 2 };
+    expect(canLevelUp(level1Hero, 19, resources)).toBe(false);
+    expect(canLevelUp(level1Hero, 10, resources)).toBe(false);
+    expect(canLevelUp(level1Hero, 1, resources)).toBe(false);
+  });
+});
+
+describe('levelUpHero', () => {
+  it('should update Quinn stats correctly on level up', () => {
+    const hero: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 8,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 7, healingSurges: 2 };
+
+    const result = levelUpHero(hero, resources);
+
+    expect(result.heroState.level).toBe(2);
+    expect(result.heroState.maxHp).toBe(10);
+    expect(result.heroState.currentHp).toBe(10);
+    expect(result.heroState.ac).toBe(18);
+    expect(result.heroState.surgeValue).toBe(5);
+    expect(result.heroState.attackBonus).toBe(7);
+  });
+
+  it('should preserve damage taken on level up', () => {
+    const hero: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 5, // 3 damage taken (8 - 5 = 3)
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 5, healingSurges: 2 };
+
+    const result = levelUpHero(hero, resources);
+
+    // New max HP is 10, with 3 damage taken = 7 HP
+    expect(result.heroState.maxHp).toBe(10);
+    expect(result.heroState.currentHp).toBe(7);
+  });
+
+  it('should deduct 5 XP on level up', () => {
+    const hero: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 8,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 7, healingSurges: 2 };
+
+    const result = levelUpHero(hero, resources);
+
+    expect(result.resources.xp).toBe(2); // 7 - 5 = 2
+  });
+
+  it('should preserve healing surges on level up', () => {
+    const hero: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 8,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 5, healingSurges: 3 };
+
+    const result = levelUpHero(hero, resources);
+
+    expect(result.resources.healingSurges).toBe(3);
+  });
+
+  it('should update Vistra stats correctly on level up', () => {
+    const hero: HeroHpState = {
+      heroId: 'vistra',
+      currentHp: 10,
+      maxHp: 10,
+      level: 1,
+      ac: 18,
+      surgeValue: 5,
+      attackBonus: 8,
+    };
+    const resources: PartyResources = { xp: 5, healingSurges: 2 };
+
+    const result = levelUpHero(hero, resources);
+
+    expect(result.heroState.level).toBe(2);
+    expect(result.heroState.maxHp).toBe(12);
+    expect(result.heroState.ac).toBe(19);
+    expect(result.heroState.surgeValue).toBe(6);
+    expect(result.heroState.attackBonus).toBe(9);
+  });
+
+  it('should ensure minimum 1 HP after level up with heavy damage', () => {
+    const hero: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 1, // 7 damage taken (8 - 1 = 7)
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 5, healingSurges: 2 };
+
+    const result = levelUpHero(hero, resources);
+
+    // New max HP is 10, with 7 damage taken would be 3 HP
+    expect(result.heroState.maxHp).toBe(10);
+    expect(result.heroState.currentHp).toBe(3);
+  });
+});
+
+describe('calculateDamage', () => {
+  it('should return base damage for level 1 hero on any roll', () => {
+    expect(calculateDamage(1, 20, 2)).toBe(2);
+    expect(calculateDamage(1, 15, 2)).toBe(2);
+    expect(calculateDamage(1, 1, 2)).toBe(2);
+  });
+
+  it('should return base damage +1 for level 2 hero on natural 20', () => {
+    expect(calculateDamage(2, 20, 2)).toBe(3);
+    expect(calculateDamage(2, 20, 1)).toBe(2);
+  });
+
+  it('should return base damage for level 2 hero on non-20 rolls', () => {
+    expect(calculateDamage(2, 19, 2)).toBe(2);
+    expect(calculateDamage(2, 10, 2)).toBe(2);
+    expect(calculateDamage(2, 1, 2)).toBe(2);
   });
 });
 

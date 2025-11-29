@@ -9,6 +9,55 @@ export interface HeroAttack {
 }
 
 /**
+ * Hero level (1 or 2)
+ */
+export type HeroLevel = 1 | 2;
+
+/**
+ * Hero stats that vary by level
+ */
+export interface HeroLevelStats {
+  level: HeroLevel;
+  hp: number;
+  maxHp: number;
+  ac: number;
+  surgeValue: number;
+  attackBonus: number;
+  damage: number;
+}
+
+/**
+ * Level 1 and Level 2 stats for each hero
+ */
+export const HERO_LEVELS: Record<string, { level1: HeroLevelStats; level2: HeroLevelStats }> = {
+  quinn: {
+    level1: { level: 1, hp: 8, maxHp: 8, ac: 17, surgeValue: 4, attackBonus: 6, damage: 2 },
+    level2: { level: 2, hp: 10, maxHp: 10, ac: 18, surgeValue: 5, attackBonus: 7, damage: 2 },
+  },
+  vistra: {
+    level1: { level: 1, hp: 10, maxHp: 10, ac: 18, surgeValue: 5, attackBonus: 8, damage: 2 },
+    level2: { level: 2, hp: 12, maxHp: 12, ac: 19, surgeValue: 6, attackBonus: 9, damage: 2 },
+  },
+  keyleth: {
+    level1: { level: 1, hp: 10, maxHp: 10, ac: 18, surgeValue: 5, attackBonus: 7, damage: 2 },
+    level2: { level: 2, hp: 12, maxHp: 12, ac: 19, surgeValue: 6, attackBonus: 8, damage: 2 },
+  },
+  tarak: {
+    level1: { level: 1, hp: 8, maxHp: 8, ac: 17, surgeValue: 4, attackBonus: 7, damage: 2 },
+    level2: { level: 2, hp: 10, maxHp: 10, ac: 18, surgeValue: 5, attackBonus: 8, damage: 2 },
+  },
+  haskan: {
+    level1: { level: 1, hp: 6, maxHp: 6, ac: 14, surgeValue: 3, attackBonus: 4, damage: 1 },
+    level2: { level: 2, hp: 8, maxHp: 8, ac: 15, surgeValue: 4, attackBonus: 5, damage: 1 },
+  },
+};
+
+/**
+ * Cost in XP to level up a hero
+ */
+export const LEVEL_UP_COST = 5;
+
+/**
  * Monster's basic attack information
  */
 export interface MonsterAttack {
@@ -196,12 +245,16 @@ export type VillainPhaseStep =
   | { type: 'phase-complete' };
 
 /**
- * Hero HP state for tracking current HP during the game
+ * Hero HP state for tracking current HP and level during the game
  */
 export interface HeroHpState {
   heroId: string;
   currentHp: number;
   maxHp: number;
+  level: HeroLevel;
+  ac: number;
+  surgeValue: number;
+  attackBonus: number;
 }
 
 /**

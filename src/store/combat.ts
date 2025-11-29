@@ -1,4 +1,5 @@
-import type { HeroAttack, AttackResult, Position, MonsterState, DungeonState, PlacedTile } from './types';
+import type { HeroAttack, AttackResult, Position, MonsterState, DungeonState, PlacedTile, HeroHpState, PartyResources, HeroLevel } from './types';
+import { HERO_LEVELS, LEVEL_UP_COST } from './types';
 import { getMonsterById } from './monsters';
 import { getTileBounds, findTileAtPosition } from './movement';
 
@@ -36,6 +37,72 @@ export function resolveAttack(
     damage: isHit ? attack.damage : 0,
     isCritical,
   };
+}
+
+/**
+ * Check if a hero can level up
+ * Requirements: hero is level 1, roll is natural 20, and party has 5+ XP
+ */
+export function canLevelUp(
+  heroState: HeroHpState,
+  roll: number,
+  resources: PartyResources
+): boolean {
+  return heroState.level === 1 && 
+         roll === 20 && 
+         resources.xp >= LEVEL_UP_COST;
+}
+
+/**
+ * Level up a hero from level 1 to level 2
+ * Updates hero stats and deducts XP from party resources
+ * @param heroState Current hero HP state
+ * @param resources Current party resources
+ * @returns Updated hero state and party resources
+ */
+export function levelUpHero(
+  heroState: HeroHpState,
+  resources: PartyResources
+): { heroState: HeroHpState; resources: PartyResources } {
+  const heroLevels = HERO_LEVELS[heroState.heroId];
+  if (!heroLevels) {
+    // If hero levels not found, return unchanged
+    return { heroState, resources };
+  }
+  
+  const level2Stats = heroLevels.level2;
+  const currentDamage = heroState.maxHp - heroState.currentHp; // Preserve damage taken
+  
+  return {
+    heroState: {
+      ...heroState,
+      level: 2 as HeroLevel,
+      maxHp: level2Stats.maxHp,
+      currentHp: Math.max(1, level2Stats.maxHp - currentDamage), // Keep same damage, minimum 1 HP
+      ac: level2Stats.ac,
+      surgeValue: level2Stats.surgeValue,
+      attackBonus: level2Stats.attackBonus,
+    },
+    resources: {
+      ...resources,
+      xp: resources.xp - LEVEL_UP_COST,
+    },
+  };
+}
+
+/**
+ * Calculate damage for an attack, including critical hit bonus for level 2 heroes
+ * Level 2 heroes deal +1 damage on natural 20 rolls
+ */
+export function calculateDamage(
+  heroLevel: HeroLevel,
+  roll: number,
+  baseDamage: number
+): number {
+  if (roll === 20 && heroLevel === 2) {
+    return baseDamage + 1; // Critical attack bonus for level 2
+  }
+  return baseDamage;
 }
 
 /**
