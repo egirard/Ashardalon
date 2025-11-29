@@ -596,7 +596,11 @@ export const gameSlice = createSlice({
           
           // Check for party defeat first (hero at 0 HP with no surges)
           if (checkPartyDefeat(heroHpState, state.partyResources)) {
-            const heroName = AVAILABLE_HEROES.find(h => h.id === currentHeroId)?.name ?? currentHeroId;
+            const hero = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
+            if (!hero) {
+              console.warn(`Hero not found in AVAILABLE_HEROES for ID: ${currentHeroId}`);
+            }
+            const heroName = hero?.name ?? 'A hero';
             state.defeatReason = `${heroName} fell with no healing surges remaining.`;
             state.currentScreen = "defeat";
             return;
