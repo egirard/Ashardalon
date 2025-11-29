@@ -66,7 +66,8 @@ export function levelUpHero(
 ): { heroState: HeroHpState; resources: PartyResources } {
   const heroLevels = HERO_LEVELS[heroState.heroId];
   if (!heroLevels) {
-    // If hero levels not found, return unchanged
+    // Log warning and return unchanged - this indicates a configuration error
+    console.warn(`Hero levels not found for heroId: ${heroState.heroId}. Level up skipped.`);
     return { heroState, resources };
   }
   

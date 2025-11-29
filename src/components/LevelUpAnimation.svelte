@@ -42,7 +42,12 @@
   <div 
     class="level-up-notification" 
     onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
+    onkeydown={(e) => {
+      // Only stop propagation for keys that are handled by the parent overlay
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        e.stopPropagation();
+      }
+    }}
     role="dialog"
     aria-labelledby="level-up-title"
     tabindex="-1"

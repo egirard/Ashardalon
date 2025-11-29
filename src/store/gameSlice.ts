@@ -311,17 +311,27 @@ export const gameSlice = createSlice({
 
       // Initialize hero HP from hero definitions with level 1 stats
       state.heroHp = heroIds.map(heroId => {
-        const hero = AVAILABLE_HEROES.find(h => h.id === heroId);
         const heroLevels = HERO_LEVELS[heroId];
+        if (!heroLevels) {
+          console.warn(`Hero levels not found for ${heroId}, using defaults`);
+        }
         const level1Stats = heroLevels?.level1;
+        const hero = AVAILABLE_HEROES.find(h => h.id === heroId);
+        
+        // Use level 1 stats from HERO_LEVELS, fallback to hero definition, then defaults
+        const hp = level1Stats?.hp ?? hero?.hp ?? 8;
+        const ac = level1Stats?.ac ?? hero?.ac ?? 17;
+        const surgeValue = level1Stats?.surgeValue ?? 4;
+        const attackBonus = level1Stats?.attackBonus ?? hero?.attack?.attackBonus ?? 6;
+        
         return {
           heroId,
-          currentHp: level1Stats?.hp ?? hero?.hp ?? 8,
-          maxHp: level1Stats?.maxHp ?? hero?.maxHp ?? 8,
+          currentHp: hp,
+          maxHp: hp,
           level: 1 as HeroLevel,
-          ac: level1Stats?.ac ?? hero?.ac ?? 17,
-          surgeValue: level1Stats?.surgeValue ?? 4,
-          attackBonus: level1Stats?.attackBonus ?? hero?.attack.attackBonus ?? 6,
+          ac,
+          surgeValue,
+          attackBonus,
         };
       });
 
@@ -578,7 +588,6 @@ export const gameSlice = createSlice({
       }
       
       const { result, targetInstanceId } = action.payload;
-      state.attackResult = result;
       state.attackTargetId = targetInstanceId;
       
       // Clear any previous notifications
@@ -587,19 +596,17 @@ export const gameSlice = createSlice({
       state.leveledUpHeroId = null;
       state.levelUpOldStats = null;
       
-      // Get current hero for level up check
+      // Get current hero for level up check and critical damage calculation
       const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
       const currentHeroHp = state.heroHp.find(h => h.heroId === currentHeroId);
       
-      // Calculate actual damage with level 2 critical bonus
-      let actualDamage = result.damage;
-      if (result.isHit && currentHeroHp) {
-        actualDamage = calculateDamage(currentHeroHp.level, result.roll, result.damage);
-        // Update the damage in result for display
-        if (actualDamage !== result.damage) {
-          state.attackResult = { ...result, damage: actualDamage };
-        }
-      }
+      // Calculate actual damage with level 2 critical bonus (always calculate for consistency)
+      const actualDamage = (result.isHit && currentHeroHp) 
+        ? calculateDamage(currentHeroHp.level, result.roll, result.damage)
+        : result.damage;
+      
+      // Always store the result with calculated damage for display consistency
+      state.attackResult = { ...result, damage: actualDamage };
       
       // Apply damage if hit
       if (result.isHit && actualDamage > 0) {
