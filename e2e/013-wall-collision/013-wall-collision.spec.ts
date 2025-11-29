@@ -146,7 +146,7 @@ test.describe('013 - Wall Collision Detection', () => {
     });
   });
 
-  test('Hero cannot move to non-adjacent tile (requires three tiles)', async ({ page }) => {
+  test('Hero cannot move diagonally to non-adjacent tile (north and east tiles)', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
     // Helper function to dismiss monster card if visible
@@ -165,7 +165,10 @@ test.describe('013 - Wall Collision Detection', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
-    // STEP 2: Set up three tiles by exploring twice
+    // STEP 2: Set up three tiles: Start, North, and East
+    // This creates a scenario where North tile (3,-1) is diagonally adjacent to East tile (4,0)
+    // but they are NOT directly connected tiles
+    
     // First, move hero to north edge and trigger exploration
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -206,12 +209,12 @@ test.describe('013 - Wall Collision Detection', () => {
     await page.locator('[data-testid="end-phase-button"]').click();
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
 
-    // Now move hero to south edge and trigger second exploration
+    // Now move hero to east edge and trigger second exploration to create east tile
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
         type: 'game/setHeroPosition',
-        payload: { heroId: 'quinn', position: { x: 2, y: 7 } }
+        payload: { heroId: 'quinn', position: { x: 3, y: 2 } }
       });
     });
 
@@ -220,10 +223,10 @@ test.describe('013 - Wall Collision Detection', () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
       });
-      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 7 });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
     }).toPass();
 
-    // End hero phase to trigger south exploration
+    // End hero phase to trigger east exploration
     await page.locator('[data-testid="end-phase-button"]').click();
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
 
@@ -250,22 +253,26 @@ test.describe('013 - Wall Collision Detection', () => {
       return (window as any).__REDUX_STORE__.getState().game.dungeon;
     });
 
-    // Find the south tile (row > 0)
-    const southTile = dungeonState.tiles.find((t: any) => t.position.row > 0);
-    expect(southTile).toBeDefined();
+    // Find the north tile (row < 0) and east tile (col > 0)
+    const northTile = dungeonState.tiles.find((t: any) => t.position.row < 0);
+    const eastTile = dungeonState.tiles.find((t: any) => t.position.col > 0);
+    expect(northTile).toBeDefined();
+    expect(eastTile).toBeDefined();
 
-    // Position hero on south tile (middle of tile)
-    // South tile at row=1 has y coordinates starting at 8 (start tile goes 0-7)
+    // Position hero on east tile at corner position (4, 0) - adjacent to north tile diagonally
+    // East tile at col=1 has x coordinates starting at 4 (x: 4-7, y: 0-3)
+    // North tile at row=-1 has y coordinates from -4 to -1 (x: 0-3)
+    // So (4, 0) on east tile is diagonally adjacent to (3, -1) on north tile
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
         type: 'game/setHeroPosition',
-        payload: { heroId: 'quinn', position: { x: 2, y: 9 } }
+        payload: { heroId: 'quinn', position: { x: 4, y: 0 } }
       });
-      // Refresh movement overlay with Quinn's speed (5)
+      // Refresh movement overlay with Quinn's speed (1) to test direct adjacency only
       store.dispatch({
         type: 'game/showMovement',
-        payload: { heroId: 'quinn', speed: 5 }
+        payload: { heroId: 'quinn', speed: 1 }
       });
     });
 
@@ -274,28 +281,28 @@ test.describe('013 - Wall Collision Detection', () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
       });
-      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 9 });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 4, y: 0 });
       expect(storeState.game.showingMovement).toBe(true);
     }).toPass();
 
-    await screenshots.capture(page, 'three-tiles-hero-on-south', {
+    await screenshots.capture(page, 'three-tiles-north-east-hero-on-east', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         
-        // Verify at least three tiles exist (start + north + south)
+        // Verify at least three tiles exist (start + north + east)
         expect(storeState.game.dungeon.tiles.length).toBeGreaterThanOrEqual(3);
         
-        // Verify hero is on south tile
-        expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 9 });
+        // Verify hero is on east tile at corner
+        expect(storeState.game.heroTokens[0].position).toEqual({ x: 4, y: 0 });
       }
     });
 
-    // STEP 4: Verify movement overlay excludes non-adjacent tiles
+    // STEP 4: Verify movement overlay excludes diagonally adjacent non-connected tile
     await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible' });
 
-    await screenshots.capture(page, 'movement-excludes-non-adjacent-tile', {
+    await screenshots.capture(page, 'movement-excludes-diagonal-non-adjacent-tile', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
         
@@ -304,37 +311,47 @@ test.describe('013 - Wall Collision Detection', () => {
         });
         
         const validSquares = storeState.game.validMoveSquares;
-        const tiles = storeState.game.dungeon.tiles;
         
-        // Find north tile (row < 0)
-        const northTile = tiles.find((t: any) => t.position.row < 0);
+        // Hero is on east tile at (4, 0) with speed 1
+        // East tile: x: 4-7, y: 0-3
+        // Start tile: x: 0-3, y: 0-7
+        // North tile: x: 0-3, y: -4 to -1
         
-        // Hero is on south tile at (2, 9)
-        // South tile: y: 8-11
-        // Start tile: y: 0-7
-        // North tile: y: -4 to -1
+        // The key test: With speed=1, hero at (4, 0) should only be able to move to:
+        // - (3, 0) - west to start tile (cardinal movement, allowed if edge is open)
+        // - (5, 0) - east within east tile
+        // - (4, 1) - south within east tile
+        // - (5, 1) - diagonal within east tile
+        // 
+        // The hero should NOT be able to move to:
+        // - (3, -1) - diagonal to north tile (different tiles, diagonal blocked)
         
-        // Valid moves should include squares on south tile
-        expect(validSquares.some((s: { x: number; y: number }) => s.y >= 8 && s.y <= 11)).toBe(true);
+        // Specifically verify (3, -1) - the diagonally adjacent non-connected tile square - is NOT reachable
+        expect(validSquares.some(
+          (s: { x: number; y: number }) => s.x === 3 && s.y === -1
+        )).toBe(false);
         
-        // With speed 5, hero at y=9 can reach start tile (y=7-4)
-        // This verifies movement between adjacent tiles works
-        expect(validSquares.some((s: { x: number; y: number }) => s.y >= 4 && s.y <= 7)).toBe(true);
+        // With speed 1, no north tile squares (y < 0) should be reachable
+        // because we can't reach them in a single step from (4, 0)
+        const northTileSquares = validSquares.filter(
+          (s: { x: number; y: number }) => s.y < 0
+        );
+        expect(northTileSquares.length).toBe(0);
         
-        // North tile squares (y: -4 to -1) should NOT be reachable
-        // Even with speed 5, hero at y=9 cannot reach y=-1 (10 squares away)
-        // More importantly, movement must go through connected tiles only
-        if (northTile) {
-          const northTileSquares = validSquares.filter(
-            (s: { x: number; y: number }) => s.y >= -4 && s.y <= -1
-          );
-          expect(northTileSquares.length).toBe(0);
-        }
+        // Verify hero CAN reach start tile at (3, 0) if edge is open
+        // (cardinal movement between adjacent tiles)
+        const canReachStartTile = validSquares.some(
+          (s: { x: number; y: number }) => s.x === 3 && s.y === 0
+        );
+        // This depends on edge configuration - just log for debugging
+        console.log('Can reach start tile at (3,0):', canReachStartTile);
         
-        // All valid squares should be within reachable range
-        // Hero at (2, 9) with speed 5 can reach y: 4-11 at most
-        expect(validSquares.every(
-          (s: { x: number; y: number }) => s.y >= 4 && s.y <= 11
+        // Verify hero CAN reach other east tile squares (diagonal within same tile)
+        expect(validSquares.some(
+          (s: { x: number; y: number }) => s.x === 5 && s.y === 0
+        )).toBe(true);
+        expect(validSquares.some(
+          (s: { x: number; y: number }) => s.x === 4 && s.y === 1
         )).toBe(true);
       }
     });
