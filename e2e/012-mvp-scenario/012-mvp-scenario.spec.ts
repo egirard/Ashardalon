@@ -13,6 +13,8 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     // STEP 2: Verify objective display is visible with initial state (no screenshot due to random movement overlay)
     // Verify objective display elements
     await expect(page.locator('[data-testid="objective-display"]')).toBeVisible();
+    await expect(page.locator('[data-testid="objective-display"]')).toContainText('🎯 Objective:');
+    await expect(page.locator('[data-testid="objective-display"]')).toContainText('Defeat 2 monsters');
     await expect(page.locator('[data-testid="objective-progress"]')).toContainText('0 / 2 defeated');
     
     // Verify Redux store scenario state
@@ -131,6 +133,10 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
         // Verify victory screen elements
         await expect(page.locator('[data-testid="victory-screen"]')).toBeVisible();
         await expect(page.locator('[data-testid="return-to-menu-button"]')).toBeVisible();
+        
+        // Verify victory screen shows trophy icon and "Victory!" title
+        await expect(page.locator('[data-testid="victory-screen"]')).toContainText('🏆');
+        await expect(page.locator('[data-testid="victory-screen"]')).toContainText('Victory!');
         
         // Verify Redux store state
         const storeState = await page.evaluate(() => {
@@ -272,6 +278,10 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
         // Verify defeat screen elements
         await expect(page.locator('[data-testid="defeat-screen"]')).toBeVisible();
         await expect(page.locator('[data-testid="return-to-menu-button"]')).toBeVisible();
+        
+        // Verify defeat screen shows skull icon and "Defeat" title
+        await expect(page.locator('[data-testid="defeat-screen"]')).toContainText('💀');
+        await expect(page.locator('[data-testid="defeat-screen"]')).toContainText('Defeat');
         
         // Verify Redux store state
         const storeState = await page.evaluate(() => {

@@ -44,14 +44,18 @@ Defeat screen displayed when all heroes are eliminated, showing:
 
 Character selection screen after returning from defeat, with scenario state reset.
 
-## Manual Verification Checklist
+## Automated Test Coverage
 
-- [ ] Objective display shows "🎯 Objective: Defeat 2 monsters"
-- [ ] Progress shows "0 / 2 defeated" at game start
-- [ ] Progress updates to "1 / 2 defeated" after first monster kill
-- [ ] Victory screen appears immediately after defeating second monster
-- [ ] Victory screen shows 🏆 icon and "Victory!" title
-- [ ] Defeat screen appears when all heroes reach 0 HP
-- [ ] Defeat screen shows 💀 icon and "Defeat" title
-- [ ] Both screens have "Return to Character Select" button
-- [ ] Returning to menu resets all game state including scenario progress
+All items are verified programmatically by the test suite:
+
+| Verification Item | Test |
+|-------------------|------|
+| Objective display shows "🎯 Objective: Defeat 2 monsters" | `Objective display shows current progress` |
+| Progress shows "0 / 2 defeated" at game start | `Objective display shows current progress` |
+| Progress updates to "1 / 2 defeated" after first monster kill | `Monster defeat counter increments correctly` |
+| Victory screen appears after defeating second monster | `Victory screen appears after defeating 2 monsters` |
+| Victory screen shows 🏆 icon and "Victory!" title | `Victory screen appears after defeating 2 monsters` |
+| Defeat screen appears when all heroes reach 0 HP | `Defeat screen appears when all heroes are eliminated` |
+| Defeat screen shows 💀 icon and "Defeat" title | `Defeat screen appears when all heroes are eliminated` |
+| Both screens have "Return to Character Select" button | Victory and Defeat tests |
+| Returning to menu resets game state | Victory and Defeat tests |
