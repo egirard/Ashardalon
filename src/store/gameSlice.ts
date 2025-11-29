@@ -571,7 +571,11 @@ export const gameSlice = createSlice({
           if (monster.currentHp <= 0) {
             // Get monster definition to award XP
             const monsterDef = getMonsterById(monster.monsterId);
-            const xpGained = monsterDef?.xp ?? 1;
+            if (!monsterDef) {
+              // Log warning for debugging - monster ID should always exist in definitions
+              console.warn(`Monster definition not found for ID: ${monster.monsterId}`);
+            }
+            const xpGained = monsterDef?.xp ?? 0;
             
             // Award XP to party
             state.partyResources.xp += xpGained;
