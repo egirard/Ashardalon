@@ -60,6 +60,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     levelUpOldStats: null,
     healingSurgeUsedHeroId: null,
     healingSurgeHpRestored: null,
+    defeatReason: null,
     ...overrides,
   };
 }
@@ -2429,6 +2430,147 @@ describe("gameSlice", () => {
       // Old notification should be cleared
       expect(state.healingSurgeUsedHeroId).toBeNull();
       expect(state.healingSurgeHpRestored).toBeNull();
+    });
+  });
+
+  describe("Party Defeat", () => {
+    it("should transition to defeat screen when hero at 0 HP with 0 surges at turn start", () => {
+      // Quinn is at 0 HP and 0 surges available
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 1, // Vistra's turn (about to end, Quinn next)
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 0 }, // No surges!
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // Should transition to defeat screen
+      expect(state.currentScreen).toBe("defeat");
+      expect(state.defeatReason).toBe("Quinn fell with no healing surges remaining.");
+    });
+
+    it("should not defeat if surges are available for hero at 0 HP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 1, // Vistra's turn
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 1 }, // 1 surge available
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // Should NOT transition to defeat - should use healing surge instead
+      expect(state.currentScreen).toBe("game-board");
+      expect(state.defeatReason).toBeNull();
+      expect(state.healingSurgeUsedHeroId).toBe("quinn");
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(4);
+    });
+
+    it("should not defeat if hero HP > 0 even with no surges", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 1, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 0 },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // Should NOT transition to defeat - hero has HP
+      expect(state.currentScreen).toBe("game-board");
+      expect(state.defeatReason).toBeNull();
+    });
+
+    it("should set correct defeat reason with hero name", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "vistra", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "vistra", currentHp: 0, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 0 },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.currentScreen).toBe("defeat");
+      expect(state.defeatReason).toBe("Vistra fell with no healing surges remaining.");
+    });
+
+    it("should clear defeatReason on resetGame", () => {
+      const initialState = createGameState({
+        currentScreen: "defeat",
+        defeatReason: "Quinn fell with no healing surges remaining.",
+      });
+
+      const state = gameReducer(initialState, resetGame());
+
+      expect(state.currentScreen).toBe("character-select");
+      expect(state.defeatReason).toBeNull();
+    });
+
+    it("should prioritize defeat check over healing surge check", () => {
+      // This tests that checkPartyDefeat is called first and blocks healing surge usage
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 0 },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // Should defeat, not use surge (which would fail anyway)
+      expect(state.currentScreen).toBe("defeat");
+      expect(state.healingSurgeUsedHeroId).toBeNull();
     });
   });
 });
