@@ -14,6 +14,17 @@ export function checkHealingSurgeNeeded(
 }
 
 /**
+ * Check if the party is defeated (hero at 0 HP with no surges remaining)
+ * This should be checked at the start of a hero's turn
+ */
+export function checkPartyDefeat(
+  heroState: HeroHpState,
+  resources: PartyResources
+): boolean {
+  return heroState.currentHp === 0 && resources.healingSurges === 0;
+}
+
+/**
  * Use a healing surge to restore hero HP
  * @param heroState Current hero HP state
  * @param resources Current party resources

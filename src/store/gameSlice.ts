@@ -48,6 +48,7 @@ import {
   calculateDamage,
   checkHealingSurgeNeeded,
   useHealingSurge,
+  checkPartyDefeat,
 } from "./combat";
 
 /**
@@ -139,6 +140,8 @@ export interface GameState {
   healingSurgeUsedHeroId: string | null;
   /** HP restored from healing surge (for displaying in notification) */
   healingSurgeHpRestored: number | null;
+  /** Reason for defeat (for displaying on defeat screen) */
+  defeatReason: string | null;
 }
 
 const initialState: GameState = {
@@ -169,6 +172,7 @@ const initialState: GameState = {
   levelUpOldStats: null,
   healingSurgeUsedHeroId: null,
   healingSurgeHpRestored: null,
+  defeatReason: null,
 };
 
 /**
@@ -467,6 +471,7 @@ export const gameSlice = createSlice({
       state.levelUpOldStats = null;
       state.healingSurgeUsedHeroId = null;
       state.healingSurgeHpRestored = null;
+      state.defeatReason = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -588,6 +593,16 @@ export const gameSlice = createSlice({
         const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
         if (heroHpIndex !== -1) {
           const heroHpState = state.heroHp[heroHpIndex];
+          
+          // Check for party defeat first (hero at 0 HP with no surges)
+          if (checkPartyDefeat(heroHpState, state.partyResources)) {
+            const heroName = AVAILABLE_HEROES.find(h => h.id === currentHeroId)?.name ?? currentHeroId;
+            state.defeatReason = `${heroName} fell with no healing surges remaining.`;
+            state.currentScreen = "defeat";
+            return;
+          }
+          
+          // Otherwise, use a healing surge if needed
           if (checkHealingSurgeNeeded(heroHpState, state.partyResources)) {
             // Use a healing surge automatically
             const surgeResult = useHealingSurge(heroHpState, state.partyResources);

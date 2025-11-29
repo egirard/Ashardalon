@@ -8,22 +8,25 @@
     monstersToDefeat: 2, 
     objective: "Defeat 2 monsters" 
   });
+  let defeatReason: string | null = $state(null);
   
   // Subscribe to store updates
   $effect(() => {
     const unsubscribe = store.subscribe(() => {
       const state = store.getState();
       scenario = state.game.scenario;
+      defeatReason = state.game.defeatReason;
     });
     
     // Initialize state
     const state = store.getState();
     scenario = state.game.scenario;
+    defeatReason = state.game.defeatReason;
     
     return unsubscribe;
   });
   
-  function handleReturnToMenu() {
+  function handleNewGame() {
     store.dispatch(resetGame());
   }
 </script>
@@ -32,21 +35,27 @@
   <div class="defeat-content">
     <div class="defeat-icon">💀</div>
     <h1 class="defeat-title">Defeat</h1>
-    <p class="defeat-message">Your party has been eliminated before completing the objective.</p>
+    <p class="defeat-message" data-testid="defeat-message">
+      {#if defeatReason}
+        {defeatReason}
+      {:else}
+        Your party has been eliminated before completing the objective.
+      {/if}
+    </p>
     <div class="defeat-progress">
       <span class="progress-label">Progress:</span>
-      <span class="progress-text">{scenario.monstersDefeated} / {scenario.monstersToDefeat} monsters defeated</span>
+      <span class="progress-text" data-testid="defeat-progress">{scenario.monstersDefeated} / {scenario.monstersToDefeat} monsters defeated</span>
     </div>
     <div class="defeat-objective">
       <span class="objective-label">Objective:</span>
       <span class="objective-text">{scenario.objective}</span>
     </div>
     <button 
-      class="return-button" 
-      data-testid="return-to-menu-button"
-      onclick={handleReturnToMenu}
+      class="new-game-button" 
+      data-testid="new-game-button"
+      onclick={handleNewGame}
     >
-      Return to Character Select
+      New Game
     </button>
   </div>
 </div>
@@ -131,7 +140,7 @@
     font-weight: bold;
   }
   
-  .return-button {
+  .new-game-button {
     padding: 1rem 2rem;
     font-size: 1.1rem;
     background: #dc2626;
@@ -145,7 +154,7 @@
     min-height: 44px;
   }
   
-  .return-button:hover {
+  .new-game-button:hover {
     background: #ef4444;
     transform: scale(1.05);
     box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
