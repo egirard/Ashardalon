@@ -16,7 +16,9 @@ import gameReducer, {
   activateNextMonster,
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
+  dismissHealingSurgeNotification,
   setHeroHp,
+  setPartyResources,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -54,6 +56,10 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     partyResources: { xp: 0, healingSurges: 2 },
     defeatedMonsterXp: null,
     defeatedMonsterName: null,
+    leveledUpHeroId: null,
+    levelUpOldStats: null,
+    healingSurgeUsedHeroId: null,
+    healingSurgeHpRestored: null,
     ...overrides,
   };
 }
@@ -2201,6 +2207,228 @@ describe("gameSlice", () => {
       expect(state.partyResources.healingSurges).toBe(2);
       expect(state.defeatedMonsterXp).toBeNull();
       expect(state.defeatedMonsterName).toBeNull();
+    });
+  });
+
+  describe("Healing Surge", () => {
+    it("should initialize party with 2 healing surges", () => {
+      const state = gameReducer(undefined, startGame({
+        heroIds: ["quinn"],
+        seed: 12345,
+      }));
+
+      expect(state.partyResources.healingSurges).toBe(2);
+    });
+
+    it("should auto-use healing surge when hero at 0 HP starts turn", () => {
+      // Quinn is at 0 HP at start of villain phase
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      // End villain phase - next hero (Vistra at index 1) begins their turn
+      let state = gameReducer(initialState, endVillainPhase());
+      
+      // Vistra is not at 0 HP, so no surge used
+      expect(state.healingSurgeUsedHeroId).toBeNull();
+      
+      // Now end Vistra's turn and get back to Quinn who is at 0 HP
+      // Quinn is at index 0, Vistra at index 1
+      // After ending Vistra's villain phase, Quinn's turn begins
+      
+      // Fast forward: set state to Quinn's villain phase
+      const quinnVillainState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 1, // Vistra's turn
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      // End villain phase - wraps back to Quinn (index 0)
+      state = gameReducer(quinnVillainState, endVillainPhase());
+
+      // Quinn should have received a healing surge
+      expect(state.healingSurgeUsedHeroId).toBe("quinn");
+      expect(state.healingSurgeHpRestored).toBe(4); // Quinn's surge value
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(4);
+      expect(state.partyResources.healingSurges).toBe(1);
+    });
+
+    it("should not use healing surge if hero HP > 0", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 1, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // No surge used since HP > 0
+      expect(state.healingSurgeUsedHeroId).toBeNull();
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(1);
+      expect(state.partyResources.healingSurges).toBe(2);
+    });
+
+    it("should not use healing surge if no surges available", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 1, // Vistra's turn
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 0 }, // No surges!
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // No surge used since none available
+      expect(state.healingSurgeUsedHeroId).toBeNull();
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
+      expect(state.partyResources.healingSurges).toBe(0);
+    });
+
+    it("should restore HP to hero's surge value", () => {
+      // Test with Vistra (surge value 5)
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "vistra", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "vistra", currentHp: 0, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.heroHp.find(h => h.heroId === "vistra")?.currentHp).toBe(5);
+      expect(state.healingSurgeHpRestored).toBe(5);
+    });
+
+    it("should decrease surge count by 1 when used", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 1, // Vistra's turn
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.partyResources.healingSurges).toBe(1);
+    });
+
+    it("should dismiss healing surge notification", () => {
+      const initialState = createGameState({
+        healingSurgeUsedHeroId: "quinn",
+        healingSurgeHpRestored: 4,
+      });
+
+      const state = gameReducer(initialState, dismissHealingSurgeNotification());
+
+      expect(state.healingSurgeUsedHeroId).toBeNull();
+      expect(state.healingSurgeHpRestored).toBeNull();
+    });
+
+    it("should clear healing surge notification on reset", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        healingSurgeUsedHeroId: "quinn",
+        healingSurgeHpRestored: 4,
+      });
+
+      const state = gameReducer(gameInProgress, resetGame());
+
+      expect(state.healingSurgeUsedHeroId).toBeNull();
+      expect(state.healingSurgeHpRestored).toBeNull();
+    });
+
+    it("should clear previous healing surge notification at start of new turn", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 5, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        healingSurgeUsedHeroId: "vistra", // Old notification
+        healingSurgeHpRestored: 5,
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // Old notification should be cleared
+      expect(state.healingSurgeUsedHeroId).toBeNull();
+      expect(state.healingSurgeHpRestored).toBeNull();
     });
   });
 });

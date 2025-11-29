@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC, canLevelUp, levelUpHero, calculateDamage } from './combat';
+import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC, canLevelUp, levelUpHero, calculateDamage, checkHealingSurgeNeeded, useHealingSurge } from './combat';
 import type { HeroAttack, MonsterState, HeroHpState, PartyResources } from './types';
 
 describe('rollD20', () => {
@@ -406,5 +406,158 @@ describe('getAdjacentMonsters', () => {
     const adjacent = getAdjacentMonsters(heroPos, [], 'tile-1');
     
     expect(adjacent).toHaveLength(0);
+  });
+});
+
+describe('checkHealingSurgeNeeded', () => {
+  it('should return true when HP=0 and surges available', () => {
+    const heroState: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 0,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 0, healingSurges: 2 };
+    
+    expect(checkHealingSurgeNeeded(heroState, resources)).toBe(true);
+  });
+
+  it('should return false when HP > 0', () => {
+    const heroState: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 1,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 0, healingSurges: 2 };
+    
+    expect(checkHealingSurgeNeeded(heroState, resources)).toBe(false);
+  });
+
+  it('should return false when no surges available', () => {
+    const heroState: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 0,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 0, healingSurges: 0 };
+    
+    expect(checkHealingSurgeNeeded(heroState, resources)).toBe(false);
+  });
+
+  it('should return false when HP > 0 even at low HP', () => {
+    const heroState: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 1,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 0, healingSurges: 2 };
+    
+    expect(checkHealingSurgeNeeded(heroState, resources)).toBe(false);
+  });
+});
+
+describe('useHealingSurge', () => {
+  it('should restore HP to surge value', () => {
+    const heroState: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 0,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 5, healingSurges: 2 };
+
+    const result = useHealingSurge(heroState, resources);
+
+    expect(result.heroState.currentHp).toBe(4); // Quinn's surge value
+    expect(result.resources.healingSurges).toBe(1); // Decreased by 1
+  });
+
+  it('should decrease surge count by 1', () => {
+    const heroState: HeroHpState = {
+      heroId: 'vistra',
+      currentHp: 0,
+      maxHp: 10,
+      level: 1,
+      ac: 18,
+      surgeValue: 5,
+      attackBonus: 8,
+    };
+    const resources: PartyResources = { xp: 3, healingSurges: 2 };
+
+    const result = useHealingSurge(heroState, resources);
+
+    expect(result.resources.healingSurges).toBe(1);
+  });
+
+  it('should not exceed maxHp when restoring', () => {
+    // Edge case where surge value might exceed maxHp
+    const heroState: HeroHpState = {
+      heroId: 'haskan',
+      currentHp: 0,
+      maxHp: 6, // Wizard has 6 HP
+      level: 1,
+      ac: 14,
+      surgeValue: 3, // Wizard's surge value is 3, lower than maxHp
+      attackBonus: 4,
+    };
+    const resources: PartyResources = { xp: 0, healingSurges: 1 };
+
+    const result = useHealingSurge(heroState, resources);
+
+    expect(result.heroState.currentHp).toBe(3);
+    expect(result.heroState.currentHp).toBeLessThanOrEqual(result.heroState.maxHp);
+  });
+
+  it('should preserve XP when using surge', () => {
+    const heroState: HeroHpState = {
+      heroId: 'quinn',
+      currentHp: 0,
+      maxHp: 8,
+      level: 1,
+      ac: 17,
+      surgeValue: 4,
+      attackBonus: 6,
+    };
+    const resources: PartyResources = { xp: 10, healingSurges: 2 };
+
+    const result = useHealingSurge(heroState, resources);
+
+    expect(result.resources.xp).toBe(10);
+  });
+
+  it('should work with different heroes and surge values', () => {
+    // Test with Vistra (Fighter, surge value 5)
+    const vistraState: HeroHpState = {
+      heroId: 'vistra',
+      currentHp: 0,
+      maxHp: 10,
+      level: 1,
+      ac: 18,
+      surgeValue: 5,
+      attackBonus: 8,
+    };
+    const resources: PartyResources = { xp: 0, healingSurges: 2 };
+
+    const result = useHealingSurge(vistraState, resources);
+
+    expect(result.heroState.currentHp).toBe(5); // Vistra's surge value
   });
 });

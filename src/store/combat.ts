@@ -4,6 +4,40 @@ import { getMonsterById } from './monsters';
 import { getTileBounds, findTileAtPosition } from './movement';
 
 /**
+ * Check if a hero needs a healing surge (at 0 HP with surges available)
+ */
+export function checkHealingSurgeNeeded(
+  heroState: HeroHpState,
+  resources: PartyResources
+): boolean {
+  return heroState.currentHp === 0 && resources.healingSurges > 0;
+}
+
+/**
+ * Use a healing surge to restore hero HP
+ * @param heroState Current hero HP state
+ * @param resources Current party resources
+ * @returns Updated hero state and party resources
+ */
+export function useHealingSurge(
+  heroState: HeroHpState,
+  resources: PartyResources
+): { heroState: HeroHpState; resources: PartyResources } {
+  const surgeValue = heroState.surgeValue;
+  
+  return {
+    heroState: {
+      ...heroState,
+      currentHp: Math.min(surgeValue, heroState.maxHp),
+    },
+    resources: {
+      ...resources,
+      healingSurges: resources.healingSurges - 1,
+    },
+  };
+}
+
+/**
  * Roll a d20 (1-20)
  * @param randomFn Optional random function for deterministic testing
  */

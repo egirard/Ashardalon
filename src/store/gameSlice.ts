@@ -46,6 +46,8 @@ import {
   canLevelUp,
   levelUpHero,
   calculateDamage,
+  checkHealingSurgeNeeded,
+  useHealingSurge,
 } from "./combat";
 
 /**
@@ -133,6 +135,10 @@ export interface GameState {
   leveledUpHeroId: string | null;
   /** Old stats before level up (for showing stat changes in UI) */
   levelUpOldStats: HeroHpState | null;
+  /** Hero ID that just used a healing surge (for displaying healing surge notification) */
+  healingSurgeUsedHeroId: string | null;
+  /** HP restored from healing surge (for displaying in notification) */
+  healingSurgeHpRestored: number | null;
 }
 
 const initialState: GameState = {
@@ -161,6 +167,8 @@ const initialState: GameState = {
   defeatedMonsterName: null,
   leveledUpHeroId: null,
   levelUpOldStats: null,
+  healingSurgeUsedHeroId: null,
+  healingSurgeHpRestored: null,
 };
 
 /**
@@ -457,6 +465,8 @@ export const gameSlice = createSlice({
       state.defeatedMonsterName = null;
       state.leveledUpHeroId = null;
       state.levelUpOldStats = null;
+      state.healingSurgeUsedHeroId = null;
+      state.healingSurgeHpRestored = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -555,6 +565,10 @@ export const gameSlice = createSlice({
       state.monsterAttackerId = null;
       state.monsterMoveActionId = null;
       
+      // Clear any previous healing surge notification
+      state.healingSurgeUsedHeroId = null;
+      state.healingSurgeHpRestored = null;
+      
       // Move to next hero
       state.turnState.currentHeroIndex = 
         (state.turnState.currentHeroIndex + 1) % state.heroTokens.length;
@@ -567,6 +581,25 @@ export const gameSlice = createSlice({
       // Start new hero phase with fresh turn actions
       state.turnState.currentPhase = "hero-phase";
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
+      
+      // Check if the new hero needs a healing surge (at 0 HP at turn start)
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (currentHeroId) {
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+        if (heroHpIndex !== -1) {
+          const heroHpState = state.heroHp[heroHpIndex];
+          if (checkHealingSurgeNeeded(heroHpState, state.partyResources)) {
+            // Use a healing surge automatically
+            const surgeResult = useHealingSurge(heroHpState, state.partyResources);
+            state.heroHp[heroHpIndex] = surgeResult.heroState;
+            state.partyResources = surgeResult.resources;
+            
+            // Set notification data for UI
+            state.healingSurgeUsedHeroId = currentHeroId;
+            state.healingSurgeHpRestored = surgeResult.heroState.currentHp;
+          }
+        }
+      }
     },
     /**
      * Dismiss the monster card display
@@ -804,6 +837,13 @@ export const gameSlice = createSlice({
       state.monsterMoveActionId = null;
     },
     /**
+     * Dismiss the healing surge notification
+     */
+    dismissHealingSurgeNotification: (state) => {
+      state.healingSurgeUsedHeroId = null;
+      state.healingSurgeHpRestored = null;
+    },
+    /**
      * Set hero HP directly (for testing purposes)
      */
     setHeroHp: (state, action: PayloadAction<{ heroId: string; hp: number }>) => {
@@ -846,6 +886,7 @@ export const {
   activateNextMonster,
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
+  dismissHealingSurgeNotification,
   setHeroHp,
   dismissLevelUpNotification,
   setPartyResources,
