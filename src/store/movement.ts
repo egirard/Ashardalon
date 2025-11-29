@@ -188,9 +188,22 @@ export function isOnTileEdge(pos: Position, tile: PlacedTile, direction: Directi
  * Check if diagonal movement within a tile is blocked by walls at the tile edges.
  * Diagonal movement is blocked if both connected edges have walls.
  * 
- * For example, moving diagonally from (3,0) to (4,1) requires checking:
- * - If at north edge (y=minY) and moving south-east (dx=1, dy=1), check east edge
- * - If at east edge (x=maxX) and moving south-east (dx=1, dy=1), check south edge
+ * This implements the rule: "Diagonal movement is not allowed if both connected edges have walls."
+ * 
+ * The logic checks if:
+ * 1. The current position is on an edge that has a wall
+ * 2. The diagonal movement direction would "cross" that wall corner
+ * 3. Both the horizontal and vertical directions are blocked by walls
+ * 
+ * For example, if at position (3,0) on a tile (bounds 0-3) with walls on north and east:
+ * - Moving north-east (dx=1, dy=-1) toward (4,-1): blocked because we're on both north 
+ *   and east edges, moving toward both walls (would cut through the corner)
+ * - Moving south-west (dx=-1, dy=1) toward (2,1): NOT blocked because we're moving AWAY
+ *   from the wall corner
+ * 
+ * Note: In practice, diagonal moves toward wall corners often lead to positions outside
+ * the tile, which are filtered by findTileAtPosition returning null. This function
+ * provides an additional safety check for edge cases where adjacent tiles might exist.
  * 
  * Returns true if movement is blocked, false if allowed.
  */
@@ -202,7 +215,7 @@ export function isDiagonalBlockedByWalls(
 ): boolean {
   const bounds = getTileBounds(tile);
   
-  // For start tile, walkable area starts at x=1, not x=0
+  // For start tile, walkable area starts at x=1, not x=0 (x=0 is wall column)
   const effectiveMinX = tile.tileType === 'start' ? 1 : bounds.minX;
   
   // Determine which edges the current position is on
@@ -211,40 +224,38 @@ export function isDiagonalBlockedByWalls(
   const onEastEdge = pos.x === bounds.maxX;
   const onWestEdge = pos.x === effectiveMinX;
   
-  // For diagonal movement, check if both connected edges have walls
-  // A diagonal move requires passage through two edges
-  
-  // Get the two cardinal directions that make up this diagonal
+  // Get the two cardinal directions that make up this diagonal movement
   const verticalDir: Direction | null = dy < 0 ? 'north' : dy > 0 ? 'south' : null;
   const horizontalDir: Direction | null = dx < 0 ? 'west' : dx > 0 ? 'east' : null;
   
   // Both directions must be present for diagonal movement
   if (!verticalDir || !horizontalDir) {
-    return false; // Not a diagonal move
+    return false; // Not a diagonal move, let other checks handle it
   }
   
-  // Check if we're moving toward a wall edge
+  // Track if each direction is blocked by a wall
+  // A direction is blocked if: we're on that edge AND moving toward it AND it has a wall
   let verticalWallBlocks = false;
   let horizontalWallBlocks = false;
   
-  // If moving north and already on north edge with wall, it's blocked
+  // Check if moving toward a wall in the vertical direction
   if (verticalDir === 'north' && onNorthEdge && tile.edges.north === 'wall') {
     verticalWallBlocks = true;
   }
-  // If moving south and already on south edge with wall, it's blocked
   if (verticalDir === 'south' && onSouthEdge && tile.edges.south === 'wall') {
     verticalWallBlocks = true;
   }
-  // If moving east and already on east edge with wall, it's blocked
+  
+  // Check if moving toward a wall in the horizontal direction
   if (horizontalDir === 'east' && onEastEdge && tile.edges.east === 'wall') {
     horizontalWallBlocks = true;
   }
-  // If moving west and already on west edge with wall, it's blocked
   if (horizontalDir === 'west' && onWestEdge && tile.edges.west === 'wall') {
     horizontalWallBlocks = true;
   }
   
-  // Diagonal movement is blocked if BOTH connected edges have walls
+  // Diagonal movement is blocked only if BOTH connected edges have walls
+  // (i.e., trying to cut through a corner where two walls meet)
   return verticalWallBlocks && horizontalWallBlocks;
 }
 
