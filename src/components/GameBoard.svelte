@@ -16,6 +16,7 @@
     dismissMonsterAttackResult,
     dismissMonsterMoveAction,
     shouldAutoEndHeroTurn,
+    dismissLevelUpNotification,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -47,6 +48,7 @@
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
   import XPCounter from "./XPCounter.svelte";
   import DefeatAnimation from "./DefeatAnimation.svelte";
+  import LevelUpAnimation from "./LevelUpAnimation.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -121,6 +123,8 @@
   let partyResources: PartyResources = $state({ xp: 0, healingSurges: 2 });
   let defeatedMonsterXp: number | null = $state(null);
   let defeatedMonsterName: string | null = $state(null);
+  let leveledUpHeroId: string | null = $state(null);
+  let levelUpOldStats: HeroHpState | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
 
@@ -153,6 +157,8 @@
       partyResources = state.game.partyResources;
       defeatedMonsterXp = state.game.defeatedMonsterXp;
       defeatedMonsterName = state.game.defeatedMonsterName;
+      leveledUpHeroId = state.game.leveledUpHeroId;
+      levelUpOldStats = state.game.levelUpOldStats;
     });
 
     // Initialize state
@@ -179,6 +185,8 @@
     partyResources = state.game.partyResources;
     defeatedMonsterXp = state.game.defeatedMonsterXp;
     defeatedMonsterName = state.game.defeatedMonsterName;
+    leveledUpHeroId = state.game.leveledUpHeroId;
+    levelUpOldStats = state.game.levelUpOldStats;
 
     return unsubscribe;
   });
@@ -432,6 +440,12 @@
   function getHeroMaxHp(heroId: string): number {
     const hp = heroHp.find((h) => h.heroId === heroId);
     return hp?.maxHp ?? 0;
+  }
+
+  // Get hero level (1 or 2)
+  function getHeroLevel(heroId: string): number {
+    const hp = heroHp.find((h) => h.heroId === heroId);
+    return hp?.level ?? 1;
   }
 
   // Get monsters controlled by the current hero
@@ -706,6 +720,17 @@
   function handleDismissDefeatNotification() {
     store.dispatch(dismissDefeatNotification());
   }
+
+  // Handle dismissing the level up notification
+  function handleDismissLevelUpNotification() {
+    store.dispatch(dismissLevelUpNotification());
+  }
+
+  // Get new stats for leveled up hero
+  function getLeveledUpHeroStats(): HeroHpState | undefined {
+    if (!leveledUpHeroId) return undefined;
+    return heroHp.find(h => h.heroId === leveledUpHeroId);
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -729,6 +754,9 @@
           />
           <div class="turn-details">
             <span class="player-name">{currentHero.name}'s Turn</span>
+            {#if getHeroLevel(currentHeroId) === 2}
+              <span class="hero-level" data-testid="hero-level">Level 2 ⭐</span>
+            {/if}
             <span class="turn-phase" data-testid="turn-phase"
               >{formatPhase(turnState.currentPhase)}</span
             >
@@ -980,6 +1008,9 @@
           />
           <div class="turn-details">
             <span class="player-name">{currentHero.name}'s Turn</span>
+            {#if getHeroLevel(currentHeroId) === 2}
+              <span class="hero-level" data-testid="hero-level">Level 2 ⭐</span>
+            {/if}
             <span class="turn-phase" data-testid="turn-phase"
               >{formatPhase(turnState.currentPhase)}</span
             >
@@ -1050,6 +1081,20 @@
       xpGained={defeatedMonsterXp}
       onDismiss={handleDismissDefeatNotification}
     />
+  {/if}
+
+  <!-- Level Up Animation/Notification (shown when hero levels up on nat 20 with 5+ XP) -->
+  <!-- Only show after combat result and defeat notification are dismissed -->
+  {#if leveledUpHeroId && levelUpOldStats && !attackResult && !defeatedMonsterXp}
+    {@const newStats = getLeveledUpHeroStats()}
+    {#if newStats}
+      <LevelUpAnimation
+        heroId={leveledUpHeroId}
+        oldStats={levelUpOldStats}
+        {newStats}
+        onDismiss={handleDismissLevelUpNotification}
+      />
+    {/if}
   {/if}
 </div>
 
@@ -1220,6 +1265,16 @@
     font-size: 1rem;
     font-weight: bold;
     color: #ffd700;
+  }
+
+  .hero-level {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 215, 0, 0.4);
   }
 
   .turn-phase {

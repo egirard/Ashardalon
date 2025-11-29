@@ -17,6 +17,8 @@ import {
   HeroSubAction,
   ScenarioState,
   PartyResources,
+  HERO_LEVELS,
+  HeroLevel,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -40,6 +42,11 @@ import {
   globalToLocalPosition,
   findTileForGlobalPosition,
 } from "./monsterAI";
+import {
+  canLevelUp,
+  levelUpHero,
+  calculateDamage,
+} from "./combat";
 
 /**
  * Default turn state for the beginning of a game
@@ -122,6 +129,10 @@ export interface GameState {
   defeatedMonsterXp: number | null;
   /** Name of the most recently defeated monster (for UI notification) */
   defeatedMonsterName: string | null;
+  /** Hero ID that just leveled up (for displaying level up notification) */
+  leveledUpHeroId: string | null;
+  /** Old stats before level up (for showing stat changes in UI) */
+  levelUpOldStats: HeroHpState | null;
 }
 
 const initialState: GameState = {
@@ -148,6 +159,8 @@ const initialState: GameState = {
   partyResources: { ...DEFAULT_PARTY_RESOURCES },
   defeatedMonsterXp: null,
   defeatedMonsterName: null,
+  leveledUpHeroId: null,
+  levelUpOldStats: null,
 };
 
 /**
@@ -296,13 +309,19 @@ export const gameSlice = createSlice({
       state.attackResult = null;
       state.attackTargetId = null;
 
-      // Initialize hero HP from hero definitions
+      // Initialize hero HP from hero definitions with level 1 stats
       state.heroHp = heroIds.map(heroId => {
         const hero = AVAILABLE_HEROES.find(h => h.id === heroId);
+        const heroLevels = HERO_LEVELS[heroId];
+        const level1Stats = heroLevels?.level1;
         return {
           heroId,
-          currentHp: hero?.hp ?? 8,
-          maxHp: hero?.maxHp ?? 8,
+          currentHp: level1Stats?.hp ?? hero?.hp ?? 8,
+          maxHp: level1Stats?.maxHp ?? hero?.maxHp ?? 8,
+          level: 1 as HeroLevel,
+          ac: level1Stats?.ac ?? hero?.ac ?? 17,
+          surgeValue: level1Stats?.surgeValue ?? 4,
+          attackBonus: level1Stats?.attackBonus ?? hero?.attack.attackBonus ?? 6,
         };
       });
 
@@ -322,6 +341,8 @@ export const gameSlice = createSlice({
       state.partyResources = { ...DEFAULT_PARTY_RESOURCES };
       state.defeatedMonsterXp = null;
       state.defeatedMonsterName = null;
+      state.leveledUpHeroId = null;
+      state.levelUpOldStats = null;
 
       state.currentScreen = "game-board";
     },
@@ -424,6 +445,8 @@ export const gameSlice = createSlice({
       state.partyResources = { ...DEFAULT_PARTY_RESOURCES };
       state.defeatedMonsterXp = null;
       state.defeatedMonsterName = null;
+      state.leveledUpHeroId = null;
+      state.levelUpOldStats = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -543,6 +566,7 @@ export const gameSlice = createSlice({
     },
     /**
      * Set the attack result and apply damage to the target monster
+     * Also handles level up on natural 20 with 5+ XP
      */
     setAttackResult: (
       state,
@@ -557,15 +581,31 @@ export const gameSlice = createSlice({
       state.attackResult = result;
       state.attackTargetId = targetInstanceId;
       
-      // Clear any previous defeat notification
+      // Clear any previous notifications
       state.defeatedMonsterXp = null;
       state.defeatedMonsterName = null;
+      state.leveledUpHeroId = null;
+      state.levelUpOldStats = null;
+      
+      // Get current hero for level up check
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      const currentHeroHp = state.heroHp.find(h => h.heroId === currentHeroId);
+      
+      // Calculate actual damage with level 2 critical bonus
+      let actualDamage = result.damage;
+      if (result.isHit && currentHeroHp) {
+        actualDamage = calculateDamage(currentHeroHp.level, result.roll, result.damage);
+        // Update the damage in result for display
+        if (actualDamage !== result.damage) {
+          state.attackResult = { ...result, damage: actualDamage };
+        }
+      }
       
       // Apply damage if hit
-      if (result.isHit && result.damage > 0) {
+      if (result.isHit && actualDamage > 0) {
         const monster = state.monsters.find(m => m.instanceId === targetInstanceId);
         if (monster) {
-          monster.currentHp -= result.damage;
+          monster.currentHp -= actualDamage;
           
           // Remove defeated monsters and award XP
           if (monster.currentHp <= 0) {
@@ -601,6 +641,27 @@ export const gameSlice = createSlice({
         }
       }
       
+      // Check for level up on natural 20 with 5+ XP (check AFTER XP is awarded from defeating monster)
+      if (currentHeroHp && currentHeroId && canLevelUp(currentHeroHp, result.roll, state.partyResources)) {
+        // Store old stats for UI display
+        state.levelUpOldStats = { ...currentHeroHp };
+        
+        // Level up the hero
+        const levelUpResult = levelUpHero(currentHeroHp, state.partyResources);
+        
+        // Update hero state
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+        if (heroHpIndex !== -1) {
+          state.heroHp[heroHpIndex] = levelUpResult.heroState;
+        }
+        
+        // Update party resources (deduct XP)
+        state.partyResources = levelUpResult.resources;
+        
+        // Set level up notification
+        state.leveledUpHeroId = currentHeroId;
+      }
+      
       // Track the attack action
       state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
     },
@@ -617,6 +678,13 @@ export const gameSlice = createSlice({
     dismissDefeatNotification: (state) => {
       state.defeatedMonsterXp = null;
       state.defeatedMonsterName = null;
+    },
+    /**
+     * Dismiss the level up notification
+     */
+    dismissLevelUpNotification: (state) => {
+      state.leveledUpHeroId = null;
+      state.levelUpOldStats = null;
     },
     /**
      * Set monsters directly (for testing purposes)
@@ -738,6 +806,18 @@ export const gameSlice = createSlice({
         heroHp.currentHp = Math.max(0, hp);
       }
     },
+    /**
+     * Set party resources directly (for testing purposes)
+     */
+    setPartyResources: (state, action: PayloadAction<{ xp?: number; healingSurges?: number }>) => {
+      const { xp, healingSurges } = action.payload;
+      if (xp !== undefined) {
+        state.partyResources.xp = xp;
+      }
+      if (healingSurges !== undefined) {
+        state.partyResources.healingSurges = healingSurges;
+      }
+    },
   },
 });
 
@@ -760,5 +840,7 @@ export const {
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
   setHeroHp,
+  dismissLevelUpNotification,
+  setPartyResources,
 } = gameSlice.actions;
 export default gameSlice.reducer;
