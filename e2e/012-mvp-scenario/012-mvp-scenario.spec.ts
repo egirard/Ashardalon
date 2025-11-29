@@ -3,6 +3,8 @@ import { createScreenshotHelper } from '../helpers/screenshot-helper';
 
 test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
   test('Objective display shows current progress', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
     // STEP 1: Navigate to character selection and select Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
@@ -10,20 +12,34 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
-    // STEP 2: Verify objective display is visible with initial state (no screenshot due to random movement overlay)
-    // Verify objective display elements
-    await expect(page.locator('[data-testid="objective-display"]')).toBeVisible();
-    await expect(page.locator('[data-testid="objective-display"]')).toContainText('🎯 Objective:');
-    await expect(page.locator('[data-testid="objective-display"]')).toContainText('Defeat 2 monsters');
-    await expect(page.locator('[data-testid="objective-progress"]')).toContainText('0 / 2 defeated');
-    
-    // Verify Redux store scenario state
-    const storeState = await page.evaluate(() => {
-      return (window as any).__REDUX_STORE__.getState();
+    // Set deterministic position for the screenshot and hide movement overlay
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 3 } }
+      });
+      store.dispatch({ type: 'game/hideMovement' });
     });
-    expect(storeState.game.scenario.monstersDefeated).toBe(0);
-    expect(storeState.game.scenario.monstersToDefeat).toBe(2);
-    expect(storeState.game.scenario.objective).toBe('Defeat 2 monsters');
+
+    // STEP 2: Capture objective display with initial state
+    await screenshots.capture(page, 'objective-display-initial', {
+      programmaticCheck: async () => {
+        // Verify objective display elements
+        await expect(page.locator('[data-testid="objective-display"]')).toBeVisible();
+        await expect(page.locator('[data-testid="objective-display"]')).toContainText('🎯 Objective:');
+        await expect(page.locator('[data-testid="objective-display"]')).toContainText('Defeat 2 monsters');
+        await expect(page.locator('[data-testid="objective-progress"]')).toContainText('0 / 2 defeated');
+        
+        // Verify Redux store scenario state
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.scenario.monstersDefeated).toBe(0);
+        expect(storeState.game.scenario.monstersToDefeat).toBe(2);
+        expect(storeState.game.scenario.objective).toBe('Defeat 2 monsters');
+      }
+    });
   });
 
   test('Victory screen appears after defeating 2 monsters', async ({ page }) => {
@@ -310,12 +326,24 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
   });
 
   test('Monster defeat counter increments correctly', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
     // Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Set deterministic position and hide movement overlay
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 3 } }
+      });
+      store.dispatch({ type: 'game/hideMovement' });
+    });
 
     // Verify initial state
     let storeState = await page.evaluate(() => {
@@ -359,13 +387,24 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
       });
     });
 
-    // Verify counter incremented
-    storeState = await page.evaluate(() => {
-      return (window as any).__REDUX_STORE__.getState();
+    // Dismiss combat result if visible
+    const combatResult = page.locator('[data-testid="combat-result"]');
+    if (await combatResult.isVisible()) {
+      await page.locator('[data-testid="dismiss-combat-result"]').click();
+    }
+
+    // Capture screenshot showing counter at 1/2
+    await screenshots.capture(page, 'counter-one-defeated', {
+      programmaticCheck: async () => {
+        // Verify counter incremented
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.scenario.monstersDefeated).toBe(1);
+        
+        // Verify objective progress display updated
+        await expect(page.locator('[data-testid="objective-progress"]')).toContainText('1 / 2 defeated');
+      }
     });
-    expect(storeState.game.scenario.monstersDefeated).toBe(1);
-    
-    // Verify objective progress display updated
-    await expect(page.locator('[data-testid="objective-progress"]')).toContainText('1 / 2 defeated');
   });
 });
