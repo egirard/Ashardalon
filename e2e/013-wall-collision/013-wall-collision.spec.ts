@@ -146,6 +146,200 @@ test.describe('013 - Wall Collision Detection', () => {
     });
   });
 
+  test('Hero cannot move to non-adjacent tile (requires three tiles)', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // Helper function to dismiss monster card if visible
+    async function dismissMonsterCardIfVisible() {
+      const monsterCard = page.locator('[data-testid="monster-card-overlay"]');
+      if (await monsterCard.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await page.locator('[data-testid="dismiss-monster-card"]').click();
+        await monsterCard.waitFor({ state: 'hidden' });
+      }
+    }
+
+    // STEP 1: Start game with Quinn
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // STEP 2: Set up three tiles by exploring twice
+    // First, move hero to north edge and trigger exploration
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 0 } }
+      });
+    });
+
+    // Wait for position
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 0 });
+    }).toPass();
+
+    // End hero phase to trigger exploration and create north tile
+    await page.locator('[data-testid="end-phase-button"]').click();
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
+
+    // Wait for exploration to complete
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.dungeon.tiles.length).toBeGreaterThanOrEqual(2);
+    }).toPass();
+
+    // Dismiss monster card if it appeared
+    await dismissMonsterCardIfVisible();
+
+    // End exploration phase
+    await page.locator('[data-testid="end-phase-button"]').click();
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
+    
+    // End villain phase
+    await page.locator('[data-testid="end-phase-button"]').click();
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+
+    // Now move hero to south edge and trigger second exploration
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 7 } }
+      });
+    });
+
+    // Wait for position
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 7 });
+    }).toPass();
+
+    // End hero phase to trigger south exploration
+    await page.locator('[data-testid="end-phase-button"]').click();
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
+
+    // Wait for third tile to be placed
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.dungeon.tiles.length).toBeGreaterThanOrEqual(3);
+    }).toPass();
+
+    // Dismiss monster card if it appeared
+    await dismissMonsterCardIfVisible();
+
+    // Navigate through phases back to hero phase
+    await page.locator('[data-testid="end-phase-button"]').click();
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
+    
+    await page.locator('[data-testid="end-phase-button"]').click();
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+
+    // STEP 3: Get current tile layout
+    const dungeonState = await page.evaluate(() => {
+      return (window as any).__REDUX_STORE__.getState().game.dungeon;
+    });
+
+    // Find the south tile (row > 0)
+    const southTile = dungeonState.tiles.find((t: any) => t.position.row > 0);
+    expect(southTile).toBeDefined();
+
+    // Position hero on south tile (middle of tile)
+    // South tile at row=1 has y coordinates starting at 8 (start tile goes 0-7)
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 9 } }
+      });
+      // Refresh movement overlay with Quinn's speed (5)
+      store.dispatch({
+        type: 'game/showMovement',
+        payload: { heroId: 'quinn', speed: 5 }
+      });
+    });
+
+    // Wait for state to be applied
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 9 });
+      expect(storeState.game.showingMovement).toBe(true);
+    }).toPass();
+
+    await screenshots.capture(page, 'three-tiles-hero-on-south', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify at least three tiles exist (start + north + south)
+        expect(storeState.game.dungeon.tiles.length).toBeGreaterThanOrEqual(3);
+        
+        // Verify hero is on south tile
+        expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 9 });
+      }
+    });
+
+    // STEP 4: Verify movement overlay excludes non-adjacent tiles
+    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'movement-excludes-non-adjacent-tile', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        const validSquares = storeState.game.validMoveSquares;
+        const tiles = storeState.game.dungeon.tiles;
+        
+        // Find north tile (row < 0)
+        const northTile = tiles.find((t: any) => t.position.row < 0);
+        
+        // Hero is on south tile at (2, 9)
+        // South tile: y: 8-11
+        // Start tile: y: 0-7
+        // North tile: y: -4 to -1
+        
+        // Valid moves should include squares on south tile
+        expect(validSquares.some((s: { x: number; y: number }) => s.y >= 8 && s.y <= 11)).toBe(true);
+        
+        // With speed 5, hero at y=9 can reach start tile (y=7-4)
+        // This verifies movement between adjacent tiles works
+        expect(validSquares.some((s: { x: number; y: number }) => s.y >= 4 && s.y <= 7)).toBe(true);
+        
+        // North tile squares (y: -4 to -1) should NOT be reachable
+        // Even with speed 5, hero at y=9 cannot reach y=-1 (10 squares away)
+        // More importantly, movement must go through connected tiles only
+        if (northTile) {
+          const northTileSquares = validSquares.filter(
+            (s: { x: number; y: number }) => s.y >= -4 && s.y <= -1
+          );
+          expect(northTileSquares.length).toBe(0);
+        }
+        
+        // All valid squares should be within reachable range
+        // Hero at (2, 9) with speed 5 can reach y: 4-11 at most
+        expect(validSquares.every(
+          (s: { x: number; y: number }) => s.y >= 4 && s.y <= 11
+        )).toBe(true);
+      }
+    });
+  });
+
   test('Movement squares respect tile boundaries and wall edges', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
