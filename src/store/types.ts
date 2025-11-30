@@ -460,7 +460,7 @@ export const ENCOUNTER_CARDS: EncounterCard[] = [
     id: 'volcanic-spray',
     name: 'Volcanic Spray',
     type: 'event',
-    description: 'Each hero on a tile adjacent to an unexplored edge takes 1 damage.',
+    description: 'Hot volcanic spray erupts from a crack in the ground. The active hero takes 1 damage.',
     effect: { type: 'damage', amount: 1, target: 'active-hero' },
     imagePath: 'assets/Encounter_VolcanicSpray.png',
   },

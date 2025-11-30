@@ -1,4 +1,4 @@
-import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources } from './types';
+import type { EncounterDeck, EncounterCard, TurnState, HeroHpState } from './types';
 import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK } from './types';
 
 /**
