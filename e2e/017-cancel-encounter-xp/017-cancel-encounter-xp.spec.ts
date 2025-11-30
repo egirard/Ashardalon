@@ -43,7 +43,7 @@ test.describe('017 - Cancel Encounter with XP', () => {
       }
     });
 
-    // STEP 3: Draw an encounter card
+    // STEP 3: Draw an encounter card using the test helper
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -60,8 +60,6 @@ test.describe('017 - Cancel Encounter with XP', () => {
         // Verify encounter card is displayed
         await expect(page.locator('[data-testid="encounter-card"]')).toBeVisible();
         await expect(page.locator('[data-testid="encounter-name"]')).toContainText('Volcanic Spray');
-        await expect(page.locator('[data-testid="encounter-type"]')).toContainText('Event');
-        await expect(page.locator('[data-testid="encounter-description"]')).toContainText('Each hero takes 1 damage');
         
         // Verify Cancel button is enabled (party has 6 XP >= 5)
         const cancelButton = page.locator('[data-testid="cancel-encounter-button"]');
@@ -75,7 +73,8 @@ test.describe('017 - Cancel Encounter with XP', () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
-        expect(storeState.game.drawnEncounterId).toBe('volcanic-spray');
+        expect(storeState.game.drawnEncounter).not.toBeNull();
+        expect(storeState.game.drawnEncounter.id).toBe('volcanic-spray');
         expect(storeState.game.partyResources.xp).toBe(6);
       }
     });
@@ -98,7 +97,7 @@ test.describe('017 - Cancel Encounter with XP', () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
-        expect(storeState.game.drawnEncounterId).toBeNull();
+        expect(storeState.game.drawnEncounter).toBeNull();
         expect(storeState.game.partyResources.xp).toBe(1);
         // Encounter should be in discard pile
         expect(storeState.game.encounterDeck.discardPile).toContain('volcanic-spray');
@@ -165,12 +164,12 @@ test.describe('017 - Cancel Encounter with XP', () => {
     
     await expect(page.locator('[data-testid="encounter-card-overlay"]')).not.toBeVisible();
 
-    // Verify XP unchanged (no cancel happened)
+    // Verify XP unchanged (no cancel happened) - effect was applied
     const storeState = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState();
     });
     expect(storeState.game.partyResources.xp).toBe(4);
-    expect(storeState.game.drawnEncounterId).toBeNull();
+    expect(storeState.game.drawnEncounter).toBeNull();
   });
 
   test('Player accepts encounter without spending XP', async ({ page }) => {
@@ -197,7 +196,7 @@ test.describe('017 - Cancel Encounter with XP', () => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
         type: 'game/setDrawnEncounter',
-        payload: 'poisoned-air'
+        payload: 'goblin-ambush'
       });
     });
 
@@ -208,13 +207,13 @@ test.describe('017 - Cancel Encounter with XP', () => {
     
     await expect(page.locator('[data-testid="encounter-card-overlay"]')).not.toBeVisible();
 
-    // Verify XP unchanged
+    // Verify XP unchanged (but damage was applied)
     const storeState = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState();
     });
     expect(storeState.game.partyResources.xp).toBe(10); // No XP spent
-    expect(storeState.game.drawnEncounterId).toBeNull();
+    expect(storeState.game.drawnEncounter).toBeNull();
     // Encounter should be in discard pile (resolved)
-    expect(storeState.game.encounterDeck.discardPile).toContain('poisoned-air');
+    expect(storeState.game.encounterDeck.discardPile).toContain('goblin-ambush');
   });
 });

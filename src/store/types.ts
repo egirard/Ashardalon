@@ -157,48 +157,6 @@ export interface MonsterDeck {
 }
 
 /**
- * Encounter card type (Event, Trap, Attack)
- */
-export type EncounterType = 'Event' | 'Trap' | 'Attack';
-
-/**
- * Encounter card definition
- */
-export interface EncounterCard {
-  id: string;
-  name: string;
-  type: EncounterType;
-  description: string;
-  imagePath?: string;
-}
-
-/**
- * Encounter deck for drawing encounters during villain phase
- */
-export interface EncounterDeck {
-  drawPile: string[];    // Encounter card IDs
-  discardPile: string[];
-}
-
-/**
- * Available encounter cards in the game
- */
-export const ENCOUNTER_CARDS: EncounterCard[] = [
-  { id: 'volcanic-spray', name: 'Volcanic Spray', type: 'Event', description: 'Each hero takes 1 damage.' },
-  { id: 'poisoned-air', name: 'Poisoned Air', type: 'Event', description: 'Each hero takes 1 damage unless they move to an adjacent tile this turn.' },
-  { id: 'cave-in', name: 'Cave-In', type: 'Trap', description: 'The active hero takes 2 damage.' },
-];
-
-/**
- * Initial encounter deck (encounter card IDs that can be drawn)
- */
-export const INITIAL_ENCOUNTER_DECK: string[] = [
-  'volcanic-spray', 'volcanic-spray',
-  'poisoned-air', 'poisoned-air',
-  'cave-in', 'cave-in',
-];
-
-/**
  * Available monsters in the game
  */
 export const MONSTERS: Monster[] = [
@@ -278,6 +236,21 @@ export interface TurnState {
   currentHeroIndex: number;
   currentPhase: GamePhase;
   turnNumber: number;
+  /** 
+   * Whether a tile was placed (exploration occurred) during this turn.
+   * Used to track if hero explored at all.
+   */
+  exploredThisTurn: boolean;
+  /**
+   * Whether only white arrow tiles were drawn this turn.
+   * - true: only white tiles drawn (prevents encounter draw)
+   * - false: at least one black tile drawn OR no tiles drawn
+   * This is used to determine if an encounter should be drawn:
+   * - No exploration: draw encounter
+   * - Black tile drawn: draw encounter
+   * - Only white tiles drawn: NO encounter
+   */
+  drewOnlyWhiteTilesThisTurn: boolean;
 }
 
 /**
@@ -392,6 +365,12 @@ export interface TileDefinition {
     east: EdgeType;
     west: EdgeType;
   };
+  /** 
+   * Whether this is a black arrow tile.
+   * - Black arrow tiles: spawn monsters AND trigger encounter draw
+   * - White arrow tiles: spawn monsters but prevent encounter draw (if only white tiles drawn)
+   */
+  isBlackTile: boolean;
 }
 
 /**
@@ -406,28 +385,45 @@ export interface DungeonState {
 /**
  * Available tile definitions
  * Based on the assets available: 2-exit, 3-exit, and 4-exit tiles
+ * - Black arrow tiles: spawn monsters AND trigger encounter draw
+ * - White arrow tiles: spawn monsters but prevent encounter draw (if only white tiles drawn)
  */
 export const TILE_DEFINITIONS: TileDefinition[] = [
-  // 2-exit tiles (north and south open)
-  { tileType: 'tile-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  // 3-exit tiles
-  { tileType: 'tile-3exit-a', imagePath: 'assets/Tile_Black_x3_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-3exit-b', imagePath: 'assets/Tile_Black_x3_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  // 4-exit tiles
-  { tileType: 'tile-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  // Black 2-exit tiles (spawn monsters, trigger encounter)
+  { tileType: 'tile-black-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  { tileType: 'tile-black-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  { tileType: 'tile-black-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  // Black 3-exit tiles (spawn monsters, trigger encounter)
+  { tileType: 'tile-black-3exit-a', imagePath: 'assets/Tile_Black_x3_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  { tileType: 'tile-black-3exit-b', imagePath: 'assets/Tile_Black_x3_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  { tileType: 'tile-black-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  // Black 4-exit tiles (spawn monsters, trigger encounter)
+  { tileType: 'tile-black-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: true },
+  // White 2-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
+  { tileType: 'tile-white-2exit-a', imagePath: 'assets/Tile_White_x2_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-2exit-c', imagePath: 'assets/Tile_White_x2_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-2exit-d', imagePath: 'assets/Tile_White_x2_04.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-2exit-e', imagePath: 'assets/Tile_White_x2_05.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
+  // White 3-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
+  { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-3exit-b', imagePath: 'assets/Tile_White_x3_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, isBlackTile: false },
 ];
 
 /**
  * Initial tile deck for the game (tile type IDs)
+ * Mix of black (spawn monsters) and white (no monsters) tiles
  */
 export const INITIAL_TILE_DECK: string[] = [
-  'tile-2exit-a', 'tile-2exit-b', 'tile-2exit-c',
-  'tile-3exit-a', 'tile-3exit-b', 'tile-3exit-c',
-  'tile-4exit-a', 'tile-4exit-b',
+  // Black tiles
+  'tile-black-2exit-a', 'tile-black-2exit-b', 'tile-black-2exit-c',
+  'tile-black-3exit-a', 'tile-black-3exit-b', 'tile-black-3exit-c',
+  'tile-black-4exit-a', 'tile-black-4exit-b',
+  // White tiles
+  'tile-white-2exit-a', 'tile-white-2exit-b', 'tile-white-2exit-c', 'tile-white-2exit-d', 'tile-white-2exit-e',
+  'tile-white-3exit-a', 'tile-white-3exit-b', 'tile-white-3exit-c',
 ];
 
 /**
@@ -445,3 +441,111 @@ export const START_TILE: PlacedTile = {
     west: 'unexplored',
   },
 };
+
+/**
+ * Encounter card type categories
+ */
+export type EncounterType = 'event' | 'trap' | 'hazard' | 'curse' | 'environment';
+
+/**
+ * Encounter effect types that can be applied when an encounter card is drawn
+ * 
+ * - damage: Immediately deal damage to one or all heroes
+ * - curse: Apply a lasting debuff (duration in turns) - NOT YET IMPLEMENTED
+ * - environment: Create a persistent dungeon-wide effect - NOT YET IMPLEMENTED
+ * - trap: Can be disabled with a skill check (disableDC) - NOT YET IMPLEMENTED
+ * - hazard: Make an attack against hero's AC - NOT YET IMPLEMENTED
+ */
+export type EncounterEffect = 
+  | { type: 'damage'; amount: number; target: 'active-hero' | 'all-heroes' }
+  | { type: 'curse'; duration: number }
+  | { type: 'environment' }
+  | { type: 'trap'; disableDC: number }
+  | { type: 'hazard'; ac: number; damage: number };
+
+/**
+ * Encounter card definition
+ */
+export interface EncounterCard {
+  id: string;
+  name: string;
+  type: EncounterType;
+  description: string;
+  effect: EncounterEffect;
+  imagePath: string;
+}
+
+/**
+ * Encounter deck for drawing encounters when no tile is placed
+ */
+export interface EncounterDeck {
+  drawPile: string[];
+  discardPile: string[];
+}
+
+/**
+ * Initial encounter cards for the game
+ * 
+ * Effect Implementation Status:
+ * - damage (active-hero): ✅ IMPLEMENTED - Deals damage to the active hero
+ * - damage (all-heroes): ✅ IMPLEMENTED - Deals damage to all heroes
+ * - environment: ⚠️ NOT IMPLEMENTED - Would apply dungeon-wide effects (e.g., attack roll penalties)
+ * - curse: ⚠️ NOT IMPLEMENTED - Would apply duration-based debuffs to heroes
+ * - trap: ⚠️ NOT IMPLEMENTED - Would allow skill checks to disable
+ * - hazard: ⚠️ NOT IMPLEMENTED - Would make attack rolls against hero AC
+ * 
+ * Cards with unimplemented effects will show description but not apply mechanical effects.
+ */
+export const ENCOUNTER_CARDS: EncounterCard[] = [
+  {
+    id: 'volcanic-spray',
+    name: 'Volcanic Spray',
+    type: 'event',
+    description: 'Hot volcanic spray erupts from a crack in the ground. The active hero takes 1 damage.',
+    effect: { type: 'damage', amount: 1, target: 'active-hero' },
+    imagePath: 'assets/Encounter_VolcanicSpray.png',
+  },
+  {
+    id: 'goblin-ambush',
+    name: 'Goblin Ambush',
+    type: 'event',
+    description: 'The active hero takes 1 damage.',
+    effect: { type: 'damage', amount: 1, target: 'active-hero' },
+    imagePath: 'assets/Encounter_GoblinAmbush.png',
+  },
+  {
+    id: 'dark-fog',
+    name: 'Dark Fog',
+    type: 'environment',
+    description: 'All heroes have -2 to attack rolls until the end of the next Hero Phase.',
+    effect: { type: 'environment' },
+    imagePath: 'assets/Encounter_DarkFog.png',
+  },
+  {
+    id: 'cave-in',
+    name: 'Cave-In',
+    type: 'event',
+    description: 'All heroes take 1 damage.',
+    effect: { type: 'damage', amount: 1, target: 'all-heroes' },
+    imagePath: 'assets/Encounter_CaveIn.png',
+  },
+  {
+    id: 'poisoned-dart-trap',
+    name: 'Poisoned Dart Trap',
+    type: 'trap',
+    description: 'The active hero takes 2 damage unless they succeed on a DC 12 Dexterity check.',
+    effect: { type: 'trap', disableDC: 12 },
+    imagePath: 'assets/Encounter_PoisonedDartTrap.png',
+  },
+];
+
+/**
+ * Initial encounter deck (encounter IDs that can be drawn)
+ */
+export const INITIAL_ENCOUNTER_DECK: string[] = [
+  'volcanic-spray',
+  'goblin-ambush', 
+  'dark-fog',
+  'cave-in',
+  'poisoned-dart-trap',
+];

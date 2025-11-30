@@ -10,6 +10,8 @@ import gameReducer, {
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
+  dismissEncounterCard,
+  cancelEncounterCard,
   setAttackResult,
   dismissAttackResult,
   dismissDefeatNotification,
@@ -19,10 +21,6 @@ import gameReducer, {
   dismissHealingSurgeNotification,
   setHeroHp,
   setPartyResources,
-  drawEncounterCard,
-  cancelCurrentEncounter,
-  acceptEncounter,
-  setDrawnEncounter,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult, ENCOUNTER_CANCEL_COST } from "./types";
@@ -39,6 +37,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
       currentHeroIndex: 0,
       currentPhase: "hero-phase",
       turnNumber: 1,
+      exploredThisTurn: false,
     },
     validMoveSquares: [],
     showingMovement: false,
@@ -49,7 +48,6 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     recentlySpawnedMonsterId: null,
     attackResult: null,
     attackTargetId: null,
-    attackName: null,
     heroHp: [],
     monsterAttackResult: null,
     monsterAttackTargetId: null,
@@ -67,7 +65,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     healingSurgeHpRestored: null,
     defeatReason: null,
     encounterDeck: { drawPile: [], discardPile: [] },
-    drawnEncounterId: null,
+    drawnEncounter: null,
     ...overrides,
   };
 }
@@ -750,7 +748,7 @@ describe("gameSlice", () => {
         initialState,
         startGame({ heroIds: ["quinn"] }),
       );
-      expect(state.dungeon.tileDeck.length).toBe(8);
+      expect(state.dungeon.tileDeck.length).toBe(16); // 8 black + 8 white tiles
     });
 
     it("should have unexplored edges on start tile", () => {
@@ -776,14 +774,14 @@ describe("gameSlice", () => {
             },
             {
               id: "tile-1",
-              tileType: "tile-2exit-a",
+              tileType: "tile-black-2exit-a",
               position: { col: 0, row: -1 },
               rotation: 0,
               edges: { north: "unexplored", south: "open", east: "unexplored", west: "unexplored" },
             },
           ],
           unexploredEdges: [{ tileId: "tile-1", direction: "north" }],
-          tileDeck: ["tile-3exit-a"],
+          tileDeck: ["tile-black-3exit-a"],
         },
         monsters: [
           {
@@ -843,7 +841,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a", "tile-2exit-b"],
+          tileDeck: ["tile-black-2exit-a", "tile-black-2exit-b"],
         },
         monsterDeck: {
           drawPile: ["kobold", "snake", "cultist"],
@@ -889,7 +887,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -904,6 +902,55 @@ describe("gameSlice", () => {
       // No monster should be spawned
       expect(state.monsters).toHaveLength(0);
       expect(state.recentlySpawnedMonsterId).toBeNull();
+    });
+
+    it("should spawn monster when white arrow tile is placed and prevent encounter draw", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }], // North edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-white-2exit-a"], // White tile - spawns monster, prevents encounter
+        },
+        monsterDeck: {
+          drawPile: ["kobold"],
+          discardPile: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // White tiles DO spawn monsters
+      expect(state.monsters).toHaveLength(1);
+      expect(state.monsters[0].monsterId).toBe("kobold");
+      expect(state.recentlySpawnedMonsterId).toBe("kobold-0");
+      // Monster deck should be updated
+      expect(state.monsterDeck.drawPile).toEqual([]);
+      // Exploration should be marked as occurred
+      expect(state.turnState.exploredThisTurn).toBe(true);
+      // White tile should mark that only white tiles were drawn (prevents encounter)
+      expect(state.turnState.drewOnlyWhiteTilesThisTurn).toBe(true);
     });
 
     it("should update monster deck after drawing", () => {
@@ -931,7 +978,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold", "snake", "cultist"],
@@ -972,7 +1019,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -1013,7 +1060,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -1054,7 +1101,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -2581,161 +2628,423 @@ describe("gameSlice", () => {
     });
   });
 
-  describe("encounter actions", () => {
-    describe("drawEncounterCard", () => {
-      it("should draw an encounter from the deck", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: ["volcanic-spray", "cave-in"],
-            discardPile: [],
-          },
-          drawnEncounterId: null,
-        });
+  describe("encounter system", () => {
+    it("should initialize encounter deck when starting game", () => {
+      const action = startGame({ heroIds: ["quinn"], seed: 12345 });
+      const state = gameReducer(undefined, action);
 
-        const state = gameReducer(initialState, drawEncounterCard());
-
-        expect(state.drawnEncounterId).toBe("volcanic-spray");
-        expect(state.encounterDeck.drawPile).toEqual(["cave-in"]);
-      });
-
-      it("should not draw if an encounter is already drawn", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: ["volcanic-spray", "cave-in"],
-            discardPile: [],
-          },
-          drawnEncounterId: "poisoned-air",
-        });
-
-        const state = gameReducer(initialState, drawEncounterCard());
-
-        // Should not change
-        expect(state.drawnEncounterId).toBe("poisoned-air");
-        expect(state.encounterDeck.drawPile).toEqual(["volcanic-spray", "cave-in"]);
-      });
+      expect(state.encounterDeck.drawPile.length).toBeGreaterThan(0);
+      expect(state.encounterDeck.discardPile).toEqual([]);
+      expect(state.drawnEncounter).toBeNull();
     });
 
-    describe("cancelCurrentEncounter", () => {
-      it("should cancel encounter when party has enough XP", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: ["cave-in"],
-            discardPile: [],
-          },
-          drawnEncounterId: "volcanic-spray",
-          partyResources: { xp: 6, healingSurges: 2 },
-        });
-
-        const state = gameReducer(initialState, cancelCurrentEncounter());
-
-        expect(state.drawnEncounterId).toBeNull();
-        expect(state.partyResources.xp).toBe(6 - ENCOUNTER_CANCEL_COST);
-        expect(state.encounterDeck.discardPile).toContain("volcanic-spray");
+    it("should set exploredThisTurn to true when tile is placed", () => {
+      // Set up state where hero is on unexplored edge
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }], // On north edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-black-2exit-a"],
+        },
+        monsterDeck: { drawPile: ["kobold"], discardPile: [] },
       });
 
-      it("should not cancel when party has insufficient XP", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: ["cave-in"],
-            discardPile: [],
-          },
-          drawnEncounterId: "volcanic-spray",
-          partyResources: { xp: 4, healingSurges: 2 },
-        });
+      const state = gameReducer(initialState, endHeroPhase());
 
-        const state = gameReducer(initialState, cancelCurrentEncounter());
-
-        // Should not change
-        expect(state.drawnEncounterId).toBe("volcanic-spray");
-        expect(state.partyResources.xp).toBe(4);
-      });
-
-      it("should not do anything when no encounter is drawn", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: ["cave-in"],
-            discardPile: [],
-          },
-          drawnEncounterId: null,
-          partyResources: { xp: 10, healingSurges: 2 },
-        });
-
-        const state = gameReducer(initialState, cancelCurrentEncounter());
-
-        expect(state.drawnEncounterId).toBeNull();
-        expect(state.partyResources.xp).toBe(10);
-      });
-
-      it("should work with exactly 5 XP", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: [],
-            discardPile: [],
-          },
-          drawnEncounterId: "volcanic-spray",
-          partyResources: { xp: 5, healingSurges: 2 },
-        });
-
-        const state = gameReducer(initialState, cancelCurrentEncounter());
-
-        expect(state.drawnEncounterId).toBeNull();
-        expect(state.partyResources.xp).toBe(0);
-      });
+      expect(state.turnState.exploredThisTurn).toBe(true);
     });
 
-    describe("acceptEncounter", () => {
-      it("should discard the encounter and clear drawnEncounterId", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: ["cave-in"],
-            discardPile: [],
-          },
-          drawnEncounterId: "volcanic-spray",
-        });
-
-        const state = gameReducer(initialState, acceptEncounter());
-
-        expect(state.drawnEncounterId).toBeNull();
-        expect(state.encounterDeck.discardPile).toContain("volcanic-spray");
-        expect(state.encounterDeck.drawPile).toEqual(["cave-in"]);
+    it("should set exploredThisTurn to false when no tile is placed", () => {
+      // Set up state where hero is NOT on unexplored edge
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }], // In middle, not on edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: ["tile-black-2exit-a"],
+        },
       });
 
-      it("should not do anything when no encounter is drawn", () => {
-        const initialState = createGameState({
-          encounterDeck: {
-            drawPile: ["cave-in"],
-            discardPile: [],
-          },
-          drawnEncounterId: null,
-        });
+      const state = gameReducer(initialState, endHeroPhase());
 
-        const state = gameReducer(initialState, acceptEncounter());
-
-        expect(state.drawnEncounterId).toBeNull();
-        expect(state.encounterDeck.discardPile).toEqual([]);
-      });
+      expect(state.turnState.exploredThisTurn).toBe(false);
     });
 
-    describe("setDrawnEncounter", () => {
-      it("should set the drawn encounter ID", () => {
-        const initialState = createGameState({
-          drawnEncounterId: null,
-        });
-
-        const state = gameReducer(initialState, setDrawnEncounter("volcanic-spray"));
-
-        expect(state.drawnEncounterId).toBe("volcanic-spray");
+    it("should draw encounter when entering villain phase without exploration", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: false, // No exploration happened
+        },
+        encounterDeck: {
+          drawPile: ["volcanic-spray", "goblin-ambush"],
+          discardPile: [],
+        },
       });
 
-      it("should clear the drawn encounter when passed null", () => {
-        const initialState = createGameState({
-          drawnEncounterId: "volcanic-spray",
-        });
+      const state = gameReducer(initialState, endExplorationPhase());
 
-        const state = gameReducer(initialState, setDrawnEncounter(null));
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.drawnEncounter?.id).toBe("volcanic-spray");
+      expect(state.encounterDeck.drawPile).toEqual(["goblin-ambush"]);
+    });
 
-        expect(state.drawnEncounterId).toBeNull();
+    it("should draw encounter when entering villain phase with black tile exploration", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: true, // Exploration happened
+          drewOnlyWhiteTilesThisTurn: false, // Black tile was drawn - triggers encounter
+        },
+        encounterDeck: {
+          drawPile: ["volcanic-spray", "goblin-ambush"],
+          discardPile: [],
+        },
       });
+
+      const state = gameReducer(initialState, endExplorationPhase());
+
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.drawnEncounter?.id).toBe("volcanic-spray");
+      expect(state.encounterDeck.drawPile).toEqual(["goblin-ambush"]);
+    });
+
+    it("should NOT draw encounter when entering villain phase with only white tile exploration", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: true, // Exploration happened
+          drewOnlyWhiteTilesThisTurn: true, // Only white tiles were drawn - prevents encounter
+        },
+        encounterDeck: {
+          drawPile: ["volcanic-spray", "goblin-ambush"],
+          discardPile: [],
+        },
+      });
+
+      const state = gameReducer(initialState, endExplorationPhase());
+
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.drawPile).toEqual(["volcanic-spray", "goblin-ambush"]);
+    });
+
+    it("should clear drawnEncounter when villain phase ends", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+          drewOnlyWhiteTilesThisTurn: false,
+        },
+        drawnEncounter: {
+          id: "volcanic-spray",
+          name: "Volcanic Spray",
+          type: "event",
+          description: "Test",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.drawnEncounter).toBeNull();
+    });
+
+    it("should clear encounter state on game reset", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        encounterDeck: {
+          drawPile: ["volcanic-spray"],
+          discardPile: ["goblin-ambush"],
+        },
+        drawnEncounter: {
+          id: "volcanic-spray",
+          name: "Volcanic Spray",
+          type: "event",
+          description: "Test",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+      });
+
+      const state = gameReducer(initialState, resetGame());
+
+      expect(state.encounterDeck).toEqual({ drawPile: [], discardPile: [] });
+      expect(state.drawnEncounter).toBeNull();
+    });
+  });
+
+  describe("dismissEncounterCard", () => {
+    it("should apply damage effect to active hero when dismissing damage encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "goblin-ambush",
+          name: "Goblin Ambush",
+          type: "event",
+          description: "The active hero takes 1 damage.",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      // Import the action
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      expect(state.heroHp[0].currentHp).toBe(7); // Took 1 damage
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("goblin-ambush");
+    });
+
+    it("should apply damage effect to all heroes when dismissing all-heroes encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        drawnEncounter: {
+          id: "cave-in",
+          name: "Cave-In",
+          type: "event",
+          description: "All heroes take 1 damage.",
+          effect: { type: "damage", amount: 1, target: "all-heroes" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      expect(state.heroHp[0].currentHp).toBe(7); // Quinn took 1 damage
+      expect(state.heroHp[1].currentHp).toBe(9); // Vistra took 1 damage
+      expect(state.drawnEncounter).toBeNull();
+    });
+
+    it("should trigger defeat when encounter reduces all heroes to 0 HP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 1, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "cave-in",
+          name: "Cave-In",
+          type: "event",
+          description: "All heroes take 1 damage.",
+          effect: { type: "damage", amount: 1, target: "all-heroes" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      expect(state.heroHp[0].currentHp).toBe(0);
+      expect(state.currentScreen).toBe("defeat");
+      expect(state.defeatReason).toContain("Cave-In");
+    });
+
+    it("should not apply damage for unimplemented environment effect", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "dark-fog",
+          name: "Dark Fog",
+          type: "environment",
+          description: "All heroes have -2 to attack rolls.",
+          effect: { type: "environment" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // HP unchanged for unimplemented effect
+      expect(state.heroHp[0].currentHp).toBe(8);
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("dark-fog");
+    });
+  });
+
+  describe("cancelEncounterCard", () => {
+    it("should cancel encounter when party has enough XP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        partyResources: { xp: 6, healingSurges: 2 },
+        drawnEncounter: {
+          id: "volcanic-spray",
+          name: "Volcanic Spray",
+          type: "event",
+          description: "Active hero takes 1 damage.",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      // XP deducted
+      expect(state.partyResources.xp).toBe(6 - ENCOUNTER_CANCEL_COST);
+      // Encounter cleared without applying damage
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.heroHp[0].currentHp).toBe(8); // No damage applied
+      // Encounter discarded
+      expect(state.encounterDeck.discardPile).toContain("volcanic-spray");
+    });
+
+    it("should not cancel when party has insufficient XP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        partyResources: { xp: 4, healingSurges: 2 },
+        drawnEncounter: {
+          id: "volcanic-spray",
+          name: "Volcanic Spray",
+          type: "event",
+          description: "Active hero takes 1 damage.",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      // XP unchanged
+      expect(state.partyResources.xp).toBe(4);
+      // Encounter NOT cleared
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.encounterDeck.discardPile).not.toContain("volcanic-spray");
+    });
+
+    it("should not do anything when no encounter is drawn", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        partyResources: { xp: 10, healingSurges: 2 },
+        drawnEncounter: null,
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      expect(state.partyResources.xp).toBe(10); // Unchanged
+      expect(state.drawnEncounter).toBeNull();
     });
   });
 });

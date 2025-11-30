@@ -20,6 +20,7 @@ import {
   HERO_LEVELS,
   HeroLevel,
   EncounterDeck,
+  EncounterCard,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -29,6 +30,7 @@ import {
   placeTile,
   drawTile,
   updateDungeonAfterExploration,
+  getTileDefinition,
 } from "./exploration";
 import {
   initializeMonsterDeck,
@@ -54,10 +56,13 @@ import {
 import {
   initializeEncounterDeck,
   drawEncounter,
+  discardEncounter,
   getEncounterById,
+  shouldDrawEncounter,
+  resolveEncounterEffect,
   canCancelEncounter,
   cancelEncounter,
-} from "./encounter";
+} from "./encounters";
 
 /**
  * Default turn state for the beginning of a game
@@ -66,6 +71,8 @@ const DEFAULT_TURN_STATE: TurnState = {
   currentHeroIndex: 0,
   currentPhase: "hero-phase",
   turnNumber: 1,
+  exploredThisTurn: false,
+  drewOnlyWhiteTilesThisTurn: false,
 };
 
 /**
@@ -152,10 +159,10 @@ export interface GameState {
   healingSurgeHpRestored: number | null;
   /** Reason for defeat (for displaying on defeat screen) */
   defeatReason: string | null;
-  /** Encounter deck for drawing encounters */
+  /** Encounter deck for drawing encounters when no exploration occurs */
   encounterDeck: EncounterDeck;
-  /** Currently drawn encounter card ID (null if no encounter is active) */
-  drawnEncounterId: string | null;
+  /** Currently drawn encounter card (displayed during villain phase) */
+  drawnEncounter: EncounterCard | null;
 }
 
 const initialState: GameState = {
@@ -189,7 +196,7 @@ const initialState: GameState = {
   healingSurgeHpRestored: null,
   defeatReason: null,
   encounterDeck: { drawPile: [], discardPile: [] },
-  drawnEncounterId: null,
+  drawnEncounter: null,
 };
 
 /**
@@ -386,7 +393,7 @@ export const gameSlice = createSlice({
 
       // Initialize encounter deck
       state.encounterDeck = initializeEncounterDeck(randomFn);
-      state.drawnEncounterId = null;
+      state.drawnEncounter = null;
 
       state.currentScreen = "game-board";
     },
@@ -496,7 +503,7 @@ export const gameSlice = createSlice({
       state.healingSurgeHpRestored = null;
       state.defeatReason = null;
       state.encounterDeck = { drawPile: [], discardPile: [] };
-      state.drawnEncounterId = null;
+      state.drawnEncounter = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -508,6 +515,10 @@ export const gameSlice = createSlice({
       
       // Clear any previously spawned monster display
       state.recentlySpawnedMonsterId = null;
+      
+      // Reset exploration tracking for this turn
+      state.turnState.exploredThisTurn = false;
+      state.turnState.drewOnlyWhiteTilesThisTurn = false;
       
       // Get current hero
       const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
@@ -527,6 +538,31 @@ export const gameSlice = createSlice({
           const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
           
           if (newTile) {
+            // Check if this is a black or white tile BEFORE updating exploration state
+            const tileDef = getTileDefinition(drawnTile);
+            const isBlackTile = tileDef?.isBlackTile ?? true; // Default to black if definition not found
+            
+            // Track whether only white tiles have been drawn this turn
+            // Logic: If any black tile is drawn, drewOnlyWhiteTilesThisTurn = false
+            //        If only white tiles have been drawn, drewOnlyWhiteTilesThisTurn = true
+            if (isBlackTile) {
+              // Black tile drawn - encounters will trigger
+              state.turnState.drewOnlyWhiteTilesThisTurn = false;
+            } else {
+              // White tile drawn - prevents encounter only if no black tiles drawn yet
+              // If this is the first tile (exploredThisTurn was false), set to true
+              // If we already drew a white tile (drewOnlyWhiteTilesThisTurn is true), keep it true
+              // If we drew a black tile before (drewOnlyWhiteTilesThisTurn is false and exploredThisTurn is true), keep it false
+              if (!state.turnState.exploredThisTurn) {
+                // First tile this turn is white
+                state.turnState.drewOnlyWhiteTilesThisTurn = true;
+              }
+              // else: keep current value (don't override if black was already drawn)
+            }
+            
+            // Mark that exploration occurred this turn
+            state.turnState.exploredThisTurn = true;
+            
             // Update dungeon state
             state.dungeon = updateDungeonAfterExploration(
               state.dungeon,
@@ -535,7 +571,7 @@ export const gameSlice = createSlice({
             );
             state.dungeon.tileDeck = remainingDeck;
             
-            // Draw and spawn a monster on the new tile
+            // Both black and white tiles spawn monsters
             const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
             
             if (drawnMonsterId) {
@@ -579,6 +615,19 @@ export const gameSlice = createSlice({
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
       state.monsterMoveActionId = null;
+      
+      // Draw encounter if no exploration occurred this turn
+      if (shouldDrawEncounter(state.turnState)) {
+        const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+        state.encounterDeck = updatedDeck;
+        
+        if (encounterId) {
+          const encounter = getEncounterById(encounterId);
+          if (encounter) {
+            state.drawnEncounter = encounter;
+          }
+        }
+      }
     },
     /**
      * End the villain phase and move to the next hero's turn
@@ -594,6 +643,9 @@ export const gameSlice = createSlice({
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
       state.monsterMoveActionId = null;
+      
+      // Clear encounter state
+      state.drawnEncounter = null;
       
       // Clear any previous healing surge notification
       state.healingSurgeUsedHeroId = null;
@@ -650,6 +702,50 @@ export const gameSlice = createSlice({
      */
     dismissMonsterCard: (state) => {
       state.recentlySpawnedMonsterId = null;
+    },
+    /**
+     * Dismiss the encounter card display and apply its effect
+     */
+    dismissEncounterCard: (state) => {
+      if (state.drawnEncounter) {
+        // Get the current hero ID for active-hero effects
+        const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        
+        if (activeHeroId) {
+          // Apply the encounter effect
+          state.heroHp = resolveEncounterEffect(
+            state.drawnEncounter,
+            state.heroHp,
+            activeHeroId
+          );
+          
+          // Check for party defeat (all heroes at 0 HP)
+          const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+          if (allHeroesDefeated) {
+            state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
+            state.currentScreen = "defeat";
+          }
+        }
+        
+        // Discard the encounter
+        state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+        state.drawnEncounter = null;
+      }
+    },
+    /**
+     * Cancel the current encounter by spending XP (does not apply effect)
+     */
+    cancelEncounterCard: (state) => {
+      if (state.drawnEncounter && canCancelEncounter(state.partyResources)) {
+        const result = cancelEncounter(
+          state.drawnEncounter.id,
+          state.partyResources,
+          state.encounterDeck
+        );
+        state.partyResources = result.resources;
+        state.encounterDeck = result.encounterDeck;
+        state.drawnEncounter = null;
+      }
     },
     /**
      * Set the attack result and apply damage to the target monster
@@ -912,64 +1008,17 @@ export const gameSlice = createSlice({
       }
     },
     /**
-     * Draw an encounter card (for testing purposes or when triggered by game rules)
-     */
-    drawEncounterCard: (state) => {
-      if (state.drawnEncounterId !== null) {
-        // Already have an encounter drawn
-        return;
-      }
-      
-      const { encounter, deck } = drawEncounter(state.encounterDeck);
-      if (encounter) {
-        state.drawnEncounterId = encounter;
-        state.encounterDeck = deck;
-      }
-    },
-    /**
-     * Cancel the current encounter by spending XP
-     */
-    cancelCurrentEncounter: (state) => {
-      if (state.drawnEncounterId === null) {
-        // No encounter to cancel
-        return;
-      }
-      
-      if (!canCancelEncounter(state.partyResources)) {
-        // Not enough XP
-        return;
-      }
-      
-      const result = cancelEncounter(
-        state.drawnEncounterId,
-        state.partyResources,
-        state.encounterDeck
-      );
-      
-      state.partyResources = result.resources;
-      state.encounterDeck = result.encounterDeck;
-      state.drawnEncounterId = null;
-    },
-    /**
-     * Accept/resolve the current encounter (dismisses it without spending XP)
-     */
-    acceptEncounter: (state) => {
-      if (state.drawnEncounterId === null) {
-        return;
-      }
-      
-      // Discard the encounter card
-      state.encounterDeck = {
-        ...state.encounterDeck,
-        discardPile: [...state.encounterDeck.discardPile, state.drawnEncounterId],
-      };
-      state.drawnEncounterId = null;
-    },
-    /**
-     * Set drawn encounter ID directly (for testing purposes)
+     * Set drawn encounter directly (for testing purposes)
      */
     setDrawnEncounter: (state, action: PayloadAction<string | null>) => {
-      state.drawnEncounterId = action.payload;
+      if (action.payload === null) {
+        state.drawnEncounter = null;
+      } else {
+        const encounter = getEncounterById(action.payload);
+        if (encounter) {
+          state.drawnEncounter = encounter;
+        }
+      }
     },
   },
 });
@@ -985,6 +1034,7 @@ export const {
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
+  dismissEncounterCard,
   setAttackResult,
   dismissAttackResult,
   dismissDefeatNotification,
@@ -996,9 +1046,7 @@ export const {
   setHeroHp,
   dismissLevelUpNotification,
   setPartyResources,
-  drawEncounterCard,
-  cancelCurrentEncounter,
-  acceptEncounter,
+  cancelEncounterCard,
   setDrawnEncounter,
 } = gameSlice.actions;
 export default gameSlice.reducer;
