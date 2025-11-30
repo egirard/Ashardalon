@@ -205,18 +205,18 @@ describe("exploration", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "north" };
       
-      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
       expect(result!.position).toEqual({ col: 0, row: -1 });
-      expect(result!.tileType).toBe("tile-2exit-a");
+      expect(result!.tileType).toBe("tile-black-2exit-a");
     });
 
     it("should set the connecting edge to open", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "north" };
       
-      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
       // When placing north, the new tile's south edge connects
@@ -236,7 +236,7 @@ describe("exploration", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "nonexistent", direction: "north" };
       
-      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).toBeNull();
     });
@@ -245,7 +245,7 @@ describe("exploration", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "north" };
       
-      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
       expect(result!.rotation).toBe(0);
@@ -255,7 +255,7 @@ describe("exploration", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "south" };
       
-      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
       expect(result!.rotation).toBe(180);
@@ -265,7 +265,7 @@ describe("exploration", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "east" };
       
-      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
       expect(result!.rotation).toBe(90);
@@ -275,7 +275,7 @@ describe("exploration", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "west" };
       
-      const result = placeTile(edge, "tile-2exit-a", dungeon);
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
       expect(result!.rotation).toBe(270);
@@ -383,7 +383,7 @@ describe("exploration", () => {
       const exploredEdge: TileEdge = { tileId: "start-tile", direction: "north" };
       const newTile: PlacedTile = {
         id: "tile-1",
-        tileType: "tile-2exit-a",
+        tileType: "tile-black-2exit-a",
         position: { col: 0, row: -1 },
         rotation: 0,
         edges: {
@@ -405,7 +405,7 @@ describe("exploration", () => {
       const exploredEdge: TileEdge = { tileId: "start-tile", direction: "north" };
       const newTile: PlacedTile = {
         id: "tile-1",
-        tileType: "tile-2exit-a",
+        tileType: "tile-black-2exit-a",
         position: { col: 0, row: -1 },
         rotation: 0,
         edges: {
@@ -430,7 +430,7 @@ describe("exploration", () => {
       const exploredEdge: TileEdge = { tileId: "start-tile", direction: "north" };
       const newTile: PlacedTile = {
         id: "tile-1",
-        tileType: "tile-2exit-a",
+        tileType: "tile-black-2exit-a",
         position: { col: 0, row: -1 },
         rotation: 0,
         edges: {
@@ -472,7 +472,7 @@ describe("exploration", () => {
       const exploredEdge: TileEdge = { tileId: "start-tile", direction: "north" };
       const newTile: PlacedTile = {
         id: "tile-1",
-        tileType: "tile-2exit-a",
+        tileType: "tile-black-2exit-a",
         position: { col: 0, row: -1 },
         rotation: 0,
         edges: {
