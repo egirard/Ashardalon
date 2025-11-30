@@ -44,7 +44,7 @@
   import UnexploredEdgeIndicator from "./UnexploredEdgeIndicator.svelte";
   import MonsterToken from "./MonsterToken.svelte";
   import MonsterCard from "./MonsterCard.svelte";
-  import AttackButton from "./AttackButton.svelte";
+  import PowerCardAttackPanel from "./PowerCardAttackPanel.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
   import XPCounter from "./XPCounter.svelte";
@@ -58,6 +58,8 @@
     getMonsterAC,
   } from "../store/combat";
   import { findTileAtPosition } from "../store/movement";
+  import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
+  import { usePowerCard } from "../store/heroesSlice";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -132,6 +134,7 @@
   let healingSurgeHpRestored: number | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
+  let heroPowerCards: Record<string, HeroPowerCards> = $state({});
 
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
@@ -166,6 +169,7 @@
       levelUpOldStats = state.game.levelUpOldStats;
       healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
+      heroPowerCards = state.heroes.heroPowerCards;
     });
 
     // Initialize state
@@ -196,6 +200,7 @@
     levelUpOldStats = state.game.levelUpOldStats;
     healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
+    heroPowerCards = state.heroes.heroPowerCards;
 
     return unsubscribe;
   });
@@ -652,13 +657,13 @@
     return AVAILABLE_HEROES.find((h) => h.id === heroId);
   }
 
-  // Handle attack action
-  function handleAttack(targetInstanceId: string) {
+  // Handle attack action using a power card
+  function handleAttackWithCard(cardId: number, targetInstanceId: string) {
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return;
 
-    const hero = getFullHeroInfo(currentHeroId);
-    if (!hero) return;
+    const powerCard = getPowerCardById(cardId);
+    if (!powerCard || powerCard.attackBonus === undefined) return;
 
     const monster = monsters.find((m) => m.instanceId === targetInstanceId);
     if (!monster) return;
@@ -666,8 +671,23 @@
     const monsterAC = getMonsterAC(monster.monsterId);
     if (monsterAC === undefined) return;
 
-    const result = resolveAttack(hero.attack, monsterAC);
+    // Create attack stats from power card
+    const attack = {
+      name: powerCard.name,
+      attackBonus: powerCard.attackBonus,
+      damage: powerCard.damage ?? 1,
+      range: 1, // Default to adjacent for now
+    };
+
+    const result = resolveAttack(attack, monsterAC);
     store.dispatch(setAttackResult({ result, targetInstanceId }));
+    
+    // Flip the power card if it's a daily (at-wills typically don't flip on use)
+    // Note: Some at-wills have special flip conditions, but for basic implementation,
+    // only daily and utility powers flip when used for attacks
+    if (powerCard.type === 'daily') {
+      store.dispatch(usePowerCard({ heroId: currentHeroId, cardId }));
+    }
   }
 
   // Handle dismissing the attack result
@@ -955,18 +975,18 @@
           ↩ Return to Character Select
         </button>
 
-        <!-- Attack Button - only show during hero phase when adjacent to monster and can attack -->
+        <!-- Power Card Attack Panel - only show during hero phase when adjacent to monster and can attack -->
         {#if turnState.currentPhase === "hero-phase" && heroTurnActions.canAttack}
           {@const currentHeroId = getCurrentHeroId()}
-          {@const fullHero = currentHeroId
-            ? getFullHeroInfo(currentHeroId)
+          {@const currentHeroPowerCards = currentHeroId
+            ? heroPowerCards[currentHeroId]
             : undefined}
           {@const adjacentMonsters = getAdjacentMonstersForCurrentHero()}
-          {#if fullHero && adjacentMonsters.length > 0}
-            <AttackButton
+          {#if currentHeroPowerCards && adjacentMonsters.length > 0}
+            <PowerCardAttackPanel
+              heroPowerCards={currentHeroPowerCards}
               {adjacentMonsters}
-              heroAttack={fullHero.attack}
-              onAttack={handleAttack}
+              onAttackWithCard={handleAttackWithCard}
             />
           {/if}
         {/if}
