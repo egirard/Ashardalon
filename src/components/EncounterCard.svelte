@@ -151,7 +151,7 @@
       </button>
     </div>
     
-    <p class="card-hint">Click anywhere or press Enter to accept</p>
+    <p class="card-hint">Press Enter to accept or use buttons above</p>
   </div>
 </div>
 

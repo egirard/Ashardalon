@@ -104,6 +104,8 @@ export function shouldDrawEncounter(turnState: TurnState): boolean {
 /**
  * Check if an encounter can be cancelled by spending XP
  * Requires at least ENCOUNTER_CANCEL_COST (5) XP
+ * @param resources - The party's current resources including XP and healing surges
+ * @returns true if party has enough XP to cancel an encounter
  */
 export function canCancelEncounter(resources: PartyResources): boolean {
   return resources.xp >= ENCOUNTER_CANCEL_COST;
@@ -112,6 +114,10 @@ export function canCancelEncounter(resources: PartyResources): boolean {
 /**
  * Cancel an encounter by spending XP
  * Deducts ENCOUNTER_CANCEL_COST (5) XP and discards the encounter card
+ * @param encounter - The encounter card to cancel
+ * @param resources - The party's current resources
+ * @param encounterDeck - The current state of the encounter deck
+ * @returns Updated resources (with XP deducted) and encounter deck (with card discarded)
  */
 export function cancelEncounter(
   encounter: EncounterCard,
