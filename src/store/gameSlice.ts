@@ -70,6 +70,7 @@ const DEFAULT_TURN_STATE: TurnState = {
   currentPhase: "hero-phase",
   turnNumber: 1,
   exploredThisTurn: false,
+  drewOnlyWhiteTilesThisTurn: false,
 };
 
 /**
@@ -515,6 +516,7 @@ export const gameSlice = createSlice({
       
       // Reset exploration tracking for this turn
       state.turnState.exploredThisTurn = false;
+      state.turnState.drewOnlyWhiteTilesThisTurn = false;
       
       // Get current hero
       const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
@@ -534,8 +536,29 @@ export const gameSlice = createSlice({
           const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
           
           if (newTile) {
-            // Mark that exploration occurred this turn (for both black and white tiles)
-            // This prevents encounter cards from being drawn
+            // Check if this is a black or white tile BEFORE updating exploration state
+            const tileDef = getTileDefinition(drawnTile);
+            const isBlackTile = tileDef?.isBlackTile ?? true; // Default to black if definition not found
+            
+            // Track whether only white tiles have been drawn this turn
+            // Logic: If any black tile is drawn, drewOnlyWhiteTilesThisTurn = false
+            //        If only white tiles have been drawn, drewOnlyWhiteTilesThisTurn = true
+            if (isBlackTile) {
+              // Black tile drawn - encounters will trigger
+              state.turnState.drewOnlyWhiteTilesThisTurn = false;
+            } else {
+              // White tile drawn - prevents encounter only if no black tiles drawn yet
+              // If this is the first tile (exploredThisTurn was false), set to true
+              // If we already drew a white tile (drewOnlyWhiteTilesThisTurn is true), keep it true
+              // If we drew a black tile before (drewOnlyWhiteTilesThisTurn is false and exploredThisTurn is true), keep it false
+              if (!state.turnState.exploredThisTurn) {
+                // First tile this turn is white
+                state.turnState.drewOnlyWhiteTilesThisTurn = true;
+              }
+              // else: keep current value (don't override if black was already drawn)
+            }
+            
+            // Mark that exploration occurred this turn
             state.turnState.exploredThisTurn = true;
             
             // Update dungeon state
@@ -546,33 +569,27 @@ export const gameSlice = createSlice({
             );
             state.dungeon.tileDeck = remainingDeck;
             
-            // Check if this tile spawns monsters (black arrow tiles do, white arrow tiles don't)
-            const tileDef = getTileDefinition(drawnTile);
-            const shouldSpawnMonster = tileDef?.spawnsMonster ?? true; // Default to spawning if definition not found
+            // Both black and white tiles spawn monsters
+            const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
             
-            if (shouldSpawnMonster) {
-              // Draw and spawn a monster on the new tile
-              const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+            if (drawnMonsterId) {
+              // Create monster instance at tile center
+              const monsterPosition = getTileMonsterSpawnPosition();
+              const monsterInstance = createMonsterInstance(
+                drawnMonsterId,
+                monsterPosition,
+                currentToken.heroId, // Monster is controlled by the exploring hero
+                newTile.id,
+                state.monsterInstanceCounter
+              );
               
-              if (drawnMonsterId) {
-                // Create monster instance at tile center
-                const monsterPosition = getTileMonsterSpawnPosition();
-                const monsterInstance = createMonsterInstance(
-                  drawnMonsterId,
-                  monsterPosition,
-                  currentToken.heroId, // Monster is controlled by the exploring hero
-                  newTile.id,
-                  state.monsterInstanceCounter
-                );
-                
-                if (monsterInstance) {
-                  state.monsters.push(monsterInstance);
-                  state.monsterInstanceCounter += 1;
-                  state.recentlySpawnedMonsterId = monsterInstance.instanceId;
-                }
-                
-                state.monsterDeck = updatedMonsterDeck;
+              if (monsterInstance) {
+                state.monsters.push(monsterInstance);
+                state.monsterInstanceCounter += 1;
+                state.recentlySpawnedMonsterId = monsterInstance.instanceId;
               }
+              
+              state.monsterDeck = updatedMonsterDeck;
             }
           }
         }

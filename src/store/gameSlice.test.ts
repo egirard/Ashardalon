@@ -903,7 +903,7 @@ describe("gameSlice", () => {
       expect(state.recentlySpawnedMonsterId).toBeNull();
     });
 
-    it("should not spawn monster when white arrow tile is placed", () => {
+    it("should spawn monster when white arrow tile is placed and prevent encounter draw", () => {
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }], // North edge
@@ -928,7 +928,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-white-2exit-a"], // White tile - should not spawn monster
+          tileDeck: ["tile-white-2exit-a"], // White tile - spawns monster, prevents encounter
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -940,13 +940,16 @@ describe("gameSlice", () => {
 
       const state = gameReducer(gameInProgress, endHeroPhase());
 
-      // White tiles should not spawn monsters
-      expect(state.monsters).toHaveLength(0);
-      expect(state.recentlySpawnedMonsterId).toBeNull();
-      // Monster deck should not be affected
-      expect(state.monsterDeck.drawPile).toEqual(["kobold"]);
-      // But exploration should still be marked as occurred (to prevent encounter draw)
+      // White tiles DO spawn monsters
+      expect(state.monsters).toHaveLength(1);
+      expect(state.monsters[0].monsterId).toBe("kobold");
+      expect(state.recentlySpawnedMonsterId).toBe("kobold-0");
+      // Monster deck should be updated
+      expect(state.monsterDeck.drawPile).toEqual([]);
+      // Exploration should be marked as occurred
       expect(state.turnState.exploredThisTurn).toBe(true);
+      // White tile should mark that only white tiles were drawn (prevents encounter)
+      expect(state.turnState.drewOnlyWhiteTilesThisTurn).toBe(true);
     });
 
     it("should update monster deck after drawing", () => {
@@ -2724,7 +2727,7 @@ describe("gameSlice", () => {
       expect(state.encounterDeck.drawPile).toEqual(["goblin-ambush"]);
     });
 
-    it("should NOT draw encounter when entering villain phase with exploration", () => {
+    it("should draw encounter when entering villain phase with black tile exploration", () => {
       const initialState = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
@@ -2733,6 +2736,32 @@ describe("gameSlice", () => {
           currentPhase: "exploration-phase",
           turnNumber: 1,
           exploredThisTurn: true, // Exploration happened
+          drewOnlyWhiteTilesThisTurn: false, // Black tile was drawn - triggers encounter
+        },
+        encounterDeck: {
+          drawPile: ["volcanic-spray", "goblin-ambush"],
+          discardPile: [],
+        },
+      });
+
+      const state = gameReducer(initialState, endExplorationPhase());
+
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.drawnEncounter?.id).toBe("volcanic-spray");
+      expect(state.encounterDeck.drawPile).toEqual(["goblin-ambush"]);
+    });
+
+    it("should NOT draw encounter when entering villain phase with only white tile exploration", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: true, // Exploration happened
+          drewOnlyWhiteTilesThisTurn: true, // Only white tiles were drawn - prevents encounter
         },
         encounterDeck: {
           drawPile: ["volcanic-spray", "goblin-ambush"],
@@ -2756,6 +2785,7 @@ describe("gameSlice", () => {
           currentPhase: "villain-phase",
           turnNumber: 1,
           exploredThisTurn: false,
+          drewOnlyWhiteTilesThisTurn: false,
         },
         drawnEncounter: {
           id: "volcanic-spray",

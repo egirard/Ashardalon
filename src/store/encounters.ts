@@ -85,10 +85,20 @@ export function getEncounterById(encounterId: string): EncounterCard | undefined
 
 /**
  * Check if an encounter should be drawn this turn
- * Encounters are drawn when the hero did not explore (no tile was placed)
+ * Encounters are drawn when:
+ * - No tile was placed (no exploration), OR
+ * - At least one black arrow tile was placed (black tiles trigger encounters)
+ * 
+ * Encounters are NOT drawn when:
+ * - Only white arrow tiles were placed this turn
  */
 export function shouldDrawEncounter(turnState: TurnState): boolean {
-  return !turnState.exploredThisTurn;
+  // If only white tiles were drawn, no encounter
+  if (turnState.drewOnlyWhiteTilesThisTurn) {
+    return false;
+  }
+  // Otherwise, draw encounter (either no exploration or black tile was drawn)
+  return true;
 }
 
 /**
