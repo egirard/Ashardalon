@@ -11,6 +11,7 @@ import gameReducer, {
   endVillainPhase,
   dismissMonsterCard,
   dismissEncounterCard,
+  cancelEncounterCard,
   setAttackResult,
   dismissAttackResult,
   dismissDefeatNotification,
@@ -2954,6 +2955,153 @@ describe("gameSlice", () => {
       expect(state.heroHp[0].currentHp).toBe(8);
       expect(state.drawnEncounter).toBeNull();
       expect(state.encounterDeck.discardPile).toContain("dark-fog");
+    });
+  });
+
+  describe("cancelEncounterCard", () => {
+    it("should cancel encounter without applying effect when party has 5+ XP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "goblin-ambush",
+          name: "Goblin Ambush",
+          type: "event",
+          description: "The active hero takes 1 damage.",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        partyResources: { xp: 6, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      // Effect was NOT applied - HP unchanged
+      expect(state.heroHp[0].currentHp).toBe(8);
+      // XP was deducted
+      expect(state.partyResources.xp).toBe(1);
+      // Encounter was discarded
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("goblin-ambush");
+    });
+
+    it("should deduct exactly 5 XP when canceling encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "cave-in",
+          name: "Cave-In",
+          type: "event",
+          description: "All heroes take 1 damage.",
+          effect: { type: "damage", amount: 1, target: "all-heroes" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        partyResources: { xp: 10, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      expect(state.partyResources.xp).toBe(5);
+    });
+
+    it("should not cancel encounter when party has less than 5 XP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "goblin-ambush",
+          name: "Goblin Ambush",
+          type: "event",
+          description: "The active hero takes 1 damage.",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        partyResources: { xp: 4, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      // Encounter should still be displayed
+      expect(state.drawnEncounter).not.toBeNull();
+      // XP should not change
+      expect(state.partyResources.xp).toBe(4);
+      // Discard pile should be empty
+      expect(state.encounterDeck.discardPile).toHaveLength(0);
+    });
+
+    it("should do nothing when no encounter is drawn", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: null,
+        encounterDeck: { drawPile: [], discardPile: [] },
+        partyResources: { xp: 10, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      // XP should not change
+      expect(state.partyResources.xp).toBe(10);
+    });
+
+    it("should not modify healing surges when canceling encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "goblin-ambush",
+          name: "Goblin Ambush",
+          type: "event",
+          description: "The active hero takes 1 damage.",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        partyResources: { xp: 5, healingSurges: 3 },
+      });
+
+      const state = gameReducer(initialState, cancelEncounterCard());
+
+      expect(state.partyResources.healingSurges).toBe(3);
     });
   });
 });

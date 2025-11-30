@@ -5,6 +5,8 @@ import {
   discardEncounter,
   getEncounterById,
   shouldDrawEncounter,
+  canCancelEncounter,
+  cancelEncounter,
   applyDamageToHero,
   applyDamageToAllHeroes,
   resolveEncounterEffect,
@@ -151,6 +153,111 @@ describe("encounters", () => {
       };
       
       expect(shouldDrawEncounter(turnState)).toBe(false);
+    });
+  });
+
+  describe("canCancelEncounter", () => {
+    it("should return true when party has 5+ XP", () => {
+      const resources = { xp: 5, healingSurges: 2 };
+      expect(canCancelEncounter(resources)).toBe(true);
+    });
+
+    it("should return true when party has more than 5 XP", () => {
+      const resources = { xp: 10, healingSurges: 2 };
+      expect(canCancelEncounter(resources)).toBe(true);
+    });
+
+    it("should return false when party has less than 5 XP", () => {
+      const resources = { xp: 4, healingSurges: 2 };
+      expect(canCancelEncounter(resources)).toBe(false);
+    });
+
+    it("should return false when party has 0 XP", () => {
+      const resources = { xp: 0, healingSurges: 2 };
+      expect(canCancelEncounter(resources)).toBe(false);
+    });
+  });
+
+  describe("cancelEncounter", () => {
+    it("should deduct 5 XP from party resources", () => {
+      const encounter: EncounterCard = {
+        id: 'volcanic-spray',
+        name: 'Volcanic Spray',
+        type: 'event',
+        description: 'Test',
+        effect: { type: 'damage', amount: 1, target: 'active-hero' },
+        imagePath: 'test.png',
+      };
+      const resources = { xp: 6, healingSurges: 2 };
+      const deck: EncounterDeck = {
+        drawPile: ['goblin-ambush'],
+        discardPile: [],
+      };
+
+      const result = cancelEncounter(encounter, resources, deck);
+
+      expect(result.resources.xp).toBe(1);
+    });
+
+    it("should add encounter to discard pile", () => {
+      const encounter: EncounterCard = {
+        id: 'volcanic-spray',
+        name: 'Volcanic Spray',
+        type: 'event',
+        description: 'Test',
+        effect: { type: 'damage', amount: 1, target: 'active-hero' },
+        imagePath: 'test.png',
+      };
+      const resources = { xp: 6, healingSurges: 2 };
+      const deck: EncounterDeck = {
+        drawPile: ['goblin-ambush'],
+        discardPile: ['dark-fog'],
+      };
+
+      const result = cancelEncounter(encounter, resources, deck);
+
+      expect(result.encounterDeck.discardPile).toContain('volcanic-spray');
+      expect(result.encounterDeck.discardPile).toHaveLength(2);
+    });
+
+    it("should not modify draw pile", () => {
+      const encounter: EncounterCard = {
+        id: 'volcanic-spray',
+        name: 'Volcanic Spray',
+        type: 'event',
+        description: 'Test',
+        effect: { type: 'damage', amount: 1, target: 'active-hero' },
+        imagePath: 'test.png',
+      };
+      const resources = { xp: 6, healingSurges: 2 };
+      const deck: EncounterDeck = {
+        drawPile: ['goblin-ambush', 'cave-in'],
+        discardPile: [],
+      };
+
+      const result = cancelEncounter(encounter, resources, deck);
+
+      expect(result.encounterDeck.drawPile).toEqual(['goblin-ambush', 'cave-in']);
+    });
+
+    it("should not modify healing surges", () => {
+      const encounter: EncounterCard = {
+        id: 'volcanic-spray',
+        name: 'Volcanic Spray',
+        type: 'event',
+        description: 'Test',
+        effect: { type: 'damage', amount: 1, target: 'active-hero' },
+        imagePath: 'test.png',
+      };
+      const resources = { xp: 6, healingSurges: 2 };
+      const deck: EncounterDeck = {
+        drawPile: [],
+        discardPile: [],
+      };
+
+      const result = cancelEncounter(encounter, resources, deck);
+
+      expect(result.resources.healingSurges).toBe(2);
     });
   });
 

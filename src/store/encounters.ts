@@ -1,5 +1,5 @@
-import type { EncounterDeck, EncounterCard, TurnState, HeroHpState } from './types';
-import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK } from './types';
+import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources } from './types';
+import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK, ENCOUNTER_CANCEL_COST } from './types';
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -99,6 +99,35 @@ export function shouldDrawEncounter(turnState: TurnState): boolean {
   }
   // Otherwise, draw encounter (either no exploration or black tile was drawn)
   return true;
+}
+
+/**
+ * Check if an encounter can be cancelled by spending XP
+ * Requires at least ENCOUNTER_CANCEL_COST (5) XP
+ */
+export function canCancelEncounter(resources: PartyResources): boolean {
+  return resources.xp >= ENCOUNTER_CANCEL_COST;
+}
+
+/**
+ * Cancel an encounter by spending XP
+ * Deducts ENCOUNTER_CANCEL_COST (5) XP and discards the encounter card
+ */
+export function cancelEncounter(
+  encounter: EncounterCard,
+  resources: PartyResources,
+  encounterDeck: EncounterDeck
+): { resources: PartyResources; encounterDeck: EncounterDeck } {
+  return {
+    resources: {
+      ...resources,
+      xp: resources.xp - ENCOUNTER_CANCEL_COST,
+    },
+    encounterDeck: {
+      ...encounterDeck,
+      discardPile: [...encounterDeck.discardPile, encounter.id],
+    },
+  };
 }
 
 /**

@@ -60,6 +60,8 @@ import {
   getEncounterById,
   shouldDrawEncounter,
   resolveEncounterEffect,
+  canCancelEncounter,
+  cancelEncounter,
 } from "./encounters";
 
 /**
@@ -731,6 +733,23 @@ export const gameSlice = createSlice({
       }
     },
     /**
+     * Cancel the encounter card by spending 5 XP (skips encounter effect)
+     */
+    cancelEncounterCard: (state) => {
+      if (state.drawnEncounter && canCancelEncounter(state.partyResources)) {
+        // Cancel encounter - deducts XP and discards the card without applying effect
+        const result = cancelEncounter(
+          state.drawnEncounter,
+          state.partyResources,
+          state.encounterDeck
+        );
+        
+        state.partyResources = result.resources;
+        state.encounterDeck = result.encounterDeck;
+        state.drawnEncounter = null;
+      }
+    },
+    /**
      * Set the attack result and apply damage to the target monster
      * Also handles level up on natural 20 with 5+ XP
      */
@@ -1005,6 +1024,7 @@ export const {
   endVillainPhase,
   dismissMonsterCard,
   dismissEncounterCard,
+  cancelEncounterCard,
   setAttackResult,
   dismissAttackResult,
   dismissDefeatNotification,

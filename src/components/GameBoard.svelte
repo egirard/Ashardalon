@@ -10,6 +10,7 @@
     endVillainPhase,
     dismissMonsterCard,
     dismissEncounterCard,
+    cancelEncounterCard,
     setAttackResult,
     dismissAttackResult,
     dismissDefeatNotification,
@@ -780,6 +781,11 @@
     store.dispatch(dismissEncounterCard());
   }
 
+  // Handle canceling the encounter card (spend 5 XP to skip the effect)
+  function handleCancelEncounterCard() {
+    store.dispatch(cancelEncounterCard());
+  }
+
   // Get new stats for leveled up hero
   function getLeveledUpHeroStats(): HeroHpState | undefined {
     if (!leveledUpHeroId) return undefined;
@@ -1167,7 +1173,9 @@
   {#if drawnEncounter}
     <EncounterCard
       encounter={drawnEncounter}
+      partyXp={partyResources.xp}
       onDismiss={handleDismissEncounterCard}
+      onCancel={handleCancelEncounterCard}
     />
   {/if}
 </div>
