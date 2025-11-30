@@ -1,5 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Hero, AVAILABLE_HEROES } from './types';
+import {
+  HeroPowerCards,
+  HERO_CUSTOM_ABILITIES,
+  createInitialPowerCardsState,
+  flipPowerCard,
+  addLevel2DailyCard,
+} from './powerCards';
 
 export type EdgePosition = 'top' | 'bottom' | 'left' | 'right';
 
@@ -8,16 +15,32 @@ export interface HeroSelection {
   edge: EdgePosition;
 }
 
+/**
+ * Power card selection for a hero during character setup
+ */
+export interface HeroPowerCardSelection {
+  heroId: string;
+  utility: number | null;
+  atWills: number[];
+  daily: number | null;
+}
+
 export interface HeroesState {
   availableHeroes: Hero[];
   selectedHeroes: Hero[];
   heroEdgeMap: Record<string, EdgePosition>; // Maps hero ID to the edge that selected it
+  /** Power card selections during character setup (before game starts) */
+  powerCardSelections: Record<string, HeroPowerCardSelection>;
+  /** Finalized power cards for each hero (after game starts) */
+  heroPowerCards: Record<string, HeroPowerCards>;
 }
 
 const initialState: HeroesState = {
   availableHeroes: AVAILABLE_HEROES,
   selectedHeroes: [],
   heroEdgeMap: {},
+  powerCardSelections: {},
+  heroPowerCards: {},
 };
 
 export const heroesSlice = createSlice({
@@ -32,12 +55,20 @@ export const heroesSlice = createSlice({
         // Deselect the hero
         state.selectedHeroes.splice(existingIndex, 1);
         delete state.heroEdgeMap[heroId];
+        delete state.powerCardSelections[heroId];
       } else {
         // Select the hero (max 5)
         if (state.selectedHeroes.length < 5) {
           const hero = state.availableHeroes.find(h => h.id === heroId);
           if (hero) {
             state.selectedHeroes.push(hero);
+            // Initialize power card selection for this hero
+            state.powerCardSelections[heroId] = {
+              heroId,
+              utility: null,
+              atWills: [],
+              daily: null,
+            };
           }
         }
       }
@@ -51,6 +82,7 @@ export const heroesSlice = createSlice({
         if (state.heroEdgeMap[heroId] === edge) {
           state.selectedHeroes.splice(existingIndex, 1);
           delete state.heroEdgeMap[heroId];
+          delete state.powerCardSelections[heroId];
         }
       } else {
         // Select the hero (max 5)
@@ -59,6 +91,13 @@ export const heroesSlice = createSlice({
           if (hero) {
             state.selectedHeroes.push(hero);
             state.heroEdgeMap[heroId] = edge;
+            // Initialize power card selection for this hero
+            state.powerCardSelections[heroId] = {
+              heroId,
+              utility: null,
+              atWills: [],
+              daily: null,
+            };
           }
         }
       }
@@ -66,9 +105,99 @@ export const heroesSlice = createSlice({
     clearSelection: (state) => {
       state.selectedHeroes = [];
       state.heroEdgeMap = {};
+      state.powerCardSelections = {};
+      state.heroPowerCards = {};
+    },
+    /**
+     * Select a utility power card for a hero
+     */
+    selectUtilityCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
+      const { heroId, cardId } = action.payload;
+      const selection = state.powerCardSelections[heroId];
+      if (selection) {
+        selection.utility = selection.utility === cardId ? null : cardId;
+      }
+    },
+    /**
+     * Toggle an at-will power card for a hero (max 2)
+     */
+    toggleAtWillCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
+      const { heroId, cardId } = action.payload;
+      const selection = state.powerCardSelections[heroId];
+      if (selection) {
+        const index = selection.atWills.indexOf(cardId);
+        if (index >= 0) {
+          // Deselect
+          selection.atWills.splice(index, 1);
+        } else if (selection.atWills.length < 2) {
+          // Select (max 2)
+          selection.atWills.push(cardId);
+        }
+      }
+    },
+    /**
+     * Select a daily power card for a hero
+     */
+    selectDailyCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
+      const { heroId, cardId } = action.payload;
+      const selection = state.powerCardSelections[heroId];
+      if (selection) {
+        selection.daily = selection.daily === cardId ? null : cardId;
+      }
+    },
+    /**
+     * Finalize power card selections when game starts
+     * Converts power card selections to HeroPowerCards state
+     */
+    finalizePowerCardSelections: (state) => {
+      state.heroPowerCards = {};
+      for (const hero of state.selectedHeroes) {
+        const selection = state.powerCardSelections[hero.id];
+        const customAbility = HERO_CUSTOM_ABILITIES[hero.id];
+        
+        if (selection && customAbility && selection.utility && selection.daily && selection.atWills.length === 2) {
+          state.heroPowerCards[hero.id] = createInitialPowerCardsState(
+            hero.id,
+            customAbility,
+            selection.utility,
+            selection.atWills,
+            selection.daily
+          );
+        }
+      }
+    },
+    /**
+     * Flip (use) a power card for a hero
+     */
+    usePowerCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
+      const { heroId, cardId } = action.payload;
+      const powerCards = state.heroPowerCards[heroId];
+      if (powerCards) {
+        state.heroPowerCards[heroId] = flipPowerCard(powerCards, cardId);
+      }
+    },
+    /**
+     * Add a level 2 daily power card for a hero
+     */
+    addLevel2Daily: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
+      const { heroId, cardId } = action.payload;
+      const powerCards = state.heroPowerCards[heroId];
+      if (powerCards) {
+        state.heroPowerCards[heroId] = addLevel2DailyCard(powerCards, cardId);
+      }
     },
   },
 });
 
-export const { toggleHeroSelection, selectHeroFromEdge, clearSelection } = heroesSlice.actions;
+export const {
+  toggleHeroSelection,
+  selectHeroFromEdge,
+  clearSelection,
+  selectUtilityCard,
+  toggleAtWillCard,
+  selectDailyCard,
+  finalizePowerCardSelections,
+  usePowerCard,
+  addLevel2Daily,
+} = heroesSlice.actions;
 export default heroesSlice.reducer;

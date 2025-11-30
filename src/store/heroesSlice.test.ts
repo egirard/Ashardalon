@@ -7,6 +7,8 @@ describe('heroesSlice', () => {
     availableHeroes: AVAILABLE_HEROES,
     selectedHeroes: [],
     heroEdgeMap: {},
+    powerCardSelections: {},
+    heroPowerCards: {},
   };
 
   describe('initial state', () => {
@@ -15,6 +17,8 @@ describe('heroesSlice', () => {
       expect(state.availableHeroes).toEqual(AVAILABLE_HEROES);
       expect(state.selectedHeroes).toEqual([]);
       expect(state.heroEdgeMap).toEqual({});
+      expect(state.powerCardSelections).toEqual({});
+      expect(state.heroPowerCards).toEqual({});
     });
   });
 
@@ -31,6 +35,7 @@ describe('heroesSlice', () => {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0]], // Quinn
         heroEdgeMap: {},
+        powerCardSelections: { quinn: { heroId: 'quinn', utility: null, atWills: [], daily: null } },
       };
       const state = heroesReducer(stateWithSelection, toggleHeroSelection('quinn'));
       expect(state.selectedHeroes).toHaveLength(0);
@@ -55,6 +60,13 @@ describe('heroesSlice', () => {
         ...initialState,
         selectedHeroes: [...AVAILABLE_HEROES],
         heroEdgeMap: {},
+        powerCardSelections: {
+          quinn: { heroId: 'quinn', utility: null, atWills: [], daily: null },
+          vistra: { heroId: 'vistra', utility: null, atWills: [], daily: null },
+          keyleth: { heroId: 'keyleth', utility: null, atWills: [], daily: null },
+          tarak: { heroId: 'tarak', utility: null, atWills: [], daily: null },
+          haskan: { heroId: 'haskan', utility: null, atWills: [], daily: null },
+        },
       };
       // Try to select a 6th hero (but all are already selected, so try again with same)
       const state = heroesReducer(stateWith5Selected, toggleHeroSelection('quinn'));
@@ -67,10 +79,18 @@ describe('heroesSlice', () => {
       const stateWith5Selected: HeroesState = {
         availableHeroes: [
           ...AVAILABLE_HEROES,
-          { id: 'extra', name: 'Extra', heroClass: 'Fighter', imagePath: 'assets/extra.png' },
+          { id: 'extra', name: 'Extra', heroClass: 'Fighter', imagePath: 'assets/extra.png', speed: 5, attack: { name: 'Sword', attackBonus: 6, damage: 2, range: 1 }, hp: 8, maxHp: 8, ac: 17 },
         ],
         selectedHeroes: [...AVAILABLE_HEROES], // 5 heroes
         heroEdgeMap: {},
+        powerCardSelections: {
+          quinn: { heroId: 'quinn', utility: null, atWills: [], daily: null },
+          vistra: { heroId: 'vistra', utility: null, atWills: [], daily: null },
+          keyleth: { heroId: 'keyleth', utility: null, atWills: [], daily: null },
+          tarak: { heroId: 'tarak', utility: null, atWills: [], daily: null },
+          haskan: { heroId: 'haskan', utility: null, atWills: [], daily: null },
+        },
+        heroPowerCards: {},
       };
       // Try to select the extra hero when already at max
       const state = heroesReducer(stateWith5Selected, toggleHeroSelection('extra'));
@@ -88,6 +108,10 @@ describe('heroesSlice', () => {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0], AVAILABLE_HEROES[1]], // Quinn and Vistra
         heroEdgeMap: {},
+        powerCardSelections: {
+          quinn: { heroId: 'quinn', utility: null, atWills: [], daily: null },
+          vistra: { heroId: 'vistra', utility: null, atWills: [], daily: null },
+        },
       };
       const state = heroesReducer(stateWithMultiple, toggleHeroSelection('quinn'));
       expect(state.selectedHeroes).toHaveLength(1);
@@ -108,6 +132,7 @@ describe('heroesSlice', () => {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0]], // Quinn
         heroEdgeMap: { quinn: 'bottom' },
+        powerCardSelections: { quinn: { heroId: 'quinn', utility: null, atWills: [], daily: null } },
       };
       const state = heroesReducer(stateWithSelection, selectHeroFromEdge({ heroId: 'quinn', edge: 'bottom' }));
       expect(state.selectedHeroes).toHaveLength(0);
@@ -119,6 +144,7 @@ describe('heroesSlice', () => {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0]], // Quinn
         heroEdgeMap: { quinn: 'bottom' },
+        powerCardSelections: { quinn: { heroId: 'quinn', utility: null, atWills: [], daily: null } },
       };
       const state = heroesReducer(stateWithSelection, selectHeroFromEdge({ heroId: 'quinn', edge: 'top' }));
       // Should still be selected since it was clicked from a different edge
@@ -145,10 +171,15 @@ describe('heroesSlice', () => {
         ...initialState,
         selectedHeroes: [AVAILABLE_HEROES[0], AVAILABLE_HEROES[1]],
         heroEdgeMap: { quinn: 'bottom', vistra: 'top' },
+        powerCardSelections: {
+          quinn: { heroId: 'quinn', utility: null, atWills: [], daily: null },
+          vistra: { heroId: 'vistra', utility: null, atWills: [], daily: null },
+        },
       };
       const state = heroesReducer(stateWithSelection, clearSelection());
       expect(state.selectedHeroes).toHaveLength(0);
       expect(state.heroEdgeMap).toEqual({});
+      expect(state.powerCardSelections).toEqual({});
     });
 
     it('should do nothing when no heroes are selected', () => {
