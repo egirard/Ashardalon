@@ -1,13 +1,18 @@
 <script lang="ts">
   import { store } from '../store';
-  import { selectHeroFromEdge, type EdgePosition } from '../store/heroesSlice';
+  import { selectHeroFromEdge, finalizePowerCardSelections, type EdgePosition, type HeroPowerCardSelection } from '../store/heroesSlice';
   import { startGame } from '../store/gameSlice';
   import type { Hero } from '../store/types';
   import { assetPath } from '../utils';
+  import PowerCardSelection from './PowerCardSelection.svelte';
   
   let selectedHeroes: Hero[] = $state([]);
   let availableHeroes: Hero[] = $state([]);
   let heroEdgeMap: Record<string, EdgePosition> = $state({});
+  let powerCardSelections: Record<string, HeroPowerCardSelection> = $state({});
+  
+  // Track which hero's power card selection modal is open
+  let powerCardSelectionHero: Hero | null = $state(null);
   
   // Subscribe to store updates
   $effect(() => {
@@ -16,6 +21,7 @@
       selectedHeroes = state.heroes.selectedHeroes;
       availableHeroes = state.heroes.availableHeroes;
       heroEdgeMap = state.heroes.heroEdgeMap;
+      powerCardSelections = state.heroes.powerCardSelections;
     });
     
     // Initialize state
@@ -23,6 +29,7 @@
     selectedHeroes = state.heroes.selectedHeroes;
     availableHeroes = state.heroes.availableHeroes;
     heroEdgeMap = state.heroes.heroEdgeMap;
+    powerCardSelections = state.heroes.powerCardSelections;
     
     return unsubscribe;
   });
@@ -45,13 +52,34 @@
   }
   
   function handleStartGame() {
-    if (selectedHeroes.length > 0) {
+    if (selectedHeroes.length > 0 && allPowerCardsSelected()) {
+      store.dispatch(finalizePowerCardSelections());
       store.dispatch(startGame({ heroIds: selectedHeroes.map(h => h.id) }));
     }
   }
   
+  function isPowerCardSelectionComplete(heroId: string): boolean {
+    const selection = powerCardSelections[heroId];
+    if (!selection) return false;
+    return selection.utility !== null &&
+           selection.atWills.length === 2 &&
+           selection.daily !== null;
+  }
+  
+  function allPowerCardsSelected(): boolean {
+    return selectedHeroes.every(hero => isPowerCardSelectionComplete(hero.id));
+  }
+  
   function canStartGame(): boolean {
-    return selectedHeroes.length >= 1 && selectedHeroes.length <= 5;
+    return selectedHeroes.length >= 1 && selectedHeroes.length <= 5 && allPowerCardsSelected();
+  }
+  
+  function openPowerCardSelection(hero: Hero) {
+    powerCardSelectionHero = hero;
+  }
+  
+  function closePowerCardSelection() {
+    powerCardSelectionHero = null;
   }
 </script>
 
@@ -112,6 +140,30 @@
         <span data-testid="selected-count">{selectedHeroes.length} heroes selected</span>
       </div>
       
+      <!-- Selected Heroes with Power Card Selection -->
+      {#if selectedHeroes.length > 0}
+        <div class="selected-heroes" data-testid="selected-heroes-list">
+          {#each selectedHeroes as hero (hero.id)}
+            <button
+              class="selected-hero-item"
+              class:complete={isPowerCardSelectionComplete(hero.id)}
+              onclick={() => openPowerCardSelection(hero)}
+              data-testid="select-powers-{hero.id}"
+            >
+              <img src={assetPath(hero.imagePath)} alt={hero.name} class="selected-hero-image" />
+              <div class="selected-hero-info">
+                <span class="selected-hero-name">{hero.name}</span>
+                {#if isPowerCardSelectionComplete(hero.id)}
+                  <span class="power-status complete">✓ Powers Selected</span>
+                {:else}
+                  <span class="power-status incomplete">Select Powers</span>
+                {/if}
+              </div>
+            </button>
+          {/each}
+        </div>
+      {/if}
+      
       <button
         class="start-button"
         data-testid="start-game-button"
@@ -167,6 +219,15 @@
     </div>
   </div>
 </div>
+
+<!-- Power Card Selection Modal -->
+{#if powerCardSelectionHero}
+  <PowerCardSelection
+    hero={powerCardSelectionHero}
+    selection={powerCardSelections[powerCardSelectionHero.id]}
+    onClose={closePowerCardSelection}
+  />
+{/if}
 
 <style>
   .character-select {
@@ -315,6 +376,67 @@
     font-size: 1.1rem;
   }
   
+  .selected-heroes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    max-width: 500px;
+  }
+  
+  .selected-hero-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 165, 0, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #fff;
+  }
+  
+  .selected-hero-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.02);
+  }
+  
+  .selected-hero-item.complete {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+  }
+  
+  .selected-hero-image {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+  }
+  
+  .selected-hero-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .selected-hero-name {
+    font-weight: bold;
+    font-size: 0.85rem;
+  }
+  
+  .power-status {
+    font-size: 0.7rem;
+  }
+  
+  .power-status.complete {
+    color: #4caf50;
+  }
+  
+  .power-status.incomplete {
+    color: #ffa726;
+  }
+
   .start-button {
     padding: 1rem 2rem;
     font-size: 1.1rem;
