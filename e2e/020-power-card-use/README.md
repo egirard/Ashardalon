@@ -1,130 +1,63 @@
 # 020 - Power Card Use
 
-This test verifies that players can use their power cards (daily, at-will, utility, and custom abilities) during gameplay and that the card state persists across turn phases.
+This test verifies that players can use their attack power cards (at-will and daily powers with attack capabilities) during gameplay through the new power card attack interface.
 
 ## User Story
 
-As a player, I want to use my hero's power cards during gameplay so that I can execute special abilities and attacks beyond the basic attack.
+As a player, I want to select from my available attack power cards when attacking a monster, so that I can use my hero's special abilities with their specific attack bonus and damage values.
 
 ## Test Overview
 
-### Test 1: Player can use daily, at-will, and utility power cards during gameplay
+### Test 1: Player can use at-will and daily attack power cards during gameplay
 
 This test verifies:
-- Power cards are finalized when the game starts
-- All power cards start in the unflipped (available) state
-- At-will power cards can be used (flipped)
-- Utility power cards can be used (flipped)
-- Daily power cards can be used (flipped)
-- Custom ability cards can be used (flipped)
-- Each power card maintains its individual flipped state
+- Power card attack panel appears when adjacent to a monster
+- Available attack cards (with attackBonus) are shown in the panel
+- Player can select an attack card and choose a target
+- Combat uses the power card's attack bonus and damage
+- At-will cards do NOT flip when used (can be reused)
 
-### Test 2: Power card state persists across turn phases
+### Test 2: Daily attack power cards flip when used
 
 This test verifies:
-- Power card state persists when transitioning from Hero Phase to Exploration Phase
-- Power card state persists when transitioning through Villain Phase
-- Used (flipped) cards remain flipped across all game phases
+- Daily cards with attack capabilities flip when used
+- Flipped daily cards are no longer available for attacks
 
 ## Test Steps (Test 1)
 
-1. **Hero With Powers Selected** - Quinn is selected with all power cards chosen
-2. **Game Started** - Game starts with all power cards finalized and unflipped
-3. **At-Will Power Used** - Cleric's Shield (card ID 2) is used and becomes flipped
-4. **Utility Power Used** - Astral Refuge (card ID 8) is used and becomes flipped
-5. **Daily Power Used** - Blade Barrier (card ID 5) is used and becomes flipped
-6. **Custom Ability Used** - Healing Hymn (card ID 1) is used and becomes flipped
-7. **Second At-Will Available** - Righteous Advance (card ID 3) is still unflipped
-8. **All Powers Used** - All 5 power cards are now flipped
+1. **Hero With Powers Selected** - Quinn is selected with power cards
+2. **Game Started** - Game starts with power cards finalized
+3. **Attack Panel Visible** - Monster spawned, attack panel shows available attack cards
+4. **At-Will Card Selected** - Player selects Cleric's Shield attack card
+5. **At-Will Attack Result** - Combat resolves using power card stats (+6 attack bonus)
 
-## Screenshot Gallery
+## Power Card Attack Interface
 
-### 000 - Hero With Powers Selected
-![Hero With Powers Selected](020-power-card-use.spec.ts-snapshots/000-hero-with-powers-selected-chromium-linux.png)
+The new power card attack panel replaces the basic attack button and allows players to:
 
-Quinn is selected with all power cards chosen. Start button is enabled.
+1. **View available attack cards** - Only unflipped cards with `attackBonus` are shown
+2. **Select an attack card** - Click a card to select it
+3. **Choose a target** - After selecting a card, available targets are shown
+4. **Execute the attack** - The attack uses the card's stats (attackBonus, damage)
 
-### 001 - Game Started
-![Game Started](020-power-card-use.spec.ts-snapshots/001-game-started-chromium-linux.png)
+## Card Types
 
-Game has started. Quinn's power cards are finalized:
-- Custom Ability: Healing Hymn (ID 1)
-- Utility: Astral Refuge (ID 8)
-- At-Wills: Cleric's Shield (ID 2), Righteous Advance (ID 3)
-- Daily: Blade Barrier (ID 5)
-
-All cards start unflipped (available).
-
-### 002 - At-Will Power Used
-![At-Will Power Used](020-power-card-use.spec.ts-snapshots/002-atwill-power-used-chromium-linux.png)
-
-Cleric's Shield (at-will) has been used. Card is now flipped.
-
-### 003 - Utility Power Used
-![Utility Power Used](020-power-card-use.spec.ts-snapshots/003-utility-power-used-chromium-linux.png)
-
-Astral Refuge (utility) has been used. Both at-will and utility cards are now flipped.
-
-### 004 - Daily Power Used
-![Daily Power Used](020-power-card-use.spec.ts-snapshots/004-daily-power-used-chromium-linux.png)
-
-Blade Barrier (daily) has been used. Three cards are now flipped.
-
-### 005 - Custom Ability Used
-![Custom Ability Used](020-power-card-use.spec.ts-snapshots/005-custom-ability-used-chromium-linux.png)
-
-Healing Hymn (custom ability) has been used. Four cards are now flipped.
-
-### 006 - Second At-Will Available
-![Second At-Will Available](020-power-card-use.spec.ts-snapshots/006-second-atwill-available-chromium-linux.png)
-
-Righteous Advance (second at-will) is still available (unflipped).
-
-### 007 - All Powers Used
-![All Powers Used](020-power-card-use.spec.ts-snapshots/007-all-powers-used-chromium-linux.png)
-
-All five power cards have been used and are flipped.
-
-## Screenshot Gallery (Test 2)
-
-### 008 - Daily Used in Hero Phase
-![Daily Used Hero Phase](020-power-card-use.spec.ts-snapshots/008-daily-used-hero-phase-chromium-linux.png)
-
-Daily power used during Hero Phase.
-
-### 009 - Daily Persists in Exploration Phase
-![Daily Persists Exploration Phase](020-power-card-use.spec.ts-snapshots/009-daily-persists-exploration-phase-chromium-linux.png)
-
-Daily power remains flipped after transitioning to Exploration Phase.
-
-### 010 - Daily Persists Through Phases
-![Daily Persists Through Phases](020-power-card-use.spec.ts-snapshots/010-daily-persists-through-phases-chromium-linux.png)
-
-Daily power remains flipped after transitioning through all phases.
-
-## Power Card Types
-
-| Type | Cards per Hero | Usage Rules |
-|------|---------------|-------------|
-| Custom Ability | 1 (automatic) | Varies by ability - some flip when used |
-| At-Will | 2 (selected) | Can be used repeatedly; some may flip when used |
-| Utility | 1 (selected) | Most flip when used |
-| Daily | 1 (selected) | Flip when used; can only be used once per adventure |
+| Type | Flip Behavior | Description |
+|------|--------------|-------------|
+| At-Will | Does NOT flip | Can be used repeatedly every turn |
+| Daily | Flips on use | Can only be used once per adventure |
 
 ## Manual Verification Checklist
 
-- [ ] All power cards start unflipped when game begins
-- [ ] Using a power card changes its state to flipped
-- [ ] Each power card's state is tracked independently
-- [ ] Power card states persist across Hero Phase → Exploration Phase transition
-- [ ] Power card states persist across Exploration Phase → Villain Phase transition
-- [ ] Daily powers remain flipped (cannot be reused) throughout the game
-- [ ] Multiple at-will powers can be used independently
+- [ ] Power card attack panel appears when hero is adjacent to a monster
+- [ ] Only cards with attack capabilities (attackBonus defined) are shown
+- [ ] Card type badges (At-Will, Daily) are displayed correctly
+- [ ] Attack bonus and damage are shown for each card
+- [ ] Selecting a card highlights it and shows target selection
+- [ ] Attacking with at-will cards does NOT flip them
+- [ ] Attacking with daily cards DOES flip them
+- [ ] Flipped cards are not shown in the attack panel
 
 ## Notes
 
-This test uses programmatic verification (via Redux store state checks) as the primary validation mechanism. The screenshots serve as documentation and visual verification aids. If screenshot comparisons fail due to rendering differences, you can regenerate baselines with:
-
-```bash
-npm run test:e2e -- e2e/020-power-card-use/020-power-card-use.spec.ts --update-snapshots
-```
+This test focuses on attack power cards only. Utility cards and non-attack powers are not included in the attack interface.
