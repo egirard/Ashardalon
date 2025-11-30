@@ -102,7 +102,12 @@
         src={assetPath(encounter.imagePath)} 
         alt={encounter.name}
         class="encounter-image"
-        onerror={(e) => { (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23333" width="100" height="100"/><text x="50" y="50" fill="%23fff" text-anchor="middle" dominant-baseline="central" font-size="40">' + getTypeIcon(encounter.type) + '</text></svg>'; }}
+        onerror={(e) => { 
+          const img = e.target as HTMLImageElement;
+          if (img && encounter) {
+            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23333" width="100" height="100"/><text x="50" y="50" fill="%23fff" text-anchor="middle" dominant-baseline="central" font-size="40">' + getTypeIcon(encounter.type) + '</text></svg>';
+          }
+        }}
       />
     </div>
     
