@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 test.describe('011 - Hero Turn Structure', () => {
   test('hero turn auto-advances after double move', async ({ page }) => {
@@ -11,6 +11,10 @@ test.describe('011 - Hero Turn Structure', () => {
     
     // Select a hero from the top edge
     await page.locator('[data-testid="hero-quinn-top"]').click();
+    
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
+    
     await page.locator('[data-testid="start-game-button"]').click();
     
     // Wait for game board to appear
@@ -102,6 +106,10 @@ test.describe('011 - Hero Turn Structure', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn-top"]').click();
+    
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     
@@ -150,6 +158,10 @@ test.describe('011 - Hero Turn Structure', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn-top"]').click();
+    
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 // Test constants for better readability
 const INITIAL_TILE_DECK_SIZE = 8;
@@ -15,6 +15,8 @@ test.describe('007 - Explore and Place New Tile', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -158,6 +160,8 @@ test.describe('007 - Explore and Place New Tile', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -201,6 +205,8 @@ test.describe('007 - Explore and Place New Tile', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 

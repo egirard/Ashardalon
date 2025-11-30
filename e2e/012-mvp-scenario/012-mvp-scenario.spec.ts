@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
   test('Objective display shows current progress', async ({ page }) => {
@@ -9,6 +9,8 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -49,6 +51,8 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -188,6 +192,8 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -332,6 +338,8 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 

@@ -48,3 +48,45 @@ export function createScreenshotHelper(): ScreenshotHelper {
     },
   };
 }
+
+/**
+ * Default power card selections for each hero class.
+ * These are used to quickly select power cards in tests that need to start the game.
+ */
+const DEFAULT_POWER_CARD_SELECTIONS: Record<string, { utility: number; atWills: number[]; daily: number }> = {
+  quinn: { utility: 8, atWills: [2, 3], daily: 5 },      // Cleric
+  vistra: { utility: 18, atWills: [12, 13], daily: 15 }, // Fighter
+  keyleth: { utility: 28, atWills: [22, 23], daily: 25 }, // Paladin
+  tarak: { utility: 38, atWills: [32, 33], daily: 35 },  // Rogue
+  haskan: { utility: 48, atWills: [42, 43], daily: 45 }, // Wizard
+};
+
+/**
+ * Selects default power cards for a hero in the character selection screen.
+ * This is a helper function for E2E tests that need to start the game quickly.
+ */
+export async function selectDefaultPowerCards(page: Page, heroId: string): Promise<void> {
+  const selection = DEFAULT_POWER_CARD_SELECTIONS[heroId];
+  if (!selection) {
+    throw new Error(`No default power card selection for hero: ${heroId}`);
+  }
+
+  // Open power card selection modal
+  await page.locator(`[data-testid="select-powers-${heroId}"]`).click();
+  await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
+
+  // Select utility card
+  await page.locator(`[data-testid="utility-card-${selection.utility}"]`).click();
+
+  // Select at-will cards
+  for (const cardId of selection.atWills) {
+    await page.locator(`[data-testid="atwill-card-${cardId}"]`).click();
+  }
+
+  // Select daily card
+  await page.locator(`[data-testid="daily-card-${selection.daily}"]`).click();
+
+  // Close modal
+  await page.locator('[data-testid="done-power-selection"]').click();
+  await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
+}

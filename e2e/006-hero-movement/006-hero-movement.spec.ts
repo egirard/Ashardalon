@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 test.describe('006 - Move a Hero', () => {
   test('User moves hero to a new position', async ({ page }) => {
@@ -9,6 +9,10 @@ test.describe('006 - Move a Hero', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
+    
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -136,6 +140,11 @@ test.describe('006 - Move a Hero', () => {
     // Select Quinn and Vistra
     await page.locator('[data-testid="hero-quinn"]').click();
     await page.locator('[data-testid="hero-vistra"]').click();
+    
+    // Select power cards for both heroes
+    await selectDefaultPowerCards(page, 'quinn');
+    await selectDefaultPowerCards(page, 'vistra');
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
