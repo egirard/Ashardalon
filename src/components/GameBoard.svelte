@@ -9,6 +9,7 @@
     endExplorationPhase,
     endVillainPhase,
     dismissMonsterCard,
+    dismissEncounterCard,
     setAttackResult,
     dismissAttackResult,
     dismissDefeatNotification,
@@ -36,6 +37,7 @@
     HeroTurnActions,
     ScenarioState,
     PartyResources,
+    EncounterCard as EncounterCardType,
   } from "../store/types";
   import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES } from "../store/types";
   import { assetPath } from "../utils";
@@ -44,6 +46,7 @@
   import UnexploredEdgeIndicator from "./UnexploredEdgeIndicator.svelte";
   import MonsterToken from "./MonsterToken.svelte";
   import MonsterCard from "./MonsterCard.svelte";
+  import EncounterCard from "./EncounterCard.svelte";
   import PowerCardAttackPanel from "./PowerCardAttackPanel.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
@@ -105,6 +108,7 @@
     currentHeroIndex: 0,
     currentPhase: "hero-phase",
     turnNumber: 1,
+    exploredThisTurn: false,
   });
   let validMoveSquares: Position[] = $state([]);
   let showingMovement: boolean = $state(false);
@@ -136,6 +140,7 @@
   let mapScale: number = $state(1);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
+  let drawnEncounter: EncounterCardType | null = $state(null);
 
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
@@ -172,6 +177,7 @@
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
+      drawnEncounter = state.game.drawnEncounter;
     });
 
     // Initialize state
@@ -204,6 +210,7 @@
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
+    drawnEncounter = state.game.drawnEncounter;
 
     return unsubscribe;
   });
@@ -765,6 +772,11 @@
     store.dispatch(dismissHealingSurgeNotification());
   }
 
+  // Handle dismissing the encounter card and applying its effect
+  function handleDismissEncounterCard() {
+    store.dispatch(dismissEncounterCard());
+  }
+
   // Get new stats for leveled up hero
   function getLeveledUpHeroStats(): HeroHpState | undefined {
     if (!leveledUpHeroId) return undefined;
@@ -1145,6 +1157,14 @@
       heroId={healingSurgeUsedHeroId}
       hpRestored={healingSurgeHpRestored}
       onDismiss={handleDismissHealingSurgeNotification}
+    />
+  {/if}
+
+  <!-- Encounter Card Display (shown during villain phase when no exploration occurred) -->
+  {#if drawnEncounter}
+    <EncounterCard
+      encounter={drawnEncounter}
+      onDismiss={handleDismissEncounterCard}
     />
   {/if}
 </div>
