@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { EncounterCard, PartyResources } from '../store/types';
+  import type { EncounterCard, PartyResources, EncounterType } from '../store/types';
   import { ENCOUNTER_CARDS, ENCOUNTER_CANCEL_COST } from '../store/types';
   import { canCancelEncounter } from '../store/encounter';
   
@@ -19,12 +19,11 @@
   const canCancel = $derived(canCancelEncounter(partyResources));
   
   // Get type icon
-  function getTypeIcon(type: string): string {
+  function getTypeIcon(type: EncounterType): string {
     switch (type) {
       case 'Event': return '🌋';
       case 'Trap': return '⚠️';
       case 'Attack': return '⚔️';
-      default: return '❓';
     }
   }
   
