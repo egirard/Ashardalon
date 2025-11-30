@@ -657,6 +657,9 @@
     return AVAILABLE_HEROES.find((h) => h.id === heroId);
   }
 
+  // Default damage for power cards without explicit damage value
+  const DEFAULT_POWER_CARD_DAMAGE = 1;
+
   // Handle attack action using a power card
   function handleAttackWithCard(cardId: number, targetInstanceId: string) {
     const currentHeroId = getCurrentHeroId();
@@ -672,19 +675,18 @@
     if (monsterAC === undefined) return;
 
     // Create attack stats from power card
+    // TODO: Some power cards like 'Ray of Frost' have range > 1 - implement ranged targeting
     const attack = {
       name: powerCard.name,
       attackBonus: powerCard.attackBonus,
-      damage: powerCard.damage ?? 1,
-      range: 1, // Default to adjacent for now
+      damage: powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE,
+      range: 1,
     };
 
     const result = resolveAttack(attack, monsterAC);
     store.dispatch(setAttackResult({ result, targetInstanceId }));
     
-    // Flip the power card if it's a daily (at-wills typically don't flip on use)
-    // Note: Some at-wills have special flip conditions, but for basic implementation,
-    // only daily and utility powers flip when used for attacks
+    // Flip the power card if it's a daily (at-wills can be used repeatedly)
     if (powerCard.type === 'daily') {
       store.dispatch(usePowerCard({ heroId: currentHeroId, cardId }));
     }
