@@ -123,17 +123,31 @@ describe("encounters", () => {
         currentPhase: 'villain-phase',
         turnNumber: 1,
         exploredThisTurn: false,
+        drewOnlyWhiteTilesThisTurn: false,
       };
       
       expect(shouldDrawEncounter(turnState)).toBe(true);
     });
 
-    it("should return false when exploration occurred", () => {
+    it("should return true when black tile was drawn (triggers encounter)", () => {
       const turnState: TurnState = {
         currentHeroIndex: 0,
         currentPhase: 'villain-phase',
         turnNumber: 1,
         exploredThisTurn: true,
+        drewOnlyWhiteTilesThisTurn: false,
+      };
+      
+      expect(shouldDrawEncounter(turnState)).toBe(true);
+    });
+
+    it("should return false when only white tiles were drawn (prevents encounter)", () => {
+      const turnState: TurnState = {
+        currentHeroIndex: 0,
+        currentPhase: 'villain-phase',
+        turnNumber: 1,
+        exploredThisTurn: true,
+        drewOnlyWhiteTilesThisTurn: true,
       };
       
       expect(shouldDrawEncounter(turnState)).toBe(false);
