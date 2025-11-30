@@ -136,9 +136,15 @@ test.describe('020 - Power Card Use', () => {
         await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('15');
         await expect(page.locator('[data-testid="attack-bonus"]')).toHaveText('6'); // Cleric's Shield has +6
         
+        // Verify the combat result shows the power card name, not the hero's basic attack
+        await expect(page.locator('[data-testid="attacker-info"]')).toContainText("Cleric's Shield");
+        
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
+        
+        // Verify attackName is stored correctly
+        expect(storeState.game.attackName).toBe("Cleric's Shield");
         
         // At-will cards should NOT flip when used (they can be used repeatedly)
         const cardStates = storeState.heroes.heroPowerCards.quinn.cardStates;

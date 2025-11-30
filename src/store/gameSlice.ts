@@ -110,6 +110,8 @@ export interface GameState {
   attackResult: AttackResult | null;
   /** Instance ID of the monster targeted in the attack */
   attackTargetId: string | null;
+  /** Name of the attack/power card used (for displaying in combat result) */
+  attackName: string | null;
   /** Hero HP state - tracks current HP for each hero */
   heroHp: HeroHpState[];
   /** Result of the most recent monster attack (for displaying villain combat result) */
@@ -157,6 +159,7 @@ const initialState: GameState = {
   recentlySpawnedMonsterId: null,
   attackResult: null,
   attackTargetId: null,
+  attackName: null,
   heroHp: [],
   monsterAttackResult: null,
   monsterAttackTargetId: null,
@@ -320,6 +323,7 @@ export const gameSlice = createSlice({
       state.recentlySpawnedMonsterId = null;
       state.attackResult = null;
       state.attackTargetId = null;
+      state.attackName = null;
 
       // Initialize hero HP from hero definitions with level 1 stats
       state.heroHp = heroIds.map(heroId => {
@@ -456,6 +460,7 @@ export const gameSlice = createSlice({
       state.recentlySpawnedMonsterId = null;
       state.attackResult = null;
       state.attackTargetId = null;
+      state.attackName = null;
       state.heroHp = [];
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
@@ -632,15 +637,16 @@ export const gameSlice = createSlice({
      */
     setAttackResult: (
       state,
-      action: PayloadAction<{ result: AttackResult; targetInstanceId: string }>
+      action: PayloadAction<{ result: AttackResult; targetInstanceId: string; attackName: string }>
     ) => {
       // Only allow attack during hero phase and if hero can attack
       if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canAttack) {
         return;
       }
       
-      const { result, targetInstanceId } = action.payload;
+      const { result, targetInstanceId, attackName } = action.payload;
       state.attackTargetId = targetInstanceId;
+      state.attackName = attackName;
       
       // Clear any previous notifications
       state.defeatedMonsterXp = null;
@@ -730,6 +736,7 @@ export const gameSlice = createSlice({
     dismissAttackResult: (state) => {
       state.attackResult = null;
       state.attackTargetId = null;
+      state.attackName = null;
     },
     /**
      * Dismiss the monster defeat/XP notification

@@ -135,6 +135,7 @@
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let mapScale: number = $state(1);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
+  let attackName: string | null = $state(null);
 
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
@@ -170,6 +171,7 @@
       healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
       heroPowerCards = state.heroes.heroPowerCards;
+      attackName = state.game.attackName;
     });
 
     // Initialize state
@@ -201,6 +203,7 @@
     healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     heroPowerCards = state.heroes.heroPowerCards;
+    attackName = state.game.attackName;
 
     return unsubscribe;
   });
@@ -684,7 +687,7 @@
     };
 
     const result = resolveAttack(attack, monsterAC);
-    store.dispatch(setAttackResult({ result, targetInstanceId }));
+    store.dispatch(setAttackResult({ result, targetInstanceId, attackName: powerCard.name }));
     
     // Flip the power card if it's a daily (at-wills can be used repeatedly)
     if (powerCard.type === 'daily') {
@@ -1081,11 +1084,11 @@
       ? getFullHeroInfo(currentHeroId)
       : undefined}
     {@const targetMonster = getAttackTargetMonster()}
-    {#if fullHero}
+    {#if fullHero && attackName}
       <CombatResultDisplay
         result={attackResult}
         attackerName={fullHero.name}
-        attackName={fullHero.attack.name}
+        attackName={attackName}
         targetName={targetMonster
           ? getMonsterName(targetMonster.monsterId)
           : "Monster"}
