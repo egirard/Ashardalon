@@ -58,6 +58,11 @@ export const HERO_LEVELS: Record<string, { level1: HeroLevelStats; level2: HeroL
 export const LEVEL_UP_COST = 5;
 
 /**
+ * Cost in XP to cancel an encounter
+ */
+export const ENCOUNTER_CANCEL_COST = 5;
+
+/**
  * Monster's basic attack information
  */
 export interface MonsterAttack {

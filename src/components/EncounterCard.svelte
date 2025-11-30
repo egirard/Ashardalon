@@ -1,17 +1,29 @@
 <script lang="ts">
   import type { EncounterCard, EncounterType } from '../store/types';
+  import { ENCOUNTER_CANCEL_COST } from '../store/types';
   import { assetPath } from '../utils';
   
   interface Props {
     encounter: EncounterCard;
+    partyXp?: number;
     onDismiss?: () => void;
+    onCancel?: () => void;
   }
   
-  let { encounter, onDismiss }: Props = $props();
+  let { encounter, partyXp = 0, onDismiss, onCancel }: Props = $props();
+  
+  // Check if the cancel option is available (party has enough XP)
+  let canCancel = $derived(partyXp >= ENCOUNTER_CANCEL_COST);
   
   function handleDismiss() {
     if (onDismiss) {
       onDismiss();
+    }
+  }
+  
+  function handleCancel() {
+    if (onCancel && canCancel) {
+      onCancel();
     }
   }
   
@@ -120,15 +132,26 @@
       <span class="effect-value">{getEffectSummary(encounter.effect)}</span>
     </div>
     
-    <button 
-      class="continue-button"
-      onclick={handleDismiss}
-      data-testid="encounter-continue"
-    >
-      Continue
-    </button>
+    <div class="button-row">
+      <button 
+        class="cancel-button"
+        onclick={handleCancel}
+        disabled={!canCancel}
+        data-testid="encounter-cancel"
+        title={canCancel ? 'Spend 5 XP to cancel this encounter' : 'Not enough XP (need 5)'}
+      >
+        Cancel (5 XP)
+      </button>
+      <button 
+        class="accept-button"
+        onclick={handleDismiss}
+        data-testid="encounter-continue"
+      >
+        Accept
+      </button>
+    </div>
     
-    <p class="card-hint">Click anywhere or press Enter to continue</p>
+    <p class="card-hint">Click anywhere or press Enter to accept</p>
   </div>
 </div>
 
@@ -251,21 +274,51 @@
     text-align: center;
   }
   
-  .continue-button {
-    width: 100%;
+  .button-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .cancel-button {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(145deg, #fbbf24 0%, #d97706 100%);
+    border: none;
+    border-radius: 8px;
+    color: #1a1a2e;
+    font-size: 0.9rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .cancel-button:hover:not(:disabled) {
+    background: linear-gradient(145deg, #fcd34d 0%, #f59e0b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  }
+  
+  .cancel-button:disabled {
+    background: linear-gradient(145deg, #4a4a4a 0%, #333333 100%);
+    color: #888;
+    cursor: not-allowed;
+  }
+  
+  .accept-button {
+    flex: 1;
     padding: 0.75rem 1rem;
     background: linear-gradient(145deg, #8b5cf6 0%, #6d28d9 100%);
     border: none;
     border-radius: 8px;
     color: #fff;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
-    margin-bottom: 0.5rem;
   }
   
-  .continue-button:hover {
+  .accept-button:hover {
     background: linear-gradient(145deg, #a78bfa 0%, #7c3aed 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
