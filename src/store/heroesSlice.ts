@@ -146,8 +146,12 @@ export const heroesSlice = createSlice({
       }
     },
     /**
-     * Finalize power card selections when game starts
-     * Converts power card selections to HeroPowerCards state
+     * Finalize power card selections when game starts.
+     * Converts power card selections to HeroPowerCards state.
+     * Note: The game start flow should validate that all heroes have complete
+     * power card selections before calling this action. Heroes with incomplete
+     * selections will have empty power cards, but the canStartGame check in
+     * CharacterSelect.svelte prevents this scenario.
      */
     finalizePowerCardSelections: (state) => {
       state.heroPowerCards = {};
@@ -163,6 +167,9 @@ export const heroesSlice = createSlice({
             selection.atWills,
             selection.daily
           );
+        } else {
+          // Log warning for debugging - this shouldn't happen if validation is working
+          console.warn(`Hero ${hero.id} has incomplete power card selection, skipping`);
         }
       }
     },

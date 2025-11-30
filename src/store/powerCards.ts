@@ -51,51 +51,6 @@ export interface HeroPowerCards {
 }
 
 /**
- * Parse attack bonus from CSV string (e.g., "+6" -> 6)
- */
-function parseAttackBonus(value: string | undefined): number | undefined {
-  if (!value || value.trim() === '') return undefined;
-  const num = parseInt(value.replace('+', ''), 10);
-  return isNaN(num) ? undefined : num;
-}
-
-/**
- * Parse damage from CSV string, handling multi-line values
- */
-function parseDamage(value: string | undefined): number | undefined {
-  if (!value || value.trim() === '') return undefined;
-  // Take only the first line/number (ignore "Miss: X Damage" parts)
-  const firstLine = value.split('\n')[0].trim();
-  const num = parseInt(firstLine, 10);
-  return isNaN(num) ? undefined : num;
-}
-
-/**
- * Parse power card type from CSV Type field
- */
-function parseType(typeStr: string): PowerCardType {
-  const lower = typeStr.toLowerCase();
-  if (lower.includes('at-will')) return 'at-will';
-  if (lower.includes('daily')) return 'daily';
-  return 'utility';
-}
-
-/**
- * Parse hero class from CSV Type field
- */
-function parseHeroClass(typeStr: string): PowerCardClass {
-  if (typeStr.includes('Cleric')) return 'Cleric';
-  if (typeStr.includes('Fighter')) return 'Fighter';
-  if (typeStr.includes('Paladin')) return 'Paladin';
-  if (typeStr.includes('Rogue')) return 'Rogue';
-  if (typeStr.includes('Wizard')) return 'Wizard';
-  if (typeStr.includes('Dwarf')) return 'Dwarf';
-  if (typeStr.includes('Half-Orc')) return 'Half-Orc';
-  if (typeStr.includes('Dragonborn')) return 'Dragonborn';
-  return 'Cleric'; // Default fallback
-}
-
-/**
  * All power cards from the game
  */
 export const POWER_CARDS: PowerCard[] = [
@@ -178,16 +133,21 @@ export const HERO_CUSTOM_ABILITIES: Record<string, number> = {
 };
 
 /**
- * Get power cards available for a specific hero class
+ * Get power cards available for a specific hero class.
+ * Each hero class has access to their class-specific powers plus any race-specific powers.
+ * Race powers are mapped based on the WoA rulebook:
+ * - Fighter class includes Dwarf race powers
+ * - Rogue class includes Half-Orc race powers  
+ * - Wizard class includes Dragonborn race powers
  */
 export function getPowerCardsForHeroClass(heroClass: string): PowerCard[] {
-  // Map hero class to power card class(es)
+  // Map hero class to power card class(es) based on WoA rulebook
   const classMapping: Record<string, PowerCardClass[]> = {
     Cleric: ['Cleric'],
-    Fighter: ['Fighter', 'Dwarf'], // Vistra can also use Dwarf powers
+    Fighter: ['Fighter', 'Dwarf'],
     Paladin: ['Paladin'],
-    Rogue: ['Rogue', 'Half-Orc'], // Tarak can also use Half-Orc powers
-    Wizard: ['Wizard', 'Dragonborn'], // Haskan can also use Dragonborn powers
+    Rogue: ['Rogue', 'Half-Orc'],
+    Wizard: ['Wizard', 'Dragonborn'],
   };
   
   const allowedClasses = classMapping[heroClass] || [];
