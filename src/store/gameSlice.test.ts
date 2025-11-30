@@ -747,7 +747,7 @@ describe("gameSlice", () => {
         initialState,
         startGame({ heroIds: ["quinn"] }),
       );
-      expect(state.dungeon.tileDeck.length).toBe(8);
+      expect(state.dungeon.tileDeck.length).toBe(16); // 8 black + 8 white tiles
     });
 
     it("should have unexplored edges on start tile", () => {
@@ -773,14 +773,14 @@ describe("gameSlice", () => {
             },
             {
               id: "tile-1",
-              tileType: "tile-2exit-a",
+              tileType: "tile-black-2exit-a",
               position: { col: 0, row: -1 },
               rotation: 0,
               edges: { north: "unexplored", south: "open", east: "unexplored", west: "unexplored" },
             },
           ],
           unexploredEdges: [{ tileId: "tile-1", direction: "north" }],
-          tileDeck: ["tile-3exit-a"],
+          tileDeck: ["tile-black-3exit-a"],
         },
         monsters: [
           {
@@ -840,7 +840,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a", "tile-2exit-b"],
+          tileDeck: ["tile-black-2exit-a", "tile-black-2exit-b"],
         },
         monsterDeck: {
           drawPile: ["kobold", "snake", "cultist"],
@@ -886,7 +886,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -901,6 +901,52 @@ describe("gameSlice", () => {
       // No monster should be spawned
       expect(state.monsters).toHaveLength(0);
       expect(state.recentlySpawnedMonsterId).toBeNull();
+    });
+
+    it("should not spawn monster when white arrow tile is placed", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }], // North edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-white-2exit-a"], // White tile - should not spawn monster
+        },
+        monsterDeck: {
+          drawPile: ["kobold"],
+          discardPile: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // White tiles should not spawn monsters
+      expect(state.monsters).toHaveLength(0);
+      expect(state.recentlySpawnedMonsterId).toBeNull();
+      // Monster deck should not be affected
+      expect(state.monsterDeck.drawPile).toEqual(["kobold"]);
+      // But exploration should still be marked as occurred (to prevent encounter draw)
+      expect(state.turnState.exploredThisTurn).toBe(true);
     });
 
     it("should update monster deck after drawing", () => {
@@ -928,7 +974,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold", "snake", "cultist"],
@@ -969,7 +1015,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -1010,7 +1056,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -1051,7 +1097,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: {
           drawPile: ["kobold"],
@@ -2613,7 +2659,7 @@ describe("gameSlice", () => {
             { tileId: "start-tile", direction: "east" },
             { tileId: "start-tile", direction: "west" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
         monsterDeck: { drawPile: ["kobold"], discardPile: [] },
       });
@@ -2645,7 +2691,7 @@ describe("gameSlice", () => {
           unexploredEdges: [
             { tileId: "start-tile", direction: "north" },
           ],
-          tileDeck: ["tile-2exit-a"],
+          tileDeck: ["tile-black-2exit-a"],
         },
       });
 

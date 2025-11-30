@@ -347,6 +347,8 @@ export interface TileDefinition {
     east: EdgeType;
     west: EdgeType;
   };
+  /** Whether placing this tile spawns a monster. Black arrow tiles spawn monsters, white arrow tiles do not. */
+  spawnsMonster: boolean;
 }
 
 /**
@@ -361,28 +363,44 @@ export interface DungeonState {
 /**
  * Available tile definitions
  * Based on the assets available: 2-exit, 3-exit, and 4-exit tiles
+ * Black arrow tiles spawn monsters, white arrow tiles do not
  */
 export const TILE_DEFINITIONS: TileDefinition[] = [
-  // 2-exit tiles (north and south open)
-  { tileType: 'tile-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  // 3-exit tiles
-  { tileType: 'tile-3exit-a', imagePath: 'assets/Tile_Black_x3_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-3exit-b', imagePath: 'assets/Tile_Black_x3_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  // 4-exit tiles
-  { tileType: 'tile-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
-  { tileType: 'tile-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } },
+  // Black 2-exit tiles (spawn monsters)
+  { tileType: 'tile-black-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  { tileType: 'tile-black-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  { tileType: 'tile-black-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  // Black 3-exit tiles (spawn monsters)
+  { tileType: 'tile-black-3exit-a', imagePath: 'assets/Tile_Black_x3_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  { tileType: 'tile-black-3exit-b', imagePath: 'assets/Tile_Black_x3_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  { tileType: 'tile-black-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  // Black 4-exit tiles (spawn monsters)
+  { tileType: 'tile-black-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: true },
+  // White 2-exit tiles (no monsters)
+  { tileType: 'tile-white-2exit-a', imagePath: 'assets/Tile_White_x2_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
+  { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
+  { tileType: 'tile-white-2exit-c', imagePath: 'assets/Tile_White_x2_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
+  { tileType: 'tile-white-2exit-d', imagePath: 'assets/Tile_White_x2_04.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
+  { tileType: 'tile-white-2exit-e', imagePath: 'assets/Tile_White_x2_05.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
+  // White 3-exit tiles (no monsters)
+  { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
+  { tileType: 'tile-white-3exit-b', imagePath: 'assets/Tile_White_x3_02.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
+  { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' }, spawnsMonster: false },
 ];
 
 /**
  * Initial tile deck for the game (tile type IDs)
+ * Mix of black (spawn monsters) and white (no monsters) tiles
  */
 export const INITIAL_TILE_DECK: string[] = [
-  'tile-2exit-a', 'tile-2exit-b', 'tile-2exit-c',
-  'tile-3exit-a', 'tile-3exit-b', 'tile-3exit-c',
-  'tile-4exit-a', 'tile-4exit-b',
+  // Black tiles
+  'tile-black-2exit-a', 'tile-black-2exit-b', 'tile-black-2exit-c',
+  'tile-black-3exit-a', 'tile-black-3exit-b', 'tile-black-3exit-c',
+  'tile-black-4exit-a', 'tile-black-4exit-b',
+  // White tiles
+  'tile-white-2exit-a', 'tile-white-2exit-b', 'tile-white-2exit-c', 'tile-white-2exit-d', 'tile-white-2exit-e',
+  'tile-white-3exit-a', 'tile-white-3exit-b', 'tile-white-3exit-c',
 ];
 
 /**

@@ -30,6 +30,7 @@ import {
   placeTile,
   drawTile,
   updateDungeonAfterExploration,
+  getTileDefinition,
 } from "./exploration";
 import {
   initializeMonsterDeck,
@@ -533,7 +534,8 @@ export const gameSlice = createSlice({
           const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
           
           if (newTile) {
-            // Mark that exploration occurred this turn
+            // Mark that exploration occurred this turn (for both black and white tiles)
+            // This prevents encounter cards from being drawn
             state.turnState.exploredThisTurn = true;
             
             // Update dungeon state
@@ -544,27 +546,33 @@ export const gameSlice = createSlice({
             );
             state.dungeon.tileDeck = remainingDeck;
             
-            // Draw and spawn a monster on the new tile
-            const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+            // Check if this tile spawns monsters (black arrow tiles do, white arrow tiles don't)
+            const tileDef = getTileDefinition(drawnTile);
+            const shouldSpawnMonster = tileDef?.spawnsMonster ?? true; // Default to spawning if definition not found
             
-            if (drawnMonsterId) {
-              // Create monster instance at tile center
-              const monsterPosition = getTileMonsterSpawnPosition();
-              const monsterInstance = createMonsterInstance(
-                drawnMonsterId,
-                monsterPosition,
-                currentToken.heroId, // Monster is controlled by the exploring hero
-                newTile.id,
-                state.monsterInstanceCounter
-              );
+            if (shouldSpawnMonster) {
+              // Draw and spawn a monster on the new tile
+              const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
               
-              if (monsterInstance) {
-                state.monsters.push(monsterInstance);
-                state.monsterInstanceCounter += 1;
-                state.recentlySpawnedMonsterId = monsterInstance.instanceId;
+              if (drawnMonsterId) {
+                // Create monster instance at tile center
+                const monsterPosition = getTileMonsterSpawnPosition();
+                const monsterInstance = createMonsterInstance(
+                  drawnMonsterId,
+                  monsterPosition,
+                  currentToken.heroId, // Monster is controlled by the exploring hero
+                  newTile.id,
+                  state.monsterInstanceCounter
+                );
+                
+                if (monsterInstance) {
+                  state.monsters.push(monsterInstance);
+                  state.monsterInstanceCounter += 1;
+                  state.recentlySpawnedMonsterId = monsterInstance.instanceId;
+                }
+                
+                state.monsterDeck = updatedMonsterDeck;
               }
-              
-              state.monsterDeck = updatedMonsterDeck;
             }
           }
         }
