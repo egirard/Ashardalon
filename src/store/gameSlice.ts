@@ -19,6 +19,7 @@ import {
   PartyResources,
   HERO_LEVELS,
   HeroLevel,
+  EncounterDeck,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -50,6 +51,13 @@ import {
   useHealingSurge,
   checkPartyDefeat,
 } from "./combat";
+import {
+  initializeEncounterDeck,
+  drawEncounter,
+  getEncounterById,
+  canCancelEncounter,
+  cancelEncounter,
+} from "./encounter";
 
 /**
  * Default turn state for the beginning of a game
@@ -144,6 +152,10 @@ export interface GameState {
   healingSurgeHpRestored: number | null;
   /** Reason for defeat (for displaying on defeat screen) */
   defeatReason: string | null;
+  /** Encounter deck for drawing encounters */
+  encounterDeck: EncounterDeck;
+  /** Currently drawn encounter card ID (null if no encounter is active) */
+  drawnEncounterId: string | null;
 }
 
 const initialState: GameState = {
@@ -176,6 +188,8 @@ const initialState: GameState = {
   healingSurgeUsedHeroId: null,
   healingSurgeHpRestored: null,
   defeatReason: null,
+  encounterDeck: { drawPile: [], discardPile: [] },
+  drawnEncounterId: null,
 };
 
 /**
@@ -370,6 +384,10 @@ export const gameSlice = createSlice({
       state.leveledUpHeroId = null;
       state.levelUpOldStats = null;
 
+      // Initialize encounter deck
+      state.encounterDeck = initializeEncounterDeck(randomFn);
+      state.drawnEncounterId = null;
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -477,6 +495,8 @@ export const gameSlice = createSlice({
       state.healingSurgeUsedHeroId = null;
       state.healingSurgeHpRestored = null;
       state.defeatReason = null;
+      state.encounterDeck = { drawPile: [], discardPile: [] };
+      state.drawnEncounterId = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -891,6 +911,66 @@ export const gameSlice = createSlice({
         state.partyResources.healingSurges = healingSurges;
       }
     },
+    /**
+     * Draw an encounter card (for testing purposes or when triggered by game rules)
+     */
+    drawEncounterCard: (state) => {
+      if (state.drawnEncounterId !== null) {
+        // Already have an encounter drawn
+        return;
+      }
+      
+      const { encounter, deck } = drawEncounter(state.encounterDeck);
+      if (encounter) {
+        state.drawnEncounterId = encounter;
+        state.encounterDeck = deck;
+      }
+    },
+    /**
+     * Cancel the current encounter by spending XP
+     */
+    cancelCurrentEncounter: (state) => {
+      if (state.drawnEncounterId === null) {
+        // No encounter to cancel
+        return;
+      }
+      
+      if (!canCancelEncounter(state.partyResources)) {
+        // Not enough XP
+        return;
+      }
+      
+      const result = cancelEncounter(
+        state.drawnEncounterId,
+        state.partyResources,
+        state.encounterDeck
+      );
+      
+      state.partyResources = result.resources;
+      state.encounterDeck = result.encounterDeck;
+      state.drawnEncounterId = null;
+    },
+    /**
+     * Accept/resolve the current encounter (dismisses it without spending XP)
+     */
+    acceptEncounter: (state) => {
+      if (state.drawnEncounterId === null) {
+        return;
+      }
+      
+      // Discard the encounter card
+      state.encounterDeck = {
+        ...state.encounterDeck,
+        discardPile: [...state.encounterDeck.discardPile, state.drawnEncounterId],
+      };
+      state.drawnEncounterId = null;
+    },
+    /**
+     * Set drawn encounter ID directly (for testing purposes)
+     */
+    setDrawnEncounter: (state, action: PayloadAction<string | null>) => {
+      state.drawnEncounterId = action.payload;
+    },
   },
 });
 
@@ -916,5 +996,9 @@ export const {
   setHeroHp,
   dismissLevelUpNotification,
   setPartyResources,
+  drawEncounterCard,
+  cancelCurrentEncounter,
+  acceptEncounter,
+  setDrawnEncounter,
 } = gameSlice.actions;
 export default gameSlice.reducer;

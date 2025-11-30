@@ -19,9 +19,13 @@ import gameReducer, {
   dismissHealingSurgeNotification,
   setHeroHp,
   setPartyResources,
+  drawEncounterCard,
+  cancelCurrentEncounter,
+  acceptEncounter,
+  setDrawnEncounter,
   GameState,
 } from "./gameSlice";
-import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
+import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult, ENCOUNTER_CANCEL_COST } from "./types";
 
 // Start tile grid dimensions - double-height tile with valid spaces x: 1-3, y: 0-7
 const START_TILE_GRID = { minX: 1, maxX: 3, minY: 0, maxY: 7 };
@@ -45,6 +49,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     recentlySpawnedMonsterId: null,
     attackResult: null,
     attackTargetId: null,
+    attackName: null,
     heroHp: [],
     monsterAttackResult: null,
     monsterAttackTargetId: null,
@@ -61,6 +66,8 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     healingSurgeUsedHeroId: null,
     healingSurgeHpRestored: null,
     defeatReason: null,
+    encounterDeck: { drawPile: [], discardPile: [] },
+    drawnEncounterId: null,
     ...overrides,
   };
 }
@@ -2571,6 +2578,164 @@ describe("gameSlice", () => {
       // Should defeat, not use surge (which would fail anyway)
       expect(state.currentScreen).toBe("defeat");
       expect(state.healingSurgeUsedHeroId).toBeNull();
+    });
+  });
+
+  describe("encounter actions", () => {
+    describe("drawEncounterCard", () => {
+      it("should draw an encounter from the deck", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: ["volcanic-spray", "cave-in"],
+            discardPile: [],
+          },
+          drawnEncounterId: null,
+        });
+
+        const state = gameReducer(initialState, drawEncounterCard());
+
+        expect(state.drawnEncounterId).toBe("volcanic-spray");
+        expect(state.encounterDeck.drawPile).toEqual(["cave-in"]);
+      });
+
+      it("should not draw if an encounter is already drawn", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: ["volcanic-spray", "cave-in"],
+            discardPile: [],
+          },
+          drawnEncounterId: "poisoned-air",
+        });
+
+        const state = gameReducer(initialState, drawEncounterCard());
+
+        // Should not change
+        expect(state.drawnEncounterId).toBe("poisoned-air");
+        expect(state.encounterDeck.drawPile).toEqual(["volcanic-spray", "cave-in"]);
+      });
+    });
+
+    describe("cancelCurrentEncounter", () => {
+      it("should cancel encounter when party has enough XP", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: ["cave-in"],
+            discardPile: [],
+          },
+          drawnEncounterId: "volcanic-spray",
+          partyResources: { xp: 6, healingSurges: 2 },
+        });
+
+        const state = gameReducer(initialState, cancelCurrentEncounter());
+
+        expect(state.drawnEncounterId).toBeNull();
+        expect(state.partyResources.xp).toBe(6 - ENCOUNTER_CANCEL_COST);
+        expect(state.encounterDeck.discardPile).toContain("volcanic-spray");
+      });
+
+      it("should not cancel when party has insufficient XP", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: ["cave-in"],
+            discardPile: [],
+          },
+          drawnEncounterId: "volcanic-spray",
+          partyResources: { xp: 4, healingSurges: 2 },
+        });
+
+        const state = gameReducer(initialState, cancelCurrentEncounter());
+
+        // Should not change
+        expect(state.drawnEncounterId).toBe("volcanic-spray");
+        expect(state.partyResources.xp).toBe(4);
+      });
+
+      it("should not do anything when no encounter is drawn", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: ["cave-in"],
+            discardPile: [],
+          },
+          drawnEncounterId: null,
+          partyResources: { xp: 10, healingSurges: 2 },
+        });
+
+        const state = gameReducer(initialState, cancelCurrentEncounter());
+
+        expect(state.drawnEncounterId).toBeNull();
+        expect(state.partyResources.xp).toBe(10);
+      });
+
+      it("should work with exactly 5 XP", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: [],
+            discardPile: [],
+          },
+          drawnEncounterId: "volcanic-spray",
+          partyResources: { xp: 5, healingSurges: 2 },
+        });
+
+        const state = gameReducer(initialState, cancelCurrentEncounter());
+
+        expect(state.drawnEncounterId).toBeNull();
+        expect(state.partyResources.xp).toBe(0);
+      });
+    });
+
+    describe("acceptEncounter", () => {
+      it("should discard the encounter and clear drawnEncounterId", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: ["cave-in"],
+            discardPile: [],
+          },
+          drawnEncounterId: "volcanic-spray",
+        });
+
+        const state = gameReducer(initialState, acceptEncounter());
+
+        expect(state.drawnEncounterId).toBeNull();
+        expect(state.encounterDeck.discardPile).toContain("volcanic-spray");
+        expect(state.encounterDeck.drawPile).toEqual(["cave-in"]);
+      });
+
+      it("should not do anything when no encounter is drawn", () => {
+        const initialState = createGameState({
+          encounterDeck: {
+            drawPile: ["cave-in"],
+            discardPile: [],
+          },
+          drawnEncounterId: null,
+        });
+
+        const state = gameReducer(initialState, acceptEncounter());
+
+        expect(state.drawnEncounterId).toBeNull();
+        expect(state.encounterDeck.discardPile).toEqual([]);
+      });
+    });
+
+    describe("setDrawnEncounter", () => {
+      it("should set the drawn encounter ID", () => {
+        const initialState = createGameState({
+          drawnEncounterId: null,
+        });
+
+        const state = gameReducer(initialState, setDrawnEncounter("volcanic-spray"));
+
+        expect(state.drawnEncounterId).toBe("volcanic-spray");
+      });
+
+      it("should clear the drawn encounter when passed null", () => {
+        const initialState = createGameState({
+          drawnEncounterId: "volcanic-spray",
+        });
+
+        const state = gameReducer(initialState, setDrawnEncounter(null));
+
+        expect(state.drawnEncounterId).toBeNull();
+      });
     });
   });
 });

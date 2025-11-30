@@ -18,6 +18,8 @@
     shouldAutoEndHeroTurn,
     dismissLevelUpNotification,
     dismissHealingSurgeNotification,
+    cancelCurrentEncounter,
+    acceptEncounter,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -44,6 +46,7 @@
   import UnexploredEdgeIndicator from "./UnexploredEdgeIndicator.svelte";
   import MonsterToken from "./MonsterToken.svelte";
   import MonsterCard from "./MonsterCard.svelte";
+  import EncounterCard from "./EncounterCard.svelte";
   import PowerCardAttackPanel from "./PowerCardAttackPanel.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
@@ -136,6 +139,7 @@
   let mapScale: number = $state(1);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
+  let drawnEncounterId: string | null = $state(null);
 
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
@@ -172,6 +176,7 @@
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
+      drawnEncounterId = state.game.drawnEncounterId;
     });
 
     // Initialize state
@@ -204,6 +209,7 @@
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
+    drawnEncounterId = state.game.drawnEncounterId;
 
     return unsubscribe;
   });
@@ -770,6 +776,16 @@
     if (!leveledUpHeroId) return undefined;
     return heroHp.find(h => h.heroId === leveledUpHeroId);
   }
+
+  // Handle canceling an encounter
+  function handleCancelEncounter() {
+    store.dispatch(cancelCurrentEncounter());
+  }
+
+  // Handle accepting an encounter
+  function handleAcceptEncounter() {
+    store.dispatch(acceptEncounter());
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -1145,6 +1161,16 @@
       heroId={healingSurgeUsedHeroId}
       hpRestored={healingSurgeHpRestored}
       onDismiss={handleDismissHealingSurgeNotification}
+    />
+  {/if}
+
+  <!-- Encounter Card Display (shown when encounter is drawn) -->
+  {#if drawnEncounterId}
+    <EncounterCard
+      encounterId={drawnEncounterId}
+      {partyResources}
+      onCancel={handleCancelEncounter}
+      onAccept={handleAcceptEncounter}
     />
   {/if}
 </div>

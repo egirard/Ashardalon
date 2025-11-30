@@ -58,6 +58,11 @@ export const HERO_LEVELS: Record<string, { level1: HeroLevelStats; level2: HeroL
 export const LEVEL_UP_COST = 5;
 
 /**
+ * Cost in XP to cancel an encounter
+ */
+export const ENCOUNTER_CANCEL_COST = 5;
+
+/**
  * Monster's basic attack information
  */
 export interface MonsterAttack {
@@ -150,6 +155,48 @@ export interface MonsterDeck {
   drawPile: string[];    // Monster IDs
   discardPile: string[];
 }
+
+/**
+ * Encounter card type (Event, Trap, Attack)
+ */
+export type EncounterType = 'Event' | 'Trap' | 'Attack';
+
+/**
+ * Encounter card definition
+ */
+export interface EncounterCard {
+  id: string;
+  name: string;
+  type: EncounterType;
+  description: string;
+  imagePath?: string;
+}
+
+/**
+ * Encounter deck for drawing encounters during villain phase
+ */
+export interface EncounterDeck {
+  drawPile: string[];    // Encounter card IDs
+  discardPile: string[];
+}
+
+/**
+ * Available encounter cards in the game
+ */
+export const ENCOUNTER_CARDS: EncounterCard[] = [
+  { id: 'volcanic-spray', name: 'Volcanic Spray', type: 'Event', description: 'Each hero takes 1 damage.' },
+  { id: 'poisoned-air', name: 'Poisoned Air', type: 'Event', description: 'Each hero takes 1 damage unless they move to an adjacent tile this turn.' },
+  { id: 'cave-in', name: 'Cave-In', type: 'Trap', description: 'The active hero takes 2 damage.' },
+];
+
+/**
+ * Initial encounter deck (encounter card IDs that can be drawn)
+ */
+export const INITIAL_ENCOUNTER_DECK: string[] = [
+  'volcanic-spray', 'volcanic-spray',
+  'poisoned-air', 'poisoned-air',
+  'cave-in', 'cave-in',
+];
 
 /**
  * Available monsters in the game
