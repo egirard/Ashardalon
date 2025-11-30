@@ -10,6 +10,7 @@ import gameReducer, {
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
+  dismissEncounterCard,
   setAttackResult,
   dismissAttackResult,
   dismissDefeatNotification,
@@ -35,6 +36,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
       currentHeroIndex: 0,
       currentPhase: "hero-phase",
       turnNumber: 1,
+      exploredThisTurn: false,
     },
     validMoveSquares: [],
     showingMovement: false,
@@ -61,6 +63,8 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     healingSurgeUsedHeroId: null,
     healingSurgeHpRestored: null,
     defeatReason: null,
+    encounterDeck: { drawPile: [], discardPile: [] },
+    drawnEncounter: null,
     ...overrides,
   };
 }
@@ -2571,6 +2575,309 @@ describe("gameSlice", () => {
       // Should defeat, not use surge (which would fail anyway)
       expect(state.currentScreen).toBe("defeat");
       expect(state.healingSurgeUsedHeroId).toBeNull();
+    });
+  });
+
+  describe("encounter system", () => {
+    it("should initialize encounter deck when starting game", () => {
+      const action = startGame({ heroIds: ["quinn"], seed: 12345 });
+      const state = gameReducer(undefined, action);
+
+      expect(state.encounterDeck.drawPile.length).toBeGreaterThan(0);
+      expect(state.encounterDeck.discardPile).toEqual([]);
+      expect(state.drawnEncounter).toBeNull();
+    });
+
+    it("should set exploredThisTurn to true when tile is placed", () => {
+      // Set up state where hero is on unexplored edge
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }], // On north edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-2exit-a"],
+        },
+        monsterDeck: { drawPile: ["kobold"], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, endHeroPhase());
+
+      expect(state.turnState.exploredThisTurn).toBe(true);
+    });
+
+    it("should set exploredThisTurn to false when no tile is placed", () => {
+      // Set up state where hero is NOT on unexplored edge
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }], // In middle, not on edge
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: ["tile-2exit-a"],
+        },
+      });
+
+      const state = gameReducer(initialState, endHeroPhase());
+
+      expect(state.turnState.exploredThisTurn).toBe(false);
+    });
+
+    it("should draw encounter when entering villain phase without exploration", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: false, // No exploration happened
+        },
+        encounterDeck: {
+          drawPile: ["volcanic-spray", "goblin-ambush"],
+          discardPile: [],
+        },
+      });
+
+      const state = gameReducer(initialState, endExplorationPhase());
+
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.drawnEncounter?.id).toBe("volcanic-spray");
+      expect(state.encounterDeck.drawPile).toEqual(["goblin-ambush"]);
+    });
+
+    it("should NOT draw encounter when entering villain phase with exploration", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: true, // Exploration happened
+        },
+        encounterDeck: {
+          drawPile: ["volcanic-spray", "goblin-ambush"],
+          discardPile: [],
+        },
+      });
+
+      const state = gameReducer(initialState, endExplorationPhase());
+
+      expect(state.turnState.currentPhase).toBe("villain-phase");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.drawPile).toEqual(["volcanic-spray", "goblin-ambush"]);
+    });
+
+    it("should clear drawnEncounter when villain phase ends", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        drawnEncounter: {
+          id: "volcanic-spray",
+          name: "Volcanic Spray",
+          type: "event",
+          description: "Test",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.drawnEncounter).toBeNull();
+    });
+
+    it("should clear encounter state on game reset", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        encounterDeck: {
+          drawPile: ["volcanic-spray"],
+          discardPile: ["goblin-ambush"],
+        },
+        drawnEncounter: {
+          id: "volcanic-spray",
+          name: "Volcanic Spray",
+          type: "event",
+          description: "Test",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+      });
+
+      const state = gameReducer(initialState, resetGame());
+
+      expect(state.encounterDeck).toEqual({ drawPile: [], discardPile: [] });
+      expect(state.drawnEncounter).toBeNull();
+    });
+  });
+
+  describe("dismissEncounterCard", () => {
+    it("should apply damage effect to active hero when dismissing damage encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "goblin-ambush",
+          name: "Goblin Ambush",
+          type: "event",
+          description: "The active hero takes 1 damage.",
+          effect: { type: "damage", amount: 1, target: "active-hero" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      // Import the action
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      expect(state.heroHp[0].currentHp).toBe(7); // Took 1 damage
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("goblin-ambush");
+    });
+
+    it("should apply damage effect to all heroes when dismissing all-heroes encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        drawnEncounter: {
+          id: "cave-in",
+          name: "Cave-In",
+          type: "event",
+          description: "All heroes take 1 damage.",
+          effect: { type: "damage", amount: 1, target: "all-heroes" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      expect(state.heroHp[0].currentHp).toBe(7); // Quinn took 1 damage
+      expect(state.heroHp[1].currentHp).toBe(9); // Vistra took 1 damage
+      expect(state.drawnEncounter).toBeNull();
+    });
+
+    it("should trigger defeat when encounter reduces all heroes to 0 HP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 1, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "cave-in",
+          name: "Cave-In",
+          type: "event",
+          description: "All heroes take 1 damage.",
+          effect: { type: "damage", amount: 1, target: "all-heroes" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      expect(state.heroHp[0].currentHp).toBe(0);
+      expect(state.currentScreen).toBe("defeat");
+      expect(state.defeatReason).toContain("Cave-In");
+    });
+
+    it("should not apply damage for unimplemented environment effect", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "dark-fog",
+          name: "Dark Fog",
+          type: "environment",
+          description: "All heroes have -2 to attack rolls.",
+          effect: { type: "environment" },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // HP unchanged for unimplemented effect
+      expect(state.heroHp[0].currentHp).toBe(8);
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("dark-fog");
     });
   });
 });

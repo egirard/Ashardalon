@@ -19,6 +19,8 @@ import {
   PartyResources,
   HERO_LEVELS,
   HeroLevel,
+  EncounterDeck,
+  EncounterCard,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -50,6 +52,14 @@ import {
   useHealingSurge,
   checkPartyDefeat,
 } from "./combat";
+import {
+  initializeEncounterDeck,
+  drawEncounter,
+  discardEncounter,
+  getEncounterById,
+  shouldDrawEncounter,
+  resolveEncounterEffect,
+} from "./encounters";
 
 /**
  * Default turn state for the beginning of a game
@@ -58,6 +68,7 @@ const DEFAULT_TURN_STATE: TurnState = {
   currentHeroIndex: 0,
   currentPhase: "hero-phase",
   turnNumber: 1,
+  exploredThisTurn: false,
 };
 
 /**
@@ -144,6 +155,10 @@ export interface GameState {
   healingSurgeHpRestored: number | null;
   /** Reason for defeat (for displaying on defeat screen) */
   defeatReason: string | null;
+  /** Encounter deck for drawing encounters when no exploration occurs */
+  encounterDeck: EncounterDeck;
+  /** Currently drawn encounter card (displayed during villain phase) */
+  drawnEncounter: EncounterCard | null;
 }
 
 const initialState: GameState = {
@@ -176,6 +191,8 @@ const initialState: GameState = {
   healingSurgeUsedHeroId: null,
   healingSurgeHpRestored: null,
   defeatReason: null,
+  encounterDeck: { drawPile: [], discardPile: [] },
+  drawnEncounter: null,
 };
 
 /**
@@ -370,6 +387,10 @@ export const gameSlice = createSlice({
       state.leveledUpHeroId = null;
       state.levelUpOldStats = null;
 
+      // Initialize encounter deck
+      state.encounterDeck = initializeEncounterDeck(randomFn);
+      state.drawnEncounter = null;
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -477,6 +498,8 @@ export const gameSlice = createSlice({
       state.healingSurgeUsedHeroId = null;
       state.healingSurgeHpRestored = null;
       state.defeatReason = null;
+      state.encounterDeck = { drawPile: [], discardPile: [] };
+      state.drawnEncounter = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -488,6 +511,9 @@ export const gameSlice = createSlice({
       
       // Clear any previously spawned monster display
       state.recentlySpawnedMonsterId = null;
+      
+      // Reset exploration tracking for this turn
+      state.turnState.exploredThisTurn = false;
       
       // Get current hero
       const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
@@ -507,6 +533,9 @@ export const gameSlice = createSlice({
           const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
           
           if (newTile) {
+            // Mark that exploration occurred this turn
+            state.turnState.exploredThisTurn = true;
+            
             // Update dungeon state
             state.dungeon = updateDungeonAfterExploration(
               state.dungeon,
@@ -559,6 +588,19 @@ export const gameSlice = createSlice({
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
       state.monsterMoveActionId = null;
+      
+      // Draw encounter if no exploration occurred this turn
+      if (shouldDrawEncounter(state.turnState)) {
+        const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+        state.encounterDeck = updatedDeck;
+        
+        if (encounterId) {
+          const encounter = getEncounterById(encounterId);
+          if (encounter) {
+            state.drawnEncounter = encounter;
+          }
+        }
+      }
     },
     /**
      * End the villain phase and move to the next hero's turn
@@ -574,6 +616,9 @@ export const gameSlice = createSlice({
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
       state.monsterMoveActionId = null;
+      
+      // Clear encounter state
+      state.drawnEncounter = null;
       
       // Clear any previous healing surge notification
       state.healingSurgeUsedHeroId = null;
@@ -630,6 +675,35 @@ export const gameSlice = createSlice({
      */
     dismissMonsterCard: (state) => {
       state.recentlySpawnedMonsterId = null;
+    },
+    /**
+     * Dismiss the encounter card display and apply its effect
+     */
+    dismissEncounterCard: (state) => {
+      if (state.drawnEncounter) {
+        // Get the current hero ID for active-hero effects
+        const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        
+        if (activeHeroId) {
+          // Apply the encounter effect
+          state.heroHp = resolveEncounterEffect(
+            state.drawnEncounter,
+            state.heroHp,
+            activeHeroId
+          );
+          
+          // Check for party defeat (all heroes at 0 HP)
+          const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+          if (allHeroesDefeated) {
+            state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
+            state.currentScreen = "defeat";
+          }
+        }
+        
+        // Discard the encounter
+        state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+        state.drawnEncounter = null;
+      }
     },
     /**
      * Set the attack result and apply damage to the target monster
@@ -905,6 +979,7 @@ export const {
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
+  dismissEncounterCard,
   setAttackResult,
   dismissAttackResult,
   dismissDefeatNotification,

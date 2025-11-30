@@ -231,6 +231,8 @@ export interface TurnState {
   currentHeroIndex: number;
   currentPhase: GamePhase;
   turnNumber: number;
+  /** Whether a tile was placed (exploration occurred) during this turn */
+  exploredThisTurn: boolean;
 }
 
 /**
@@ -398,3 +400,111 @@ export const START_TILE: PlacedTile = {
     west: 'unexplored',
   },
 };
+
+/**
+ * Encounter card type categories
+ */
+export type EncounterType = 'event' | 'trap' | 'hazard' | 'curse' | 'environment';
+
+/**
+ * Encounter effect types that can be applied when an encounter card is drawn
+ * 
+ * - damage: Immediately deal damage to one or all heroes
+ * - curse: Apply a lasting debuff (duration in turns) - NOT YET IMPLEMENTED
+ * - environment: Create a persistent dungeon-wide effect - NOT YET IMPLEMENTED
+ * - trap: Can be disabled with a skill check (disableDC) - NOT YET IMPLEMENTED
+ * - hazard: Make an attack against hero's AC - NOT YET IMPLEMENTED
+ */
+export type EncounterEffect = 
+  | { type: 'damage'; amount: number; target: 'active-hero' | 'all-heroes' }
+  | { type: 'curse'; duration: number }
+  | { type: 'environment' }
+  | { type: 'trap'; disableDC: number }
+  | { type: 'hazard'; ac: number; damage: number };
+
+/**
+ * Encounter card definition
+ */
+export interface EncounterCard {
+  id: string;
+  name: string;
+  type: EncounterType;
+  description: string;
+  effect: EncounterEffect;
+  imagePath: string;
+}
+
+/**
+ * Encounter deck for drawing encounters when no tile is placed
+ */
+export interface EncounterDeck {
+  drawPile: string[];
+  discardPile: string[];
+}
+
+/**
+ * Initial encounter cards for the game
+ * 
+ * Effect Implementation Status:
+ * - damage (active-hero): ✅ IMPLEMENTED - Deals damage to the active hero
+ * - damage (all-heroes): ✅ IMPLEMENTED - Deals damage to all heroes
+ * - environment: ⚠️ NOT IMPLEMENTED - Would apply dungeon-wide effects (e.g., attack roll penalties)
+ * - curse: ⚠️ NOT IMPLEMENTED - Would apply duration-based debuffs to heroes
+ * - trap: ⚠️ NOT IMPLEMENTED - Would allow skill checks to disable
+ * - hazard: ⚠️ NOT IMPLEMENTED - Would make attack rolls against hero AC
+ * 
+ * Cards with unimplemented effects will show description but not apply mechanical effects.
+ */
+export const ENCOUNTER_CARDS: EncounterCard[] = [
+  {
+    id: 'volcanic-spray',
+    name: 'Volcanic Spray',
+    type: 'event',
+    description: 'Each hero on a tile adjacent to an unexplored edge takes 1 damage.',
+    effect: { type: 'damage', amount: 1, target: 'active-hero' },
+    imagePath: 'assets/Encounter_VolcanicSpray.png',
+  },
+  {
+    id: 'goblin-ambush',
+    name: 'Goblin Ambush',
+    type: 'event',
+    description: 'The active hero takes 1 damage.',
+    effect: { type: 'damage', amount: 1, target: 'active-hero' },
+    imagePath: 'assets/Encounter_GoblinAmbush.png',
+  },
+  {
+    id: 'dark-fog',
+    name: 'Dark Fog',
+    type: 'environment',
+    description: 'All heroes have -2 to attack rolls until the end of the next Hero Phase.',
+    effect: { type: 'environment' },
+    imagePath: 'assets/Encounter_DarkFog.png',
+  },
+  {
+    id: 'cave-in',
+    name: 'Cave-In',
+    type: 'event',
+    description: 'All heroes take 1 damage.',
+    effect: { type: 'damage', amount: 1, target: 'all-heroes' },
+    imagePath: 'assets/Encounter_CaveIn.png',
+  },
+  {
+    id: 'poisoned-dart-trap',
+    name: 'Poisoned Dart Trap',
+    type: 'trap',
+    description: 'The active hero takes 2 damage unless they succeed on a DC 12 Dexterity check.',
+    effect: { type: 'trap', disableDC: 12 },
+    imagePath: 'assets/Encounter_PoisonedDartTrap.png',
+  },
+];
+
+/**
+ * Initial encounter deck (encounter IDs that can be drawn)
+ */
+export const INITIAL_ENCOUNTER_DECK: string[] = [
+  'volcanic-spray',
+  'goblin-ambush', 
+  'dark-fog',
+  'cave-in',
+  'poisoned-dart-trap',
+];
