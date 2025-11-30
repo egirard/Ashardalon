@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 test.describe('018 - Party Defeat', () => {
   test('Game ends when hero dies with no surges', async ({ page }) => {
@@ -10,6 +10,9 @@ test.describe('018 - Party Defeat', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
     await page.locator('[data-testid="hero-vistra"]').click();
+    // Select power cards for heroes
+    await selectDefaultPowerCards(page, 'quinn');
+    await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -145,6 +148,9 @@ test.describe('018 - Party Defeat', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn"]').click();
     await page.locator('[data-testid="hero-vistra"]').click();
+    // Select power cards for heroes
+    await selectDefaultPowerCards(page, 'quinn');
+    await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
