@@ -1,9 +1,16 @@
-import type { Position, HeroToken, DungeonState, PlacedTile, Direction } from './types';
+import type { Position, HeroToken, DungeonState, PlacedTile, Direction, StartTileSubTileId } from './types';
+import { getStartTileSubTileId, START_TILE_SUB_TILE_BOUNDARY } from './types';
 
 /**
  * Start Tile boundaries
  * The Start Tile is a double-height tile with valid spaces from x: 1-3, y: 0-7.
  * The staircase occupies the center (x: 1-2, y: 3-4) and is not walkable.
+ * 
+ * The start tile is composed of two sub-tiles (north and south halves):
+ * - North sub-tile: y: 0-3
+ * - South sub-tile: y: 4-7
+ * 
+ * For tile counting purposes, each sub-tile is treated as a separate tile.
  */
 export const START_TILE = {
   minX: 1,
@@ -17,6 +24,11 @@ export const START_TILE = {
     { x: 1, y: 4 },
     { x: 2, y: 4 },
   ],
+  // Sub-tile boundaries
+  subTiles: {
+    north: { minY: 0, maxY: START_TILE_SUB_TILE_BOUNDARY.northMaxY },
+    south: { minY: START_TILE_SUB_TILE_BOUNDARY.southMinY, maxY: 7 },
+  },
 };
 
 /**
@@ -105,6 +117,65 @@ export function findTileAtPosition(pos: Position, dungeon: DungeonState): Placed
 }
 
 /**
+ * Get the sub-tile identifier for a position on the start tile.
+ * The start tile is composed of two sub-tiles:
+ * - 'start-tile-north': y coordinates 0-3
+ * - 'start-tile-south': y coordinates 4-7
+ * 
+ * This is used for tile counting purposes where each sub-tile
+ * is treated as a separate tile.
+ * 
+ * @param pos - The position to check
+ * @param dungeon - The dungeon state (to verify position is on start tile)
+ * @returns The sub-tile ID if on start tile, null otherwise
+ */
+export function getSubTileIdAtPosition(pos: Position, dungeon: DungeonState): StartTileSubTileId | null {
+  const tile = findTileAtPosition(pos, dungeon);
+  
+  if (!tile || tile.tileType !== 'start') {
+    return null;
+  }
+  
+  return getStartTileSubTileId(pos.y);
+}
+
+/**
+ * Check if two positions are on the same sub-tile (for tile counting purposes).
+ * 
+ * This implements the rule that the start tile consists of 2 connected tiles,
+ * each section treated as its own tile for movement and counting.
+ * 
+ * @param pos1 - First position
+ * @param pos2 - Second position
+ * @param dungeon - The dungeon state
+ * @returns true if both positions are on the same logical tile (or sub-tile for start tile)
+ */
+export function areOnSameTileOrSubTile(pos1: Position, pos2: Position, dungeon: DungeonState): boolean {
+  const tile1 = findTileAtPosition(pos1, dungeon);
+  const tile2 = findTileAtPosition(pos2, dungeon);
+  
+  // If either position is not on a tile, they're not on the same tile
+  if (!tile1 || !tile2) {
+    return false;
+  }
+  
+  // If on different tiles (by ID), they're not on the same tile
+  if (tile1.id !== tile2.id) {
+    return false;
+  }
+  
+  // If on the start tile, check sub-tiles
+  if (tile1.tileType === 'start') {
+    const subTile1 = getStartTileSubTileId(pos1.y);
+    const subTile2 = getStartTileSubTileId(pos2.y);
+    return subTile1 === subTile2;
+  }
+  
+  // For normal tiles, same tile ID means same tile
+  return true;
+}
+
+/**
  * Check if a position is within the valid start tile bounds
  */
 export function isWithinStartTile(pos: Position): boolean {
@@ -114,6 +185,32 @@ export function isWithinStartTile(pos: Position): boolean {
     pos.y >= START_TILE.minY &&
     pos.y <= START_TILE.maxY
   );
+}
+
+/**
+ * Get a unique identifier for the tile or sub-tile at a position.
+ * This is used for tile counting purposes where the start tile's
+ * sub-tiles are treated as separate tiles.
+ * 
+ * @param pos - The position to check
+ * @param dungeon - The dungeon state
+ * @returns A unique string identifier for the tile/sub-tile, or null if not on a tile
+ */
+export function getTileOrSubTileId(pos: Position, dungeon: DungeonState): string | null {
+  const tile = findTileAtPosition(pos, dungeon);
+  
+  if (!tile) {
+    return null;
+  }
+  
+  // For start tile, return the sub-tile ID
+  if (tile.tileType === 'start') {
+    const subTileId = getStartTileSubTileId(pos.y);
+    return subTileId;
+  }
+  
+  // For normal tiles, return the tile ID
+  return tile.id;
 }
 
 /**

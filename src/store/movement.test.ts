@@ -747,3 +747,250 @@ describe("movement utilities", () => {
     });
   });
 });
+
+// Import sub-tile functions for testing
+import {
+  getSubTileIdAtPosition,
+  areOnSameTileOrSubTile,
+  getTileOrSubTileId,
+} from "./movement";
+import {
+  getStartTileSubTileId,
+  isInNorthSubTile,
+  isInSouthSubTile,
+  START_TILE_SUB_TILE_BOUNDARY,
+} from "./types";
+
+describe("start tile sub-tiles", () => {
+  describe("START_TILE sub-tile constants", () => {
+    it("should define sub-tile boundaries", () => {
+      expect(START_TILE.subTiles.north.minY).toBe(0);
+      expect(START_TILE.subTiles.north.maxY).toBe(3);
+      expect(START_TILE.subTiles.south.minY).toBe(4);
+      expect(START_TILE.subTiles.south.maxY).toBe(7);
+    });
+  });
+
+  describe("isInNorthSubTile", () => {
+    it("should return true for positions in north sub-tile (y: 0-3)", () => {
+      expect(isInNorthSubTile(0)).toBe(true);
+      expect(isInNorthSubTile(1)).toBe(true);
+      expect(isInNorthSubTile(2)).toBe(true);
+      expect(isInNorthSubTile(3)).toBe(true);
+    });
+
+    it("should return false for positions in south sub-tile (y: 4-7)", () => {
+      expect(isInNorthSubTile(4)).toBe(false);
+      expect(isInNorthSubTile(5)).toBe(false);
+      expect(isInNorthSubTile(6)).toBe(false);
+      expect(isInNorthSubTile(7)).toBe(false);
+    });
+
+    it("should return false for positions outside start tile bounds", () => {
+      expect(isInNorthSubTile(-1)).toBe(false);
+      expect(isInNorthSubTile(8)).toBe(false);
+    });
+  });
+
+  describe("isInSouthSubTile", () => {
+    it("should return true for positions in south sub-tile (y: 4-7)", () => {
+      expect(isInSouthSubTile(4)).toBe(true);
+      expect(isInSouthSubTile(5)).toBe(true);
+      expect(isInSouthSubTile(6)).toBe(true);
+      expect(isInSouthSubTile(7)).toBe(true);
+    });
+
+    it("should return false for positions in north sub-tile (y: 0-3)", () => {
+      expect(isInSouthSubTile(0)).toBe(false);
+      expect(isInSouthSubTile(1)).toBe(false);
+      expect(isInSouthSubTile(2)).toBe(false);
+      expect(isInSouthSubTile(3)).toBe(false);
+    });
+
+    it("should return false for positions outside start tile bounds", () => {
+      expect(isInSouthSubTile(-1)).toBe(false);
+      expect(isInSouthSubTile(8)).toBe(false);
+    });
+  });
+
+  describe("getStartTileSubTileId", () => {
+    it("should return 'start-tile-north' for north sub-tile positions", () => {
+      expect(getStartTileSubTileId(0)).toBe('start-tile-north');
+      expect(getStartTileSubTileId(1)).toBe('start-tile-north');
+      expect(getStartTileSubTileId(2)).toBe('start-tile-north');
+      expect(getStartTileSubTileId(3)).toBe('start-tile-north');
+    });
+
+    it("should return 'start-tile-south' for south sub-tile positions", () => {
+      expect(getStartTileSubTileId(4)).toBe('start-tile-south');
+      expect(getStartTileSubTileId(5)).toBe('start-tile-south');
+      expect(getStartTileSubTileId(6)).toBe('start-tile-south');
+      expect(getStartTileSubTileId(7)).toBe('start-tile-south');
+    });
+
+    it("should return null for positions outside start tile bounds", () => {
+      expect(getStartTileSubTileId(-1)).toBeNull();
+      expect(getStartTileSubTileId(8)).toBeNull();
+    });
+  });
+
+  describe("getSubTileIdAtPosition", () => {
+    const startTile: PlacedTile = {
+      id: 'start-tile',
+      tileType: 'start',
+      position: { col: 0, row: 0 },
+      rotation: 0,
+      edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'unexplored' },
+    };
+
+    const normalTile: PlacedTile = {
+      id: 'tile-1',
+      tileType: 'tile-2exit-a',
+      position: { col: 1, row: 0 },
+      rotation: 0,
+      edges: { north: 'wall', south: 'wall', east: 'wall', west: 'open' },
+    };
+
+    const dungeon: DungeonState = {
+      tiles: [startTile, normalTile],
+      unexploredEdges: [],
+      tileDeck: [],
+    };
+
+    it("should return north sub-tile ID for positions in north half of start tile", () => {
+      expect(getSubTileIdAtPosition({ x: 2, y: 0 }, dungeon)).toBe('start-tile-north');
+      expect(getSubTileIdAtPosition({ x: 2, y: 3 }, dungeon)).toBe('start-tile-north');
+    });
+
+    it("should return south sub-tile ID for positions in south half of start tile", () => {
+      expect(getSubTileIdAtPosition({ x: 2, y: 4 }, dungeon)).toBe('start-tile-south');
+      expect(getSubTileIdAtPosition({ x: 2, y: 7 }, dungeon)).toBe('start-tile-south');
+    });
+
+    it("should return null for positions on normal tiles", () => {
+      expect(getSubTileIdAtPosition({ x: 5, y: 1 }, dungeon)).toBeNull();
+    });
+
+    it("should return null for positions not on any tile", () => {
+      expect(getSubTileIdAtPosition({ x: 100, y: 100 }, dungeon)).toBeNull();
+    });
+  });
+
+  describe("areOnSameTileOrSubTile", () => {
+    const startTile: PlacedTile = {
+      id: 'start-tile',
+      tileType: 'start',
+      position: { col: 0, row: 0 },
+      rotation: 0,
+      edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'unexplored' },
+    };
+
+    const normalTile: PlacedTile = {
+      id: 'tile-1',
+      tileType: 'tile-2exit-a',
+      position: { col: 1, row: 0 },
+      rotation: 0,
+      edges: { north: 'wall', south: 'wall', east: 'wall', west: 'open' },
+    };
+
+    const dungeon: DungeonState = {
+      tiles: [startTile, normalTile],
+      unexploredEdges: [],
+      tileDeck: [],
+    };
+
+    it("should return true for two positions in the same sub-tile (north)", () => {
+      const pos1 = { x: 2, y: 0 };
+      const pos2 = { x: 3, y: 2 };
+      expect(areOnSameTileOrSubTile(pos1, pos2, dungeon)).toBe(true);
+    });
+
+    it("should return true for two positions in the same sub-tile (south)", () => {
+      const pos1 = { x: 2, y: 5 };
+      const pos2 = { x: 3, y: 7 };
+      expect(areOnSameTileOrSubTile(pos1, pos2, dungeon)).toBe(true);
+    });
+
+    it("should return false for positions in different sub-tiles of start tile", () => {
+      const pos1 = { x: 2, y: 3 }; // North sub-tile
+      const pos2 = { x: 2, y: 4 }; // South sub-tile
+      expect(areOnSameTileOrSubTile(pos1, pos2, dungeon)).toBe(false);
+    });
+
+    it("should return true for two positions on the same normal tile", () => {
+      const pos1 = { x: 4, y: 0 };
+      const pos2 = { x: 7, y: 3 };
+      expect(areOnSameTileOrSubTile(pos1, pos2, dungeon)).toBe(true);
+    });
+
+    it("should return false for positions on different tiles", () => {
+      const pos1 = { x: 2, y: 2 }; // Start tile
+      const pos2 = { x: 5, y: 1 }; // Normal tile
+      expect(areOnSameTileOrSubTile(pos1, pos2, dungeon)).toBe(false);
+    });
+
+    it("should return false if either position is not on a tile", () => {
+      const pos1 = { x: 100, y: 100 };
+      const pos2 = { x: 2, y: 2 };
+      expect(areOnSameTileOrSubTile(pos1, pos2, dungeon)).toBe(false);
+    });
+  });
+
+  describe("getTileOrSubTileId", () => {
+    const startTile: PlacedTile = {
+      id: 'start-tile',
+      tileType: 'start',
+      position: { col: 0, row: 0 },
+      rotation: 0,
+      edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'unexplored' },
+    };
+
+    const normalTile: PlacedTile = {
+      id: 'tile-1',
+      tileType: 'tile-2exit-a',
+      position: { col: 1, row: 0 },
+      rotation: 0,
+      edges: { north: 'wall', south: 'wall', east: 'wall', west: 'open' },
+    };
+
+    const dungeon: DungeonState = {
+      tiles: [startTile, normalTile],
+      unexploredEdges: [],
+      tileDeck: [],
+    };
+
+    it("should return 'start-tile-north' for positions in north sub-tile", () => {
+      expect(getTileOrSubTileId({ x: 2, y: 0 }, dungeon)).toBe('start-tile-north');
+      expect(getTileOrSubTileId({ x: 2, y: 3 }, dungeon)).toBe('start-tile-north');
+    });
+
+    it("should return 'start-tile-south' for positions in south sub-tile", () => {
+      expect(getTileOrSubTileId({ x: 2, y: 4 }, dungeon)).toBe('start-tile-south');
+      expect(getTileOrSubTileId({ x: 2, y: 7 }, dungeon)).toBe('start-tile-south');
+    });
+
+    it("should return normal tile ID for positions on normal tiles", () => {
+      expect(getTileOrSubTileId({ x: 5, y: 1 }, dungeon)).toBe('tile-1');
+    });
+
+    it("should return null for positions not on any tile", () => {
+      expect(getTileOrSubTileId({ x: 100, y: 100 }, dungeon)).toBeNull();
+    });
+  });
+
+  describe("sub-tile boundary at staircase", () => {
+    it("should correctly identify sub-tiles at the staircase boundary", () => {
+      // The staircase spans y: 3-4, which crosses the sub-tile boundary
+      // y: 3 is in north sub-tile, y: 4 is in south sub-tile
+      expect(getStartTileSubTileId(3)).toBe('start-tile-north');
+      expect(getStartTileSubTileId(4)).toBe('start-tile-south');
+    });
+
+    it("should not affect movement through staircase (blocked by isOnStaircase)", () => {
+      // This is handled by the existing isOnStaircase function
+      // The sub-tile boundary doesn't add additional movement restrictions
+      expect(isOnStaircase({ x: 2, y: 3 })).toBe(true);
+      expect(isOnStaircase({ x: 2, y: 4 })).toBe(true);
+    });
+  });
+});
