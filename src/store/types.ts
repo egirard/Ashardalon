@@ -427,7 +427,65 @@ export const INITIAL_TILE_DECK: string[] = [
 ];
 
 /**
+ * Sub-tile identifier for the start tile.
+ * The start tile consists of two joined sub-tiles:
+ * - 'north': The north half (y: 0-3)
+ * - 'south': The south half (y: 4-7)
+ * 
+ * Each sub-tile is treated as its own tile for movement and counting purposes,
+ * but the start tile is displayed and referenced as a single unified tile.
+ */
+export type StartTileSubTileId = 'start-tile-north' | 'start-tile-south';
+
+/**
+ * Constants for start tile sub-tile boundaries.
+ * The start tile is divided into two 4x4 sub-tiles along the y-axis.
+ */
+export const START_TILE_SUB_TILE_BOUNDARY = {
+  /** Y coordinate where the north sub-tile ends (inclusive) */
+  northMaxY: 3,
+  /** Y coordinate where the south sub-tile starts (inclusive) */
+  southMinY: 4,
+};
+
+/**
+ * Check if a y-coordinate is in the north half of the start tile
+ */
+export function isInNorthSubTile(y: number): boolean {
+  return y >= 0 && y <= START_TILE_SUB_TILE_BOUNDARY.northMaxY;
+}
+
+/**
+ * Check if a y-coordinate is in the south half of the start tile
+ */
+export function isInSouthSubTile(y: number): boolean {
+  return y >= START_TILE_SUB_TILE_BOUNDARY.southMinY && y <= 7;
+}
+
+/**
+ * Get the sub-tile ID for a position on the start tile
+ * @param y - The y coordinate within the start tile (0-7)
+ * @returns The sub-tile ID ('start-tile-north' or 'start-tile-south'), or null if outside start tile bounds
+ */
+export function getStartTileSubTileId(y: number): StartTileSubTileId | null {
+  if (isInNorthSubTile(y)) {
+    return 'start-tile-north';
+  }
+  if (isInSouthSubTile(y)) {
+    return 'start-tile-south';
+  }
+  return null;
+}
+
+/**
  * Start tile definition - double height tile with 4 unexplored edges
+ * 
+ * The start tile is a special double-sized tile composed of two joined sub-tiles:
+ * - North sub-tile: y coordinates 0-3
+ * - South sub-tile: y coordinates 4-7
+ * 
+ * For visual and exploration purposes, it's treated as one tile with 4 edges.
+ * For movement and tile counting purposes, each sub-tile is treated separately.
  */
 export const START_TILE: PlacedTile = {
   id: 'start-tile',
