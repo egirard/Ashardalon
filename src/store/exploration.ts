@@ -8,7 +8,7 @@ import type {
   DungeonState,
   TileDefinition
 } from './types';
-import { TILE_DEFINITIONS, START_TILE } from './types';
+import { TILE_DEFINITIONS, START_TILE, getStartTileSubTileId } from './types';
 import { findTileAtPosition, isOnTileEdge } from './movement';
 
 /**
@@ -79,6 +79,9 @@ export function getOppositeDirection(direction: Direction): Direction {
 /**
  * Check if a hero is adjacent to an unexplored edge
  * Returns the unexplored edge if hero is on edge squares, null otherwise
+ * 
+ * For the start tile, east/west edges have sub-tile identifiers. The function
+ * determines which sub-tile the hero is in and returns the matching edge.
  */
 export function checkExploration(
   hero: HeroToken,
@@ -91,6 +94,11 @@ export function checkExploration(
     return null;
   }
   
+  // Get the hero's sub-tile ID if on the start tile
+  const heroSubTileId = heroTile.tileType === 'start' 
+    ? getStartTileSubTileId(hero.position.y) 
+    : undefined;
+  
   // Check each unexplored edge of the hero's current tile
   for (const edge of dungeon.unexploredEdges) {
     // Only check edges on the hero's current tile
@@ -100,6 +108,10 @@ export function checkExploration(
     
     // Check if hero is on an edge square for this direction using the generic isOnTileEdge
     if (isOnTileEdge(hero.position, heroTile, edge.direction)) {
+      // For start tile east/west edges with sub-tile IDs, match the hero's sub-tile
+      if (edge.subTileId && heroSubTileId && edge.subTileId !== heroSubTileId) {
+        continue; // Hero is in a different sub-tile than this edge
+      }
       return edge;
     }
   }
@@ -219,7 +231,13 @@ export function placeTile(
 }
 
 /**
- * Initialize the dungeon state with the start tile
+ * Initialize the dungeon state with the start tile.
+ * 
+ * The start tile has 6 unexplored edges:
+ * - 1 north edge (spans full width)
+ * - 1 south edge (spans full width)
+ * - 2 east edges (one for north sub-tile, one for south sub-tile)
+ * - 2 west edges (one for north sub-tile, one for south sub-tile)
  */
 export function initializeDungeon(): DungeonState {
   return {
@@ -227,8 +245,12 @@ export function initializeDungeon(): DungeonState {
     unexploredEdges: [
       { tileId: 'start-tile', direction: 'north' },
       { tileId: 'start-tile', direction: 'south' },
-      { tileId: 'start-tile', direction: 'east' },
-      { tileId: 'start-tile', direction: 'west' },
+      // East edges - one per sub-tile
+      { tileId: 'start-tile', direction: 'east', subTileId: 'start-tile-north' },
+      { tileId: 'start-tile', direction: 'east', subTileId: 'start-tile-south' },
+      // West edges - one per sub-tile
+      { tileId: 'start-tile', direction: 'west', subTileId: 'start-tile-north' },
+      { tileId: 'start-tile', direction: 'west', subTileId: 'start-tile-south' },
     ],
     tileDeck: [],
   };

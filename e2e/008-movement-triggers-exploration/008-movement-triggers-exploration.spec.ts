@@ -4,7 +4,8 @@ import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/scre
 // Test constants for better readability
 const INITIAL_TILE_DECK_SIZE = 8;
 const TILE_DECK_SIZE_AFTER_EXPLORATION = 7;
-const INITIAL_UNEXPLORED_EDGE_COUNT = 4;
+// Start tile has 6 unexplored edges: north, south, 2 east (per sub-tile), 2 west (per sub-tile)
+const INITIAL_UNEXPLORED_EDGE_COUNT = 6;
 
 /**
  * Start Tile Edge Positions:
