@@ -53,7 +53,6 @@
           height: `${indicatorLength}px`,
         };
       case 'west':
-        // Same positioning logic as east
         let westVerticalPosition: number;
         if (subTileId === 'start-tile-north') {
           westVerticalPosition = tileHeight / 4 - indicatorLength / 2;
