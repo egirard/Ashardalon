@@ -1063,7 +1063,7 @@ describe("gameSlice", () => {
       expect(state.monsters[0].tileId).toBe("tile-1");
     });
 
-    it("should place monster at tile center position", () => {
+    it("should place monster at black square position", () => {
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
@@ -1100,8 +1100,74 @@ describe("gameSlice", () => {
 
       const state = gameReducer(gameInProgress, endHeroPhase());
 
-      // Monster should be at center (2, 2)
-      expect(state.monsters[0].position).toEqual({ x: 2, y: 2 });
+      // Hero explores north edge, tile placed with 0° rotation (arrow points south)
+      // Black square is at (1, 3) - the south edge center position
+      expect(state.monsters[0].position).toEqual({ x: 1, y: 3 });
+    });
+
+    it("should place monster at adjacent position when black square is occupied", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east" },
+            { tileId: "start-tile", direction: "west" },
+          ],
+          tileDeck: ["tile-black-2exit-a"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold", "snake"],
+          discardPile: [],
+        },
+        // Pre-place a monster at the black square position on the tile that will be created
+        // Note: The new tile will get id "tile-1", and black square at (1, 3) with 0° rotation
+        monsters: [
+          { 
+            monsterId: "cultist", 
+            instanceId: "cultist-0", 
+            position: { x: 1, y: 3 }, 
+            currentHp: 2, 
+            controllerId: "quinn", 
+            tileId: "tile-1"  // This is the id the new tile will get
+          },
+        ],
+        monsterInstanceCounter: 1,
+      });
+
+      const state = gameReducer(gameInProgress, endHeroPhase());
+
+      // Should have 2 monsters now
+      expect(state.monsters).toHaveLength(2);
+      
+      // The new monster should NOT be at the black square (1, 3) since it's occupied
+      const newMonster = state.monsters.find(m => m.instanceId === "kobold-1");
+      expect(newMonster).not.toBeUndefined();
+      expect(newMonster?.position).not.toEqual({ x: 1, y: 3 });
+      
+      // It should be at an adjacent position
+      if (newMonster) {
+        const dx = Math.abs(newMonster.position.x - 1);
+        const dy = Math.abs(newMonster.position.y - 3);
+        // Adjacent means dx <= 1 and dy <= 1 but not (0, 0)
+        expect(dx <= 1 && dy <= 1 && (dx > 0 || dy > 0)).toBe(true);
+      }
     });
 
     it("should clear recently spawned monster ID on next endHeroPhase when no exploration", () => {

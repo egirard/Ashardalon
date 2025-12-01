@@ -36,7 +36,7 @@ import {
   initializeMonsterDeck,
   drawMonster,
   createMonsterInstance,
-  getTileMonsterSpawnPosition,
+  getMonsterSpawnPosition,
   discardMonster,
   getMonsterById,
 } from "./monsters";
@@ -583,21 +583,26 @@ export const gameSlice = createSlice({
             const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
             
             if (drawnMonsterId) {
-              // Create monster instance at tile center
-              const monsterPosition = getTileMonsterSpawnPosition();
-              const monsterInstance = createMonsterInstance(
-                drawnMonsterId,
-                monsterPosition,
-                currentToken.heroId, // Monster is controlled by the exploring hero
-                newTile.id,
-                state.monsterInstanceCounter
-              );
+              // Get spawn position (black square, or adjacent if occupied)
+              const monsterPosition = getMonsterSpawnPosition(newTile, state.monsters);
               
-              if (monsterInstance) {
-                state.monsters.push(monsterInstance);
-                state.monsterInstanceCounter += 1;
-                state.recentlySpawnedMonsterId = monsterInstance.instanceId;
+              if (monsterPosition) {
+                const monsterInstance = createMonsterInstance(
+                  drawnMonsterId,
+                  monsterPosition,
+                  currentToken.heroId, // Monster is controlled by the exploring hero
+                  newTile.id,
+                  state.monsterInstanceCounter
+                );
+                
+                if (monsterInstance) {
+                  state.monsters.push(monsterInstance);
+                  state.monsterInstanceCounter += 1;
+                  state.recentlySpawnedMonsterId = monsterInstance.instanceId;
+                }
               }
+              // Note: If no valid spawn position, monster card is still drawn but not placed
+              // This could happen if all positions on the tile are occupied (rare edge case)
               
               state.monsterDeck = updatedMonsterDeck;
             }
