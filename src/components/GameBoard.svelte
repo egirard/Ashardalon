@@ -935,12 +935,13 @@
             />
 
             <!-- Unexplored edge indicators for this tile -->
-            {#each dungeon.unexploredEdges.filter((e) => e.tileId === tile.id) as edge (edge.direction)}
+            {#each dungeon.unexploredEdges.filter((e) => e.tileId === tile.id) as edge (`${edge.direction}-${edge.subTileId || 'default'}`)}
               <UnexploredEdgeIndicator
                 direction={edge.direction}
                 cellSize={TILE_CELL_SIZE}
                 tileWidth={tileDims.width}
                 tileHeight={tileDims.height}
+                subTileId={edge.subTileId}
               />
             {/each}
           </div>

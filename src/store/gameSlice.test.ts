@@ -782,7 +782,8 @@ describe("gameSlice", () => {
         initialState,
         startGame({ heroIds: ["quinn"] }),
       );
-      expect(state.dungeon.unexploredEdges).toHaveLength(4);
+      // Start tile has 6 unexplored edges: north, south, 2 east (per sub-tile), 2 west (per sub-tile)
+      expect(state.dungeon.unexploredEdges).toHaveLength(6);
     });
 
     it("should reset dungeon state on game reset", () => {
@@ -824,7 +825,8 @@ describe("gameSlice", () => {
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.dungeon.tiles).toHaveLength(1);
       expect(state.dungeon.tiles[0].id).toBe("start-tile");
-      expect(state.dungeon.unexploredEdges).toHaveLength(4);
+      // Start tile has 6 unexplored edges: north, south, 2 east (per sub-tile), 2 west (per sub-tile)
+      expect(state.dungeon.unexploredEdges).toHaveLength(6);
       expect(state.dungeon.tileDeck).toHaveLength(0);
       expect(state.monsters).toHaveLength(0);
       expect(state.monsterInstanceCounter).toBe(0);

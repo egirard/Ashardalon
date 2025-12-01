@@ -321,11 +321,19 @@ export type Direction = 'north' | 'south' | 'east' | 'west';
 export type EdgeType = 'wall' | 'open' | 'unexplored';
 
 /**
- * Reference to a specific edge on a tile
+ * Reference to a specific edge on a tile.
+ * For the start tile, the `subTileId` field indicates which sub-tile the edge belongs to
+ * when there are multiple edges on the same side (e.g., north and south halves of the east edge).
  */
 export interface TileEdge {
   tileId: string;
   direction: Direction;
+  /** 
+   * Optional sub-tile identifier for start tile edges.
+   * Used for east/west edges which have two exits (one per sub-tile).
+   * Values: 'start-tile-north' or 'start-tile-south'
+   */
+  subTileId?: StartTileSubTileId;
 }
 
 /**

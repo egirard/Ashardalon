@@ -1,14 +1,16 @@
 <script lang="ts">
-  import type { Direction } from '../store/types';
+  import type { Direction, StartTileSubTileId } from '../store/types';
   
   interface Props {
     direction: Direction;
     cellSize: number;
     tileWidth: number;
     tileHeight: number;
+    /** Optional sub-tile ID for start tile edges with multiple exits per side */
+    subTileId?: StartTileSubTileId;
   }
   
-  let { direction, cellSize, tileWidth, tileHeight }: Props = $props();
+  let { direction, cellSize, tileWidth, tileHeight, subTileId }: Props = $props();
   
   // Calculate position and size for the indicator based on direction
   const getIndicatorStyle = () => {
@@ -32,16 +34,37 @@
           height: `${indicatorThickness}px`,
         };
       case 'east':
+        // For start tile sub-tiles, position at the center of each sub-tile half
+        // North sub-tile: center at 1/4 of tile height
+        // South sub-tile: center at 3/4 of tile height
+        // Regular tile: center at 1/2 of tile height
+        let eastVerticalPosition: number;
+        if (subTileId === 'start-tile-north') {
+          eastVerticalPosition = tileHeight / 4 - indicatorLength / 2;
+        } else if (subTileId === 'start-tile-south') {
+          eastVerticalPosition = (3 * tileHeight) / 4 - indicatorLength / 2;
+        } else {
+          eastVerticalPosition = tileHeight / 2 - indicatorLength / 2;
+        }
         return {
           right: `${offset - indicatorThickness / 2}px`,
-          top: `${tileHeight / 2 - indicatorLength / 2}px`,
+          top: `${eastVerticalPosition}px`,
           width: `${indicatorThickness}px`,
           height: `${indicatorLength}px`,
         };
       case 'west':
+        // Same positioning logic as east
+        let westVerticalPosition: number;
+        if (subTileId === 'start-tile-north') {
+          westVerticalPosition = tileHeight / 4 - indicatorLength / 2;
+        } else if (subTileId === 'start-tile-south') {
+          westVerticalPosition = (3 * tileHeight) / 4 - indicatorLength / 2;
+        } else {
+          westVerticalPosition = tileHeight / 2 - indicatorLength / 2;
+        }
         return {
           left: `${offset - indicatorThickness / 2}px`,
-          top: `${tileHeight / 2 - indicatorLength / 2}px`,
+          top: `${westVerticalPosition}px`,
           width: `${indicatorThickness}px`,
           height: `${indicatorLength}px`,
         };
