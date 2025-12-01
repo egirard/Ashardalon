@@ -2,16 +2,33 @@
   import type { Monster } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { assetPath } from '../utils';
+  import type { EdgePosition } from '../store/heroesSlice';
   
   interface Props {
     monsterId: string;
     onDismiss?: () => void;
+    edge?: EdgePosition;
   }
   
-  let { monsterId, onDismiss }: Props = $props();
+  let { monsterId, onDismiss, edge = 'bottom' }: Props = $props();
   
   // Get monster definition
   const monster = $derived(MONSTERS.find(m => m.id === monsterId));
+  
+  // Get the rotation angle for the card based on the edge
+  function getRotation(): number {
+    switch (edge) {
+      case 'top':
+        return 180;
+      case 'left':
+        return 90;
+      case 'right':
+        return -90;
+      case 'bottom':
+      default:
+        return 0;
+    }
+  }
   
   function handleDismiss() {
     if (onDismiss) {
@@ -45,6 +62,7 @@
       onkeydown={(e) => e.stopPropagation()}
       role="article"
       data-testid="monster-card"
+      style="transform: rotate({getRotation()}deg);"
     >
       <div class="card-header">
         <h3 class="monster-name" data-testid="monster-name">{monster.name}</h3>
