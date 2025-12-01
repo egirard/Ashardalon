@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { EncounterCard, EncounterType } from '../store/types';
   import { ENCOUNTER_CANCEL_COST } from '../store/types';
-  import { assetPath } from '../utils';
+  import { assetPath, getEdgeRotation } from '../utils';
   import type { EdgePosition } from '../store/heroesSlice';
   
   interface Props {
@@ -16,21 +16,6 @@
   
   // Check if the cancel option is available (party has enough XP)
   let canCancel = $derived(partyXp >= ENCOUNTER_CANCEL_COST);
-  
-  // Get the rotation angle for the card based on the edge
-  function getRotation(): number {
-    switch (edge) {
-      case 'top':
-        return 180;
-      case 'left':
-        return 90;
-      case 'right':
-        return -90;
-      case 'bottom':
-      default:
-        return 0;
-    }
-  }
   
   function handleDismiss() {
     if (onDismiss) {
@@ -109,7 +94,7 @@
     onkeydown={(e) => e.stopPropagation()}
     role="article"
     data-testid="encounter-card"
-    style="transform: rotate({getRotation()}deg);"
+    style="transform: rotate({getEdgeRotation(edge)}deg);"
   >
     <div class="card-header">
       <span class="type-badge" data-testid="encounter-type">
