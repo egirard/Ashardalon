@@ -12,6 +12,8 @@ import {
   getTileBounds,
   findTileAtPosition,
   isDiagonalBlockedByWalls,
+  isOnWallSquare,
+  getLocalTileCoordinates,
 } from "./movement";
 import type { HeroToken, Position, DungeonState, PlacedTile } from "./types";
 
@@ -548,6 +550,164 @@ describe("movement utilities", () => {
     });
   });
 
+  describe("wall square detection", () => {
+    // Helper to create a normal tile with specific edges
+    function createTile(id: string, col: number, row: number, edges: { north: 'wall' | 'open'; south: 'wall' | 'open'; east: 'wall' | 'open'; west: 'wall' | 'open' }): PlacedTile {
+      return {
+        id,
+        tileType: 'tile-2exit-a',
+        position: { col, row },
+        rotation: 0,
+        edges,
+      };
+    }
+
+    describe("getLocalTileCoordinates", () => {
+      it("should return correct local coordinates for positions on start tile", () => {
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'open', south: 'open', east: 'open', west: 'open' },
+        };
+        
+        // Start tile bounds: x=0-3, y=0-7
+        expect(getLocalTileCoordinates({ x: 0, y: 0 }, startTile)).toEqual({ localX: 0, localY: 0 });
+        expect(getLocalTileCoordinates({ x: 3, y: 7 }, startTile)).toEqual({ localX: 3, localY: 7 });
+        expect(getLocalTileCoordinates({ x: 2, y: 3 }, startTile)).toEqual({ localX: 2, localY: 3 });
+      });
+
+      it("should return correct local coordinates for positions on normal tile east of start", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'open', south: 'open', east: 'open', west: 'open' });
+        
+        // Tile at col=1 has bounds: x=4-7, y=0-3
+        expect(getLocalTileCoordinates({ x: 4, y: 0 }, tile)).toEqual({ localX: 0, localY: 0 });
+        expect(getLocalTileCoordinates({ x: 7, y: 3 }, tile)).toEqual({ localX: 3, localY: 3 });
+        expect(getLocalTileCoordinates({ x: 5, y: 1 }, tile)).toEqual({ localX: 1, localY: 1 });
+      });
+    });
+
+    describe("isOnWallSquare", () => {
+      it("should return false for interior positions", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'wall', south: 'wall', east: 'wall', west: 'wall' });
+        
+        // Interior positions (localX: 1-2, localY: 1-2) are not on walls
+        expect(isOnWallSquare(1, 1, tile)).toBe(false);
+        expect(isOnWallSquare(2, 2, tile)).toBe(false);
+        expect(isOnWallSquare(1, 2, tile)).toBe(false);
+        expect(isOnWallSquare(2, 1, tile)).toBe(false);
+      });
+
+      it("should return true for north edge when north is wall", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'wall', south: 'open', east: 'open', west: 'open' });
+        
+        // North edge is y=0
+        expect(isOnWallSquare(0, 0, tile)).toBe(true);
+        expect(isOnWallSquare(1, 0, tile)).toBe(true);
+        expect(isOnWallSquare(2, 0, tile)).toBe(true);
+        expect(isOnWallSquare(3, 0, tile)).toBe(true);
+        // Not on north edge
+        expect(isOnWallSquare(1, 1, tile)).toBe(false);
+      });
+
+      it("should return true for south edge when south is wall", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'open', south: 'wall', east: 'open', west: 'open' });
+        
+        // South edge is y=3
+        expect(isOnWallSquare(0, 3, tile)).toBe(true);
+        expect(isOnWallSquare(1, 3, tile)).toBe(true);
+        expect(isOnWallSquare(2, 3, tile)).toBe(true);
+        expect(isOnWallSquare(3, 3, tile)).toBe(true);
+        // Not on south edge
+        expect(isOnWallSquare(1, 2, tile)).toBe(false);
+      });
+
+      it("should return true for east edge when east is wall", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'open', south: 'open', east: 'wall', west: 'open' });
+        
+        // East edge is x=3
+        expect(isOnWallSquare(3, 0, tile)).toBe(true);
+        expect(isOnWallSquare(3, 1, tile)).toBe(true);
+        expect(isOnWallSquare(3, 2, tile)).toBe(true);
+        expect(isOnWallSquare(3, 3, tile)).toBe(true);
+        // Not on east edge
+        expect(isOnWallSquare(2, 1, tile)).toBe(false);
+      });
+
+      it("should return true for west edge when west is wall", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'open', south: 'open', east: 'open', west: 'wall' });
+        
+        // West edge is x=0
+        expect(isOnWallSquare(0, 0, tile)).toBe(true);
+        expect(isOnWallSquare(0, 1, tile)).toBe(true);
+        expect(isOnWallSquare(0, 2, tile)).toBe(true);
+        expect(isOnWallSquare(0, 3, tile)).toBe(true);
+        // Not on west edge
+        expect(isOnWallSquare(1, 1, tile)).toBe(false);
+      });
+
+      it("should return false for open edges", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'open', south: 'open', east: 'open', west: 'open' });
+        
+        // All edges are open, no wall squares
+        expect(isOnWallSquare(0, 0, tile)).toBe(false);
+        expect(isOnWallSquare(3, 0, tile)).toBe(false);
+        expect(isOnWallSquare(0, 3, tile)).toBe(false);
+        expect(isOnWallSquare(3, 3, tile)).toBe(false);
+      });
+
+      it("should return false for start tile (uses different wall logic)", () => {
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' },
+        };
+        
+        // Start tile uses isOnStaircase and x<1 check instead
+        expect(isOnWallSquare(0, 0, startTile)).toBe(false);
+        expect(isOnWallSquare(1, 3, startTile)).toBe(false);
+      });
+    });
+
+    describe("isValidSquare with wall squares", () => {
+      it("should return false for wall squares on normal tiles", () => {
+        const tile = createTile('tile-1', 1, 0, { north: 'wall', south: 'open', east: 'wall', west: 'open' });
+        const startTile: PlacedTile = {
+          id: 'start-tile',
+          tileType: 'start',
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: 'open', south: 'open', east: 'open', west: 'open' },
+        };
+        
+        const dungeon: DungeonState = {
+          tiles: [startTile, tile],
+          unexploredEdges: [],
+          tileDeck: [],
+        };
+        
+        // North wall squares (y=0 on tile-1, which is global y=0, x=4-7)
+        expect(isValidSquare({ x: 4, y: 0 }, dungeon)).toBe(false);
+        expect(isValidSquare({ x: 5, y: 0 }, dungeon)).toBe(false);
+        expect(isValidSquare({ x: 6, y: 0 }, dungeon)).toBe(false);
+        expect(isValidSquare({ x: 7, y: 0 }, dungeon)).toBe(false);
+        
+        // East wall squares (x=7)
+        expect(isValidSquare({ x: 7, y: 1 }, dungeon)).toBe(false);
+        expect(isValidSquare({ x: 7, y: 2 }, dungeon)).toBe(false);
+        expect(isValidSquare({ x: 7, y: 3 }, dungeon)).toBe(false);
+        
+        // Interior positions should be valid
+        expect(isValidSquare({ x: 5, y: 1 }, dungeon)).toBe(true);
+        expect(isValidSquare({ x: 5, y: 2 }, dungeon)).toBe(true);
+        expect(isValidSquare({ x: 6, y: 2 }, dungeon)).toBe(true);
+      });
+    });
+  });
+
   describe("wall collision for diagonal movement", () => {
     // Helper to create a normal tile with specific walls
     function createTileWithWalls(edges: { north?: boolean; south?: boolean; east?: boolean; west?: boolean }): PlacedTile {
@@ -617,7 +777,7 @@ describe("movement utilities", () => {
     });
 
     describe("getAdjacentPositions with walls", () => {
-      it("should not include diagonal position when both connected edges have walls", () => {
+      it("should not include wall squares as valid movement destinations", () => {
         // Create a tile with north and east walls
         const tile: PlacedTile = {
           id: 'tile-1',
@@ -646,32 +806,32 @@ describe("movement utilities", () => {
           tileDeck: [],
         };
 
-        // Position at north-east corner of tile-1 (x=7, y=0)
+        // Position at interior of tile-1 (x=5, y=1) - not on any wall edge
         // Tile-1 bounds: x=4-7, y=0-3
-        const pos = { x: 7, y: 0 };
+        // Wall squares: y=0 (north), x=7 (east)
+        const pos = { x: 5, y: 1 };
         const adjacent = getAdjacentPositions(pos, dungeon);
 
-        // Should NOT include diagonal up-right (would be x=8, y=-1 which is off tile anyway)
-        // But more importantly, should NOT include positions that would require diagonal through corner walls
-        // At x=7, y=0 with north and east walls, up-right diagonal should be blocked
-        // The new position (8, -1) is off tile, but (6, 1) is valid (down-left)
+        // Should include valid interior positions
+        expect(adjacent.some(p => p.x === 5 && p.y === 2)).toBe(true); // south
+        expect(adjacent.some(p => p.x === 4 && p.y === 1)).toBe(true); // west
+        expect(adjacent.some(p => p.x === 6 && p.y === 1)).toBe(true); // east (not on wall edge yet)
+        expect(adjacent.some(p => p.x === 6 && p.y === 2)).toBe(true); // southeast diagonal
         
-        // Verify that valid adjacent positions within the tile don't include blocked diagonals
-        // From (7, 0), can go south (7, 1), west (6, 0), and diagonals within tile
-        expect(adjacent.some(p => p.x === 7 && p.y === 1)).toBe(true); // south
-        expect(adjacent.some(p => p.x === 6 && p.y === 0)).toBe(true); // west
+        // Should NOT include wall squares (y=0 is wall due to north wall)
+        expect(adjacent.some(p => p.y === 0)).toBe(false);
       });
 
-      it("should allow diagonal movement when only one wall blocks", () => {
+      it("should not include east wall squares when east edge is wall", () => {
         const tile: PlacedTile = {
           id: 'tile-1',
           tileType: 'tile-2exit-a',
           position: { col: 1, row: 0 },
           rotation: 0,
           edges: {
-            north: 'wall',
+            north: 'open',
             south: 'open',
-            east: 'open', // East is open
+            east: 'wall',
             west: 'open',
           },
         };
@@ -690,18 +850,23 @@ describe("movement utilities", () => {
           tileDeck: [],
         };
 
-        // Position at north edge but not corner (x=5, y=0)
-        const pos = { x: 5, y: 0 };
+        // Position adjacent to east wall (x=6, y=1)
+        // East wall is at x=7 (local x=3)
+        const pos = { x: 6, y: 1 };
         const adjacent = getAdjacentPositions(pos, dungeon);
 
-        // Should include diagonal down-right and down-left (within tile)
-        expect(adjacent.some(p => p.x === 6 && p.y === 1)).toBe(true); // down-right
-        expect(adjacent.some(p => p.x === 4 && p.y === 1)).toBe(true); // down-left
+        // Should NOT include x=7 positions (east wall)
+        expect(adjacent.some(p => p.x === 7)).toBe(false);
+        
+        // Should include other valid positions
+        expect(adjacent.some(p => p.x === 5 && p.y === 1)).toBe(true); // west
+        expect(adjacent.some(p => p.x === 6 && p.y === 0)).toBe(true); // north (not a wall)
+        expect(adjacent.some(p => p.x === 6 && p.y === 2)).toBe(true); // south
       });
     });
 
     describe("getValidMoveSquares with wall constraints", () => {
-      it("should not include positions reachable only through wall-blocked diagonals", () => {
+      it("should not include wall squares in valid movement destinations", () => {
         // Create a tile with walls on north and east
         const tile: PlacedTile = {
           id: 'tile-1',
@@ -731,18 +896,22 @@ describe("movement utilities", () => {
         };
 
         const heroTokens: HeroToken[] = [
-          { heroId: 'quinn', position: { x: 7, y: 0 } }, // At north-east corner of tile-1
+          { heroId: 'quinn', position: { x: 5, y: 1 } }, // At interior of tile-1
         ];
 
-        // With speed 1, from corner with both walls, diagonal moves should be limited
-        const squares = getValidMoveSquares({ x: 7, y: 0 }, 1, heroTokens, 'quinn', dungeon);
+        // With speed 3, should be able to reach many positions but not walls
+        const squares = getValidMoveSquares({ x: 5, y: 1 }, 3, heroTokens, 'quinn', dungeon);
 
-        // Should include south (7, 1), west (6, 0)
-        expect(squares.some(s => s.x === 7 && s.y === 1)).toBe(true);
-        expect(squares.some(s => s.x === 6 && s.y === 0)).toBe(true);
+        // Should NOT include north wall squares (y=0)
+        expect(squares.some(s => s.y === 0 && s.x >= 4 && s.x <= 7)).toBe(false);
         
-        // Should include south-west diagonal (6, 1) since that's not blocked by the north+east walls
-        expect(squares.some(s => s.x === 6 && s.y === 1)).toBe(true);
+        // Should NOT include east wall squares (x=7)
+        expect(squares.some(s => s.x === 7)).toBe(false);
+        
+        // Should include interior positions
+        expect(squares.some(s => s.x === 5 && s.y === 2)).toBe(true);
+        expect(squares.some(s => s.x === 6 && s.y === 2)).toBe(true);
+        expect(squares.some(s => s.x === 4 && s.y === 1)).toBe(true);
       });
     });
   });

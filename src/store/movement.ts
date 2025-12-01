@@ -221,6 +221,62 @@ export function isOnStaircase(pos: Position): boolean {
 }
 
 /**
+ * Check if a position is on a wall square within a normal (non-start) tile.
+ * Wall squares are determined by the tile's edge configuration:
+ * - When an edge is 'wall' (not 'open' or 'unexplored'), the squares along that edge are walls
+ * 
+ * @param localX - X coordinate relative to the tile's bounds (0-3 for normal tiles)
+ * @param localY - Y coordinate relative to the tile's bounds (0-3 for normal tiles)
+ * @param tile - The placed tile to check
+ * @returns true if the position is a wall square
+ */
+export function isOnWallSquare(localX: number, localY: number, tile: PlacedTile): boolean {
+  // For start tile, use existing logic (handled elsewhere)
+  if (tile.tileType === 'start') {
+    return false;
+  }
+  
+  const tileSize = NORMAL_TILE_SIZE; // 4x4
+  
+  // Check each edge - if it's a wall, the squares along that edge are walls
+  // North edge (y = 0)
+  if (tile.edges.north === 'wall' && localY === 0) {
+    return true;
+  }
+  
+  // South edge (y = 3)
+  if (tile.edges.south === 'wall' && localY === tileSize - 1) {
+    return true;
+  }
+  
+  // West edge (x = 0)
+  if (tile.edges.west === 'wall' && localX === 0) {
+    return true;
+  }
+  
+  // East edge (x = 3)
+  if (tile.edges.east === 'wall' && localX === tileSize - 1) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Convert a global position to local tile coordinates.
+ * @param pos - Global position
+ * @param tile - The tile to get local coordinates for
+ * @returns Local coordinates (0-based within the tile)
+ */
+export function getLocalTileCoordinates(pos: Position, tile: PlacedTile): { localX: number; localY: number } {
+  const bounds = getTileBounds(tile);
+  return {
+    localX: pos.x - bounds.minX,
+    localY: pos.y - bounds.minY,
+  };
+}
+
+/**
  * Check if a position is a valid walkable square on any tile in the dungeon.
  * If no dungeon is provided, falls back to checking only the start tile.
  */
@@ -244,6 +300,13 @@ export function isValidSquare(pos: Position, dungeon?: DungeonState): boolean {
     if (pos.x < 1) {
       return false;
     }
+    return true;
+  }
+  
+  // For normal tiles, check if position is on a wall square
+  const { localX, localY } = getLocalTileCoordinates(pos, tile);
+  if (isOnWallSquare(localX, localY, tile)) {
+    return false;
   }
   
   return true;
@@ -454,10 +517,9 @@ export function getAdjacentPositions(pos: Position, dungeon?: DungeonState): Pos
     }
     
     // Check validity based on tile-specific rules (staircase, walls, etc.)
-    if (targetTile.tileType === 'start') {
-      if (isOnStaircase(newPos) || newPos.x < 1) {
-        continue;
-      }
+    // This now handles both start tile and normal tile wall squares
+    if (!isValidSquare(newPos, dungeon)) {
+      continue;
     }
     
     // If same tile, movement is allowed (including diagonal) unless blocked by walls
