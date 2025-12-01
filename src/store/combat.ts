@@ -25,46 +25,6 @@ export function checkPartyDefeat(
 }
 
 /**
- * Check if a hero can voluntarily use an action surge at the start of their turn.
- * Requirements: hero HP is below max and surges are available.
- * This allows proactive healing before combat.
- */
-export function canUseActionSurge(
-  heroState: HeroHpState,
-  resources: PartyResources
-): boolean {
-  return heroState.currentHp < heroState.maxHp && resources.healingSurges > 0;
-}
-
-/**
- * Use an action surge voluntarily to restore hero HP.
- * Adds the surge value to current HP (capped at maxHp).
- * @param heroState Current hero HP state
- * @param resources Current party resources
- * @returns Updated hero state and party resources
- */
-export function useActionSurge(
-  heroState: HeroHpState,
-  resources: PartyResources
-): { heroState: HeroHpState; resources: PartyResources; hpRestored: number } {
-  const surgeValue = heroState.surgeValue;
-  const newHp = Math.min(heroState.currentHp + surgeValue, heroState.maxHp);
-  const hpRestored = newHp - heroState.currentHp;
-  
-  return {
-    heroState: {
-      ...heroState,
-      currentHp: newHp,
-    },
-    resources: {
-      ...resources,
-      healingSurges: resources.healingSurges - 1,
-    },
-    hpRestored,
-  };
-}
-
-/**
  * Use a healing surge to restore hero HP
  * @param heroState Current hero HP state
  * @param resources Current party resources

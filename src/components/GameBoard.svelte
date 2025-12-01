@@ -1203,14 +1203,13 @@
     />
   {/if}
 
-  <!-- Action Surge Prompt (shown at start of hero's turn when HP < maxHp with surges available) -->
+  <!-- Action Surge Prompt (shown at start of hero's turn when HP = 0 with surges available) -->
   {#if showActionSurgePrompt}
     {@const currentHeroId = getCurrentHeroId()}
     {@const currentHeroHp = currentHeroId ? heroHp.find(h => h.heroId === currentHeroId) : undefined}
     {#if currentHeroId && currentHeroHp}
       <ActionSurgePrompt
         heroId={currentHeroId}
-        currentHp={currentHeroHp.currentHp}
         maxHp={currentHeroHp.maxHp}
         surgeValue={currentHeroHp.surgeValue}
         surgesToRemaining={partyResources.healingSurges}
