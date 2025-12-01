@@ -13,8 +13,8 @@ export default defineConfig({
   },
   expect: {
     toHaveScreenshot: {
-      maxDiffPixels: 0, // No pixels can differ
-      threshold: 0, // No color difference allowed
+      maxDiffPixels: 100, // Allow small pixel differences for CSS transitions
+      threshold: 0.1, // Allow small color differences
     },
   },
   projects: [

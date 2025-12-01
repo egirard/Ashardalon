@@ -90,6 +90,18 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
       expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
     }).toPass();
 
+    // Hide the movement overlay for a stable screenshot
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/hideMovement' });
+    });
+
+    // Wait for movement overlay to be hidden
+    await page.waitForFunction(() => {
+      const buttons = document.querySelectorAll('[data-testid^="move-to-"]');
+      return buttons.length === 0;
+    });
+
     await screenshots.capture(page, 'game-board', {
       programmaticCheck: async () => {
         // Verify game board is visible with tabletop layout
