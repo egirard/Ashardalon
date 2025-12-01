@@ -513,6 +513,10 @@ export const gameSlice = createSlice({
         return;
       }
       
+      // Clear movement overlay when exiting hero phase
+      state.validMoveSquares = [];
+      state.showingMovement = false;
+      
       // Clear any previously spawned monster display
       state.recentlySpawnedMonsterId = null;
       

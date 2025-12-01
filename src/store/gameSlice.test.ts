@@ -570,6 +570,29 @@ describe("gameSlice", () => {
       expect(state.turnState.currentPhase).toBe("exploration-phase");
     });
 
+    it("should clear movement overlay when transitioning to exploration phase", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 3, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 1 }],
+        showingMovement: true,
+        dungeon: {
+          tiles: [],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      });
+      const state = gameReducer(gameInProgress, endHeroPhase());
+      expect(state.turnState.currentPhase).toBe("exploration-phase");
+      expect(state.validMoveSquares).toEqual([]);
+      expect(state.showingMovement).toBe(false);
+    });
+
     it("should not transition if not in hero phase", () => {
       const gameInProgress = createGameState({
         currentScreen: "game-board",
