@@ -52,6 +52,8 @@ import {
   checkHealingSurgeNeeded,
   useHealingSurge,
   checkPartyDefeat,
+  canUseActionSurge,
+  useActionSurge,
 } from "./combat";
 import {
   initializeEncounterDeck,
@@ -163,6 +165,8 @@ export interface GameState {
   encounterDeck: EncounterDeck;
   /** Currently drawn encounter card (displayed during villain phase) */
   drawnEncounter: EncounterCard | null;
+  /** Whether to show the action surge prompt at start of turn (hero can voluntarily use a surge) */
+  showActionSurgePrompt: boolean;
 }
 
 const initialState: GameState = {
@@ -197,6 +201,7 @@ const initialState: GameState = {
   defeatReason: null,
   encounterDeck: { drawPile: [], discardPile: [] },
   drawnEncounter: null,
+  showActionSurgePrompt: false,
 };
 
 /**
@@ -504,6 +509,7 @@ export const gameSlice = createSlice({
       state.defeatReason = null;
       state.encounterDeck = { drawPile: [], discardPile: [] };
       state.drawnEncounter = null;
+      state.showActionSurgePrompt = false;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -655,6 +661,9 @@ export const gameSlice = createSlice({
       state.healingSurgeUsedHeroId = null;
       state.healingSurgeHpRestored = null;
       
+      // Clear action surge prompt
+      state.showActionSurgePrompt = false;
+      
       // Move to next hero
       state.turnState.currentHeroIndex = 
         (state.turnState.currentHeroIndex + 1) % state.heroTokens.length;
@@ -687,7 +696,7 @@ export const gameSlice = createSlice({
             return;
           }
           
-          // Otherwise, use a healing surge if needed
+          // Otherwise, use a healing surge if needed (hero at 0 HP - mandatory)
           if (checkHealingSurgeNeeded(heroHpState, state.partyResources)) {
             // Use a healing surge automatically
             const surgeResult = useHealingSurge(heroHpState, state.partyResources);
@@ -697,6 +706,9 @@ export const gameSlice = createSlice({
             // Set notification data for UI - use surge value as the HP restored amount
             state.healingSurgeUsedHeroId = currentHeroId;
             state.healingSurgeHpRestored = heroHpState.surgeValue;
+          } else if (canUseActionSurge(heroHpState, state.partyResources)) {
+            // Hero HP > 0 but < maxHp with surges available - show optional action surge prompt
+            state.showActionSurgePrompt = true;
           }
         }
       }
@@ -992,6 +1004,47 @@ export const gameSlice = createSlice({
       state.healingSurgeHpRestored = null;
     },
     /**
+     * Use an action surge voluntarily at the start of a hero's turn.
+     * This heals the hero by their surge value (capped at maxHp).
+     */
+    useVoluntaryActionSurge: (state) => {
+      if (state.turnState.currentPhase !== "hero-phase" || !state.showActionSurgePrompt) {
+        return;
+      }
+      
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (!currentHeroId) return;
+      
+      const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+      if (heroHpIndex === -1) return;
+      
+      const heroHpState = state.heroHp[heroHpIndex];
+      
+      // Check if can use action surge
+      if (!canUseActionSurge(heroHpState, state.partyResources)) {
+        return;
+      }
+      
+      // Use the action surge
+      const surgeResult = useActionSurge(heroHpState, state.partyResources);
+      state.heroHp[heroHpIndex] = surgeResult.heroState;
+      state.partyResources = surgeResult.resources;
+      
+      // Set notification data for UI
+      state.healingSurgeUsedHeroId = currentHeroId;
+      state.healingSurgeHpRestored = surgeResult.hpRestored;
+      
+      // Hide the prompt
+      state.showActionSurgePrompt = false;
+    },
+    /**
+     * Skip the action surge prompt (decline to use the surge).
+     * This allows the hero to proceed with their turn without using a surge.
+     */
+    skipActionSurge: (state) => {
+      state.showActionSurgePrompt = false;
+    },
+    /**
      * Set hero HP directly (for testing purposes)
      */
     setHeroHp: (state, action: PayloadAction<{ heroId: string; hp: number }>) => {
@@ -1040,5 +1093,7 @@ export const {
   setHeroHp,
   dismissLevelUpNotification,
   setPartyResources,
+  useVoluntaryActionSurge,
+  skipActionSurge,
 } = gameSlice.actions;
 export default gameSlice.reducer;

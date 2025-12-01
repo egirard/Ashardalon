@@ -21,6 +21,8 @@ import gameReducer, {
   dismissHealingSurgeNotification,
   setHeroHp,
   setPartyResources,
+  useVoluntaryActionSurge,
+  skipActionSurge,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -66,6 +68,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     defeatReason: null,
     encounterDeck: { drawPile: [], discardPile: [] },
     drawnEncounter: null,
+    showActionSurgePrompt: false,
     ...overrides,
   };
 }
@@ -3125,6 +3128,242 @@ describe("gameSlice", () => {
       const state = gameReducer(initialState, cancelEncounterCard());
 
       expect(state.partyResources.healingSurges).toBe(3);
+    });
+  });
+
+  describe("Action Surge (Voluntary Use)", () => {
+    it("should show action surge prompt when hero HP < maxHp with surges available at turn start", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 5, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        showActionSurgePrompt: false,
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.showActionSurgePrompt).toBe(true);
+      expect(state.turnState.currentPhase).toBe("hero-phase");
+    });
+
+    it("should NOT show action surge prompt when hero HP = maxHp", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        showActionSurgePrompt: false,
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.showActionSurgePrompt).toBe(false);
+    });
+
+    it("should NOT show action surge prompt when no surges available", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 5, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 0 },
+        showActionSurgePrompt: false,
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.showActionSurgePrompt).toBe(false);
+    });
+
+    it("should heal hero when using voluntary action surge", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 3, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        showActionSurgePrompt: true,
+      });
+
+      const state = gameReducer(initialState, useVoluntaryActionSurge());
+
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(7); // 3 + 4 = 7
+      expect(state.partyResources.healingSurges).toBe(1);
+      expect(state.showActionSurgePrompt).toBe(false);
+      expect(state.healingSurgeUsedHeroId).toBe("quinn");
+      expect(state.healingSurgeHpRestored).toBe(4);
+    });
+
+    it("should cap HP at maxHp when using action surge", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 6, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        showActionSurgePrompt: true,
+      });
+
+      const state = gameReducer(initialState, useVoluntaryActionSurge());
+
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(8); // 6 + 4 = 10, capped at 8
+      expect(state.healingSurgeHpRestored).toBe(2); // Only 2 HP actually restored
+    });
+
+    it("should hide prompt and not heal when skipping action surge", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 5, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        showActionSurgePrompt: true,
+      });
+
+      const state = gameReducer(initialState, skipActionSurge());
+
+      expect(state.showActionSurgePrompt).toBe(false);
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(5); // Unchanged
+      expect(state.partyResources.healingSurges).toBe(2); // Unchanged
+    });
+
+    it("should not allow using action surge when prompt is not shown", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 5, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        showActionSurgePrompt: false, // Prompt not shown
+      });
+
+      const state = gameReducer(initialState, useVoluntaryActionSurge());
+
+      // HP and surges should remain unchanged
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(5);
+      expect(state.partyResources.healingSurges).toBe(2);
+    });
+
+    it("should not allow using action surge during non-hero phase", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase", // Not hero phase
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 5, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+        showActionSurgePrompt: true,
+      });
+
+      const state = gameReducer(initialState, useVoluntaryActionSurge());
+
+      // HP and surges should remain unchanged
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(5);
+      expect(state.partyResources.healingSurges).toBe(2);
+    });
+
+    it("should clear action surge prompt on reset", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        showActionSurgePrompt: true,
+      });
+
+      const state = gameReducer(initialState, resetGame());
+
+      expect(state.showActionSurgePrompt).toBe(false);
+    });
+
+    it("should still auto-use surge when hero at 0 HP (mandatory)", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 1, // Vistra's turn
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [
+          { heroId: "quinn", currentHp: 0, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ],
+        partyResources: { xp: 0, healingSurges: 2 },
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      // Quinn is at 0 HP - should auto-use surge, not show optional prompt
+      expect(state.healingSurgeUsedHeroId).toBe("quinn");
+      expect(state.showActionSurgePrompt).toBe(false);
+      expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(4);
     });
   });
 });
