@@ -6,9 +6,13 @@ import {
   getMonsterById,
   createMonsterInstance,
   getTileMonsterSpawnPosition,
+  getBlackSquarePosition,
+  getAdjacentTilePositions,
+  isPositionOccupiedByMonster,
+  getMonsterSpawnPosition,
   shuffleArray,
 } from './monsters';
-import type { MonsterDeck } from './types';
+import type { MonsterDeck, MonsterState, PlacedTile } from './types';
 import { INITIAL_MONSTER_DECK, MONSTERS } from './types';
 
 describe('monsters', () => {
@@ -242,6 +246,206 @@ describe('monsters', () => {
     it('should return center position for normal tile', () => {
       const position = getTileMonsterSpawnPosition();
       expect(position).toEqual({ x: 2, y: 2 });
+    });
+  });
+
+  describe('getBlackSquarePosition', () => {
+    it('should return south edge center for 0° rotation (arrow points south)', () => {
+      const position = getBlackSquarePosition(0);
+      expect(position).toEqual({ x: 1, y: 3 });
+    });
+
+    it('should return west edge center for 90° rotation (arrow points west)', () => {
+      const position = getBlackSquarePosition(90);
+      expect(position).toEqual({ x: 0, y: 1 });
+    });
+
+    it('should return north edge center for 180° rotation (arrow points north)', () => {
+      const position = getBlackSquarePosition(180);
+      expect(position).toEqual({ x: 1, y: 0 });
+    });
+
+    it('should return east edge center for 270° rotation (arrow points east)', () => {
+      const position = getBlackSquarePosition(270);
+      expect(position).toEqual({ x: 3, y: 1 });
+    });
+
+    it('should handle negative rotations', () => {
+      // -90° should be equivalent to 270°
+      const position = getBlackSquarePosition(-90);
+      expect(position).toEqual({ x: 3, y: 1 });
+    });
+
+    it('should handle rotations > 360°', () => {
+      // 450° should be equivalent to 90°
+      const position = getBlackSquarePosition(450);
+      expect(position).toEqual({ x: 0, y: 1 });
+    });
+
+    it('should return center for unexpected rotation values', () => {
+      // 45° is not a valid rotation, should fallback to center
+      const position = getBlackSquarePosition(45);
+      expect(position).toEqual({ x: 2, y: 2 });
+    });
+  });
+
+  describe('getAdjacentTilePositions', () => {
+    it('should return all 8 adjacent positions for center tile position', () => {
+      const adjacent = getAdjacentTilePositions({ x: 2, y: 2 });
+      expect(adjacent).toHaveLength(8);
+    });
+
+    it('should return 5 adjacent positions for corner position', () => {
+      // Corner (0,0) can only have N, S, E, NE, SE (but N and NW are out of bounds)
+      const adjacent = getAdjacentTilePositions({ x: 0, y: 0 });
+      // South (0,1), East (1,0), Southeast (1,1) - only 3 valid positions
+      expect(adjacent).toHaveLength(3);
+      expect(adjacent).toContainEqual({ x: 0, y: 1 }); // South
+      expect(adjacent).toContainEqual({ x: 1, y: 0 }); // East
+      expect(adjacent).toContainEqual({ x: 1, y: 1 }); // Southeast
+    });
+
+    it('should return 5 adjacent positions for edge position', () => {
+      // Edge (1,0) - on north edge
+      const adjacent = getAdjacentTilePositions({ x: 1, y: 0 });
+      // Valid: South, East, West, Southeast, Southwest
+      expect(adjacent).toHaveLength(5);
+      expect(adjacent).toContainEqual({ x: 1, y: 1 }); // South
+      expect(adjacent).toContainEqual({ x: 2, y: 0 }); // East
+      expect(adjacent).toContainEqual({ x: 0, y: 0 }); // West
+    });
+
+    it('should return positions in consistent order', () => {
+      // Two calls should return same order
+      const adjacent1 = getAdjacentTilePositions({ x: 2, y: 2 });
+      const adjacent2 = getAdjacentTilePositions({ x: 2, y: 2 });
+      expect(adjacent1).toEqual(adjacent2);
+    });
+  });
+
+  describe('isPositionOccupiedByMonster', () => {
+    it('should return true when position is occupied by monster on same tile', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+      ];
+      expect(isPositionOccupiedByMonster({ x: 1, y: 3 }, 'tile-1', monsters)).toBe(true);
+    });
+
+    it('should return false when position is occupied by monster on different tile', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+      ];
+      expect(isPositionOccupiedByMonster({ x: 1, y: 3 }, 'tile-2', monsters)).toBe(false);
+    });
+
+    it('should return false when no monsters exist', () => {
+      expect(isPositionOccupiedByMonster({ x: 1, y: 3 }, 'tile-1', [])).toBe(false);
+    });
+
+    it('should return false when position is not occupied', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+      ];
+      expect(isPositionOccupiedByMonster({ x: 1, y: 3 }, 'tile-1', monsters)).toBe(false);
+    });
+  });
+
+  describe('getMonsterSpawnPosition', () => {
+    it('should return black square position when it is unoccupied', () => {
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 0, row: -1 },
+        rotation: 0, // Arrow points south, black square at (1, 3)
+        edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
+      };
+      
+      const position = getMonsterSpawnPosition(tile, []);
+      expect(position).toEqual({ x: 1, y: 3 });
+    });
+
+    it('should return adjacent position when black square is occupied', () => {
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 0, row: -1 },
+        rotation: 0, // Arrow points south, black square at (1, 3)
+        edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
+      };
+      
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+      ];
+      
+      const position = getMonsterSpawnPosition(tile, monsters);
+      
+      // Should be adjacent to black square (1, 3)
+      expect(position).not.toBeNull();
+      expect(position).not.toEqual({ x: 1, y: 3 });
+      
+      // Verify it's actually adjacent
+      if (position) {
+        const dx = Math.abs(position.x - 1);
+        const dy = Math.abs(position.y - 3);
+        expect(dx <= 1 && dy <= 1 && (dx > 0 || dy > 0)).toBe(true);
+      }
+    });
+
+    it('should return null when all positions are occupied', () => {
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 0, row: -1 },
+        rotation: 0, // Arrow points south, black square at (1, 3)
+        edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
+      };
+      
+      // Occupy the black square and all adjacent positions
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        // Adjacent positions
+        { monsterId: 'kobold', instanceId: 'kobold-1', position: { x: 1, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-2', position: { x: 0, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-3', position: { x: 2, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-4', position: { x: 0, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-5', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+      ];
+      
+      const position = getMonsterSpawnPosition(tile, monsters);
+      expect(position).toBeNull();
+    });
+
+    it('should work with different tile rotations', () => {
+      // Test with 180° rotation - black square at (1, 0)
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 0, row: 1 },
+        rotation: 180, // Arrow points north, black square at (1, 0)
+        edges: { north: 'open', south: 'unexplored', east: 'unexplored', west: 'unexplored' },
+      };
+      
+      const position = getMonsterSpawnPosition(tile, []);
+      expect(position).toEqual({ x: 1, y: 0 });
+    });
+
+    it('should not be affected by monsters on other tiles', () => {
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 0, row: -1 },
+        rotation: 0,
+        edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
+      };
+      
+      // Monster on a different tile at the same local position
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-2' },
+      ];
+      
+      const position = getMonsterSpawnPosition(tile, monsters);
+      // Should still return black square since monster is on different tile
+      expect(position).toEqual({ x: 1, y: 3 });
     });
   });
 });
