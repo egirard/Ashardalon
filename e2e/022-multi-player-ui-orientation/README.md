@@ -15,29 +15,57 @@ This test verifies that when multiple players join from different edges of the s
 
 ## Screenshots
 
-### 000 - Character Selection Complete
-Players have selected heroes from three different edges:
-- Quinn from the bottom edge (standard orientation)
-- Vistra from the top edge (180° rotation)
-- Keyleth from the left edge (90° rotation)
+### 000 - Power Selection (Quinn - Bottom Edge)
+The power card selection modal for Quinn who joined from the bottom edge.
 
-![Character Selection Complete](022-multi-player-ui-orientation.spec.ts-snapshots/000-character-selection-complete-chromium-linux.png)
+![Power Selection Quinn](022-multi-player-ui-orientation.spec.ts-snapshots/000-power-selection-quinn-bottom-chromium-linux.png)
 
-### 001 - Game Board with Multi-Player UI
-The game board shows all three players' dashboards oriented toward their respective edges:
-- **Bottom edge (Quinn)**: Active player with full turn indicator showing "Quinn's Turn", "Hero Phase", "Turn 1", and HP
-- **Top edge (Vistra)**: Dashboard rotated 180° showing "Vistra" and "HP: 10/10"
-- **Left edge (Keyleth)**: Dashboard rotated 90° showing "Keyleth" and "HP: 10/10"
-- **Right edge**: Empty (no player joined from this side)
+### 001 - Power Selection (Vistra - Top Edge)
+The power card selection modal for Vistra who joined from the top edge.
 
-![Game Board Multi-Player](022-multi-player-ui-orientation.spec.ts-snapshots/001-game-board-multi-player-chromium-linux.png)
+![Power Selection Vistra](022-multi-player-ui-orientation.spec.ts-snapshots/001-power-selection-vistra-top-chromium-linux.png)
+
+### 002 - Power Selection (Keyleth - Left Edge)
+The power card selection modal for Keyleth who joined from the left edge.
+
+![Power Selection Keyleth](022-multi-player-ui-orientation.spec.ts-snapshots/002-power-selection-keyleth-left-chromium-linux.png)
+
+### 003 - Character Selection Complete
+All three players have selected heroes from different edges and their power cards.
+
+![Character Selection Complete](022-multi-player-ui-orientation.spec.ts-snapshots/003-character-selection-complete-chromium-linux.png)
+
+### 004 - Game Board (Quinn's Turn - Bottom)
+Quinn's turn with the turn indicator at the bottom edge (standard orientation).
+- **Bottom edge (Quinn)**: Active player with full turn indicator
+- **Top edge (Vistra)**: Dashboard rotated 180° showing "Vistra" and HP
+- **Left edge (Keyleth)**: Dashboard rotated 90° showing "Keyleth" and HP
+
+![Game Board Quinn Turn](022-multi-player-ui-orientation.spec.ts-snapshots/004-game-board-quinn-turn-bottom-chromium-linux.png)
+
+### 005 - Game Board (Vistra's Turn - Top, 180° Rotation)
+Vistra's turn with the turn indicator at the top edge, rotated 180° to face the player at the top.
+- **Top edge (Vistra)**: Active player with turn indicator rotated 180°
+- **Bottom edge (Quinn)**: Inactive dashboard
+- **Left edge (Keyleth)**: Inactive dashboard
+
+![Game Board Vistra Turn](022-multi-player-ui-orientation.spec.ts-snapshots/005-game-board-vistra-turn-top-rotated-chromium-linux.png)
+
+### 006 - Game Board (Keyleth's Turn - Left, 90° Rotation)
+Keyleth's turn with the turn indicator at the left edge, rotated 90° to face the player on the left.
+- **Left edge (Keyleth)**: Active player with turn indicator rotated 90°
+- **Bottom edge (Quinn)**: Inactive dashboard
+- **Top edge (Vistra)**: Inactive dashboard rotated 180°
+
+![Game Board Keyleth Turn](022-multi-player-ui-orientation.spec.ts-snapshots/006-game-board-keyleth-turn-left-rotated-chromium-linux.png)
 
 ## Verification Checklist
 
 - [ ] Quinn's turn indicator appears at the bottom edge with full turn information
-- [ ] Vistra's dashboard appears at the top edge, rotated 180° to face the top player
-- [ ] Keyleth's dashboard appears at the left edge, rotated 90° to face the left player
+- [ ] Vistra's turn indicator appears at the top edge, rotated 180° to face the top player
+- [ ] Keyleth's turn indicator appears at the left edge, rotated 90° to face the left player
 - [ ] The right edge zone is empty (no player joined from there)
 - [ ] The game board in the center is not rotated
 - [ ] Non-active players see only name and HP (not turn phase info)
 - [ ] Active player's dashboard is highlighted with a gold glow effect
+- [ ] Power selection modals display correctly for each player
