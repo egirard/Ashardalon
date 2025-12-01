@@ -442,4 +442,78 @@ test.describe('013 - Wall Collision Detection', () => {
       }
     });
   });
+
+  test('Wall squares on normal tiles block movement based on edge configuration', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // STEP 1: Start game with Quinn
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="hero-quinn"]').click();
+    await selectDefaultPowerCards(page, 'quinn');
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // STEP 2: Verify movement on start tile respects wall squares
+    // The start tile has:
+    // - west edge (x=0) is a wall column
+    // - staircase (x:1-2, y:3-4) is blocked
+    
+    // Position hero at (2, 2) - center of walkable area
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 2 } }
+      });
+      store.dispatch({
+        type: 'game/showMovement',
+        payload: { heroId: 'quinn', speed: 5 }
+      });
+    });
+
+    // Wait for state to be applied
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 2 });
+      expect(storeState.game.showingMovement).toBe(true);
+    }).toPass();
+
+    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'wall-squares-start-tile', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        const validSquares = storeState.game.validMoveSquares;
+        
+        // Verify x=0 (west wall column) is never a valid movement destination
+        const westWallSquares = validSquares.filter(
+          (s: { x: number; y: number }) => s.x === 0
+        );
+        expect(westWallSquares.length).toBe(0);
+        
+        // Verify staircase squares are never valid movement destinations
+        const staircaseSquares = [
+          { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 1, y: 4 }, { x: 2, y: 4 }
+        ];
+        staircaseSquares.forEach(staircase => {
+          expect(
+            validSquares.some(
+              (s: { x: number; y: number }) => s.x === staircase.x && s.y === staircase.y
+            )
+          ).toBe(false);
+        });
+        
+        // Verify walkable interior squares ARE valid movement destinations
+        expect(validSquares.some((s: { x: number; y: number }) => s.x === 2 && s.y === 1)).toBe(true);
+        expect(validSquares.some((s: { x: number; y: number }) => s.x === 3 && s.y === 2)).toBe(true);
+        expect(validSquares.some((s: { x: number; y: number }) => s.x === 1 && s.y === 5)).toBe(true);
+      }
+    });
+  });
 });
