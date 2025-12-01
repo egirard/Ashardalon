@@ -163,6 +163,91 @@ describe("exploration", () => {
       const result = checkExploration(hero, dungeon);
       expect(result).toBeNull();
     });
+
+    it("should detect exploration on a newly placed tile's unexplored edge", () => {
+      // Create a dungeon with start tile and a newly placed tile to the north
+      const dungeon = initializeDungeon();
+      
+      // Add a new tile at position (col: 0, row: -1), which is north of the start tile
+      // The tile is at grid position north, so in absolute coords:
+      // minX = 0, maxX = 3 (col = 0, so same as start tile)
+      // minY = -4, maxY = -1 (row = -1, so minY = -1 * 4 = -4)
+      const newTile: PlacedTile = {
+        id: "tile-1",
+        tileType: "tile-black-2exit-a",
+        position: { col: 0, row: -1 },
+        rotation: 0,
+        edges: {
+          north: "unexplored",
+          south: "open", // Connected to start tile
+          east: "unexplored",
+          west: "unexplored",
+        },
+      };
+      
+      // Update dungeon state
+      dungeon.tiles.push(newTile);
+      // Mark start tile's north edge as explored
+      dungeon.unexploredEdges = dungeon.unexploredEdges.filter(
+        (e) => !(e.tileId === "start-tile" && e.direction === "north")
+      );
+      // Add unexplored edges for the new tile (north, east, west - south is connected)
+      dungeon.unexploredEdges.push(
+        { tileId: "tile-1", direction: "north" },
+        { tileId: "tile-1", direction: "east" },
+        { tileId: "tile-1", direction: "west" }
+      );
+      
+      // Hero is on the new tile's north edge
+      // New tile at row -1: x: 0-3, y: -4 to -1
+      // North edge is y = -4 (minY)
+      const hero: HeroToken = {
+        heroId: "quinn",
+        position: { x: 1, y: -4 }, // North edge of the new tile
+      };
+      
+      const result = checkExploration(hero, dungeon);
+      expect(result).toEqual({ tileId: "tile-1", direction: "north" });
+    });
+
+    it("should return null when hero is on newly placed tile but not on an edge", () => {
+      // Create a dungeon with start tile and a newly placed tile to the north
+      const dungeon = initializeDungeon();
+      
+      const newTile: PlacedTile = {
+        id: "tile-1",
+        tileType: "tile-black-2exit-a",
+        position: { col: 0, row: -1 },
+        rotation: 0,
+        edges: {
+          north: "unexplored",
+          south: "open",
+          east: "unexplored",
+          west: "unexplored",
+        },
+      };
+      
+      dungeon.tiles.push(newTile);
+      dungeon.unexploredEdges = dungeon.unexploredEdges.filter(
+        (e) => !(e.tileId === "start-tile" && e.direction === "north")
+      );
+      dungeon.unexploredEdges.push(
+        { tileId: "tile-1", direction: "north" },
+        { tileId: "tile-1", direction: "east" },
+        { tileId: "tile-1", direction: "west" }
+      );
+      
+      // Hero is in the center of the new tile, not on an edge
+      // New tile at row -1, col 0: absolute coords x: 0-3, y: -4 to -1
+      // Center position would be something like (1, -2) or (2, -3)
+      const hero: HeroToken = {
+        heroId: "quinn",
+        position: { x: 1, y: -2 }, // Center, not on any edge
+      };
+      
+      const result = checkExploration(hero, dungeon);
+      expect(result).toBeNull();
+    });
   });
 
   describe("getNewTilePosition", () => {

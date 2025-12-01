@@ -9,6 +9,7 @@ import type {
   TileDefinition
 } from './types';
 import { TILE_DEFINITIONS, START_TILE } from './types';
+import { findTileAtPosition, isOnTileEdge } from './movement';
 
 /**
  * Grid dimensions for the start tile (double height)
@@ -84,7 +85,7 @@ export function checkExploration(
   dungeon: DungeonState
 ): TileEdge | null {
   // Find the tile the hero is on
-  const heroTile = dungeon.tiles.find(t => t.id === 'start-tile'); // For now, heroes are always on start tile
+  const heroTile = findTileAtPosition(hero.position, dungeon);
   
   if (!heroTile) {
     return null;
@@ -97,8 +98,8 @@ export function checkExploration(
       continue;
     }
     
-    // Check if hero is on an edge square for this direction
-    if (isOnEdge(hero.position, edge.direction)) {
+    // Check if hero is on an edge square for this direction using the generic isOnTileEdge
+    if (isOnTileEdge(hero.position, heroTile, edge.direction)) {
       return edge;
     }
   }
