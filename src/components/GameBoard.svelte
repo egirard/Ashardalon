@@ -20,6 +20,8 @@
     shouldAutoEndHeroTurn,
     dismissLevelUpNotification,
     dismissHealingSurgeNotification,
+    useVoluntaryActionSurge,
+    skipActionSurge,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -56,6 +58,7 @@
   import DefeatAnimation from "./DefeatAnimation.svelte";
   import LevelUpAnimation from "./LevelUpAnimation.svelte";
   import HealingSurgeAnimation from "./HealingSurgeAnimation.svelte";
+  import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -142,6 +145,7 @@
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
   let drawnEncounter: EncounterCardType | null = $state(null);
+  let showActionSurgePrompt: boolean = $state(false);
 
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
@@ -179,6 +183,7 @@
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
+      showActionSurgePrompt = state.game.showActionSurgePrompt;
     });
 
     // Initialize state
@@ -212,6 +217,7 @@
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
+    showActionSurgePrompt = state.game.showActionSurgePrompt;
 
     return unsubscribe;
   });
@@ -786,6 +792,24 @@
     store.dispatch(cancelEncounterCard());
   }
 
+  // Handle using an action surge voluntarily at start of turn
+  function handleUseActionSurge() {
+    store.dispatch(useVoluntaryActionSurge());
+  }
+
+  // Handle skipping the action surge prompt
+  function handleSkipActionSurge() {
+    store.dispatch(skipActionSurge());
+  }
+
+  // Get current hero's surge value for display
+  function getCurrentHeroSurgeValue(): number {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return 0;
+    const hp = heroHp.find(h => h.heroId === currentHeroId);
+    return hp?.surgeValue ?? 0;
+  }
+
   // Get new stats for leveled up hero
   function getLeveledUpHeroStats(): HeroHpState | undefined {
     if (!leveledUpHeroId) return undefined;
@@ -1177,6 +1201,23 @@
       onDismiss={handleDismissEncounterCard}
       onCancel={handleCancelEncounterCard}
     />
+  {/if}
+
+  <!-- Action Surge Prompt (shown at start of hero's turn when HP < maxHp with surges available) -->
+  {#if showActionSurgePrompt}
+    {@const currentHeroId = getCurrentHeroId()}
+    {@const currentHeroHp = currentHeroId ? heroHp.find(h => h.heroId === currentHeroId) : undefined}
+    {#if currentHeroId && currentHeroHp}
+      <ActionSurgePrompt
+        heroId={currentHeroId}
+        currentHp={currentHeroHp.currentHp}
+        maxHp={currentHeroHp.maxHp}
+        surgeValue={currentHeroHp.surgeValue}
+        surgesToRemaining={partyResources.healingSurges}
+        onUse={handleUseActionSurge}
+        onSkip={handleSkipActionSurge}
+      />
+    {/if}
   {/if}
 </div>
 
