@@ -1019,9 +1019,9 @@ export const gameSlice = createSlice({
       state.heroHp[heroHpIndex] = surgeResult.heroState;
       state.partyResources = surgeResult.resources;
       
-      // Set notification data for UI
+      // Set notification data for UI - use actual HP restored (surge value capped at maxHp)
       state.healingSurgeUsedHeroId = currentHeroId;
-      state.healingSurgeHpRestored = heroHpState.surgeValue;
+      state.healingSurgeHpRestored = surgeResult.heroState.currentHp;
       
       // Hide the prompt
       state.showActionSurgePrompt = false;
