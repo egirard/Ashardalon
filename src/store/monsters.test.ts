@@ -295,10 +295,9 @@ describe('monsters', () => {
       expect(adjacent).toHaveLength(8);
     });
 
-    it('should return 5 adjacent positions for corner position', () => {
-      // Corner (0,0) can only have N, S, E, NE, SE (but N and NW are out of bounds)
+    it('should return 3 adjacent positions for corner position', () => {
+      // Corner (0,0) only has South, East, and Southeast as valid adjacent positions
       const adjacent = getAdjacentTilePositions({ x: 0, y: 0 });
-      // South (0,1), East (1,0), Southeast (1,1) - only 3 valid positions
       expect(adjacent).toHaveLength(3);
       expect(adjacent).toContainEqual({ x: 0, y: 1 }); // South
       expect(adjacent).toContainEqual({ x: 1, y: 0 }); // East
