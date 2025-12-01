@@ -33,7 +33,7 @@
     </div>
     
     <div class="healing-message">
-      <span class="was-text">used a healing surge</span>
+      <span class="was-text">was at 0 HP</span>
     </div>
     
     <div class="hp-restored-section" data-testid="hp-restored-section">

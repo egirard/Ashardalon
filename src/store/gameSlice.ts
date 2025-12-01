@@ -52,8 +52,6 @@ import {
   checkHealingSurgeNeeded,
   useHealingSurge,
   checkPartyDefeat,
-  canUseActionSurge,
-  useActionSurge,
 } from "./combat";
 import {
   initializeEncounterDeck,
@@ -696,18 +694,9 @@ export const gameSlice = createSlice({
             return;
           }
           
-          // Otherwise, use a healing surge if needed (hero at 0 HP - mandatory)
+          // Show action surge prompt if hero is at 0 HP with surges available
+          // This allows the player to choose to use a healing surge
           if (checkHealingSurgeNeeded(heroHpState, state.partyResources)) {
-            // Use a healing surge automatically
-            const surgeResult = useHealingSurge(heroHpState, state.partyResources);
-            state.heroHp[heroHpIndex] = surgeResult.heroState;
-            state.partyResources = surgeResult.resources;
-            
-            // Set notification data for UI - use surge value as the HP restored amount
-            state.healingSurgeUsedHeroId = currentHeroId;
-            state.healingSurgeHpRestored = heroHpState.surgeValue;
-          } else if (canUseActionSurge(heroHpState, state.partyResources)) {
-            // Hero HP > 0 but < maxHp with surges available - show optional action surge prompt
             state.showActionSurgePrompt = true;
           }
         }
@@ -1020,28 +1009,43 @@ export const gameSlice = createSlice({
       
       const heroHpState = state.heroHp[heroHpIndex];
       
-      // Check if can use action surge
-      if (!canUseActionSurge(heroHpState, state.partyResources)) {
+      // Check if hero needs a healing surge (at 0 HP with surges available)
+      if (!checkHealingSurgeNeeded(heroHpState, state.partyResources)) {
         return;
       }
       
-      // Use the action surge
-      const surgeResult = useActionSurge(heroHpState, state.partyResources);
+      // Use the healing surge
+      const surgeResult = useHealingSurge(heroHpState, state.partyResources);
       state.heroHp[heroHpIndex] = surgeResult.heroState;
       state.partyResources = surgeResult.resources;
       
       // Set notification data for UI
       state.healingSurgeUsedHeroId = currentHeroId;
-      state.healingSurgeHpRestored = surgeResult.hpRestored;
+      state.healingSurgeHpRestored = heroHpState.surgeValue;
       
       // Hide the prompt
       state.showActionSurgePrompt = false;
     },
     /**
      * Skip the action surge prompt (decline to use the surge).
-     * This allows the hero to proceed with their turn without using a surge.
+     * If the hero is at 0 HP, this triggers defeat.
      */
     skipActionSurge: (state) => {
+      if (!state.showActionSurgePrompt) return;
+      
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (currentHeroId) {
+        const heroHpState = state.heroHp.find(h => h.heroId === currentHeroId);
+        
+        // If hero is at 0 HP and skips the surge, they are defeated
+        if (heroHpState && heroHpState.currentHp === 0) {
+          const hero = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
+          const heroName = hero?.name ?? 'A hero';
+          state.defeatReason = `${heroName} chose not to use a healing surge while at 0 HP.`;
+          state.currentScreen = "defeat";
+        }
+      }
+      
       state.showActionSurgePrompt = false;
     },
     /**

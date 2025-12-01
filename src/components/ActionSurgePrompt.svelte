@@ -4,7 +4,6 @@
 
   interface Props {
     heroId: string;
-    currentHp: number;
     maxHp: number;
     surgeValue: number;
     surgesToRemaining: number;
@@ -12,7 +11,7 @@
     onSkip: () => void;
   }
   
-  let { heroId, currentHp, maxHp, surgeValue, surgesToRemaining, onUse, onSkip }: Props = $props();
+  let { heroId, maxHp, surgeValue, surgesToRemaining, onUse, onSkip }: Props = $props();
   
   function getHeroName(id: string): string {
     return AVAILABLE_HEROES.find(h => h.id === id)?.name ?? "Hero";
@@ -22,15 +21,15 @@
     return AVAILABLE_HEROES.find(h => h.id === id)?.imagePath ?? "";
   }
   
-  // Calculate how much HP would actually be restored (capped at maxHp)
+  // HP restored is the surge value capped at maxHp (hero is at 0 HP)
   function getActualHpRestored(): number {
-    return Math.min(surgeValue, maxHp - currentHp);
+    return Math.min(surgeValue, maxHp);
   }
 </script>
 
 <div class="action-surge-overlay" data-testid="action-surge-prompt">
   <div class="action-surge-card">
-    <h2 class="action-surge-title" data-testid="action-surge-title">Use Action Surge?</h2>
+    <h2 class="action-surge-title" data-testid="action-surge-title">Use Healing Surge?</h2>
     
     <div class="hero-section">
       <img 
@@ -41,9 +40,8 @@
       <span class="hero-name" data-testid="action-surge-hero-name">{getHeroName(heroId)}</span>
     </div>
     
-    <div class="hp-status">
-      <span class="hp-label">Current HP:</span>
-      <span class="hp-value" data-testid="current-hp-display">{currentHp} / {maxHp}</span>
+    <div class="hp-status hp-status-danger">
+      <span class="hp-label">⚠️ Hero is at 0 HP!</span>
     </div>
     
     <div class="surge-info">
@@ -57,8 +55,8 @@
       </div>
     </div>
     
-    <p class="description">
-      At the start of your turn, you may spend an action surge to heal.
+    <p class="description warning-text">
+      Skipping will result in defeat!
     </p>
     
     <div class="button-row">
@@ -70,11 +68,11 @@
         Use Surge
       </button>
       <button 
-        class="skip-button"
+        class="skip-button skip-danger"
         data-testid="skip-action-surge-button"
         onclick={onSkip}
       >
-        Skip
+        Skip (Defeat)
       </button>
     </div>
   </div>
@@ -170,12 +168,6 @@
     font-size: 0.9rem;
   }
   
-  .hp-value {
-    color: #e74c3c;
-    font-size: 1.1rem;
-    font-weight: bold;
-  }
-  
   .surge-info {
     margin-bottom: 1rem;
     padding: 0.75rem;
@@ -256,5 +248,33 @@
     background: linear-gradient(145deg, #555, #444);
     color: #fff;
     transform: translateY(-2px);
+  }
+  
+  .hp-status-danger {
+    background: rgba(231, 76, 60, 0.3);
+    border: 1px solid #e74c3c;
+  }
+  
+  .hp-status-danger .hp-label {
+    color: #e74c3c;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  
+  .warning-text {
+    color: #e74c3c;
+    font-weight: bold;
+    font-style: normal;
+  }
+  
+  .skip-danger {
+    background: linear-gradient(145deg, #8e2020, #6b1818);
+    color: #ff9999;
+    border: 2px solid #8e2020;
+  }
+  
+  .skip-danger:hover {
+    background: linear-gradient(145deg, #a52a2a, #8b1a1a);
+    color: #fff;
   }
 </style>
