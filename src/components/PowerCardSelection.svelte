@@ -5,6 +5,7 @@
     toggleAtWillCard,
     selectDailyCard,
     type HeroPowerCardSelection,
+    type EdgePosition,
   } from '../store/heroesSlice';
   import type { Hero } from '../store/types';
   import {
@@ -20,9 +21,25 @@
     hero: Hero;
     selection: HeroPowerCardSelection;
     onClose: () => void;
+    edge?: EdgePosition;
   }
 
-  let { hero, selection, onClose }: Props = $props();
+  let { hero, selection, onClose, edge = 'bottom' }: Props = $props();
+
+  // Get the rotation angle for the modal based on the edge
+  function getRotation(): number {
+    switch (edge) {
+      case 'top':
+        return 180;
+      case 'left':
+        return 90;
+      case 'right':
+        return -90;
+      case 'bottom':
+      default:
+        return 0;
+    }
+  }
 
   // Get available cards for this hero's class
   const atWillCards = $derived(getAtWillCards(hero.heroClass));
@@ -76,7 +93,7 @@
     tabindex="-1"
     aria-label="Close modal"
   ></div>
-  <div class="modal-content">
+  <div class="modal-content" style="transform: rotate({getRotation()}deg);">
     <div class="modal-header">
       <h2>Select Power Cards for {hero.name}</h2>
       <button class="close-button" onclick={onClose} data-testid="close-power-selection">×</button>

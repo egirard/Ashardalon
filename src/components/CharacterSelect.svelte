@@ -226,6 +226,7 @@
     hero={powerCardSelectionHero}
     selection={powerCardSelections[powerCardSelectionHero.id]}
     onClose={closePowerCardSelection}
+    edge={heroEdgeMap[powerCardSelectionHero.id]}
   />
 {/if}
 

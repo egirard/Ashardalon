@@ -1134,6 +1134,7 @@
       <MonsterCard
         monsterId={monsterState.monsterId}
         onDismiss={handleDismissMonsterCard}
+        edge={getActivePlayerEdge()}
       />
     {/if}
   {/if}
@@ -1154,6 +1155,7 @@
           ? getMonsterName(targetMonster.monsterId)
           : "Monster"}
         onDismiss={handleDismissAttackResult}
+        edge={getActivePlayerEdge()}
       />
     {/if}
   {/if}
@@ -1166,6 +1168,7 @@
       attackName="Attack"
       targetName={getMonsterAttackTargetName()}
       onDismiss={handleDismissMonsterAttackResult}
+      edge={getActivePlayerEdge()}
     />
   {/if}
 
@@ -1216,6 +1219,7 @@
       partyXp={partyResources.xp}
       onDismiss={handleDismissEncounterCard}
       onCancel={handleCancelEncounterCard}
+      edge={getActivePlayerEdge()}
     />
   {/if}
 

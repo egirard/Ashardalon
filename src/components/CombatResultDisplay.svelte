@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { AttackResult } from '../store/types';
+  import type { EdgePosition } from '../store/heroesSlice';
   
   interface Props {
     result: AttackResult;
@@ -7,9 +8,25 @@
     attackerName: string;
     attackName: string;
     onDismiss?: () => void;
+    edge?: EdgePosition;
   }
   
-  let { result, targetName, attackerName, attackName, onDismiss }: Props = $props();
+  let { result, targetName, attackerName, attackName, onDismiss, edge = 'bottom' }: Props = $props();
+  
+  // Get the rotation angle for the display based on the edge
+  function getRotation(): number {
+    switch (edge) {
+      case 'top':
+        return 180;
+      case 'left':
+        return 90;
+      case 'right':
+        return -90;
+      case 'bottom':
+      default:
+        return 0;
+    }
+  }
   
   function handleDismiss() {
     if (onDismiss) {
@@ -45,6 +62,7 @@
     onkeydown={(e) => e.stopPropagation()}
     role="document"
     data-testid="combat-result"
+    style="transform: rotate({getRotation()}deg);"
   >
     <div class="result-header">
       <h3 class="attacker-info" data-testid="attacker-info">
