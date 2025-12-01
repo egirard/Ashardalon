@@ -225,18 +225,19 @@ export function isOnStaircase(pos: Position): boolean {
  * Wall squares are determined by the tile's edge configuration:
  * - When an edge is 'wall' (not 'open' or 'unexplored'), the squares along that edge are walls
  * 
+ * Note: Start tiles use different wall logic (x<1 column and staircase) handled in isValidSquare.
+ * This function returns false for start tiles to allow the caller to use the appropriate logic.
+ * 
  * @param localX - X coordinate relative to the tile's bounds (0-3 for normal tiles)
  * @param localY - Y coordinate relative to the tile's bounds (0-3 for normal tiles)
  * @param tile - The placed tile to check
- * @returns true if the position is a wall square
+ * @returns true if the position is a wall square, false for start tiles
  */
 export function isOnWallSquare(localX: number, localY: number, tile: PlacedTile): boolean {
-  // For start tile, use existing logic (handled elsewhere)
+  // Start tiles use different wall logic (x<1 column and staircase) handled elsewhere
   if (tile.tileType === 'start') {
     return false;
   }
-  
-  const tileSize = NORMAL_TILE_SIZE; // 4x4
   
   // Check each edge - if it's a wall, the squares along that edge are walls
   // North edge (y = 0)
@@ -244,8 +245,8 @@ export function isOnWallSquare(localX: number, localY: number, tile: PlacedTile)
     return true;
   }
   
-  // South edge (y = 3)
-  if (tile.edges.south === 'wall' && localY === tileSize - 1) {
+  // South edge (y = NORMAL_TILE_SIZE - 1 = 3)
+  if (tile.edges.south === 'wall' && localY === NORMAL_TILE_SIZE - 1) {
     return true;
   }
   
@@ -254,8 +255,8 @@ export function isOnWallSquare(localX: number, localY: number, tile: PlacedTile)
     return true;
   }
   
-  // East edge (x = 3)
-  if (tile.edges.east === 'wall' && localX === tileSize - 1) {
+  // East edge (x = NORMAL_TILE_SIZE - 1 = 3)
+  if (tile.edges.east === 'wall' && localX === NORMAL_TILE_SIZE - 1) {
     return true;
   }
   
