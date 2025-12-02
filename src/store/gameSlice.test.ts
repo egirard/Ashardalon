@@ -1063,7 +1063,7 @@ describe("gameSlice", () => {
       expect(state.monsters[0].tileId).toBe("tile-1");
     });
 
-    it("should place monster at black square position", () => {
+    it("should place monster at black spot position", () => {
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
@@ -1101,11 +1101,11 @@ describe("gameSlice", () => {
       const state = gameReducer(gameInProgress, endHeroPhase());
 
       // Hero explores north edge, tile placed with 0° rotation (arrow points south)
-      // Black square is at (1, 3) - the south edge center position
-      expect(state.monsters[0].position).toEqual({ x: 1, y: 3 });
+      // Black spot is at (2, 1) - the dark circular marking on the tile
+      expect(state.monsters[0].position).toEqual({ x: 2, y: 1 });
     });
 
-    it("should place monster at adjacent position when black square is occupied", () => {
+    it("should place monster at adjacent position when black spot is occupied", () => {
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
@@ -1136,13 +1136,13 @@ describe("gameSlice", () => {
           drawPile: ["kobold", "snake"],
           discardPile: [],
         },
-        // Pre-place a monster at the black square position on the tile that will be created
-        // Note: The new tile will get id "tile-1", and black square at (1, 3) with 0° rotation
+        // Pre-place a monster at the black spot position on the tile that will be created
+        // Note: The new tile will get id "tile-1", and black spot at (2, 1) with 0° rotation
         monsters: [
           { 
             monsterId: "cultist", 
             instanceId: "cultist-0", 
-            position: { x: 1, y: 3 }, 
+            position: { x: 2, y: 1 }, 
             currentHp: 2, 
             controllerId: "quinn", 
             tileId: "tile-1"  // This is the id the new tile will get
@@ -1156,15 +1156,15 @@ describe("gameSlice", () => {
       // Should have 2 monsters now
       expect(state.monsters).toHaveLength(2);
       
-      // The new monster should NOT be at the black square (1, 3) since it's occupied
+      // The new monster should NOT be at the black spot (2, 1) since it's occupied
       const newMonster = state.monsters.find(m => m.instanceId === "kobold-1");
       expect(newMonster).not.toBeUndefined();
-      expect(newMonster?.position).not.toEqual({ x: 1, y: 3 });
+      expect(newMonster?.position).not.toEqual({ x: 2, y: 1 });
       
       // It should be at an adjacent position
       if (newMonster) {
-        const dx = Math.abs(newMonster.position.x - 1);
-        const dy = Math.abs(newMonster.position.y - 3);
+        const dx = Math.abs(newMonster.position.x - 2);
+        const dy = Math.abs(newMonster.position.y - 1);
         // Adjacent means dx <= 1 and dy <= 1 but not (0, 0)
         expect(dx <= 1 && dy <= 1 && (dx > 0 || dy > 0)).toBe(true);
       }

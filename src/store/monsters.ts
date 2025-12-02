@@ -132,36 +132,41 @@ export function getTileMonsterSpawnPosition(): Position {
 /**
  * Get the black square position on a tile based on its rotation.
  * 
- * In Wrath of Ashardalon, the black square is located at the edge where the
- * arrow points (the connecting edge where heroes enter). The position is
- * at the center of that edge (position 1 in local coordinates).
+ * In Wrath of Ashardalon, the black spot is a dark circular marking on the tile
+ * where monsters spawn. In the default tile orientation (arrow pointing south),
+ * the black spot is located at position (2, 1) - in the upper-right quadrant.
  * 
- * Tile rotation determines which edge the arrow points to:
- * - 0° (arrow points south): black square at (1, 3) - south edge center
- * - 90° (arrow points west): black square at (0, 1) - west edge center  
- * - 180° (arrow points north): black square at (1, 0) - north edge center
- * - 270° (arrow points east): black square at (3, 1) - east edge center
+ * As the tile rotates, the black spot position rotates with it:
+ * - 0° (arrow points south): black spot at (2, 1)
+ * - 90° (arrow points west): black spot at (2, 2) - rotated 90° clockwise
+ * - 180° (arrow points north): black spot at (1, 2) - rotated 180°
+ * - 270° (arrow points east): black spot at (1, 1) - rotated 270° clockwise
  * 
  * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
- * @returns The black square position in local tile coordinates
+ * @returns The black spot position in local tile coordinates
  */
 export function getBlackSquarePosition(rotation: number): Position {
   // Normalize rotation to 0, 90, 180, or 270
   const normalizedRotation = ((rotation % 360) + 360) % 360;
   
+  // In the default orientation (0°, arrow pointing south), the black spot is at (2, 1)
+  // When the tile rotates, we need to rotate this position accordingly
+  // Rotation formula for 90° clockwise around center (1.5, 1.5):
+  // new_x = 3 - old_y, new_y = old_x
+  
   switch (normalizedRotation) {
     case 0:
-      // Arrow points south, black square at south edge center
-      return { x: 1, y: 3 };
+      // Arrow points south, black spot at (2, 1)
+      return { x: 2, y: 1 };
     case 90:
-      // Arrow points west, black square at west edge center
-      return { x: 0, y: 1 };
+      // Arrow points west, rotated 90° clockwise: (2, 1) -> (2, 2)
+      return { x: 2, y: 2 };
     case 180:
-      // Arrow points north, black square at north edge center
-      return { x: 1, y: 0 };
+      // Arrow points north, rotated 180°: (2, 1) -> (1, 2)
+      return { x: 1, y: 2 };
     case 270:
-      // Arrow points east, black square at east edge center
-      return { x: 3, y: 1 };
+      // Arrow points east, rotated 270° clockwise: (2, 1) -> (1, 1)
+      return { x: 1, y: 1 };
     default:
       // Fallback to center for unexpected rotations
       return { x: TILE_CENTER, y: TILE_CENTER };
