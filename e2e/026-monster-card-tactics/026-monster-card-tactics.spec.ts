@@ -19,9 +19,8 @@ test.describe('026 - Monster Card Tactics', () => {
       }
     });
 
-    // STEP 2: Set up test scenario and verify state using Redux directly
-    // This tests the monster AI logic without relying on UI auto-activation
-    const result = await page.evaluate(() => {
+    // STEP 2: Set up the snake monster within range of the hero
+    await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
       // Move Quinn to (2, 5)
@@ -42,6 +41,23 @@ test.describe('026 - Monster Card Tactics', () => {
           tileId: 'start-tile'
         }]
       });
+    });
+    
+    // Wait for UI to update and capture screenshot showing snake positioned
+    await page.waitForTimeout(100);
+    
+    await screenshots.capture(page, 'snake-positioned', {
+      programmaticCheck: async () => {
+        // Verify snake is on the board
+        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+        expect(state.game.monsters.length).toBe(1);
+        expect(state.game.monsters[0].monsterId).toBe('snake');
+      }
+    });
+
+    // STEP 3: Transition to villain phase and trigger monster activation
+    const result = await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
       
       // Transition to villain phase
       store.dispatch({ type: 'game/endHeroPhase' });
