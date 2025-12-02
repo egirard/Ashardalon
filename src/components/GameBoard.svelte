@@ -22,6 +22,14 @@
     dismissHealingSurgeNotification,
     useVoluntaryActionSurge,
     skipActionSurge,
+    startMultiAttack,
+    recordMultiAttackHit,
+    clearMultiAttack,
+    startMoveAttack,
+    completeMoveAttackMovement,
+    clearMoveAttack,
+    type MultiAttackState,
+    type PendingMoveAttackState,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -67,6 +75,7 @@
   import { findTileAtPosition } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
   import { usePowerCard } from "../store/heroesSlice";
+  import { parseActionCard, requiresMultiAttack } from "../store/actionCardParser";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -146,6 +155,8 @@
   let attackName: string | null = $state(null);
   let drawnEncounter: EncounterCardType | null = $state(null);
   let showActionSurgePrompt: boolean = $state(false);
+  let multiAttackState: MultiAttackState | null = $state(null);
+  let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
 
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
@@ -184,6 +195,8 @@
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
       showActionSurgePrompt = state.game.showActionSurgePrompt;
+      multiAttackState = state.game.multiAttackState;
+      pendingMoveAttack = state.game.pendingMoveAttack;
     });
 
     // Initialize state
@@ -218,6 +231,8 @@
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
     showActionSurgePrompt = state.game.showActionSurgePrompt;
+    multiAttackState = state.game.multiAttackState;
+    pendingMoveAttack = state.game.pendingMoveAttack;
 
     return unsubscribe;
   });
@@ -717,14 +732,46 @@
     store.dispatch(setAttackResult({ result, targetInstanceId, attackName: powerCard.name }));
     
     // Flip the power card if it's a daily (at-wills can be used repeatedly)
-    if (powerCard.type === 'daily') {
+    // But only flip on the first attack of a multi-attack sequence
+    const isMultiAttackInProgress = multiAttackState && multiAttackState.attacksCompleted > 0;
+    if (powerCard.type === 'daily' && !isMultiAttackInProgress) {
       store.dispatch(usePowerCard({ heroId: currentHeroId, cardId }));
     }
   }
 
-  // Handle dismissing the attack result
+  // Handle dismissing the attack result - also handles multi-attack progression
   function handleDismissAttackResult() {
+    // Check if we're in a multi-attack sequence
+    if (multiAttackState) {
+      // Check if the target was defeated
+      const targetStillAlive = monsters.some(m => m.instanceId === attackTargetId);
+      
+      // Record the attack hit
+      store.dispatch(recordMultiAttackHit());
+      
+      // If target died and this was a same-target attack, clear the multi-attack
+      if (!targetStillAlive && multiAttackState.sameTarget) {
+        store.dispatch(clearMultiAttack());
+      }
+    }
+    
     store.dispatch(dismissAttackResult());
+  }
+
+  // Handle starting a multi-attack sequence
+  function handleStartMultiAttack(
+    cardId: number, 
+    totalAttacks: number, 
+    sameTarget: boolean, 
+    maxTargets: number, 
+    targetInstanceId?: string
+  ) {
+    store.dispatch(startMultiAttack({ cardId, totalAttacks, sameTarget, maxTargets, targetInstanceId }));
+  }
+
+  // Handle starting a move-then-attack sequence
+  function handleStartMoveAttack(cardId: number) {
+    store.dispatch(startMoveAttack({ cardId }));
   }
 
   // Get monster name from instance
@@ -1040,7 +1087,7 @@
         </button>
 
         <!-- Power Card Attack Panel - only show during hero phase when adjacent to monster and can attack -->
-        {#if turnState.currentPhase === "hero-phase" && heroTurnActions.canAttack}
+        {#if turnState.currentPhase === "hero-phase" && (heroTurnActions.canAttack || multiAttackState)}
           {@const currentHeroId = getCurrentHeroId()}
           {@const currentHeroPowerCards = currentHeroId
             ? heroPowerCards[currentHeroId]
@@ -1051,6 +1098,11 @@
               heroPowerCards={currentHeroPowerCards}
               {adjacentMonsters}
               onAttackWithCard={handleAttackWithCard}
+              {multiAttackState}
+              onStartMultiAttack={handleStartMultiAttack}
+              {pendingMoveAttack}
+              onStartMoveAttack={handleStartMoveAttack}
+              canMove={heroTurnActions.canMove}
             />
           {/if}
         {/if}

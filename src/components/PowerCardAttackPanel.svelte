@@ -3,21 +3,40 @@
   import { MONSTERS } from '../store/types';
   import type { PowerCard, HeroPowerCards, PowerCardState } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
+  import { parseActionCard, requiresMultiAttack, requiresMovementFirst, getActionDescription } from '../store/actionCardParser';
+  import type { MultiAttackState, PendingMoveAttackState } from '../store/gameSlice';
   
   interface Props {
     heroPowerCards: HeroPowerCards;
     adjacentMonsters: MonsterState[];
     onAttackWithCard: (cardId: number, targetInstanceId: string) => void;
+    /** For multi-attack cards, callbacks to manage the sequence */
+    multiAttackState?: MultiAttackState | null;
+    onStartMultiAttack?: (cardId: number, totalAttacks: number, sameTarget: boolean, maxTargets: number, targetInstanceId?: string) => void;
+    /** For move-then-attack cards like Charge */
+    pendingMoveAttack?: PendingMoveAttackState | null;
+    onStartMoveAttack?: (cardId: number) => void;
+    /** Whether hero can currently move (for move-then-attack cards) */
+    canMove?: boolean;
   }
   
-  let { heroPowerCards, adjacentMonsters, onAttackWithCard }: Props = $props();
+  let { 
+    heroPowerCards, 
+    adjacentMonsters, 
+    onAttackWithCard,
+    multiAttackState = null,
+    onStartMultiAttack,
+    pendingMoveAttack = null,
+    onStartMoveAttack,
+    canMove = true,
+  }: Props = $props();
   
   // State for selected card
   let selectedCardId: number | null = $state(null);
   
   // Get all available (unflipped) attack power cards
   const availableAttackCards = $derived(() => {
-    const cards: { card: PowerCard; state: PowerCardState }[] = [];
+    const cards: { card: PowerCard; state: PowerCardState; parsed: ReturnType<typeof parseActionCard> }[] = [];
     
     for (const cardState of heroPowerCards.cardStates) {
       // Skip flipped cards
@@ -28,7 +47,8 @@
       
       // Only include cards that have attack capabilities (attackBonus defined)
       if (card.attackBonus !== undefined) {
-        cards.push({ card, state: cardState });
+        const parsed = parseActionCard(card);
+        cards.push({ card, state: cardState, parsed });
       }
     }
     
@@ -45,10 +65,42 @@
   }
   
   function handleAttack(targetInstanceId: string) {
-    if (selectedCardId !== null) {
-      onAttackWithCard(selectedCardId, targetInstanceId);
+    if (selectedCardId === null) return;
+    
+    const card = getPowerCardById(selectedCardId);
+    if (!card) return;
+    
+    const parsed = parseActionCard(card);
+    
+    // Check if this is a move-then-attack card
+    if (requiresMovementFirst(parsed) && onStartMoveAttack && !pendingMoveAttack) {
+      // Start the move-attack sequence
+      onStartMoveAttack(selectedCardId);
       selectedCardId = null;
+      return;
     }
+    
+    // Check if this is a multi-attack card
+    if (requiresMultiAttack(parsed) && parsed.attack && onStartMultiAttack) {
+      // Start the multi-attack sequence
+      onStartMultiAttack(
+        selectedCardId,
+        parsed.attack.attackCount > 1 ? parsed.attack.attackCount : 1,
+        parsed.attack.sameTarget,
+        parsed.attack.maxTargets,
+        parsed.attack.sameTarget ? targetInstanceId : undefined
+      );
+      // Execute the first attack
+      onAttackWithCard(selectedCardId, targetInstanceId);
+      if (!parsed.attack.sameTarget) {
+        selectedCardId = null;
+      }
+      return;
+    }
+    
+    // Standard single attack
+    onAttackWithCard(selectedCardId, targetInstanceId);
+    selectedCardId = null;
   }
   
   function getCardTypeLabel(type: string): string {
@@ -68,57 +120,128 @@
       default: return '';
     }
   }
+  
+  function getSpecialBadge(parsed: ReturnType<typeof parseActionCard>): string | null {
+    if (requiresMovementFirst(parsed)) return 'Move+Attack';
+    if (parsed.attack?.attackCount === 2) return 'x2';
+    if (parsed.attack?.attackCount === 4) return 'x4';
+    if (parsed.attack?.maxTargets === 2) return '2 targets';
+    if (parsed.attack?.maxTargets === -1) return 'All targets';
+    return null;
+  }
+  
+  // Check if a card can be used right now
+  function canUseCard(cardId: number): boolean {
+    const card = getPowerCardById(cardId);
+    if (!card) return false;
+    
+    const parsed = parseActionCard(card);
+    
+    // Move-then-attack cards need movement ability and no pending move-attack
+    if (requiresMovementFirst(parsed)) {
+      return canMove && !pendingMoveAttack;
+    }
+    
+    return true;
+  }
 </script>
 
 {#if adjacentMonsters.length > 0 && availableAttackCards().length > 0}
   <div class="power-card-attack-panel" data-testid="power-card-attack-panel">
     <div class="panel-header">
-      <span class="panel-title">Select Attack Power</span>
+      {#if multiAttackState}
+        <span class="panel-title">Multi-Attack: {multiAttackState.attacksCompleted + 1}/{multiAttackState.totalAttacks}</span>
+      {:else if pendingMoveAttack && !pendingMoveAttack.movementCompleted}
+        <span class="panel-title">Move First, Then Attack</span>
+      {:else}
+        <span class="panel-title">Select Attack Power</span>
+      {/if}
     </div>
     
-    <!-- Power Card Selection -->
-    <div class="card-list" data-testid="attack-card-list">
-      {#each availableAttackCards() as { card, state } (card.id)}
-        <button
-          class="power-card-option {getCardTypeClass(card.type)}"
-          class:selected={selectedCardId === card.id}
-          onclick={() => handleCardSelect(card.id)}
-          data-testid="attack-card-{card.id}"
-          data-card-type={card.type}
-        >
-          <div class="card-header">
-            <span class="card-name">{card.name}</span>
-            <span class="card-type-badge">{getCardTypeLabel(card.type)}</span>
-          </div>
-          <div class="card-stats">
-            <span class="attack-bonus">+{card.attackBonus}</span>
-            <span class="damage">{card.damage} dmg</span>
-          </div>
-        </button>
-      {/each}
-    </div>
+    <!-- Multi-attack in progress indicator -->
+    {#if multiAttackState}
+      {@const multiCard = getPowerCardById(multiAttackState.cardId)}
+      <div class="multi-attack-info" data-testid="multi-attack-info">
+        <span class="multi-attack-card">{multiCard?.name}</span>
+        <span class="multi-attack-progress">
+          Attack {multiAttackState.attacksCompleted + 1} of {multiAttackState.totalAttacks}
+        </span>
+      </div>
+    {/if}
     
-    <!-- Target Selection (only shown when a card is selected) -->
-    {#if selectedCardId !== null}
-      {@const selectedCard = getPowerCardById(selectedCardId)}
+    <!-- Power Card Selection (hidden during multi-attack) -->
+    {#if !multiAttackState}
+      <div class="card-list" data-testid="attack-card-list">
+        {#each availableAttackCards() as { card, state, parsed } (card.id)}
+          {@const specialBadge = getSpecialBadge(parsed)}
+          {@const isUsable = canUseCard(card.id)}
+          <button
+            class="power-card-option {getCardTypeClass(card.type)}"
+            class:selected={selectedCardId === card.id}
+            class:disabled={!isUsable}
+            onclick={() => isUsable && handleCardSelect(card.id)}
+            data-testid="attack-card-{card.id}"
+            data-card-type={card.type}
+            disabled={!isUsable}
+          >
+            <div class="card-header">
+              <span class="card-name">{card.name}</span>
+              <div class="card-badges">
+                {#if specialBadge}
+                  <span class="special-badge" data-testid="special-badge-{card.id}">{specialBadge}</span>
+                {/if}
+                <span class="card-type-badge">{getCardTypeLabel(card.type)}</span>
+              </div>
+            </div>
+            <div class="card-stats">
+              <span class="attack-bonus">+{card.attackBonus}</span>
+              <span class="damage">{card.damage} dmg</span>
+            </div>
+            {#if parsed.attack && (parsed.attack.attackCount > 1 || parsed.attack.maxTargets > 1)}
+              <div class="card-effect" data-testid="card-effect-{card.id}">
+                {getActionDescription(parsed)}
+              </div>
+            {/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
+    
+    <!-- Target Selection -->
+    {#if selectedCardId !== null || multiAttackState}
+      {@const activeCardId = multiAttackState?.cardId ?? selectedCardId}
+      {@const selectedCard = activeCardId ? getPowerCardById(activeCardId) : null}
+      {@const parsed = selectedCard ? parseActionCard(selectedCard) : null}
       <div class="target-selection" data-testid="target-selection">
         <div class="target-header">
-          <span>Attack with {selectedCard?.name}</span>
+          {#if multiAttackState}
+            <span>Attack {multiAttackState.attacksCompleted + 1}/{multiAttackState.totalAttacks} with {selectedCard?.name}</span>
+          {:else}
+            <span>Attack with {selectedCard?.name}</span>
+          {/if}
         </div>
         <div class="target-list">
           {#each adjacentMonsters as monster (monster.instanceId)}
-            <button 
-              class="attack-button"
-              onclick={() => handleAttack(monster.instanceId)}
-              data-testid="attack-target-{monster.instanceId}"
-              aria-label="Attack {getMonsterName(monster.monsterId)} with {selectedCard?.name}"
-            >
-              Attack {getMonsterName(monster.monsterId)}
-            </button>
+            {@const isValidTarget = !multiAttackState?.sameTarget || 
+                                    multiAttackState.targetInstanceId === monster.instanceId ||
+                                    multiAttackState.attacksCompleted === 0}
+            {#if isValidTarget}
+              <button 
+                class="attack-button"
+                onclick={() => handleAttack(monster.instanceId)}
+                data-testid="attack-target-{monster.instanceId}"
+                aria-label="Attack {getMonsterName(monster.monsterId)} with {selectedCard?.name}"
+              >
+                Attack {getMonsterName(monster.monsterId)}
+                {#if parsed?.attack?.attackCount && parsed.attack.attackCount > 1 && parsed.attack.sameTarget}
+                  <span class="attack-multiplier">×{parsed.attack.attackCount}</span>
+                {/if}
+              </button>
+            {/if}
           {/each}
         </div>
       </div>
-    {:else}
+    {:else if !multiAttackState}
       <div class="select-card-hint" data-testid="select-card-hint">
         Select a power card above to attack
       </div>
@@ -291,5 +414,77 @@
     font-size: 0.8rem;
     font-style: italic;
     padding: 0.5rem;
+  }
+  
+  /* Multi-attack indicator */
+  .multi-attack-info {
+    background: rgba(255, 152, 0, 0.2);
+    border: 1px solid #ff9800;
+    border-radius: 6px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .multi-attack-card {
+    font-weight: bold;
+    color: #ff9800;
+    font-size: 0.85rem;
+  }
+  
+  .multi-attack-progress {
+    font-size: 0.75rem;
+    color: #ffcc80;
+  }
+  
+  /* Card badges container */
+  .card-badges {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+  
+  /* Special badge for multi-attack/move-attack cards */
+  .special-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-weight: bold;
+    background: rgba(255, 152, 0, 0.3);
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.5);
+  }
+  
+  /* Card effect description */
+  .card-effect {
+    font-size: 0.7rem;
+    color: #aaa;
+    font-style: italic;
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Attack multiplier badge on attack button */
+  .attack-multiplier {
+    font-size: 0.7rem;
+    background: rgba(255, 152, 0, 0.3);
+    color: #ff9800;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+  }
+  
+  /* Disabled card styling */
+  .power-card-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .power-card-option.disabled:hover {
+    transform: none;
+    background: rgba(255, 255, 255, 0.1);
   }
 </style>
