@@ -229,8 +229,9 @@ export function addLevel2DailyCard(powerCards: HeroPowerCards, dailyCardId: numb
 }
 
 /**
- * Simple seeded random number generator (LCG).
- * Returns a function that generates numbers between 0 and 1.
+ * Simple seeded random number generator (LCG - Linear Congruential Generator).
+ * @param seed - Initial seed value
+ * @returns A function that generates pseudo-random numbers between 0 (inclusive) and 1 (exclusive)
  */
 function seededRandom(seed: number): () => number {
   let currentSeed = seed;
@@ -249,7 +250,7 @@ function heroIdToSeed(heroId: string): number {
   for (let i = 0; i < heroId.length; i++) {
     const char = heroId.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash | 0; // Convert to 32-bit integer
   }
   return Math.abs(hash);
 }
