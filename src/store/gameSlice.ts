@@ -165,6 +165,40 @@ export interface GameState {
   drawnEncounter: EncounterCard | null;
   /** Whether to show the action surge prompt at start of turn (hero can voluntarily use a surge) */
   showActionSurgePrompt: boolean;
+  /** Multi-attack state: tracks remaining attacks when using cards like Reaping Strike */
+  multiAttackState: MultiAttackState | null;
+  /** Movement-before-attack state: set when using cards like Charge that require movement first */
+  pendingMoveAttack: PendingMoveAttackState | null;
+}
+
+/**
+ * State for tracking multi-attack sequences (e.g., Reaping Strike, Tornado Strike)
+ */
+export interface MultiAttackState {
+  /** Power card ID being used */
+  cardId: number;
+  /** Total number of attacks to make */
+  totalAttacks: number;
+  /** Number of attacks completed */
+  attacksCompleted: number;
+  /** Target instance IDs (for same-target attacks like Reaping Strike) */
+  targetInstanceId: string | null;
+  /** Whether all attacks must target the same monster */
+  sameTarget: boolean;
+  /** Maximum number of unique targets (for multi-target attacks) */
+  maxTargets: number;
+}
+
+/**
+ * State for tracking move-then-attack sequences (e.g., Charge)
+ */
+export interface PendingMoveAttackState {
+  /** Power card ID being used */
+  cardId: number;
+  /** Whether movement has been completed */
+  movementCompleted: boolean;
+  /** The hero's starting position before the move */
+  startPosition: Position;
 }
 
 const initialState: GameState = {
@@ -200,6 +234,8 @@ const initialState: GameState = {
   encounterDeck: { drawPile: [], discardPile: [] },
   drawnEncounter: null,
   showActionSurgePrompt: false,
+  multiAttackState: null,
+  pendingMoveAttack: null,
 };
 
 /**
@@ -508,6 +544,8 @@ export const gameSlice = createSlice({
       state.encounterDeck = { drawPile: [], discardPile: [] };
       state.drawnEncounter = null;
       state.showActionSurgePrompt = false;
+      state.multiAttackState = null;
+      state.pendingMoveAttack = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -881,6 +919,97 @@ export const gameSlice = createSlice({
       state.levelUpOldStats = null;
     },
     /**
+     * Start a multi-attack sequence (for cards like Reaping Strike that attack multiple times)
+     */
+    startMultiAttack: (
+      state,
+      action: PayloadAction<{
+        cardId: number;
+        totalAttacks: number;
+        sameTarget: boolean;
+        maxTargets: number;
+        targetInstanceId?: string;
+      }>
+    ) => {
+      if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canAttack) {
+        return;
+      }
+
+      const { cardId, totalAttacks, sameTarget, maxTargets, targetInstanceId } = action.payload;
+      
+      state.multiAttackState = {
+        cardId,
+        totalAttacks,
+        attacksCompleted: 0,
+        targetInstanceId: targetInstanceId || null,
+        sameTarget,
+        maxTargets,
+      };
+    },
+    /**
+     * Record a multi-attack hit and check if sequence is complete
+     */
+    recordMultiAttackHit: (state) => {
+      if (!state.multiAttackState) return;
+      
+      state.multiAttackState.attacksCompleted += 1;
+      
+      // Check if multi-attack sequence is complete
+      if (state.multiAttackState.attacksCompleted >= state.multiAttackState.totalAttacks) {
+        // Clear multi-attack state when done
+        state.multiAttackState = null;
+        // Track the attack action (only once per multi-attack sequence)
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
+      }
+    },
+    /**
+     * Cancel/clear the multi-attack state (e.g., when target dies mid-sequence)
+     */
+    clearMultiAttack: (state) => {
+      if (state.multiAttackState) {
+        // If at least one attack was made, count the action
+        if (state.multiAttackState.attacksCompleted > 0) {
+          state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
+        }
+        state.multiAttackState = null;
+      }
+    },
+    /**
+     * Start a move-then-attack sequence (for cards like Charge)
+     */
+    startMoveAttack: (
+      state,
+      action: PayloadAction<{ cardId: number }>
+    ) => {
+      if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canAttack) {
+        return;
+      }
+
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+      if (!currentToken) return;
+
+      state.pendingMoveAttack = {
+        cardId: action.payload.cardId,
+        movementCompleted: false,
+        startPosition: { ...currentToken.position },
+      };
+    },
+    /**
+     * Mark the movement portion of move-attack as complete
+     */
+    completeMoveAttackMovement: (state) => {
+      if (state.pendingMoveAttack) {
+        state.pendingMoveAttack.movementCompleted = true;
+      }
+    },
+    /**
+     * Clear the move-attack state after the attack is completed
+     */
+    clearMoveAttack: (state) => {
+      state.pendingMoveAttack = null;
+    },
+    /**
      * Set monsters directly (for testing purposes)
      */
     setMonsters: (state, action: PayloadAction<MonsterState[]>) => {
@@ -1104,5 +1233,11 @@ export const {
   setPartyResources,
   useVoluntaryActionSurge,
   skipActionSurge,
+  startMultiAttack,
+  recordMultiAttackHit,
+  clearMultiAttack,
+  startMoveAttack,
+  completeMoveAttackMovement,
+  clearMoveAttack,
 } = gameSlice.actions;
 export default gameSlice.reducer;
