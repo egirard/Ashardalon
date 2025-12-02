@@ -34,19 +34,13 @@ The player starts the game with Quinn the Cleric. The game board shows the Start
 
 ### Step 2: Snake Positioned Within Range
 
-A Snake monster is placed at position (2, 2) on the start tile, while Quinn is moved to position (2, 5). The Snake is within 1 tile range (approximately 4 squares) of the hero - this distance is critical because it triggers the Snake's `move-and-attack` tactic rather than just moving.
+A Snake monster is placed at position (2, 2) on the start tile, while Quinn is moved to position (2, 5). The Snake token is visible on the game board. The Snake is within 1 tile range (approximately 4 squares) of the hero - this distance is critical because it triggers the Snake's `move-and-attack` tactic rather than just moving.
 
-![Snake positioned within 1 tile range of Quinn](026-monster-card-tactics.spec.ts-snapshots/001-snake-positioned-chromium-linux.png)
+![Snake monster positioned within 1 tile range of Quinn](026-monster-card-tactics.spec.ts-snapshots/001-snake-positioned-chromium-linux.png)
 
-### Step 3: Villain Phase Begins
+### Step 3: Snake Moves Adjacent and Attacks
 
-The game transitions to the Villain Phase. At this point, monsters controlled by the active hero will activate. The Snake is ready to use its card-specific behavior.
-
-![Villain Phase with Snake ready to activate](026-monster-card-tactics.spec.ts-snapshots/001-villain-phase-snake-positioned-chromium-linux.png)
-
-### Step 4: Snake Moves Adjacent and Attacks
-
-When the Snake activates, it demonstrates its `move-and-attack` behavior - the key feature implemented in this PR:
+When the Snake activates during the Villain Phase, it demonstrates its `move-and-attack` behavior - the key feature implemented in this PR:
 
 1. **Move**: The Snake moves from (2, 2) to a position adjacent to Quinn at (2, 5)
 2. **Attack**: The Snake immediately attacks Quinn with its Bite attack (+7 attack bonus, 1 damage)
@@ -54,7 +48,7 @@ When the Snake activates, it demonstrates its `move-and-attack` behavior - the k
 
 This is the critical difference from `attack-only` monsters like the Kobold, which would only move toward the hero without attacking when not already adjacent.
 
-![Snake has moved adjacent to Quinn and attacked in one turn](026-monster-card-tactics.spec.ts-snapshots/001-snake-moved-and-attacked-chromium-linux.png)
+![Snake has moved adjacent to Quinn and attacked in one turn](026-monster-card-tactics.spec.ts-snapshots/002-snake-moved-and-attacked-chromium-linux.png)
 
 ## Test Scenarios
 
