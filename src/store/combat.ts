@@ -2,6 +2,13 @@ import type { HeroAttack, AttackResult, Position, MonsterState, DungeonState, Pl
 import { HERO_LEVELS, LEVEL_UP_COST } from './types';
 import { getMonsterById } from './monsters';
 import { getTileBounds, findTileAtPosition } from './movement';
+import {
+  getAttackBonusFromItems,
+  getAcBonusFromItems,
+  getSpeedBonusFromItems,
+  getDamageBonusFromItems,
+  type HeroInventory,
+} from './treasure';
 
 /**
  * Check if a hero needs a healing surge (at 0 HP with surges available)
@@ -82,6 +89,58 @@ export function resolveAttack(
     damage: isHit ? attack.damage : 0,
     isCritical,
   };
+}
+
+/**
+ * Create an attack with bonuses from equipped items applied
+ * @param baseAttack The hero's base attack stats
+ * @param inventory The hero's inventory with equipped items
+ * @returns Attack with bonuses applied
+ */
+export function applyItemBonusesToAttack(
+  baseAttack: HeroAttack,
+  inventory: HeroInventory | undefined
+): HeroAttack {
+  if (!inventory) {
+    return baseAttack;
+  }
+
+  return {
+    attackBonus: baseAttack.attackBonus + getAttackBonusFromItems(inventory),
+    damage: baseAttack.damage + getDamageBonusFromItems(inventory),
+  };
+}
+
+/**
+ * Calculate total AC including item bonuses
+ * @param baseAC The hero's base AC
+ * @param inventory The hero's inventory with equipped items
+ * @returns Total AC with bonuses applied
+ */
+export function calculateTotalAC(
+  baseAC: number,
+  inventory: HeroInventory | undefined
+): number {
+  if (!inventory) {
+    return baseAC;
+  }
+  return baseAC + getAcBonusFromItems(inventory);
+}
+
+/**
+ * Calculate total speed including item bonuses
+ * @param baseSpeed The hero's base speed
+ * @param inventory The hero's inventory with equipped items
+ * @returns Total speed with bonuses applied
+ */
+export function calculateTotalSpeed(
+  baseSpeed: number,
+  inventory: HeroInventory | undefined
+): number {
+  if (!inventory) {
+    return baseSpeed;
+  }
+  return baseSpeed + getSpeedBonusFromItems(inventory);
 }
 
 /**
