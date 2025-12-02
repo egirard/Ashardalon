@@ -66,17 +66,107 @@ export const ENCOUNTER_CANCEL_COST = 5;
  * Monster's basic attack information
  */
 export interface MonsterAttack {
+  name: string;
   attackBonus: number;
   damage: number;
 }
 
 /**
+ * Monster attack that can be used at different ranges or conditions.
+ * Some monsters have multiple attacks (e.g., Grell has Bite when adjacent, Tentacles when within 1 tile).
+ */
+export interface MonsterAttackOption {
+  name: string;
+  attackBonus: number;
+  damage: number;
+  /** 
+   * Range in tiles (0 = adjacent/same square only, 1 = within 1 tile, 2 = within 2 tiles)
+   * Default is 0 (melee/adjacent only)
+   */
+  range?: number;
+  /**
+   * Status effect applied on hit (e.g., 'poisoned', 'dazed')
+   * NOT YET IMPLEMENTED - documented for future use
+   */
+  statusEffect?: string;
+  /**
+   * Damage dealt on miss (some attacks deal damage even on miss)
+   * NOT YET IMPLEMENTED - documented for future use
+   */
+  missDamage?: number;
+}
+
+/**
+ * Monster AI behavior type that determines how the monster acts
+ */
+export type MonsterTacticType = 
+  | 'attack-only'           // If adjacent, attack. Otherwise move toward closest hero.
+  | 'move-and-attack'       // If within range, move adjacent AND attack. Otherwise move.
+  | 'explore-or-attack'     // If adjacent, attack. If on tile with unexplored edge and no heroes, explore. Otherwise move.
+  | 'ranged-attack';        // Complex ranged attack patterns (documented but not fully implemented)
+
+/**
+ * Monster card tactics define the AI behavior for each monster type.
+ * Based on the official Wrath of Ashardalon monster cards.
+ */
+export interface MonsterCardTactics {
+  /** Primary tactic type that determines AI behavior */
+  type: MonsterTacticType;
+  /** Attack used when adjacent to hero */
+  adjacentAttack: MonsterAttackOption;
+  /** 
+   * Attack used when moving and attacking (for move-and-attack type)
+   * If not specified, uses adjacentAttack after moving
+   */
+  moveAttack?: MonsterAttackOption;
+  /**
+   * Range for move-and-attack behavior (default: 1 tile)
+   * Monster will move and attack if within this many tiles
+   */
+  moveAttackRange?: number;
+  /**
+   * Notes about unimplemented features (for documentation)
+   */
+  implementationNotes?: string;
+}
+
+/**
+ * Monster card tactics (keyed by monster ID)
+ * Defines the AI behavior for each monster based on their card rules.
+ * 
+ * IMPLEMENTATION STATUS:
+ * - kobold: ✅ FULLY IMPLEMENTED (attack-only behavior)
+ * - snake: ⚠️ PARTIALLY IMPLEMENTED (move-and-attack works, but Poisoned status not applied)
+ * - cultist: ⚠️ PARTIALLY IMPLEMENTED (move-and-attack works, but Poisoned status not applied)
+ */
+export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
+  kobold: {
+    type: 'attack-only', // TODO: Future PR should implement 'explore-or-attack' for kobold exploration
+    adjacentAttack: { name: 'Sword', attackBonus: 7, damage: 1 },
+    implementationNotes: 'Kobold exploration behavior (draw tile when on tile with unexplored edge and no heroes) not yet implemented.',
+  },
+  snake: {
+    type: 'move-and-attack',
+    adjacentAttack: { name: 'Bite', attackBonus: 7, damage: 1, statusEffect: 'poisoned' },
+    moveAttackRange: 1,
+    implementationNotes: 'Poisoned status effect not yet implemented. Damage is dealt but status is not applied.',
+  },
+  cultist: {
+    type: 'move-and-attack',
+    adjacentAttack: { name: 'Dagger', attackBonus: 6, damage: 1, statusEffect: 'poisoned' },
+    moveAttackRange: 1,
+    implementationNotes: 'Poisoned status effect not yet implemented. Damage is dealt but status is not applied.',
+  },
+};
+
+/**
  * Monster attacks from cards (keyed by monster ID)
+ * @deprecated Use MONSTER_TACTICS instead for full card behavior
  */
 export const MONSTER_ATTACKS: Record<string, MonsterAttack> = {
-  kobold: { attackBonus: 5, damage: 1 },
-  snake: { attackBonus: 4, damage: 1 },
-  cultist: { attackBonus: 5, damage: 1 },
+  kobold: { name: 'Sword', attackBonus: 7, damage: 1 },
+  snake: { name: 'Bite', attackBonus: 7, damage: 1 },
+  cultist: { name: 'Dagger', attackBonus: 6, damage: 1 },
 };
 
 /**

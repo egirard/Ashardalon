@@ -1154,6 +1154,39 @@ export const gameSlice = createSlice({
             }
           }
         }
+      } else if (result.type === 'move-and-attack') {
+        // Handle move-and-attack: monster moves adjacent AND attacks in same turn
+        // First, update monster position
+        const monsterToMove = state.monsters.find(m => m.instanceId === monster.instanceId);
+        if (monsterToMove) {
+          const newTileId = findTileForGlobalPosition(result.destination, state.dungeon);
+          if (newTileId) {
+            const localPos = globalToLocalPosition(result.destination, newTileId, state.dungeon);
+            if (localPos) {
+              monsterToMove.position = localPos;
+              monsterToMove.tileId = newTileId;
+            }
+          }
+        }
+        
+        // Then, store the attack result
+        state.monsterAttackResult = result.result;
+        state.monsterAttackTargetId = result.targetId;
+        state.monsterAttackerId = monster.instanceId;
+
+        // Apply damage to hero if hit
+        if (result.result.isHit && result.result.damage > 0) {
+          const heroHp = state.heroHp.find(h => h.heroId === result.targetId);
+          if (heroHp) {
+            heroHp.currentHp = Math.max(0, heroHp.currentHp - result.result.damage);
+            
+            // Check for party defeat (all heroes at 0 HP)
+            const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+            if (allHeroesDefeated) {
+              state.currentScreen = "defeat";
+            }
+          }
+        }
       }
       // Note: For result.type === 'none', no visual feedback is needed - monster couldn't act
 

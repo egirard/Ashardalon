@@ -7,6 +7,7 @@ import {
   executeMonsterTurn,
   getMonsterGlobalPosition,
   getManhattanDistance,
+  findHeroWithinTileRange,
 } from './monsterAI';
 import type { MonsterState, HeroToken, DungeonState, PlacedTile } from './types';
 
@@ -279,13 +280,14 @@ describe('monsterAI', () => {
 
   describe('resolveMonsterAttack', () => {
     it('should hit when roll + bonus >= AC', () => {
-      // Roll 15 + bonus 5 = 20 >= 17
+      // Kobold has +7 attack bonus per monster card
+      // Roll 15 + bonus 7 = 22 >= 17
       const randomFn = () => 0.7; // (0.7 * 20) + 1 = 15
       const result = resolveMonsterAttack('kobold', 17, randomFn);
 
       expect(result.roll).toBe(15);
-      expect(result.attackBonus).toBe(5);
-      expect(result.total).toBe(20);
+      expect(result.attackBonus).toBe(7);  // Updated to match monster card
+      expect(result.total).toBe(22);       // 15 + 7
       expect(result.targetAC).toBe(17);
       expect(result.isHit).toBe(true);
       expect(result.damage).toBe(1);
@@ -293,12 +295,12 @@ describe('monsterAI', () => {
     });
 
     it('should miss when roll + bonus < AC', () => {
-      // Roll 5 + bonus 5 = 10 < 17
+      // Roll 5 + bonus 7 = 12 < 17
       const randomFn = () => 0.2; // (0.2 * 20) + 1 = 5
       const result = resolveMonsterAttack('kobold', 17, randomFn);
 
       expect(result.roll).toBe(5);
-      expect(result.total).toBe(10);
+      expect(result.total).toBe(12);  // 5 + 7
       expect(result.isHit).toBe(false);
       expect(result.damage).toBe(0);
     });
@@ -314,12 +316,12 @@ describe('monsterAI', () => {
     });
 
     it('should use correct stats for different monsters', () => {
-      // Snake has +4 attack bonus, 1 damage
+      // Snake has +7 attack bonus (Bite), 1 damage per monster card
       const randomFn = () => 0.5; // (0.5 * 20) + 1 = 11
       const result = resolveMonsterAttack('snake', 12, randomFn);
 
-      expect(result.attackBonus).toBe(4);
-      expect(result.total).toBe(15); // 11 + 4
+      expect(result.attackBonus).toBe(7);  // Updated to match monster card
+      expect(result.total).toBe(18);       // 11 + 7
       expect(result.isHit).toBe(true);
       expect(result.damage).toBe(1);
     });
@@ -422,6 +424,169 @@ describe('monsterAI', () => {
       );
 
       expect(result.type).toBe('none');
+    });
+
+    it('snake should move-and-attack when hero is within 1 tile range', () => {
+      const dungeon = createTestDungeon();
+      // Snake at position (2, 0) on start tile (local coords)
+      const monster: MonsterState = {
+        monsterId: 'snake',
+        instanceId: 'snake-0',
+        position: { x: 2, y: 0 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      // Hero at position (2, 2) - within 1 tile (4 squares) of monster
+      // Using (2, 2) instead of (2, 3) because (2, 3) is on the staircase
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 2 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+      const heroAcMap = { quinn: 17 };
+
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon
+      );
+
+      // Snake has move-and-attack tactic, so if hero is within 1 tile
+      // it should move adjacent and attack in the same turn
+      expect(result.type).toBe('move-and-attack');
+      if (result.type === 'move-and-attack') {
+        expect(result.targetId).toBe('quinn');
+        expect(result.result).toBeDefined();
+        // Destination should be adjacent to hero at (2, 2)
+        const heroPos = heroTokens[0].position;
+        const dx = Math.abs(result.destination.x - heroPos.x);
+        const dy = Math.abs(result.destination.y - heroPos.y);
+        expect(dx <= 1 && dy <= 1 && (dx + dy) > 0).toBe(true);
+      }
+    });
+
+    it('cultist should move-and-attack when hero is within 1 tile range', () => {
+      const dungeon = createTestDungeon();
+      // Cultist at position (1, 0) on start tile (local coords)
+      const monster: MonsterState = {
+        monsterId: 'cultist',
+        instanceId: 'cultist-0',
+        position: { x: 1, y: 0 },
+        currentHp: 2,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      // Hero at position (1, 2) - within 1 tile (2 squares) of monster
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 1, y: 2 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+      const heroAcMap = { quinn: 17 };
+
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon
+      );
+
+      // Cultist has move-and-attack tactic
+      expect(result.type).toBe('move-and-attack');
+      if (result.type === 'move-and-attack') {
+        expect(result.targetId).toBe('quinn');
+      }
+    });
+
+    it('kobold should just move when hero is not adjacent (attack-only tactic)', () => {
+      const dungeon = createTestDungeon();
+      // Kobold at position (2, 2) on start tile
+      const monster: MonsterState = {
+        monsterId: 'kobold',
+        instanceId: 'kobold-0',
+        position: { x: 2, y: 2 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      // Hero at position (2, 5) - not adjacent to kobold
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 5 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+      const heroAcMap = { quinn: 17 };
+
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon
+      );
+
+      // Kobold has attack-only tactic, so it should just move (not move-and-attack)
+      expect(result.type).toBe('move');
+    });
+  });
+
+  describe('findHeroWithinTileRange', () => {
+    it('should find hero within 1 tile range', () => {
+      const dungeon = createTestDungeon();
+      const monster: MonsterState = {
+        monsterId: 'snake',
+        instanceId: 'snake-0',
+        position: { x: 2, y: 2 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      // Hero at position (2, 5) - 3 squares away (within 4 squares = 1 tile)
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 5 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+
+      const result = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, 1);
+      expect(result).not.toBeNull();
+      expect(result?.hero.heroId).toBe('quinn');
+    });
+
+    it('should not find hero outside tile range', () => {
+      const dungeon = createTestDungeon();
+      const monster: MonsterState = {
+        monsterId: 'snake',
+        instanceId: 'snake-0',
+        position: { x: 1, y: 0 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      // Hero at position (1, 7) - 7 squares away (more than 4 squares = outside 1 tile range)
+      // But actually BFS finds the path which goes around the staircase
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 1, y: 7 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+
+      // Path from (1,0) to (1,7): (1,0)->(1,1)->(1,2)->(3,2)->(3,3)->(3,4)->(3,5)->(1,5)->(1,6)->(1,7)
+      // That's about 9 squares via BFS which is more than 4 squares
+      const result = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, 1);
+      expect(result).toBeNull();
     });
   });
 });
