@@ -55,13 +55,28 @@ test.describe('026 - Monster Card Tactics', () => {
       }
     });
 
-    // STEP 3: Transition to villain phase and trigger monster activation
-    const result = await page.evaluate(() => {
+    // STEP 3: Transition to villain phase
+    await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
       // Transition to villain phase
       store.dispatch({ type: 'game/endHeroPhase' });
       store.dispatch({ type: 'game/endExplorationPhase' });
+    });
+    
+    // Wait a moment for encounter card to appear (if any)
+    await page.waitForTimeout(200);
+    
+    // Dismiss any encounter card that may have appeared (drawn at start of villain phase)
+    const encounterDismissButton = page.locator('[data-testid="dismiss-encounter-card"]');
+    if (await encounterDismissButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await encounterDismissButton.click();
+      await page.waitForTimeout(100);
+    }
+    
+    // Now trigger monster activation
+    const result = await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
       
       // Manually trigger monster activation
       store.dispatch({ type: 'game/activateNextMonster', payload: {} });
@@ -83,9 +98,14 @@ test.describe('026 - Monster Card Tactics', () => {
     const dy = Math.abs(monster.position.y - heroPos.y);
     expect(dx <= 1 && dy <= 1).toBe(true);
 
+    // Wait for the monster attack result UI to be visible
+    await page.waitForTimeout(100);
+
     await screenshots.capture(page, 'snake-moved-and-attacked', {
       programmaticCheck: async () => {
-        // Verification already done above
+        // Verify the attack result is displayed
+        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+        expect(state.game.monsterAttackResult).not.toBeNull();
       }
     });
   });
