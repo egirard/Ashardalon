@@ -227,3 +227,70 @@ export function addLevel2DailyCard(powerCards: HeroPowerCards, dailyCardId: numb
     cardStates: [...powerCards.cardStates, { cardId: dailyCardId, isFlipped: false }],
   };
 }
+
+/**
+ * Simple seeded random number generator (LCG).
+ * Returns a function that generates numbers between 0 and 1.
+ */
+function seededRandom(seed: number): () => number {
+  let currentSeed = seed;
+  return () => {
+    // LCG parameters (same as glibc)
+    currentSeed = (currentSeed * 1103515245 + 12345) & 0x7fffffff;
+    return currentSeed / 0x7fffffff;
+  };
+}
+
+/**
+ * Generate a seed from a hero ID for deterministic shuffling per hero.
+ */
+function heroIdToSeed(heroId: string): number {
+  let hash = 0;
+  for (let i = 0; i < heroId.length; i++) {
+    const char = heroId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * Fisher-Yates shuffle with optional seeded random.
+ * Returns a new shuffled array without modifying the original.
+ */
+export function shuffleArray<T>(array: T[], seed?: number): T[] {
+  const result = [...array];
+  const random = seed !== undefined ? seededRandom(seed) : Math.random;
+  
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  
+  return result;
+}
+
+/**
+ * Get shuffled at-will power cards for a hero class using the hero ID as seed.
+ * This provides deterministic randomization per hero per session.
+ */
+export function getShuffledAtWillCards(heroClass: string, heroId: string): PowerCard[] {
+  const cards = getAtWillCards(heroClass);
+  return shuffleArray(cards, heroIdToSeed(heroId));
+}
+
+/**
+ * Get shuffled daily power cards for a hero class using the hero ID as seed.
+ */
+export function getShuffledDailyCards(heroClass: string, heroId: string): PowerCard[] {
+  const cards = getDailyCards(heroClass);
+  return shuffleArray(cards, heroIdToSeed(heroId));
+}
+
+/**
+ * Get shuffled utility power cards for a hero class using the hero ID as seed.
+ */
+export function getShuffledUtilityCards(heroClass: string, heroId: string): PowerCard[] {
+  const cards = getUtilityCards(heroClass);
+  return shuffleArray(cards, heroIdToSeed(heroId));
+}
