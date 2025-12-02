@@ -4,6 +4,20 @@ import { arePositionsAdjacent, rollD20 } from './combat';
 import { getAdjacentPositions, findTileAtPosition, getTileBounds } from './movement';
 
 /**
+ * A tile is 4x4 squares. This constant is used for converting tile range to square distance.
+ */
+const SQUARES_PER_TILE = 4;
+
+/**
+ * Default monster attack stats used when no tactics or attacks are defined.
+ */
+const DEFAULT_MONSTER_ATTACK: MonsterAttackOption = {
+  name: 'Attack',
+  attackBonus: 5,
+  damage: 1,
+};
+
+/**
  * Result of a monster's turn - either move, attack, move-and-attack, or no action
  */
 export type MonsterAction =
@@ -148,8 +162,8 @@ export function findHeroWithinTileRange(
   dungeon: DungeonState,
   tileRange: number
 ): { hero: HeroToken; distance: number } | null {
-  // A tile is 4x4 squares, so "within N tiles" means within N*4 squares of movement
-  const maxSquareDistance = tileRange * 4;
+  // "Within N tiles" means within N * SQUARES_PER_TILE squares of movement
+  const maxSquareDistance = tileRange * SQUARES_PER_TILE;
   
   const closest = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
   
@@ -383,7 +397,7 @@ export function executeMonsterTurn(
   if (adjacentHero) {
     // Attack the adjacent hero
     const targetAC = heroAcMap[adjacentHero.heroId] ?? 10;
-    const attackOption = tactics?.adjacentAttack ?? { name: 'Attack', attackBonus: 5, damage: 1 };
+    const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
     const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
     return { type: 'attack', targetId: adjacentHero.heroId, result };
   }
@@ -406,7 +420,7 @@ export function executeMonsterTurn(
       if (moveTarget) {
         // Can move adjacent and attack in the same turn
         const targetAC = heroAcMap[heroInRange.hero.heroId] ?? 10;
-        const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack ?? { name: 'Attack', attackBonus: 5, damage: 1 };
+        const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
         const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
         return { 
           type: 'move-and-attack', 
