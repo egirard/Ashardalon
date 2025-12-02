@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 test.describe('008 - Spawn Monster on Exploration', () => {
-  test('Monster appears on newly placed tile', async ({ page }) => {
+  test('Monster appears on newly placed tile at black square position', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
     // STEP 1: Navigate to character selection and select Quinn
@@ -53,7 +53,7 @@ test.describe('008 - Spawn Monster on Exploration', () => {
     // Wait for monster card to appear
     await page.locator('[data-testid="monster-card"]').waitFor({ state: 'visible' });
 
-    await screenshots.capture(page, 'monster-spawns', {
+    await screenshots.capture(page, 'monster-spawns-at-black-square', {
       programmaticCheck: async () => {
         // Verify monster card is displayed
         await expect(page.locator('[data-testid="monster-card"]')).toBeVisible();
@@ -78,6 +78,12 @@ test.describe('008 - Spawn Monster on Exploration', () => {
         
         // Should have a recently spawned monster ID
         expect(storeState.game.recentlySpawnedMonsterId).not.toBeNull();
+        
+        // IMPORTANT: Verify monster spawns at black square position
+        // When exploring north (placing tile north), tile has 0° rotation (arrow points south)
+        // Black square is at local position (1, 3) - south edge center
+        const monster = storeState.game.monsters[0];
+        expect(monster.position).toEqual({ x: 1, y: 3 });
       }
     });
 
@@ -87,7 +93,7 @@ test.describe('008 - Spawn Monster on Exploration', () => {
     // Wait for card to be dismissed
     await expect(page.locator('[data-testid="monster-card"]')).not.toBeVisible();
 
-    await screenshots.capture(page, 'monster-card-dismissed', {
+    await screenshots.capture(page, 'monster-at-black-square-dismissed', {
       programmaticCheck: async () => {
         // Verify monster card is no longer visible
         await expect(page.locator('[data-testid="monster-card"]')).not.toBeVisible();
@@ -103,6 +109,9 @@ test.describe('008 - Spawn Monster on Exploration', () => {
         
         // Monster should still exist in state
         expect(storeState.game.monsters).toHaveLength(1);
+        
+        // Verify monster is still at black square position
+        expect(storeState.game.monsters[0].position).toEqual({ x: 1, y: 3 });
         
         // Verify we're in exploration phase
         await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
