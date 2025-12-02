@@ -10,9 +10,9 @@
   import type { Hero } from '../store/types';
   import {
     type PowerCard,
-    getAtWillCards,
-    getDailyCards,
-    getUtilityCards,
+    getShuffledAtWillCards,
+    getShuffledDailyCards,
+    getShuffledUtilityCards,
     getPowerCardById,
     HERO_CUSTOM_ABILITIES,
   } from '../store/powerCards';
@@ -27,12 +27,21 @@
 
   let { hero, selection, onClose, edge = 'bottom' }: Props = $props();
 
-  // Get available cards for this hero's class
-  const atWillCards = $derived(getAtWillCards(hero.heroClass));
-  const dailyCards = $derived(getDailyCards(hero.heroClass));
-  const utilityCards = $derived(getUtilityCards(hero.heroClass));
+  // Get randomized cards for this hero's class (deterministic per hero)
+  const atWillCards = $derived(getShuffledAtWillCards(hero.heroClass, hero.id));
+  const dailyCards = $derived(getShuffledDailyCards(hero.heroClass, hero.id));
+  const utilityCards = $derived(getShuffledUtilityCards(hero.heroClass, hero.id));
   const customAbilityId = $derived(HERO_CUSTOM_ABILITIES[hero.id]);
   const customAbility = $derived(customAbilityId ? getPowerCardById(customAbilityId) : null);
+  
+  // Progress text for at-will selection
+  const atWillProgressText = $derived(
+    selection.atWills.length === 0
+      ? 'Pick first of two'
+      : selection.atWills.length === 1
+        ? 'Pick second of two'
+        : '✓ Complete'
+  );
 
   // Check if selection is complete
   const isSelectionComplete = $derived(
@@ -147,7 +156,7 @@
 
       <!-- At-Will Cards -->
       <div class="card-section">
-        <h3>At-Will Powers (Select 2)</h3>
+        <h3>At-Will Powers — <span class="pick-progress" data-testid="atwill-progress">{atWillProgressText}</span></h3>
         <div class="card-grid" data-testid="atwill-cards">
           {#each atWillCards as card (card.id)}
             <button
@@ -310,6 +319,11 @@
     margin: 0 0 0.75rem 0;
     font-size: 1.1rem;
     color: #ffd700;
+  }
+
+  .pick-progress {
+    font-weight: normal;
+    color: #ffa726;
   }
 
   .card-grid {

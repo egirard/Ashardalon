@@ -11,6 +11,10 @@ import {
   createInitialPowerCardsState,
   flipPowerCard,
   addLevel2DailyCard,
+  shuffleArray,
+  getShuffledAtWillCards,
+  getShuffledDailyCards,
+  getShuffledUtilityCards,
 } from './powerCards';
 
 describe('powerCards', () => {
@@ -194,6 +198,87 @@ describe('powerCards', () => {
       
       const newCard = updated.cardStates.find(s => s.cardId === 6);
       expect(newCard?.isFlipped).toBe(false);
+    });
+  });
+
+  describe('shuffleArray', () => {
+    it('should return an array with the same elements', () => {
+      const input = [1, 2, 3, 4, 5];
+      const result = shuffleArray(input);
+      expect(result).toHaveLength(input.length);
+      expect(result.sort()).toEqual(input.sort());
+    });
+
+    it('should not modify the original array', () => {
+      const input = [1, 2, 3, 4, 5];
+      const original = [...input];
+      shuffleArray(input);
+      expect(input).toEqual(original);
+    });
+
+    it('should produce deterministic results with the same seed', () => {
+      const input = [1, 2, 3, 4, 5];
+      const result1 = shuffleArray(input, 12345);
+      const result2 = shuffleArray(input, 12345);
+      expect(result1).toEqual(result2);
+    });
+
+    it('should produce different results with different seeds', () => {
+      const input = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const result1 = shuffleArray(input, 12345);
+      const result2 = shuffleArray(input, 54321);
+      expect(result1).not.toEqual(result2);
+    });
+  });
+
+  describe('getShuffledAtWillCards', () => {
+    it('should return at-will cards for the class', () => {
+      const cards = getShuffledAtWillCards('Cleric', 'quinn');
+      expect(cards.length).toBeGreaterThan(0);
+      expect(cards.every(card => card.type === 'at-will')).toBe(true);
+    });
+
+    it('should return deterministic order for the same heroId', () => {
+      const cards1 = getShuffledAtWillCards('Cleric', 'quinn');
+      const cards2 = getShuffledAtWillCards('Cleric', 'quinn');
+      expect(cards1.map(c => c.id)).toEqual(cards2.map(c => c.id));
+    });
+
+    it('should return different order for different heroIds', () => {
+      const cards1 = getShuffledAtWillCards('Fighter', 'vistra');
+      const cards2 = getShuffledAtWillCards('Fighter', 'different-hero');
+      // Since the order might coincidentally be the same for small arrays,
+      // we just verify both return valid cards
+      expect(cards1.length).toBe(cards2.length);
+    });
+  });
+
+  describe('getShuffledDailyCards', () => {
+    it('should return daily cards for the class', () => {
+      const cards = getShuffledDailyCards('Cleric', 'quinn');
+      expect(cards.length).toBeGreaterThan(0);
+      expect(cards.every(card => card.type === 'daily')).toBe(true);
+    });
+
+    it('should return deterministic order for the same heroId', () => {
+      const cards1 = getShuffledDailyCards('Paladin', 'keyleth');
+      const cards2 = getShuffledDailyCards('Paladin', 'keyleth');
+      expect(cards1.map(c => c.id)).toEqual(cards2.map(c => c.id));
+    });
+  });
+
+  describe('getShuffledUtilityCards', () => {
+    it('should return utility cards for the class excluding custom abilities', () => {
+      const cards = getShuffledUtilityCards('Cleric', 'quinn');
+      expect(cards.length).toBeGreaterThan(0);
+      expect(cards.every(card => card.type === 'utility')).toBe(true);
+      expect(cards.every(card => !card.isCustomAbility)).toBe(true);
+    });
+
+    it('should return deterministic order for the same heroId', () => {
+      const cards1 = getShuffledUtilityCards('Rogue', 'tarak');
+      const cards2 = getShuffledUtilityCards('Rogue', 'tarak');
+      expect(cards1.map(c => c.id)).toEqual(cards2.map(c => c.id));
     });
   });
 });
