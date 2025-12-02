@@ -28,26 +28,33 @@ This test validates the implementation of monster card tactics from the official
 
 ### Step 1: Initial Game Board
 
-The player starts the game with Quinn. The game board shows the Start Tile with the hero token positioned on it.
+The player starts the game with Quinn the Cleric. The game board shows the Start Tile with Quinn's hero token positioned on it, ready to begin the adventure.
 
-![000-initial-game-board](026-monster-card-tactics.spec.ts-snapshots/000-initial-game-board-chromium-linux.png)
+![Initial game board with Quinn on the Start Tile](026-monster-card-tactics.spec.ts-snapshots/000-initial-game-board-chromium-linux.png)
 
 ### Step 2: Snake Positioned Within Range
 
-A Snake monster is placed at position (2, 2) on the start tile, while Quinn is at position (2, 5). The Snake is within 1 tile range (approximately 4 squares) of the hero, which triggers its `move-and-attack` tactic.
+A Snake monster is placed at position (2, 2) on the start tile, while Quinn is moved to position (2, 5). The Snake is within 1 tile range (approximately 4 squares) of the hero - this distance is critical because it triggers the Snake's `move-and-attack` tactic rather than just moving.
 
-![001-snake-positioned](026-monster-card-tactics.spec.ts-snapshots/001-snake-positioned-chromium-linux.png)
+![Snake positioned within 1 tile range of Quinn](026-monster-card-tactics.spec.ts-snapshots/001-snake-positioned-chromium-linux.png)
 
-### Step 3: Snake Moves Adjacent and Attacks
+### Step 3: Villain Phase Begins
 
-When the Villain Phase begins and the Snake activates, it uses its `move-and-attack` behavior:
-1. The Snake moves to a position adjacent to Quinn
-2. The Snake immediately attacks Quinn with its Bite (+7 attack bonus)
-3. Both the movement and attack happen in a single turn
+The game transitions to the Villain Phase. At this point, monsters controlled by the active hero will activate. The Snake is ready to use its card-specific behavior.
 
-This is the key difference from `attack-only` monsters like the Kobold, which would only move toward the hero without attacking.
+![Villain Phase with Snake ready to activate](026-monster-card-tactics.spec.ts-snapshots/001-villain-phase-snake-positioned-chromium-linux.png)
 
-![001-snake-moved-and-attacked](026-monster-card-tactics.spec.ts-snapshots/001-snake-moved-and-attacked-chromium-linux.png)
+### Step 4: Snake Moves Adjacent and Attacks
+
+When the Snake activates, it demonstrates its `move-and-attack` behavior - the key feature implemented in this PR:
+
+1. **Move**: The Snake moves from (2, 2) to a position adjacent to Quinn at (2, 5)
+2. **Attack**: The Snake immediately attacks Quinn with its Bite attack (+7 attack bonus, 1 damage)
+3. **Single Turn**: Both the movement AND attack happen in the same turn
+
+This is the critical difference from `attack-only` monsters like the Kobold, which would only move toward the hero without attacking when not already adjacent.
+
+![Snake has moved adjacent to Quinn and attacked in one turn](026-monster-card-tactics.spec.ts-snapshots/001-snake-moved-and-attacked-chromium-linux.png)
 
 ## Test Scenarios
 
