@@ -26,6 +26,8 @@ e2e/
 | [007-tile-exploration](007-tile-exploration/README.md) | Tile exploration mechanics (programmatic) |
 | [008-movement-triggers-exploration](008-movement-triggers-exploration/README.md) | **Complete user experience**: movement UI triggers tile exploration |
 | [011-hero-turn-structure](011-hero-turn-structure/README.md) | Hero turn action enforcement: valid move/attack sequences |
+| [025-treasure-on-defeat](025-treasure-on-defeat/README.md) | Treasure drawing on monster defeat |
+| [027-treasure-cards](027-treasure-cards/README.md) | Complete treasure card system: draw, view, assign, discard |
 
 ## Running Tests
 

@@ -93,10 +93,51 @@ export interface TreasureDeck {
  * Some numbers are skipped as they are continuation rows in the source CSV
  * (e.g., 148, 151, 152, 154 continue multi-line card text from previous rows).
  * 
- * IMPLEMENTATION STATUS:
- * - ✅ IMPLEMENTED: attack-bonus, ac-bonus, speed-bonus, healing, damage-bonus
- * - ⚠️ PARTIAL: attack-action (basic attack works, special effects pending)
- * - ❌ NOT YET: reroll, flip-power, monster-control, movement, level-up, trap-disable, condition-removal
+ * IMPLEMENTATION STATUS BY EFFECT TYPE:
+ * ════════════════════════════════════════════════════════════════════════════
+ * 
+ * ✅ FULLY IMPLEMENTED (passive bonuses applied automatically):
+ * - attack-bonus: +1/+2 Magic Sword, Dragontooth Pick, Dwarven Hammer, 
+ *                 Staff of the Elements, Vorpal Sword
+ * - ac-bonus: Amulet of Protection, Blessed Shield, Shield of Protection,
+ *             Throwing Shield
+ * - speed-bonus: Boots of Striding
+ * - damage-bonus: Gauntlets of Ogre Power
+ * - healing: Potion of Healing (consumable, heals 2 HP)
+ * 
+ * ⚠️ PARTIALLY IMPLEMENTED (basic mechanics work, special effects pending):
+ * - attack-action: Crossbow of Speed, Ring of Shooting Stars
+ *   → Basic attack works, but "instead of moving" restriction not enforced
+ *   → "Does not count as attack action" for Ring not implemented
+ * 
+ * ❌ NOT YET IMPLEMENTED (cards display but effects don't apply):
+ * - reroll: Lucky Charm
+ *   → Need dice roll hook to allow reroll after any die roll
+ * - flip-power: Pearl of Power, Potion of Rejuvenation
+ *   → Need UI to select which power card to flip up
+ * - monster-control: Elven Cloak, Scroll of Monster Control, Wand of Fear, 
+ *                    Wand of Polymorph
+ *   → Need monster placement/movement mechanics for another player
+ * - movement: Flying Carpet, Potion of Speed
+ *   → Flying Carpet needs persistent marker system
+ *   → Potion of Speed needs "move again" action
+ * - level-up: Tome of Experience
+ *   → Need to check hero is level 1 and trigger level up
+ * - trap-disable: Thieves' Tools
+ *   → Traps not yet implemented in game
+ * - condition-removal: Potion of Recovery
+ *   → Conditions (poisoned, dazed, etc.) not yet implemented
+ * - other: Box of Caltrops, Bracers of Defense
+ *   → Box of Caltrops needs Caltrop token system
+ *   → Bracers of Defense needs "when you take damage" trigger
+ * 
+ * SPECIAL CARD NOTES:
+ * - Dragontooth Pick (142): +1 damage on nat 19-20 NOT implemented
+ * - Dwarven Hammer (143): +3 attack if no move NOT implemented
+ * - Vorpal Sword (164): +1 damage on nat 18-20 NOT implemented
+ * - Blessed Shield (137): "+2 AC for all Heroes on tile" only gives +2 to owner
+ * - Throwing Shield (162): Free attack on play NOT implemented
+ * ════════════════════════════════════════════════════════════════════════════
  */
 export const TREASURE_CARDS: TreasureCard[] = [
   {

@@ -1319,7 +1319,8 @@
   {/if}
 
   <!-- Treasure Card Display (shown when treasure is drawn on monster defeat) -->
-  {#if drawnTreasure}
+  <!-- Only show after combat result and defeat notification are dismissed -->
+  {#if drawnTreasure && !attackResult && defeatedMonsterXp === null}
     <TreasureCard
       treasure={drawnTreasure}
       heroes={selectedHeroes.map(h => ({ id: h.id, name: h.name }))}

@@ -310,5 +310,189 @@ describe('treasure', () => {
         expect(getDamageBonusFromItems(inventory)).toBe(0);
       });
     });
+
+    describe('combined bonuses', () => {
+      it('should calculate multiple bonuses from different items', () => {
+        let inventory = createHeroInventory('quinn');
+        // +1 Magic Sword (+1 attack)
+        inventory = addTreasureToInventory(inventory, 134);
+        // Amulet of Protection (+1 AC)
+        inventory = addTreasureToInventory(inventory, 136);
+        // Boots of Striding (+1 Speed)
+        inventory = addTreasureToInventory(inventory, 138);
+        // Gauntlets of Ogre Power (+1 damage)
+        inventory = addTreasureToInventory(inventory, 146);
+        
+        expect(getAttackBonusFromItems(inventory)).toBe(1);
+        expect(getAcBonusFromItems(inventory)).toBe(1);
+        expect(getSpeedBonusFromItems(inventory)).toBe(1);
+        expect(getDamageBonusFromItems(inventory)).toBe(1);
+      });
+
+      it('should stack multiple items of the same type', () => {
+        let inventory = createHeroInventory('quinn');
+        // +1 Magic Sword (+1 attack)
+        inventory = addTreasureToInventory(inventory, 134);
+        // +2 Magic Sword (+2 attack)
+        inventory = addTreasureToInventory(inventory, 135);
+        
+        expect(getAttackBonusFromItems(inventory)).toBe(3);
+      });
+
+      it('should stack multiple AC bonuses', () => {
+        let inventory = createHeroInventory('quinn');
+        // Amulet of Protection (+1 AC)
+        inventory = addTreasureToInventory(inventory, 136);
+        // Shield of Protection (+1 AC)
+        inventory = addTreasureToInventory(inventory, 159);
+        
+        expect(getAcBonusFromItems(inventory)).toBe(2);
+      });
+    });
+  });
+
+  describe('treasure card types', () => {
+    describe('immediate usage cards', () => {
+      it('should have correct properties for +1 Magic Sword', () => {
+        const card = getTreasureById(134);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('immediate');
+        expect(card?.discardAfterUse).toBe(false);
+        expect(card?.effect.type).toBe('attack-bonus');
+        expect(card?.effect.value).toBe(1);
+      });
+
+      it('should have correct properties for Blessed Shield', () => {
+        const card = getTreasureById(137);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('immediate');
+        expect(card?.effect.type).toBe('ac-bonus');
+        expect(card?.effect.value).toBe(2);
+        expect(card?.effect.description).toContain('all Heroes on your tile');
+      });
+
+      it('should have correct properties for Gauntlets of Ogre Power', () => {
+        const card = getTreasureById(146);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('immediate');
+        expect(card?.effect.type).toBe('damage-bonus');
+        expect(card?.effect.value).toBe(1);
+      });
+    });
+
+    describe('consumable cards', () => {
+      it('should have correct properties for Potion of Healing', () => {
+        const card = getTreasureById(150);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('consumable');
+        expect(card?.discardAfterUse).toBe(true);
+        expect(card?.effect.type).toBe('healing');
+        expect(card?.effect.value).toBe(2);
+      });
+
+      it('should have correct properties for Potion of Rejuvenation', () => {
+        const card = getTreasureById(155);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('consumable');
+        expect(card?.discardAfterUse).toBe(true);
+        expect(card?.effect.type).toBe('flip-power');
+      });
+
+      it('should have correct properties for Potion of Speed', () => {
+        const card = getTreasureById(156);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('consumable');
+        expect(card?.discardAfterUse).toBe(true);
+        expect(card?.effect.type).toBe('movement');
+      });
+    });
+
+    describe('action cards', () => {
+      it('should have correct properties for Crossbow of Speed', () => {
+        const card = getTreasureById(141);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('action');
+        expect(card?.discardAfterUse).toBe(false);
+        expect(card?.effect.type).toBe('attack-action');
+        expect(card?.effect.attackBonus).toBe(4);
+        expect(card?.effect.damage).toBe(1);
+        expect(card?.effect.range).toBe(1);
+      });
+
+      it('should have correct properties for Ring of Shooting Stars', () => {
+        const card = getTreasureById(157);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('action');
+        expect(card?.effect.type).toBe('attack-action');
+        expect(card?.effect.attackBonus).toBe(8);
+        expect(card?.effect.damage).toBe(1);
+        expect(card?.effect.range).toBe(2);
+      });
+
+      it('should have correct properties for Tome of Experience', () => {
+        const card = getTreasureById(163);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('action');
+        expect(card?.discardAfterUse).toBe(true);
+        expect(card?.effect.type).toBe('level-up');
+      });
+    });
+
+    describe('reaction cards', () => {
+      it('should have correct properties for Lucky Charm', () => {
+        const card = getTreasureById(147);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('reaction');
+        expect(card?.discardAfterUse).toBe(true);
+        expect(card?.effect.type).toBe('reroll');
+      });
+
+      it('should have correct properties for Elven Cloak', () => {
+        const card = getTreasureById(144);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('reaction');
+        expect(card?.effect.type).toBe('monster-control');
+        expect(card?.effect.description).toContain('Another player places');
+      });
+
+      it('should have correct properties for Scroll of Monster Control', () => {
+        const card = getTreasureById(158);
+        expect(card).toBeDefined();
+        expect(card?.usage).toBe('reaction');
+        expect(card?.discardAfterUse).toBe(true);
+        expect(card?.effect.type).toBe('monster-control');
+        expect(card?.effect.attackBonus).toBe(9);
+        expect(card?.effect.damage).toBe(1);
+      });
+    });
+  });
+
+  describe('treasure card count', () => {
+    it('should have 29 unique treasure cards', () => {
+      // Card IDs range from 134-166 with gaps for multi-line entries in source CSV
+      // Skipped IDs: 148, 151, 152, 154 (continuation rows)
+      expect(TREASURE_CARDS.length).toBe(29);
+    });
+
+    it('should have all cards with valid effect types', () => {
+      const validEffectTypes = [
+        'attack-bonus', 'damage-bonus', 'ac-bonus', 'speed-bonus',
+        'healing', 'reroll', 'flip-power', 'attack-action',
+        'monster-control', 'movement', 'level-up', 'trap-disable',
+        'condition-removal', 'other'
+      ];
+      
+      for (const card of TREASURE_CARDS) {
+        expect(validEffectTypes).toContain(card.effect.type);
+      }
+    });
+
+    it('should have all cards with valid usage types', () => {
+      const validUsageTypes = ['immediate', 'action', 'reaction', 'consumable'];
+      
+      for (const card of TREASURE_CARDS) {
+        expect(validUsageTypes).toContain(card.usage);
+      }
+    });
   });
 });
