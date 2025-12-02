@@ -63,6 +63,19 @@ import {
   canCancelEncounter,
   cancelEncounter,
 } from "./encounters";
+import {
+  initializeTreasureDeck,
+  drawTreasure,
+  discardTreasure,
+  getTreasureById,
+  createHeroInventory,
+  addTreasureToInventory,
+  flipTreasureInInventory,
+  removeTreasureFromInventory,
+  type TreasureDeck,
+  type TreasureCard,
+  type HeroInventory,
+} from "./treasure";
 
 /**
  * Default turn state for the beginning of a game
@@ -169,6 +182,14 @@ export interface GameState {
   multiAttackState: MultiAttackState | null;
   /** Movement-before-attack state: set when using cards like Charge that require movement first */
   pendingMoveAttack: PendingMoveAttackState | null;
+  /** Treasure deck for drawing treasure on monster defeat */
+  treasureDeck: TreasureDeck;
+  /** Currently drawn treasure card awaiting assignment to a hero */
+  drawnTreasure: TreasureCard | null;
+  /** Hero inventories - items owned by each hero */
+  heroInventories: Record<string, HeroInventory>;
+  /** Whether treasure has been drawn this turn (only one treasure per turn) */
+  treasureDrawnThisTurn: boolean;
 }
 
 /**
@@ -236,6 +257,10 @@ const initialState: GameState = {
   showActionSurgePrompt: false,
   multiAttackState: null,
   pendingMoveAttack: null,
+  treasureDeck: { drawPile: [], discardPile: [] },
+  drawnTreasure: null,
+  heroInventories: {},
+  treasureDrawnThisTurn: false,
 };
 
 /**
@@ -434,6 +459,15 @@ export const gameSlice = createSlice({
       state.encounterDeck = initializeEncounterDeck(randomFn);
       state.drawnEncounter = null;
 
+      // Initialize treasure deck and hero inventories
+      state.treasureDeck = initializeTreasureDeck(randomFn);
+      state.drawnTreasure = null;
+      state.heroInventories = {};
+      for (const heroId of heroIds) {
+        state.heroInventories[heroId] = createHeroInventory(heroId);
+      }
+      state.treasureDrawnThisTurn = false;
+
       state.currentScreen = "game-board";
     },
     setHeroPosition: (
@@ -546,6 +580,10 @@ export const gameSlice = createSlice({
       state.showActionSurgePrompt = false;
       state.multiAttackState = null;
       state.pendingMoveAttack = null;
+      state.treasureDeck = { drawPile: [], discardPile: [] };
+      state.drawnTreasure = null;
+      state.heroInventories = {};
+      state.treasureDrawnThisTurn = false;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -718,6 +756,9 @@ export const gameSlice = createSlice({
       state.turnState.currentPhase = "hero-phase";
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
       
+      // Reset treasure drawn flag for the new turn
+      state.treasureDrawnThisTurn = false;
+      
       // Check if the new hero needs a healing surge (at 0 HP at turn start)
       const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
       if (currentHeroId) {
@@ -863,6 +904,20 @@ export const gameSlice = createSlice({
             
             // Track monster defeated for scenario
             state.scenario.monstersDefeated += 1;
+            
+            // Draw treasure on monster defeat (only once per turn)
+            if (!state.treasureDrawnThisTurn) {
+              const { treasure: treasureId, deck: updatedTreasureDeck } = drawTreasure(state.treasureDeck);
+              state.treasureDeck = updatedTreasureDeck;
+              
+              if (treasureId !== null) {
+                const treasureCard = getTreasureById(treasureId);
+                if (treasureCard) {
+                  state.drawnTreasure = treasureCard;
+                  state.treasureDrawnThisTurn = true;
+                }
+              }
+            }
             
             // Check for victory condition (MVP: defeat 2 monsters)
             if (state.scenario.monstersDefeated >= state.scenario.monstersToDefeat) {
@@ -1204,6 +1259,100 @@ export const gameSlice = createSlice({
         state.partyResources.healingSurges = healingSurges;
       }
     },
+    /**
+     * Assign the currently drawn treasure to a hero's inventory
+     */
+    assignTreasureToHero: (state, action: PayloadAction<{ heroId: string }>) => {
+      const { heroId } = action.payload;
+      
+      if (!state.drawnTreasure) {
+        return;
+      }
+      
+      // Get or create the hero's inventory
+      if (!state.heroInventories[heroId]) {
+        state.heroInventories[heroId] = createHeroInventory(heroId);
+      }
+      
+      // Add the treasure to the hero's inventory
+      state.heroInventories[heroId] = addTreasureToInventory(
+        state.heroInventories[heroId],
+        state.drawnTreasure.id
+      );
+      
+      // Clear the drawn treasure (modal will close)
+      state.drawnTreasure = null;
+    },
+    /**
+     * Dismiss the treasure card without assigning it (put back in deck)
+     */
+    dismissTreasureCard: (state) => {
+      if (state.drawnTreasure) {
+        // Put the treasure back in the discard pile
+        state.treasureDeck = discardTreasure(state.treasureDeck, state.drawnTreasure.id);
+        state.drawnTreasure = null;
+      }
+    },
+    /**
+     * Use a treasure item from a hero's inventory
+     */
+    useTreasureItem: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
+      const { heroId, cardId } = action.payload;
+      const inventory = state.heroInventories[heroId];
+      
+      if (!inventory) {
+        return;
+      }
+      
+      const card = getTreasureById(cardId);
+      if (!card) {
+        return;
+      }
+      
+      // Check if the item is flippable (not already used)
+      const itemState = inventory.items.find(i => i.cardId === cardId);
+      if (!itemState || itemState.isFlipped) {
+        return;
+      }
+      
+      // Apply the item effect based on type
+      const effect = card.effect;
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      
+      // Handle healing effect
+      if (effect.type === 'healing' && effect.value) {
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
+        if (heroHpIndex !== -1) {
+          const hp = state.heroHp[heroHpIndex];
+          state.heroHp[heroHpIndex] = {
+            ...hp,
+            currentHp: Math.min(hp.maxHp, hp.currentHp + effect.value),
+          };
+        }
+      }
+      
+      // Remove or flip the item based on whether it's a consumable
+      if (card.discardAfterUse) {
+        // Remove from inventory and add to discard pile
+        state.heroInventories[heroId] = removeTreasureFromInventory(inventory, cardId);
+        state.treasureDeck = discardTreasure(state.treasureDeck, cardId);
+      } else {
+        // Just flip the card (mark as used)
+        state.heroInventories[heroId] = flipTreasureInInventory(inventory, cardId);
+      }
+    },
+    /**
+     * Set treasure deck directly (for testing purposes)
+     */
+    setTreasureDeck: (state, action: PayloadAction<TreasureDeck>) => {
+      state.treasureDeck = action.payload;
+    },
+    /**
+     * Set hero inventories directly (for testing purposes)
+     */
+    setHeroInventories: (state, action: PayloadAction<Record<string, HeroInventory>>) => {
+      state.heroInventories = action.payload;
+    },
   },
 });
 
@@ -1239,5 +1388,10 @@ export const {
   startMoveAttack,
   completeMoveAttackMovement,
   clearMoveAttack,
+  assignTreasureToHero,
+  dismissTreasureCard,
+  useTreasureItem,
+  setTreasureDeck,
+  setHeroInventories,
 } = gameSlice.actions;
 export default gameSlice.reducer;

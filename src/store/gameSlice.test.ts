@@ -23,6 +23,8 @@ import gameReducer, {
   setPartyResources,
   useVoluntaryActionSurge,
   skipActionSurge,
+  assignTreasureToHero,
+  dismissTreasureCard,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -69,6 +71,13 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     encounterDeck: { drawPile: [], discardPile: [] },
     drawnEncounter: null,
     showActionSurgePrompt: false,
+    multiAttackState: null,
+    pendingMoveAttack: null,
+    attackName: null,
+    treasureDeck: { drawPile: [], discardPile: [] },
+    drawnTreasure: null,
+    heroInventories: {},
+    treasureDrawnThisTurn: false,
     ...overrides,
   };
 }
@@ -3406,6 +3415,214 @@ describe("gameSlice", () => {
       const state = gameReducer(initialState, resetGame());
 
       expect(state.showActionSurgePrompt).toBe(false);
+    });
+  });
+
+  describe("treasure system", () => {
+    it("should initialize treasure deck when starting game", () => {
+      const action = startGame({ heroIds: ["quinn"], seed: 12345 });
+      const state = gameReducer(undefined, action);
+
+      expect(state.treasureDeck.drawPile.length).toBeGreaterThan(0);
+      expect(state.treasureDeck.discardPile).toEqual([]);
+      expect(state.drawnTreasure).toBeNull();
+      expect(state.treasureDrawnThisTurn).toBe(false);
+    });
+
+    it("should initialize hero inventories when starting game", () => {
+      const action = startGame({ heroIds: ["quinn", "vistra"], seed: 12345 });
+      const state = gameReducer(undefined, action);
+
+      expect(state.heroInventories).toBeDefined();
+      expect(state.heroInventories["quinn"]).toBeDefined();
+      expect(state.heroInventories["quinn"].heroId).toBe("quinn");
+      expect(state.heroInventories["quinn"].items).toEqual([]);
+      expect(state.heroInventories["vistra"]).toBeDefined();
+      expect(state.heroInventories["vistra"].heroId).toBe("vistra");
+    });
+
+    it("should draw treasure when defeating a monster", () => {
+      const attackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        treasureDeck: { drawPile: [134, 135, 136], discardPile: [] },
+        treasureDrawnThisTurn: false,
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+        attackName: "Test Attack",
+      }));
+
+      // Treasure should be drawn
+      expect(state.drawnTreasure).not.toBeNull();
+      expect(state.drawnTreasure?.id).toBe(134);
+      expect(state.treasureDrawnThisTurn).toBe(true);
+      // Treasure deck should be updated
+      expect(state.treasureDeck.drawPile).toEqual([135, 136]);
+    });
+
+    it("should only draw one treasure per turn", () => {
+      const attackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+
+      // First defeat sets treasureDrawnThisTurn
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+          { monsterId: "kobold", instanceId: "kobold-1", position: { x: 1, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        treasureDeck: { drawPile: [134, 135, 136], discardPile: [] },
+        treasureDrawnThisTurn: true, // Already drawn treasure this turn
+        heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
+      });
+
+      const state = gameReducer(initialState, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+        attackName: "Test Attack",
+      }));
+
+      // No new treasure should be drawn (treasureDrawnThisTurn was already true)
+      expect(state.drawnTreasure).toBeNull();
+      // Deck should remain unchanged
+      expect(state.treasureDeck.drawPile).toEqual([134, 135, 136]);
+    });
+
+    it("should reset treasureDrawnThisTurn on new turn", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        treasureDrawnThisTurn: true,
+      });
+
+      const state = gameReducer(initialState, endVillainPhase());
+
+      expect(state.treasureDrawnThisTurn).toBe(false);
+    });
+
+    it("should assign treasure to hero inventory", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        drawnTreasure: {
+          id: 134,
+          name: "+1 Magic Sword",
+          description: "Test",
+          rule: "Test",
+          usage: "immediate" as const,
+          goldPrice: 1000,
+          effect: { type: "attack-bonus" as const, value: 1, description: "+1 attack" },
+          discardAfterUse: false,
+        },
+        heroInventories: {
+          quinn: { heroId: "quinn", items: [] },
+        },
+      });
+
+      const state = gameReducer(initialState, assignTreasureToHero({ heroId: "quinn" }));
+
+      expect(state.drawnTreasure).toBeNull();
+      expect(state.heroInventories["quinn"].items).toHaveLength(1);
+      expect(state.heroInventories["quinn"].items[0].cardId).toBe(134);
+      expect(state.heroInventories["quinn"].items[0].isFlipped).toBe(false);
+    });
+
+    it("should dismiss treasure card and discard it", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        drawnTreasure: {
+          id: 134,
+          name: "+1 Magic Sword",
+          description: "Test",
+          rule: "Test",
+          usage: "immediate" as const,
+          goldPrice: 1000,
+          effect: { type: "attack-bonus" as const, value: 1, description: "+1 attack" },
+          discardAfterUse: false,
+        },
+        treasureDeck: { drawPile: [135, 136], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, dismissTreasureCard());
+
+      expect(state.drawnTreasure).toBeNull();
+      expect(state.treasureDeck.discardPile).toContain(134);
+    });
+
+    it("should reset treasure state on game reset", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        treasureDeck: { drawPile: [134], discardPile: [135] },
+        drawnTreasure: {
+          id: 136,
+          name: "Test",
+          description: "Test",
+          rule: "Test",
+          usage: "immediate" as const,
+          goldPrice: 1000,
+          effect: { type: "attack-bonus" as const, value: 1, description: "Test" },
+          discardAfterUse: false,
+        },
+        heroInventories: {
+          quinn: { heroId: "quinn", items: [{ cardId: 137, isFlipped: false }] },
+        },
+        treasureDrawnThisTurn: true,
+      });
+
+      const state = gameReducer(initialState, resetGame());
+
+      expect(state.treasureDeck.drawPile).toEqual([]);
+      expect(state.treasureDeck.discardPile).toEqual([]);
+      expect(state.drawnTreasure).toBeNull();
+      expect(state.heroInventories).toEqual({});
+      expect(state.treasureDrawnThisTurn).toBe(false);
     });
   });
 });

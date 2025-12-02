@@ -28,6 +28,8 @@
     startMoveAttack,
     completeMoveAttackMovement,
     clearMoveAttack,
+    assignTreasureToHero,
+    dismissTreasureCard,
     type MultiAttackState,
     type PendingMoveAttackState,
   } from "../store/gameSlice";
@@ -67,6 +69,7 @@
   import LevelUpAnimation from "./LevelUpAnimation.svelte";
   import HealingSurgeAnimation from "./HealingSurgeAnimation.svelte";
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
+  import TreasureCard from "./TreasureCard.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -76,6 +79,7 @@
   import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack } from "../store/actionCardParser";
+  import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -157,6 +161,8 @@
   let showActionSurgePrompt: boolean = $state(false);
   let multiAttackState: MultiAttackState | null = $state(null);
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
+  let drawnTreasure: TreasureCardType | null = $state(null);
+  let heroInventories: Record<string, HeroInventory> = $state({});
 
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
@@ -197,6 +203,8 @@
       showActionSurgePrompt = state.game.showActionSurgePrompt;
       multiAttackState = state.game.multiAttackState;
       pendingMoveAttack = state.game.pendingMoveAttack;
+      drawnTreasure = state.game.drawnTreasure;
+      heroInventories = state.game.heroInventories;
     });
 
     // Initialize state
@@ -233,6 +241,8 @@
     showActionSurgePrompt = state.game.showActionSurgePrompt;
     multiAttackState = state.game.multiAttackState;
     pendingMoveAttack = state.game.pendingMoveAttack;
+    drawnTreasure = state.game.drawnTreasure;
+    heroInventories = state.game.heroInventories;
 
     return unsubscribe;
   });
@@ -872,6 +882,22 @@
     if (!leveledUpHeroId) return undefined;
     return heroHp.find(h => h.heroId === leveledUpHeroId);
   }
+
+  // Handle assigning treasure to a hero
+  function handleAssignTreasure(heroId: string) {
+    store.dispatch(assignTreasureToHero({ heroId }));
+  }
+
+  // Handle dismissing/discarding the treasure card
+  function handleDismissTreasure() {
+    store.dispatch(dismissTreasureCard());
+  }
+
+  // Get hero inventory item count for display
+  function getHeroInventoryCount(heroId: string): number {
+    const inventory = heroInventories[heroId];
+    return inventory?.items?.length ?? 0;
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -1290,6 +1316,17 @@
         onSkip={handleSkipActionSurge}
       />
     {/if}
+  {/if}
+
+  <!-- Treasure Card Display (shown when treasure is drawn on monster defeat) -->
+  {#if drawnTreasure}
+    <TreasureCard
+      treasure={drawnTreasure}
+      heroes={selectedHeroes.map(h => ({ id: h.id, name: h.name }))}
+      onAssign={handleAssignTreasure}
+      onDismiss={handleDismissTreasure}
+      edge={getActivePlayerEdge()}
+    />
   {/if}
 </div>
 
