@@ -6,7 +6,7 @@
 
 ## Feature Description
 
-This test validates the implementation of monster card tactics from the official Wrath of Ashardalon monster cards. Each monster type has specific behaviors:
+This test validates the implementation of monster card tactics from the official Wrath of Ashardalon monster cards. Each monster type has specific behaviors defined on their cards.
 
 ### Implemented Monster Tactics
 
@@ -24,36 +24,57 @@ This test validates the implementation of monster card tactics from the official
 | Snake | Bite | +7 | 1 |
 | Cultist | Dagger | +6 | 1 |
 
+## Test Flow with Screenshots
+
+### Step 1: Initial Game Board
+
+The player starts the game with Quinn. The game board shows the Start Tile with the hero token positioned on it.
+
+![000-initial-game-board](026-monster-card-tactics.spec.ts-snapshots/000-initial-game-board-chromium-linux.png)
+
+### Step 2: Snake Positioned Within Range
+
+A Snake monster is placed at position (2, 2) on the start tile, while Quinn is at position (2, 5). The Snake is within 1 tile range (approximately 4 squares) of the hero, which triggers its `move-and-attack` tactic.
+
+![001-snake-positioned](026-monster-card-tactics.spec.ts-snapshots/001-snake-positioned-chromium-linux.png)
+
+### Step 3: Snake Moves Adjacent and Attacks
+
+When the Villain Phase begins and the Snake activates, it uses its `move-and-attack` behavior:
+1. The Snake moves to a position adjacent to Quinn
+2. The Snake immediately attacks Quinn with its Bite (+7 attack bonus)
+3. Both the movement and attack happen in a single turn
+
+This is the key difference from `attack-only` monsters like the Kobold, which would only move toward the hero without attacking.
+
+![001-snake-moved-and-attacked](026-monster-card-tactics.spec.ts-snapshots/001-snake-moved-and-attacked-chromium-linux.png)
+
 ## Test Scenarios
 
-### 1. Snake Move-and-Attack
-- Snake at (2, 2), Hero at (2, 5)
-- Snake is within 1 tile range
-- Snake moves adjacent AND attacks in same turn
+### Test 1: Snake Move-and-Attack
+- **Setup**: Snake at (2, 2), Hero at (2, 5)
+- **Condition**: Snake is within 1 tile range
+- **Expected**: Snake moves adjacent to hero AND attacks in the same turn
+- **Verification**: `monsterAttackResult` is not null, monster position is adjacent to hero
 
-### 2. Kobold Attack-Only
-- Kobold at (2, 2), Hero at (2, 5)
-- Kobold is NOT adjacent
-- Kobold only moves (does not attack)
+### Test 2: Kobold Attack-Only
+- **Setup**: Kobold at (2, 2), Hero at (2, 5)
+- **Condition**: Kobold is NOT adjacent to hero
+- **Expected**: Kobold only moves toward hero (does NOT attack)
+- **Verification**: `monsterAttackResult` is null, monster moved closer to hero
 
-### 3. Attack Stats Verification
-- Kobold adjacent to hero
-- Attack uses +7 bonus (per monster card)
-- Damage is calculated correctly
-
-## Screenshot Sequence
-
-1. `000-initial-game-board.png` - Game board after starting
-2. `001-villain-phase-snake-positioned.png` - Snake positioned within 1 tile of hero
-3. `002-snake-attack-result.png` - Combat result after snake's move-and-attack
-4. `003-snake-moved-and-attacked.png` - Final state showing snake adjacent to hero
+### Test 3: Attack Stats Verification
+- **Setup**: Kobold adjacent to hero at (2, 6), Hero at (2, 5)
+- **Condition**: Kobold is adjacent and will attack
+- **Expected**: Attack uses +7 bonus (per monster card), damage calculated correctly
+- **Verification**: Attack roll uses correct bonus, hit/miss determined by AC comparison
 
 ## Manual Verification Checklist
 
-- [ ] Snake moves to a position adjacent to the hero
-- [ ] Snake attacks immediately after moving (same turn)
-- [ ] Kobold only moves when not adjacent (doesn't attack)
-- [ ] Attack bonuses match the monster card values
+- [x] Snake moves to a position adjacent to the hero
+- [x] Snake attacks immediately after moving (same turn)
+- [x] Kobold only moves when not adjacent (doesn't attack)
+- [x] Attack bonuses match the monster card values (+7 for Kobold/Snake, +6 for Cultist)
 
 ## Implementation Notes
 
