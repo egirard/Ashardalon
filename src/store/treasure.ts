@@ -89,7 +89,9 @@ export interface TreasureDeck {
 
 /**
  * All treasure cards from the game
- * Note: Card IDs match the original game's numbering (134-166)
+ * Note: Card IDs match the original game's numbering (134-166).
+ * Some numbers are skipped as they are continuation rows in the source CSV
+ * (e.g., 148, 151, 152, 154 continue multi-line card text from previous rows).
  * 
  * IMPLEMENTATION STATUS:
  * - ✅ IMPLEMENTED: attack-bonus, ac-bonus, speed-bonus, healing, damage-bonus

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC, canLevelUp, levelUpHero, calculateDamage, checkHealingSurgeNeeded, useHealingSurge, checkPartyDefeat } from './combat';
+import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC, canLevelUp, levelUpHero, calculateDamage, checkHealingSurgeNeeded, useHealingSurge, checkPartyDefeat, applyItemBonusesToAttack, calculateTotalAC, calculateTotalSpeed } from './combat';
 import type { HeroAttack, MonsterState, HeroHpState, PartyResources } from './types';
+import type { HeroInventory } from './treasure';
 
 describe('rollD20', () => {
   it('should return values between 1 and 20', () => {
@@ -636,5 +637,141 @@ describe('checkPartyDefeat', () => {
     const resources: PartyResources = { xp: 0, healingSurges: 2 };
 
     expect(checkPartyDefeat(heroState, resources)).toBe(false);
+  });
+});
+
+describe('applyItemBonusesToAttack', () => {
+  it('should return base attack when inventory is undefined', () => {
+    const baseAttack: HeroAttack = { attackBonus: 6, damage: 1 };
+    const result = applyItemBonusesToAttack(baseAttack, undefined);
+    expect(result).toEqual(baseAttack);
+  });
+
+  it('should return base attack when inventory has no items', () => {
+    const baseAttack: HeroAttack = { attackBonus: 6, damage: 1 };
+    const inventory: HeroInventory = { heroId: 'quinn', items: [] };
+    const result = applyItemBonusesToAttack(baseAttack, inventory);
+    expect(result.attackBonus).toBe(6);
+    expect(result.damage).toBe(1);
+  });
+
+  it('should add attack bonus from +1 Magic Sword', () => {
+    const baseAttack: HeroAttack = { attackBonus: 6, damage: 1 };
+    // +1 Magic Sword (id: 134) gives +1 attack bonus
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [{ cardId: 134, isFlipped: false }]
+    };
+    const result = applyItemBonusesToAttack(baseAttack, inventory);
+    expect(result.attackBonus).toBe(7);
+    expect(result.damage).toBe(1);
+  });
+
+  it('should add damage bonus from Gauntlets of Ogre Power', () => {
+    const baseAttack: HeroAttack = { attackBonus: 6, damage: 1 };
+    // Gauntlets of Ogre Power (id: 146) gives +1 damage
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [{ cardId: 146, isFlipped: false }]
+    };
+    const result = applyItemBonusesToAttack(baseAttack, inventory);
+    expect(result.attackBonus).toBe(6);
+    expect(result.damage).toBe(2);
+  });
+
+  it('should stack multiple item bonuses', () => {
+    const baseAttack: HeroAttack = { attackBonus: 6, damage: 1 };
+    // +2 Magic Sword (id: 135) gives +2 attack bonus
+    // Gauntlets of Ogre Power (id: 146) gives +1 damage
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [
+        { cardId: 135, isFlipped: false },
+        { cardId: 146, isFlipped: false }
+      ]
+    };
+    const result = applyItemBonusesToAttack(baseAttack, inventory);
+    expect(result.attackBonus).toBe(8);
+    expect(result.damage).toBe(2);
+  });
+
+  it('should not include bonuses from flipped items', () => {
+    const baseAttack: HeroAttack = { attackBonus: 6, damage: 1 };
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [{ cardId: 134, isFlipped: true }] // Used/flipped item
+    };
+    const result = applyItemBonusesToAttack(baseAttack, inventory);
+    expect(result.attackBonus).toBe(6);
+    expect(result.damage).toBe(1);
+  });
+});
+
+describe('calculateTotalAC', () => {
+  it('should return base AC when inventory is undefined', () => {
+    expect(calculateTotalAC(17, undefined)).toBe(17);
+  });
+
+  it('should return base AC when inventory has no items', () => {
+    const inventory: HeroInventory = { heroId: 'quinn', items: [] };
+    expect(calculateTotalAC(17, inventory)).toBe(17);
+  });
+
+  it('should add AC bonus from Amulet of Protection', () => {
+    // Amulet of Protection (id: 136) gives +1 AC
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [{ cardId: 136, isFlipped: false }]
+    };
+    expect(calculateTotalAC(17, inventory)).toBe(18);
+  });
+
+  it('should stack AC bonuses from multiple items', () => {
+    // Amulet of Protection (id: 136) gives +1 AC
+    // Shield of Protection (id: 159) gives +1 AC
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [
+        { cardId: 136, isFlipped: false },
+        { cardId: 159, isFlipped: false }
+      ]
+    };
+    expect(calculateTotalAC(17, inventory)).toBe(19);
+  });
+
+  it('should not include bonus from flipped items', () => {
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [{ cardId: 136, isFlipped: true }]
+    };
+    expect(calculateTotalAC(17, inventory)).toBe(17);
+  });
+});
+
+describe('calculateTotalSpeed', () => {
+  it('should return base speed when inventory is undefined', () => {
+    expect(calculateTotalSpeed(6, undefined)).toBe(6);
+  });
+
+  it('should return base speed when inventory has no items', () => {
+    const inventory: HeroInventory = { heroId: 'quinn', items: [] };
+    expect(calculateTotalSpeed(6, inventory)).toBe(6);
+  });
+
+  it('should add speed bonus from Boots of Striding', () => {
+    // Boots of Striding (id: 138) gives +1 speed
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [{ cardId: 138, isFlipped: false }]
+    };
+    expect(calculateTotalSpeed(6, inventory)).toBe(7);
+  });
+
+  it('should not include bonus from flipped items', () => {
+    const inventory: HeroInventory = { 
+      heroId: 'quinn', 
+      items: [{ cardId: 138, isFlipped: true }]
+    };
+    expect(calculateTotalSpeed(6, inventory)).toBe(6);
   });
 });
