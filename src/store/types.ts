@@ -138,10 +138,12 @@ export interface MonsterCardTactics {
  * - kobold: ✅ FULLY IMPLEMENTED (attack-only behavior)
  * - snake: ⚠️ PARTIALLY IMPLEMENTED (move-and-attack works, but Poisoned status not applied)
  * - cultist: ⚠️ PARTIALLY IMPLEMENTED (move-and-attack works, but Poisoned status not applied)
+ * 
+ * See MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
  */
 export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   kobold: {
-    type: 'attack-only', // TODO: Future PR should implement 'explore-or-attack' for kobold exploration
+    type: 'attack-only', // See MONSTER_CARD_IMPLEMENTATION.md for exploration behavior
     adjacentAttack: { name: 'Sword', attackBonus: 7, damage: 1 },
     implementationNotes: 'Kobold exploration behavior (draw tile when on tile with unexplored edge and no heroes) not yet implemented.',
   },
