@@ -92,6 +92,9 @@
       );
       // Execute the first attack
       onAttackWithCard(selectedCardId, targetInstanceId);
+      // For same-target attacks (e.g., Reaping Strike), keep the card selected
+      // so the player can see which card they're using for subsequent attacks.
+      // For multi-target attacks, clear the selection since they need to pick new targets.
       if (!parsed.attack.sameTarget) {
         selectedCardId = null;
       }
