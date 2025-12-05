@@ -154,7 +154,6 @@
   let healingSurgeUsedHeroId: string | null = $state(null);
   let healingSurgeHpRestored: number | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
-  let mapScale: number = $state(1);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
   let drawnEncounter: EncounterCardType | null = $state(null);
@@ -448,6 +447,20 @@
   // Base scale calculated to fit the map in the available space
   let baseScale: number = $state(1);
   
+  // Combined scale = baseScale * manualZoom (computed as derived for efficiency)
+  let mapScale = $derived(baseScale * manualZoom);
+  
+  // Computed pan offset adjusted for current scale (to apply in transform)
+  let scaledPanOffset = $derived({
+    x: panOffset.x / mapScale,
+    y: panOffset.y / mapScale
+  });
+  
+  // Combined map transform style
+  let mapTransformStyle = $derived(
+    `transform: scale(${mapScale}) translate(${scaledPanOffset.x}px, ${scaledPanOffset.y}px); width: ${mapBounds.width}px; height: ${mapBounds.height}px;`
+  );
+  
   // Calculate base scale to fit the map in the available space
   $effect(() => {
     if (boardContainerRef) {
@@ -469,9 +482,6 @@
         // Use the smaller scale to ensure it fits, capped between MIN and MAX
         const newScale = Math.min(scaleX, scaleY, MAX_SCALE);
         baseScale = Math.max(newScale, MIN_SCALE);
-        
-        // Update mapScale with combined scale
-        mapScale = baseScale * manualZoom;
       };
 
       calculateBaseScale();
@@ -482,11 +492,6 @@
 
       return () => resizeObserver.disconnect();
     }
-  });
-
-  // Update mapScale whenever manualZoom changes
-  $effect(() => {
-    mapScale = baseScale * manualZoom;
   });
 
   function getHeroInfo(heroId: string): Hero | undefined {
@@ -923,6 +928,7 @@
   const MAP_ZOOM_MIN = 0.5;  // Minimum zoom (50% of base scale)
   const MAP_ZOOM_MAX = 3;    // Maximum zoom (300% of base scale)
   const MAP_ZOOM_STEP = 0.1; // Zoom step for buttons
+  const PINCH_ZOOM_SENSITIVITY = 0.01; // Sensitivity for pinch-to-zoom gesture
 
   // Toggle map control mode
   function toggleMapControlMode() {
@@ -948,6 +954,11 @@
   function handleZoomSlider(event: Event) {
     const target = event.target as HTMLInputElement;
     manualZoom = parseFloat(target.value);
+  }
+
+  // Helper to update pan offset based on delta movement
+  function updatePanOffset(deltaX: number, deltaY: number) {
+    panOffset = { x: panOffset.x + deltaX, y: panOffset.y + deltaY };
   }
 
   // Mouse/touch pan handlers
@@ -976,12 +987,12 @@
     if (event instanceof MouseEvent) {
       const deltaX = event.clientX - lastPanPoint.x;
       const deltaY = event.clientY - lastPanPoint.y;
-      panOffset = { x: panOffset.x + deltaX, y: panOffset.y + deltaY };
+      updatePanOffset(deltaX, deltaY);
       lastPanPoint = { x: event.clientX, y: event.clientY };
     } else if (event.touches.length === 1) {
       const deltaX = event.touches[0].clientX - lastPanPoint.x;
       const deltaY = event.touches[0].clientY - lastPanPoint.y;
-      panOffset = { x: panOffset.x + deltaX, y: panOffset.y + deltaY };
+      updatePanOffset(deltaX, deltaY);
       lastPanPoint = { x: event.touches[0].clientX, y: event.touches[0].clientY };
     } else if (event.touches.length === 2) {
       // Handle pinch-to-zoom
@@ -990,7 +1001,7 @@
       const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
       
       if (lastPinchDistance > 0) {
-        const zoomDelta = (currentDistance - lastPinchDistance) * 0.01;
+        const zoomDelta = (currentDistance - lastPinchDistance) * PINCH_ZOOM_SENSITIVITY;
         manualZoom = Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, manualZoom + zoomDelta));
       }
       
@@ -1090,7 +1101,7 @@
         class:map-control-active={mapControlMode}
         bind:this={dungeonMapRef}
         data-testid="dungeon-map"
-        style="transform: scale({mapScale}) translate({panOffset.x / mapScale}px, {panOffset.y / mapScale}px); width: {mapBounds.width}px; height: {mapBounds.height}px;"
+        style={mapTransformStyle}
         onclick={mapControlMode ? undefined : handleTileClick}
         onkeydown={mapControlMode ? undefined : handleTileKeydown}
         onmousedown={mapControlMode ? handlePanStart : undefined}
