@@ -70,14 +70,24 @@
                           eff.target === 'heroes-on-tile' ? 'Heroes on tile' :
                           eff.target === 'heroes-within-1-tile' ? 'Nearby heroes' :
                           'All heroes';
-        let damageText = eff.damage > 0 ? `${eff.damage} damage` : '';
+        
+        // Build effect description showing damage and/or status effects
+        const parts: string[] = [];
+        if (eff.damage > 0) {
+          parts.push(`${eff.damage} damage`);
+        }
         if (eff.statusEffect) {
-          damageText = damageText ? `${damageText} + ${eff.statusEffect}` : eff.statusEffect;
+          // Status effects may be comma-separated (e.g., 'dazed,poisoned')
+          const statuses = eff.statusEffect.split(',').map(s => s.trim());
+          parts.push(...statuses);
         }
+        
+        let hitText = parts.length > 0 ? parts.join(' + ') : 'no effect';
         if (eff.missDamage) {
-          damageText += ` (${eff.missDamage} on miss)`;
+          hitText += ` (${eff.missDamage} on miss)`;
         }
-        return `Attack +${eff.attackBonus} vs ${targetText}. ${damageText || 'status effect'}`;
+        
+        return `Attack +${eff.attackBonus} vs ${targetText}. Hit: ${hitText}`;
       }
       case 'environment':
         return `Environment: ${eff.description}`;
