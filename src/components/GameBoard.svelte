@@ -74,6 +74,7 @@
   import HealingSurgeAnimation from "./HealingSurgeAnimation.svelte";
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
   import TreasureCard from "./TreasureCard.svelte";
+  import PlayerCard from "./PlayerCard.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -540,6 +541,11 @@
   function getHeroLevel(heroId: string): number {
     const hp = heroHp.find((h) => h.heroId === heroId);
     return hp?.level ?? 1;
+  }
+
+  // Get full HeroHpState for a hero
+  function getHeroHpState(heroId: string): HeroHpState | undefined {
+    return heroHp.find((h) => h.heroId === heroId);
   }
 
   // Get monsters controlled by the current hero
@@ -1054,30 +1060,17 @@
     data-testid="player-zone-top"
   >
     {#each getHeroesForEdge('top') as hero (hero.id)}
-      <div 
-        class="player-info" 
-        class:active-player={isActiveHero(hero.id)}
-        data-testid={isActiveHero(hero.id) ? "turn-indicator" : `player-dashboard-${hero.id}`}
-      >
-        <img
-          src={assetPath(hero.imagePath)}
-          alt={hero.name}
-          class="player-avatar"
+      {@const heroHpState = getHeroHpState(hero.id)}
+      {#if heroHpState}
+        <PlayerCard
+          {hero}
+          {heroHpState}
+          heroPowerCards={heroPowerCards[hero.id]}
+          isActive={isActiveHero(hero.id)}
+          turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+          turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
         />
-        <div class="turn-details">
-          <span class="player-name">{isActiveHero(hero.id) ? `${hero.name}'s Turn` : hero.name}</span>
-          {#if getHeroLevel(hero.id) === 2}
-            <span class="hero-level" data-testid="hero-level">Level 2 ⭐</span>
-          {/if}
-          {#if isActiveHero(hero.id)}
-            <span class="turn-phase" data-testid="turn-phase"
-              >{formatPhase(turnState.currentPhase)}</span
-            >
-            <span class="turn-number">Turn {turnState.turnNumber}</span>
-          {/if}
-          <span class="hero-hp" data-testid="hero-hp">HP: {getHeroCurrentHp(hero.id)}/{getHeroMaxHp(hero.id)}</span>
-        </div>
-      </div>
+      {/if}
     {/each}
   </div>
 
@@ -1090,30 +1083,17 @@
       data-testid="player-zone-left"
     >
       {#each getHeroesForEdge('left') as hero (hero.id)}
-        <div 
-          class="player-info"
-          class:active-player={isActiveHero(hero.id)}
-          data-testid={isActiveHero(hero.id) ? "turn-indicator" : `player-dashboard-${hero.id}`}
-        >
-          <img
-            src={assetPath(hero.imagePath)}
-            alt={hero.name}
-            class="player-avatar"
+        {@const heroHpState = getHeroHpState(hero.id)}
+        {#if heroHpState}
+          <PlayerCard
+            {hero}
+            {heroHpState}
+            heroPowerCards={heroPowerCards[hero.id]}
+            isActive={isActiveHero(hero.id)}
+            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
           />
-          <div class="turn-details">
-            <span class="player-name">{isActiveHero(hero.id) ? `${hero.name}'s Turn` : hero.name}</span>
-            {#if getHeroLevel(hero.id) === 2}
-              <span class="hero-level" data-testid="hero-level">Level 2 ⭐</span>
-            {/if}
-            {#if isActiveHero(hero.id)}
-              <span class="turn-phase"
-                >{formatPhase(turnState.currentPhase)}</span
-              >
-              <span class="turn-number">Turn {turnState.turnNumber}</span>
-            {/if}
-            <span class="hero-hp">HP: {getHeroCurrentHp(hero.id)}/{getHeroMaxHp(hero.id)}</span>
-          </div>
-        </div>
+        {/if}
       {/each}
     </div>
 
@@ -1391,30 +1371,17 @@
       data-testid="player-zone-right"
     >
       {#each getHeroesForEdge('right') as hero (hero.id)}
-        <div 
-          class="player-info"
-          class:active-player={isActiveHero(hero.id)}
-          data-testid={isActiveHero(hero.id) ? "turn-indicator" : `player-dashboard-${hero.id}`}
-        >
-          <img
-            src={assetPath(hero.imagePath)}
-            alt={hero.name}
-            class="player-avatar"
+        {@const heroHpState = getHeroHpState(hero.id)}
+        {#if heroHpState}
+          <PlayerCard
+            {hero}
+            {heroHpState}
+            heroPowerCards={heroPowerCards[hero.id]}
+            isActive={isActiveHero(hero.id)}
+            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
           />
-          <div class="turn-details">
-            <span class="player-name">{isActiveHero(hero.id) ? `${hero.name}'s Turn` : hero.name}</span>
-            {#if getHeroLevel(hero.id) === 2}
-              <span class="hero-level" data-testid="hero-level">Level 2 ⭐</span>
-            {/if}
-            {#if isActiveHero(hero.id)}
-              <span class="turn-phase"
-                >{formatPhase(turnState.currentPhase)}</span
-              >
-              <span class="turn-number">Turn {turnState.turnNumber}</span>
-            {/if}
-            <span class="hero-hp">HP: {getHeroCurrentHp(hero.id)}/{getHeroMaxHp(hero.id)}</span>
-          </div>
-        </div>
+        {/if}
       {/each}
     </div>
   </div>
@@ -1426,30 +1393,17 @@
     data-testid="player-zone-bottom"
   >
     {#each getHeroesForEdge('bottom') as hero (hero.id)}
-      <div 
-        class="player-info" 
-        class:active-player={isActiveHero(hero.id)}
-        data-testid={isActiveHero(hero.id) ? "turn-indicator" : `player-dashboard-${hero.id}`}
-      >
-        <img
-          src={assetPath(hero.imagePath)}
-          alt={hero.name}
-          class="player-avatar"
+      {@const heroHpState = getHeroHpState(hero.id)}
+      {#if heroHpState}
+        <PlayerCard
+          {hero}
+          {heroHpState}
+          heroPowerCards={heroPowerCards[hero.id]}
+          isActive={isActiveHero(hero.id)}
+          turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+          turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
         />
-        <div class="turn-details">
-          <span class="player-name">{isActiveHero(hero.id) ? `${hero.name}'s Turn` : hero.name}</span>
-          {#if getHeroLevel(hero.id) === 2}
-            <span class="hero-level" data-testid="hero-level">Level 2 ⭐</span>
-          {/if}
-          {#if isActiveHero(hero.id)}
-            <span class="turn-phase" data-testid="turn-phase"
-              >{formatPhase(turnState.currentPhase)}</span
-            >
-            <span class="turn-number">Turn {turnState.turnNumber}</span>
-          {/if}
-          <span class="hero-hp" data-testid="hero-hp">HP: {getHeroCurrentHp(hero.id)}/{getHeroMaxHp(hero.id)}</span>
-        </div>
-      </div>
+      {/if}
     {/each}
   </div>
 
@@ -1619,19 +1573,11 @@
     flex-direction: column;
   }
 
-  .edge-left .player-info {
-    transform: rotate(90deg);
-  }
-
   .edge-right {
     border-left: 2px solid #333;
     min-width: 80px;
     min-height: auto;
     flex-direction: column;
-  }
-
-  .edge-right .player-info {
-    transform: rotate(-90deg);
   }
 
   .edge-bottom {
@@ -1719,86 +1665,6 @@
     border-radius: 4px;
     margin-top: 2px;
     white-space: nowrap;
-  }
-
-  /* Player info display in edge zones */
-  .player-info {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease-out;
-  }
-
-  .player-info.active-player {
-    background: rgba(255, 215, 0, 0.15);
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-    border: 2px solid rgba(255, 215, 0, 0.5);
-  }
-
-  .player-avatar {
-    width: 50px;
-    height: 50px;
-    object-fit: contain;
-    border-radius: 50%;
-    border: 2px solid #888;
-    background: rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease-out;
-  }
-
-  .active-player .player-avatar {
-    border-color: #ffd700;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-  }
-
-  .turn-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-  }
-
-  .player-name {
-    font-size: 1rem;
-    font-weight: bold;
-    color: #aaa;
-    transition: color 0.3s ease-out;
-  }
-
-  .active-player .player-name {
-    color: #ffd700;
-  }
-
-  .hero-level {
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: #ffd700;
-    background: rgba(255, 215, 0, 0.2);
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 215, 0, 0.4);
-  }
-
-  .turn-phase {
-    font-size: 0.85rem;
-    color: #8ecae6;
-  }
-
-  .turn-number {
-    font-size: 0.75rem;
-    color: #aaa;
-  }
-
-  .hero-hp {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #e76f51;
-    background: rgba(231, 111, 81, 0.15);
-    padding: 0.1rem 0.4rem;
-    border-radius: 4px;
-    border: 1px solid rgba(231, 111, 81, 0.3);
   }
 
   /* Board controls container */
