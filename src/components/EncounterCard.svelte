@@ -60,17 +60,35 @@
       case 'damage':
         if (eff.target === 'active-hero') {
           return `Active hero takes ${eff.amount} damage`;
+        } else if (eff.target === 'heroes-on-tile') {
+          return `Heroes on tile take ${eff.amount} damage`;
         } else {
           return `All heroes take ${eff.amount} damage`;
         }
+      case 'attack': {
+        const targetText = eff.target === 'active-hero' ? 'Active hero' :
+                          eff.target === 'heroes-on-tile' ? 'Heroes on tile' :
+                          eff.target === 'heroes-within-1-tile' ? 'Nearby heroes' :
+                          'All heroes';
+        let damageText = eff.damage > 0 ? `${eff.damage} damage` : '';
+        if (eff.statusEffect) {
+          damageText = damageText ? `${damageText} + ${eff.statusEffect}` : eff.statusEffect;
+        }
+        if (eff.missDamage) {
+          damageText += ` (${eff.missDamage} on miss)`;
+        }
+        return `Attack +${eff.attackBonus} vs ${targetText}. ${damageText || 'status effect'}`;
+      }
       case 'environment':
-        return 'Environment effect (not implemented)';
+        return `Environment: ${eff.description}`;
       case 'curse':
-        return `Curse (${eff.duration} turns) (not implemented)`;
+        return `Curse: ${eff.description}`;
       case 'trap':
-        return `Trap - DC ${eff.disableDC} to disable (not implemented)`;
+        return `Trap (DC ${eff.disableDC}): ${eff.description}`;
       case 'hazard':
-        return `Hazard - AC ${eff.ac}, ${eff.damage} damage (not implemented)`;
+        return `Hazard: ${eff.description}`;
+      case 'special':
+        return `Special: ${eff.description}`;
       default:
         return 'Unknown effect';
     }
