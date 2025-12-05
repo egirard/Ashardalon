@@ -27,6 +27,7 @@ import gameReducer, {
   skipActionSurge,
   assignTreasureToHero,
   dismissTreasureCard,
+  useTreasureItem,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -3648,6 +3649,148 @@ describe("gameSlice", () => {
       expect(state.drawnTreasure).toBeNull();
       expect(state.heroInventories).toEqual({});
       expect(state.treasureDrawnThisTurn).toBe(false);
+    });
+
+    describe("useTreasureItem", () => {
+      it("should heal hero when using Potion of Healing", () => {
+        const initialState = createGameState({
+          currentScreen: "game-board",
+          heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: "hero-phase",
+            turnNumber: 1,
+          },
+          heroHp: [{ heroId: "quinn", currentHp: 4, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+          heroInventories: {
+            quinn: { heroId: "quinn", items: [{ cardId: 150, isFlipped: false }] }, // Potion of Healing
+          },
+          treasureDeck: { drawPile: [], discardPile: [] },
+        });
+
+        const state = gameReducer(initialState, useTreasureItem({ heroId: "quinn", cardId: 150 }));
+
+        // Hero should be healed by 2 HP
+        expect(state.heroHp[0].currentHp).toBe(6);
+        // Potion should be removed from inventory and discarded
+        expect(state.heroInventories["quinn"].items).toHaveLength(0);
+        expect(state.treasureDeck.discardPile).toContain(150);
+      });
+
+      it("should not heal beyond max HP", () => {
+        const initialState = createGameState({
+          currentScreen: "game-board",
+          heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: "hero-phase",
+            turnNumber: 1,
+          },
+          heroHp: [{ heroId: "quinn", currentHp: 7, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+          heroInventories: {
+            quinn: { heroId: "quinn", items: [{ cardId: 150, isFlipped: false }] },
+          },
+          treasureDeck: { drawPile: [], discardPile: [] },
+        });
+
+        const state = gameReducer(initialState, useTreasureItem({ heroId: "quinn", cardId: 150 }));
+
+        // Hero should be capped at max HP
+        expect(state.heroHp[0].currentHp).toBe(8);
+        expect(state.heroHp[0].maxHp).toBe(8);
+      });
+
+      it("should not use an item that is already flipped", () => {
+        const initialState = createGameState({
+          currentScreen: "game-board",
+          heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: "hero-phase",
+            turnNumber: 1,
+          },
+          heroHp: [{ heroId: "quinn", currentHp: 4, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+          heroInventories: {
+            quinn: { heroId: "quinn", items: [{ cardId: 150, isFlipped: true }] }, // Already used
+          },
+          treasureDeck: { drawPile: [], discardPile: [] },
+        });
+
+        const state = gameReducer(initialState, useTreasureItem({ heroId: "quinn", cardId: 150 }));
+
+        // Nothing should change - item is already flipped
+        expect(state.heroHp[0].currentHp).toBe(4);
+        expect(state.heroInventories["quinn"].items).toHaveLength(1);
+        expect(state.heroInventories["quinn"].items[0].isFlipped).toBe(true);
+      });
+
+      it("should flip reusable items instead of discarding", () => {
+        // Ring of Shooting Stars (157) is a flip-to-use item
+        const initialState = createGameState({
+          currentScreen: "game-board",
+          heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: "hero-phase",
+            turnNumber: 1,
+          },
+          heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+          heroInventories: {
+            quinn: { heroId: "quinn", items: [{ cardId: 157, isFlipped: false }] }, // Ring of Shooting Stars
+          },
+          treasureDeck: { drawPile: [], discardPile: [] },
+        });
+
+        const state = gameReducer(initialState, useTreasureItem({ heroId: "quinn", cardId: 157 }));
+
+        // Item should be flipped, not removed
+        expect(state.heroInventories["quinn"].items).toHaveLength(1);
+        expect(state.heroInventories["quinn"].items[0].isFlipped).toBe(true);
+        expect(state.treasureDeck.discardPile).toHaveLength(0);
+      });
+
+      it("should do nothing if hero inventory does not exist", () => {
+        const initialState = createGameState({
+          currentScreen: "game-board",
+          heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: "hero-phase",
+            turnNumber: 1,
+          },
+          heroHp: [{ heroId: "quinn", currentHp: 4, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+          heroInventories: {},
+          treasureDeck: { drawPile: [], discardPile: [] },
+        });
+
+        const state = gameReducer(initialState, useTreasureItem({ heroId: "quinn", cardId: 150 }));
+
+        // Nothing should change
+        expect(state.heroHp[0].currentHp).toBe(4);
+      });
+
+      it("should do nothing if item is not in inventory", () => {
+        const initialState = createGameState({
+          currentScreen: "game-board",
+          heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: "hero-phase",
+            turnNumber: 1,
+          },
+          heroHp: [{ heroId: "quinn", currentHp: 4, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+          heroInventories: {
+            quinn: { heroId: "quinn", items: [{ cardId: 134, isFlipped: false }] }, // Different item
+          },
+          treasureDeck: { drawPile: [], discardPile: [] },
+        });
+
+        const state = gameReducer(initialState, useTreasureItem({ heroId: "quinn", cardId: 150 }));
+
+        // Nothing should change
+        expect(state.heroHp[0].currentHp).toBe(4);
+        expect(state.heroInventories["quinn"].items).toHaveLength(1);
+      });
     });
   });
 
