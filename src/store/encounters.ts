@@ -166,17 +166,21 @@ export function applyDamageToAllHeroes(
  * Currently implemented effects:
  * - damage (active-hero): Deals damage to the current hero
  * - damage (all-heroes): Deals damage to all heroes
+ * - damage (heroes-on-tile): Deals damage to all heroes (treated as all-heroes for now)
+ * - attack: Makes attack roll vs AC and deals damage on hit
  * 
  * Not yet implemented effects (will log a warning):
- * - environment
- * - curse
- * - trap
- * - hazard
+ * - environment: Persistent global effect
+ * - curse: Persistent hero debuff
+ * - trap: Persistent trap with trigger
+ * - hazard: Hazard marker placement
+ * - special: Complex effect requiring UI interaction
  */
 export function resolveEncounterEffect(
   encounter: EncounterCard,
   heroHpList: HeroHpState[],
-  activeHeroId: string
+  activeHeroId: string,
+  randomFn: () => number = Math.random
 ): HeroHpState[] {
   const effect = encounter.effect;
   
@@ -191,9 +195,52 @@ export function resolveEncounterEffect(
           return hp;
         });
       } else {
-        // Apply damage to all heroes
+        // Apply damage to all heroes (covers 'all-heroes' and 'heroes-on-tile')
         return applyDamageToAllHeroes(heroHpList, effect.amount);
       }
+    }
+    
+    case 'attack': {
+      // Make attack rolls against heroes
+      // Note: Status effects (dazed, poisoned) are NOT YET IMPLEMENTED
+      if (effect.statusEffect) {
+        console.warn(`Status effect '${effect.statusEffect}' from '${encounter.name}' is not yet implemented`);
+      }
+      
+      const getTargetHeroes = (): string[] => {
+        switch (effect.target) {
+          case 'active-hero':
+            return [activeHeroId];
+          case 'all-heroes':
+          case 'heroes-on-tile':
+          case 'heroes-within-1-tile':
+            // For now, treat all area targets as all heroes
+            // Full tile-based targeting would require position info
+            return heroHpList.map(h => h.heroId);
+          default:
+            return [activeHeroId];
+        }
+      };
+      
+      const targetHeroIds = getTargetHeroes();
+      
+      return heroHpList.map(hp => {
+        if (!targetHeroIds.includes(hp.heroId)) {
+          return hp;
+        }
+        
+        // Roll attack (d20 + attack bonus vs AC)
+        const roll = Math.floor(randomFn() * 20) + 1;
+        const total = roll + effect.attackBonus;
+        const isHit = total >= hp.ac;
+        
+        if (isHit) {
+          return applyDamageToHero(hp, effect.damage);
+        } else if (effect.missDamage !== undefined && effect.missDamage > 0) {
+          return applyDamageToHero(hp, effect.missDamage);
+        }
+        return hp;
+      });
     }
     
     case 'environment':
@@ -210,14 +257,20 @@ export function resolveEncounterEffect(
       
     case 'trap':
       // Trap effects are NOT YET IMPLEMENTED  
-      // Would need skill check UI and resolution
+      // Would need persistent trap state and villain phase triggers
       console.warn(`Trap effect '${encounter.name}' is not yet implemented`);
       return heroHpList;
       
     case 'hazard':
       // Hazard effects are NOT YET IMPLEMENTED
-      // Would need attack roll against hero AC
+      // Would need hazard marker placement and ongoing effects
       console.warn(`Hazard effect '${encounter.name}' is not yet implemented`);
+      return heroHpList;
+      
+    case 'special':
+      // Special effects are NOT YET IMPLEMENTED
+      // Would need complex UI interactions (tile placement, monster spawning, etc.)
+      console.warn(`Special effect '${encounter.name}' is not yet implemented`);
       return heroHpList;
       
     default:

@@ -2844,7 +2844,7 @@ describe("gameSlice", () => {
           exploredThisTurn: false, // No exploration happened
         },
         encounterDeck: {
-          drawPile: ["volcanic-spray", "goblin-ambush"],
+          drawPile: ["unbearable-heat", "frenzied-leap"],
           discardPile: [],
         },
       });
@@ -2853,8 +2853,8 @@ describe("gameSlice", () => {
 
       expect(state.turnState.currentPhase).toBe("villain-phase");
       expect(state.drawnEncounter).not.toBeNull();
-      expect(state.drawnEncounter?.id).toBe("volcanic-spray");
-      expect(state.encounterDeck.drawPile).toEqual(["goblin-ambush"]);
+      expect(state.drawnEncounter?.id).toBe("unbearable-heat");
+      expect(state.encounterDeck.drawPile).toEqual(["frenzied-leap"]);
     });
 
     it("should draw encounter when entering villain phase with black tile exploration", () => {
@@ -2869,7 +2869,7 @@ describe("gameSlice", () => {
           drewOnlyWhiteTilesThisTurn: false, // Black tile was drawn - triggers encounter
         },
         encounterDeck: {
-          drawPile: ["volcanic-spray", "goblin-ambush"],
+          drawPile: ["unbearable-heat", "frenzied-leap"],
           discardPile: [],
         },
       });
@@ -2878,8 +2878,8 @@ describe("gameSlice", () => {
 
       expect(state.turnState.currentPhase).toBe("villain-phase");
       expect(state.drawnEncounter).not.toBeNull();
-      expect(state.drawnEncounter?.id).toBe("volcanic-spray");
-      expect(state.encounterDeck.drawPile).toEqual(["goblin-ambush"]);
+      expect(state.drawnEncounter?.id).toBe("unbearable-heat");
+      expect(state.encounterDeck.drawPile).toEqual(["frenzied-leap"]);
     });
 
     it("should NOT draw encounter when entering villain phase with only white tile exploration", () => {
@@ -2894,7 +2894,7 @@ describe("gameSlice", () => {
           drewOnlyWhiteTilesThisTurn: true, // Only white tiles were drawn - prevents encounter
         },
         encounterDeck: {
-          drawPile: ["volcanic-spray", "goblin-ambush"],
+          drawPile: ["unbearable-heat", "frenzied-leap"],
           discardPile: [],
         },
       });
@@ -2903,7 +2903,7 @@ describe("gameSlice", () => {
 
       expect(state.turnState.currentPhase).toBe("villain-phase");
       expect(state.drawnEncounter).toBeNull();
-      expect(state.encounterDeck.drawPile).toEqual(["volcanic-spray", "goblin-ambush"]);
+      expect(state.encounterDeck.drawPile).toEqual(["unbearable-heat", "frenzied-leap"]);
     });
 
     it("should clear drawnEncounter when villain phase ends", () => {
@@ -2918,8 +2918,8 @@ describe("gameSlice", () => {
           drewOnlyWhiteTilesThisTurn: false,
         },
         drawnEncounter: {
-          id: "volcanic-spray",
-          name: "Volcanic Spray",
+          id: "unbearable-heat",
+          name: "Unbearable Heat",
           type: "event",
           description: "Test",
           effect: { type: "damage", amount: 1, target: "active-hero" },
@@ -2937,12 +2937,12 @@ describe("gameSlice", () => {
       const initialState = createGameState({
         currentScreen: "game-board",
         encounterDeck: {
-          drawPile: ["volcanic-spray"],
-          discardPile: ["goblin-ambush"],
+          drawPile: ["unbearable-heat"],
+          discardPile: ["frenzied-leap"],
         },
         drawnEncounter: {
-          id: "volcanic-spray",
-          name: "Volcanic Spray",
+          id: "unbearable-heat",
+          name: "Unbearable Heat",
           type: "event",
           description: "Test",
           effect: { type: "damage", amount: 1, target: "active-hero" },
@@ -2970,11 +2970,11 @@ describe("gameSlice", () => {
         },
         heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
         drawnEncounter: {
-          id: "goblin-ambush",
-          name: "Goblin Ambush",
+          id: "frenzied-leap",
+          name: "Frenzied Leap",
           type: "event",
-          description: "The active hero takes 1 damage.",
-          effect: { type: "damage", amount: 1, target: "active-hero" },
+          description: "The active hero takes 2 damage.",
+          effect: { type: "damage", amount: 2, target: "active-hero" },
           imagePath: "test.png",
         },
         encounterDeck: { drawPile: [], discardPile: [] },
@@ -2984,9 +2984,9 @@ describe("gameSlice", () => {
       
       const state = gameReducer(initialState, dismissEncounterCard());
 
-      expect(state.heroHp[0].currentHp).toBe(7); // Took 1 damage
+      expect(state.heroHp[0].currentHp).toBe(6); // Took 2 damage
       expect(state.drawnEncounter).toBeNull();
-      expect(state.encounterDeck.discardPile).toContain("goblin-ambush");
+      expect(state.encounterDeck.discardPile).toContain("frenzied-leap");
     });
 
     it("should apply damage effect to all heroes when dismissing all-heroes encounter", () => {
@@ -3007,8 +3007,8 @@ describe("gameSlice", () => {
           { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
         ],
         drawnEncounter: {
-          id: "cave-in",
-          name: "Cave-In",
+          id: "unbearable-heat",
+          name: "Unbearable Heat",
           type: "event",
           description: "All heroes take 1 damage.",
           effect: { type: "damage", amount: 1, target: "all-heroes" },
@@ -3037,8 +3037,8 @@ describe("gameSlice", () => {
         },
         heroHp: [{ heroId: "quinn", currentHp: 1, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
         drawnEncounter: {
-          id: "cave-in",
-          name: "Cave-In",
+          id: "unbearable-heat",
+          name: "Unbearable Heat",
           type: "event",
           description: "All heroes take 1 damage.",
           effect: { type: "damage", amount: 1, target: "all-heroes" },
@@ -3052,7 +3052,7 @@ describe("gameSlice", () => {
 
       expect(state.heroHp[0].currentHp).toBe(0);
       expect(state.currentScreen).toBe("defeat");
-      expect(state.defeatReason).toContain("Cave-In");
+      expect(state.defeatReason).toContain("Unbearable Heat");
     });
 
     it("should not apply damage for unimplemented environment effect", () => {
@@ -3067,11 +3067,11 @@ describe("gameSlice", () => {
         },
         heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
         drawnEncounter: {
-          id: "dark-fog",
-          name: "Dark Fog",
+          id: "hidden-snipers",
+          name: "Hidden Snipers",
           type: "environment",
-          description: "All heroes have -2 to attack rolls.",
-          effect: { type: "environment" },
+          description: "Take 1 damage when alone on tile.",
+          effect: { type: "environment", description: "Take 1 damage when alone on tile." },
           imagePath: "test.png",
         },
         encounterDeck: { drawPile: [], discardPile: [] },
@@ -3083,7 +3083,7 @@ describe("gameSlice", () => {
       // HP unchanged for unimplemented effect
       expect(state.heroHp[0].currentHp).toBe(8);
       expect(state.drawnEncounter).toBeNull();
-      expect(state.encounterDeck.discardPile).toContain("dark-fog");
+      expect(state.encounterDeck.discardPile).toContain("hidden-snipers");
     });
   });
 
@@ -3100,11 +3100,11 @@ describe("gameSlice", () => {
         },
         heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
         drawnEncounter: {
-          id: "goblin-ambush",
-          name: "Goblin Ambush",
+          id: "frenzied-leap",
+          name: "Frenzied Leap",
           type: "event",
-          description: "The active hero takes 1 damage.",
-          effect: { type: "damage", amount: 1, target: "active-hero" },
+          description: "The active hero takes 2 damage.",
+          effect: { type: "damage", amount: 2, target: "active-hero" },
           imagePath: "test.png",
         },
         encounterDeck: { drawPile: [], discardPile: [] },
@@ -3119,7 +3119,7 @@ describe("gameSlice", () => {
       expect(state.partyResources.xp).toBe(1);
       // Encounter was discarded
       expect(state.drawnEncounter).toBeNull();
-      expect(state.encounterDeck.discardPile).toContain("goblin-ambush");
+      expect(state.encounterDeck.discardPile).toContain("frenzied-leap");
     });
 
     it("should deduct exactly 5 XP when canceling encounter", () => {
@@ -3134,8 +3134,8 @@ describe("gameSlice", () => {
         },
         heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
         drawnEncounter: {
-          id: "cave-in",
-          name: "Cave-In",
+          id: "unbearable-heat",
+          name: "Unbearable Heat",
           type: "event",
           description: "All heroes take 1 damage.",
           effect: { type: "damage", amount: 1, target: "all-heroes" },
@@ -3162,11 +3162,11 @@ describe("gameSlice", () => {
         },
         heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
         drawnEncounter: {
-          id: "goblin-ambush",
-          name: "Goblin Ambush",
+          id: "frenzied-leap",
+          name: "Frenzied Leap",
           type: "event",
-          description: "The active hero takes 1 damage.",
-          effect: { type: "damage", amount: 1, target: "active-hero" },
+          description: "The active hero takes 2 damage.",
+          effect: { type: "damage", amount: 2, target: "active-hero" },
           imagePath: "test.png",
         },
         encounterDeck: { drawPile: [], discardPile: [] },
@@ -3217,11 +3217,11 @@ describe("gameSlice", () => {
         },
         heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
         drawnEncounter: {
-          id: "goblin-ambush",
-          name: "Goblin Ambush",
+          id: "frenzied-leap",
+          name: "Frenzied Leap",
           type: "event",
-          description: "The active hero takes 1 damage.",
-          effect: { type: "damage", amount: 1, target: "active-hero" },
+          description: "The active hero takes 2 damage.",
+          effect: { type: "damage", amount: 2, target: "active-hero" },
           imagePath: "test.png",
         },
         encounterDeck: { drawPile: [], discardPile: [] },
