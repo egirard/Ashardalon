@@ -607,3 +607,99 @@ export function getDamageBonusFromItems(inventory: HeroInventory): number {
   }
   return bonus;
 }
+
+/**
+ * Effect types that are fully implemented
+ */
+const IMPLEMENTED_EFFECT_TYPES: TreasureEffectType[] = [
+  'attack-bonus',
+  'ac-bonus',
+  'speed-bonus',
+  'damage-bonus',
+  'healing',
+];
+
+/**
+ * Effect types that are partially implemented (some functionality works)
+ */
+const PARTIALLY_IMPLEMENTED_EFFECT_TYPES: TreasureEffectType[] = [
+  'attack-action',
+  'trap-disable', // Data model only, trap system not implemented
+];
+
+/**
+ * Check if a treasure card effect is fully implemented
+ * @param card The treasure card to check
+ * @returns true if the effect is fully implemented
+ */
+export function isEffectImplemented(card: TreasureCard): boolean {
+  return IMPLEMENTED_EFFECT_TYPES.includes(card.effect.type);
+}
+
+/**
+ * Check if a treasure card effect is partially implemented
+ * @param card The treasure card to check
+ * @returns true if the effect is partially implemented (some functionality works)
+ */
+export function isEffectPartiallyImplemented(card: TreasureCard): boolean {
+  return PARTIALLY_IMPLEMENTED_EFFECT_TYPES.includes(card.effect.type);
+}
+
+/**
+ * Get the implementation status of a treasure card
+ * @param card The treasure card to check
+ * @returns 'implemented', 'partial', or 'not-implemented'
+ */
+export function getEffectImplementationStatus(card: TreasureCard): 'implemented' | 'partial' | 'not-implemented' {
+  if (isEffectImplemented(card)) {
+    return 'implemented';
+  }
+  if (isEffectPartiallyImplemented(card)) {
+    return 'partial';
+  }
+  return 'not-implemented';
+}
+
+/**
+ * Get a human-readable message about why an effect is not implemented
+ * @param card The treasure card
+ * @returns A user-friendly message explaining the implementation status
+ */
+export function getImplementationMessage(card: TreasureCard): string | null {
+  const status = getEffectImplementationStatus(card);
+  
+  if (status === 'implemented') {
+    return null;
+  }
+  
+  if (status === 'partial') {
+    switch (card.effect.type) {
+      case 'attack-action':
+        return 'Basic attack works. Special restrictions not yet enforced.';
+      case 'trap-disable':
+        return 'Bonus tracked. Trap system not yet implemented.';
+      default:
+        return 'Some features not yet implemented.';
+    }
+  }
+  
+  // Not implemented - provide specific reason based on effect type
+  switch (card.effect.type) {
+    case 'reroll':
+      return 'Reroll system not yet implemented. Keep this card for future use.';
+    case 'flip-power':
+      return 'Power card refresh not yet implemented. Keep this card for future use.';
+    case 'monster-control':
+      return 'Monster control not yet implemented. Keep this card for future use.';
+    case 'movement':
+      return 'Extra movement actions not yet implemented. Keep this card for future use.';
+    case 'level-up':
+      return 'Manual level-up not yet implemented. Heroes level up automatically on natural 20 with 5+ XP.';
+    case 'condition-removal':
+      return 'Condition system not yet implemented. Keep this card for future use.';
+    case 'other':
+      return 'Special effect not yet implemented. Keep this card for future use.';
+    default:
+      return 'Effect not yet implemented. Keep this card for future use.';
+  }
+}
