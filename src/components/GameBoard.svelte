@@ -5,6 +5,8 @@
     showMovement,
     hideMovement,
     moveHero,
+    completeMove,
+    undoAction,
     endHeroPhase,
     endExplorationPhase,
     endVillainPhase,
@@ -32,6 +34,8 @@
     dismissTreasureCard,
     type MultiAttackState,
     type PendingMoveAttackState,
+    type IncrementalMovementState,
+    type UndoSnapshot,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import type {
@@ -162,6 +166,8 @@
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
+  let incrementalMovement: IncrementalMovementState | null = $state(null);
+  let undoSnapshot: UndoSnapshot | null = $state(null);
 
   // Map control state
   let mapControlMode: boolean = $state(false);
@@ -213,6 +219,8 @@
       pendingMoveAttack = state.game.pendingMoveAttack;
       drawnTreasure = state.game.drawnTreasure;
       heroInventories = state.game.heroInventories;
+      incrementalMovement = state.game.incrementalMovement;
+      undoSnapshot = state.game.undoSnapshot;
     });
 
     // Initialize state
@@ -251,6 +259,8 @@
     pendingMoveAttack = state.game.pendingMoveAttack;
     drawnTreasure = state.game.drawnTreasure;
     heroInventories = state.game.heroInventories;
+    incrementalMovement = state.game.incrementalMovement;
+    undoSnapshot = state.game.undoSnapshot;
 
     return unsubscribe;
   });
@@ -646,7 +656,20 @@
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return;
 
-    store.dispatch(moveHero({ heroId: currentHeroId, position }));
+    const currentHero = getHeroInfo(currentHeroId);
+    if (!currentHero) return;
+
+    store.dispatch(moveHero({ heroId: currentHeroId, position, speed: currentHero.speed }));
+  }
+
+  // Handle completing the current move action early
+  function handleCompleteMove() {
+    store.dispatch(completeMove());
+  }
+
+  // Handle undoing the last reversible action
+  function handleUndo() {
+    store.dispatch(undoAction());
   }
 
   // Handle keyboard events for accessibility
@@ -1285,6 +1308,41 @@
             >
               ↺
             </button>
+          </div>
+        {/if}
+
+        <!-- Movement Controls (shown during hero phase with incremental movement) -->
+        {#if turnState.currentPhase === "hero-phase"}
+          <div class="movement-controls" data-testid="movement-controls">
+            <!-- Remaining Movement Display -->
+            {#if incrementalMovement?.inProgress}
+              <div class="remaining-movement" data-testid="remaining-movement">
+                <span class="movement-label">🏃 Movement:</span>
+                <span class="movement-value">{incrementalMovement.remainingMovement} remaining</span>
+              </div>
+            {/if}
+            
+            <!-- Complete Move Button (shown when movement in progress) -->
+            {#if incrementalMovement?.inProgress}
+              <button
+                class="complete-move-button"
+                data-testid="complete-move-button"
+                onclick={handleCompleteMove}
+              >
+                ✓ Complete Move
+              </button>
+            {/if}
+            
+            <!-- Undo Button (shown when undo is available) -->
+            {#if undoSnapshot}
+              <button
+                class="undo-button"
+                data-testid="undo-button"
+                onclick={handleUndo}
+              >
+                ↩ Undo
+              </button>
+            {/if}
           </div>
         {/if}
 
@@ -1955,5 +2013,73 @@
   .reset-view-button:hover {
     background: rgba(85, 85, 85, 0.9);
     color: #fff;
+  }
+
+  /* Movement controls container */
+  .movement-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+
+  /* Remaining movement display */
+  .remaining-movement {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid #1e90ff;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .movement-label {
+    font-size: 0.8rem;
+    color: #8ecae6;
+  }
+
+  .movement-value {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #1e90ff;
+  }
+
+  /* Complete move button */
+  .complete-move-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(30, 144, 255, 0.8);
+    color: #fff;
+    border: 1px solid #1e90ff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .complete-move-button:hover {
+    background: rgba(30, 144, 255, 0.95);
+    box-shadow: 0 0 10px rgba(30, 144, 255, 0.4);
+  }
+
+  /* Undo button */
+  .undo-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(255, 165, 0, 0.8);
+    color: #fff;
+    border: 1px solid #ffa500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .undo-button:hover {
+    background: rgba(255, 165, 0, 0.95);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
   }
 </style>
