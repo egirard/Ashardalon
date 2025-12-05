@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 test.describe('009 - Hero Attacks Monster', () => {
   test('Hero attacks adjacent monster and sees result', async ({ page }) => {
