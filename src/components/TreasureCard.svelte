@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { TreasureCard } from '../store/treasure';
+  import { getEffectImplementationStatus, getImplementationMessage } from '../store/treasure';
   import { assetPath } from '../utils';
 
   interface Props {
@@ -49,6 +50,10 @@
     }
     return '';
   }
+
+  // Get implementation status and message for display
+  const implementationStatus = $derived(getEffectImplementationStatus(treasure));
+  const implementationMessage = $derived(getImplementationMessage(treasure));
 
   function handleAssign(heroId: string) {
     if (onAssign) {
@@ -102,6 +107,22 @@
         <div class="treasure-rule" data-testid="treasure-rule">
           <strong>Rule:</strong> {treasure.rule}
         </div>
+
+        {#if implementationMessage}
+          <div 
+            class="implementation-status" 
+            class:partial={implementationStatus === 'partial'}
+            class:not-implemented={implementationStatus === 'not-implemented'}
+            data-testid="implementation-status"
+          >
+            {#if implementationStatus === 'partial'}
+              <span class="status-icon">⚠️</span>
+            {:else}
+              <span class="status-icon">ℹ️</span>
+            {/if}
+            <span class="status-message">{implementationMessage}</span>
+          </div>
+        {/if}
 
         {#if treasure.goldPrice}
           <div class="treasure-value">
@@ -285,6 +306,37 @@
 
   .treasure-rule strong {
     color: #c9a227;
+  }
+
+  .implementation-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin-top: 0.25rem;
+  }
+
+  .implementation-status.partial {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    color: #ffc107;
+  }
+
+  .implementation-status.not-implemented {
+    background: rgba(100, 149, 237, 0.2);
+    border: 1px solid rgba(100, 149, 237, 0.5);
+    color: #87ceeb;
+  }
+
+  .status-icon {
+    flex-shrink: 0;
+  }
+
+  .status-message {
+    flex: 1;
   }
 
   .treasure-value {

@@ -14,6 +14,10 @@ import {
   getAcBonusFromItems,
   getSpeedBonusFromItems,
   getDamageBonusFromItems,
+  isEffectImplemented,
+  isEffectPartiallyImplemented,
+  getEffectImplementationStatus,
+  getImplementationMessage,
   type TreasureDeck,
   type HeroInventory,
 } from './treasure';
@@ -493,6 +497,163 @@ describe('treasure', () => {
       for (const card of TREASURE_CARDS) {
         expect(validUsageTypes).toContain(card.usage);
       }
+    });
+  });
+
+  describe('implementation status', () => {
+    describe('isEffectImplemented', () => {
+      it('should return true for attack-bonus cards', () => {
+        const card = getTreasureById(134); // +1 Magic Sword
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(true);
+      });
+
+      it('should return true for ac-bonus cards', () => {
+        const card = getTreasureById(136); // Amulet of Protection
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(true);
+      });
+
+      it('should return true for speed-bonus cards', () => {
+        const card = getTreasureById(138); // Boots of Striding
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(true);
+      });
+
+      it('should return true for damage-bonus cards', () => {
+        const card = getTreasureById(146); // Gauntlets of Ogre Power
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(true);
+      });
+
+      it('should return true for healing cards', () => {
+        const card = getTreasureById(150); // Potion of Healing
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(true);
+      });
+
+      it('should return false for reroll cards', () => {
+        const card = getTreasureById(147); // Lucky Charm
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(false);
+      });
+
+      it('should return false for monster-control cards', () => {
+        const card = getTreasureById(144); // Elven Cloak
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(false);
+      });
+    });
+
+    describe('isEffectPartiallyImplemented', () => {
+      it('should return true for attack-action cards', () => {
+        const card = getTreasureById(141); // Crossbow of Speed
+        expect(card).toBeDefined();
+        expect(isEffectPartiallyImplemented(card!)).toBe(true);
+      });
+
+      it('should return true for trap-disable cards', () => {
+        const card = getTreasureById(161); // Thieves' Tools
+        expect(card).toBeDefined();
+        expect(isEffectPartiallyImplemented(card!)).toBe(true);
+      });
+
+      it('should return false for fully implemented cards', () => {
+        const card = getTreasureById(134); // +1 Magic Sword
+        expect(card).toBeDefined();
+        expect(isEffectPartiallyImplemented(card!)).toBe(false);
+      });
+    });
+
+    describe('getEffectImplementationStatus', () => {
+      it('should return "implemented" for fully implemented cards', () => {
+        const card = getTreasureById(134); // +1 Magic Sword
+        expect(card).toBeDefined();
+        expect(getEffectImplementationStatus(card!)).toBe('implemented');
+      });
+
+      it('should return "partial" for partially implemented cards', () => {
+        const card = getTreasureById(141); // Crossbow of Speed
+        expect(card).toBeDefined();
+        expect(getEffectImplementationStatus(card!)).toBe('partial');
+      });
+
+      it('should return "not-implemented" for unimplemented cards', () => {
+        const card = getTreasureById(147); // Lucky Charm
+        expect(card).toBeDefined();
+        expect(getEffectImplementationStatus(card!)).toBe('not-implemented');
+      });
+    });
+
+    describe('getImplementationMessage', () => {
+      it('should return null for fully implemented cards', () => {
+        const card = getTreasureById(134); // +1 Magic Sword
+        expect(card).toBeDefined();
+        expect(getImplementationMessage(card!)).toBeNull();
+      });
+
+      it('should return message for partially implemented attack-action cards', () => {
+        const card = getTreasureById(141); // Crossbow of Speed
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Basic attack works');
+      });
+
+      it('should return message for partially implemented trap-disable cards', () => {
+        const card = getTreasureById(161); // Thieves' Tools
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Trap system not yet implemented');
+      });
+
+      it('should return message for reroll cards', () => {
+        const card = getTreasureById(147); // Lucky Charm
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Reroll system not yet implemented');
+      });
+
+      it('should return message for flip-power cards', () => {
+        const card = getTreasureById(149); // Pearl of Power
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Power card refresh not yet implemented');
+      });
+
+      it('should return message for monster-control cards', () => {
+        const card = getTreasureById(144); // Elven Cloak
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Monster control not yet implemented');
+      });
+
+      it('should return message for movement cards', () => {
+        const card = getTreasureById(156); // Potion of Speed
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Extra movement actions not yet implemented');
+      });
+
+      it('should return message for level-up cards', () => {
+        const card = getTreasureById(163); // Tome of Experience
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Manual level-up not yet implemented');
+      });
+
+      it('should return message for condition-removal cards', () => {
+        const card = getTreasureById(153); // Potion of Recovery
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Condition system not yet implemented');
+      });
+
+      it('should return message for other effect cards', () => {
+        const card = getTreasureById(139); // Box of Caltrops
+        expect(card).toBeDefined();
+        const message = getImplementationMessage(card!);
+        expect(message).toContain('Special effect not yet implemented');
+      });
     });
   });
 });

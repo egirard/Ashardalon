@@ -4,10 +4,10 @@ This document tracks the implementation status of treasure card effects in the W
 
 ## Summary
 
-- **Total Cards**: 26 unique treasure cards (from original game cards 134-166, excluding continuation rows in CSV)
-- **Fully Implemented**: 12 cards (passive bonuses)
-- **Partially Implemented**: 4 cards (basic attack functionality, advanced effects pending)
-- **Not Yet Implemented**: 10 cards (require complex game mechanics)
+- **Total Cards**: 29 unique treasure cards (from original game cards 134-166, excluding continuation rows in CSV)
+- **Fully Implemented**: 12 cards (passive bonuses applied automatically)
+- **Partially Implemented**: 4 cards (basic functionality works, special rules pending)
+- **Not Yet Implemented**: 13 cards (require complex game mechanics)
 
 ## Implementation Categories
 
@@ -25,9 +25,9 @@ These cards provide passive bonuses that are automatically applied to heroes whi
 | 142 | Dragontooth Pick | +1 attack, +1 damage on natural 19-20 | ✅ Basic (+1 attack, crit bonus pending) |
 | 143 | Dwarven Hammer | +1 attack (+3 if not moving) | ✅ Basic (+1 attack, conditional pending) |
 | 146 | Gauntlets of Ogre Power | +1 damage | ✅ Implemented |
+| 150 | Potion of Healing | Heal 2 HP | ✅ Implemented (consumable) |
 | 159 | Shield of Protection | +1 AC | ✅ Implemented |
 | 160 | Staff of the Elements | +2 attack (ranged) | ✅ Basic (+2 attack to adjacent) |
-| 161 | Thieves' Tools | +4 to disable traps | ✅ Data model only (trap system pending) |
 | 164 | Vorpal Sword | +2 attack, +1 damage on natural 18-20 | ✅ Basic (+2 attack, crit bonus pending) |
 
 ### ⚠️ Partially Implemented (Attack Actions)
@@ -38,6 +38,7 @@ These cards provide attack actions that work at a basic level:
 |----|------|--------|--------|
 | 141 | Crossbow of Speed | Ranged attack instead of movement | ⚠️ Data model only |
 | 157 | Ring of Shooting Stars | Free ranged attack | ⚠️ Data model only |
+| 161 | Thieves' Tools | +4 to disable traps | ⚠️ Bonus tracked, trap system pending |
 | 162 | Throwing Shield | +2 AC + free ranged attack | ⚠️ +2 AC works, attack pending |
 
 ### ❌ Not Yet Implemented (Complex Effects)
@@ -52,7 +53,6 @@ These cards require additional game systems to be implemented:
 | 145 | Flying Carpet | Special movement marker | Needs persistent markers |
 | 147 | Lucky Charm | Reroll mechanism | Needs reroll UI/system |
 | 149 | Pearl of Power | Card flip mechanism | Needs power card integration |
-| 150 | Potion of Healing | Healing action | ✅ Effect works, UI pending |
 | 153 | Potion of Recovery | Condition removal | Needs condition system |
 | 155 | Potion of Rejuvenation | Power card refresh | Needs power card integration |
 | 156 | Potion of Speed | Extra movement action | Needs action system |
@@ -64,19 +64,18 @@ These cards require additional game systems to be implemented:
 ## Future Implementation Priorities
 
 ### High Priority (Core Gameplay)
-1. **Potion of Healing** - Common consumable, healing is core mechanic
-2. **Lucky Charm** - Reroll is fundamental D&D mechanic
-3. **Tome of Experience** - Level up is important progression
+1. **Lucky Charm** - Reroll is fundamental D&D mechanic
+2. **Tome of Experience** - Level up is important progression
 
 ### Medium Priority (Combat Enhancement)
-4. **Crossbow of Speed** - Alternate attack action
-5. **Ring of Shooting Stars** - Free attack action
-6. **Bracers of Defense** - Damage mitigation
+3. **Crossbow of Speed** - Alternate attack action
+4. **Ring of Shooting Stars** - Free attack action
+5. **Bracers of Defense** - Damage mitigation
 
 ### Lower Priority (Advanced Mechanics)
-7. Token placement items (Caltrops, Flying Carpet)
-8. Monster control items (Scroll, Wand of Fear, Wand of Polymorph)
-9. Condition-related items (Potion of Recovery)
+6. Token placement items (Caltrops, Flying Carpet)
+7. Monster control items (Scroll, Wand of Fear, Wand of Polymorph)
+8. Condition-related items (Potion of Recovery)
 
 ## Technical Requirements for Full Implementation
 
@@ -118,9 +117,94 @@ These are used by combat resolution functions:
 - `calculateTotalAC(baseAC, inventory)`
 - `calculateTotalSpeed(baseSpeed, inventory)`
 
+### Implementation Status Check
+The `treasure.ts` module provides functions to check implementation status:
+- `isEffectImplemented(card)` - Returns true if effect is fully implemented
+- `isEffectPartiallyImplemented(card)` - Returns true if some functionality works
+- `getEffectImplementationStatus(card)` - Returns 'implemented', 'partial', or 'not-implemented'
+- `getImplementationMessage(card)` - Returns user-friendly message about implementation status
+
+The TreasureCard UI component displays implementation status messages to inform players when a card's effect is not yet functional.
+
 ### Item State Tracking
 Each item in a hero's inventory tracks:
 - `cardId` - Reference to treasure card definition
 - `isFlipped` - Whether item has been used (for flip-to-use items)
 
 Flipped items do NOT provide passive bonuses until refreshed.
+
+---
+
+## Unparsed Cards Reference
+
+The following treasure cards cannot be fully implemented with the current game systems. They are documented here with their complete rule text for reference:
+
+### Reaction Cards (Need Reaction System)
+
+**Lucky Charm** (ID: 147)
+> Use this item after any die roll. Reroll the die. Discard this card after using it.
+- *Why unparsed*: Requires a reaction system that can interrupt after any die roll and allow player to choose to reroll.
+
+**Bracers of Defense** (ID: 140)
+> Use when you take damage. Reduce the damage from the attack by 1. Flip this card over after using the item.
+- *Why unparsed*: Requires a reaction system that triggers when damage is about to be applied.
+
+**Elven Cloak** (ID: 144)
+> Use before drawing a Monster Card during your Exploration Phase. The player to your left places that Monster instead.
+- *Why unparsed*: Requires reaction hook during monster spawning and multi-player placement delegation.
+
+### Power Card Integration Cards
+
+**Pearl of Power** (ID: 149)
+> Use during your Hero Phase. Flip up one of your used powers or items. Flip this card over after you use the item.
+- *Why unparsed*: Requires integration with power card system to flip used cards back up.
+
+**Potion of Rejuvenation** (ID: 155)
+> Use this item during your Hero Phase. Flip up one of your used powers. Discard this card after using it.
+- *Why unparsed*: Same as Pearl of Power - requires power card integration.
+
+### Movement System Cards
+
+**Flying Carpet** (ID: 145)
+> Use during your Hero Phase. Place the Flying Carpet marker on any tile without a marker. Instead of moving, you can move the Flying Carpet marker to any tile within 1 tile of it. Any Hero standing on the Flying Carpet moves with the carpet.
+- *Why unparsed*: Requires persistent marker system and alternate movement mode.
+
+**Potion of Speed** (ID: 156)
+> Use during your Hero Phase. Move up to your speed. Discard this card after using it.
+- *Why unparsed*: Requires "move again" action that doesn't consume normal move action.
+
+### Monster Control Cards
+
+**Scroll of Monster Control** (ID: 158)
+> Use during your Villain Phase when choosing a Monster's action. The Monster does not act normally. Instead, place the Monster in any square within 1 tile of it. If it is adjacent to another Monster, attack that Monster. Attack: +9 / Damage: 1. Discard this card after using it.
+- *Why unparsed*: Requires villain phase action hooks and monster-vs-monster combat.
+
+**Wand of Fear** (ID: 165)
+> Use instead of an attack. Choose a tile within 1 tile of you. Place each Monster on that tile up to 2 tiles away from you. Flip this card over after you use the item.
+- *Why unparsed*: Requires monster push/placement mechanics.
+
+**Wand of Polymorph** (ID: 166)
+> Use instead of an attack. Choose a Monster within 2 tiles of you. Draw a Monster Card and replace the original Monster. Flip this card over after you use the item.
+- *Why unparsed*: Requires monster replacement mechanics and deck integration.
+
+### Token System Cards
+
+**Box of Caltrops** (ID: 139)
+> Use during your Hero Phase. Place three Caltrop tokens on any three squares on your tile. When a Monster is placed on a square with a Caltrop token, remove that token and deal 1 damage to the Monster. Discard this card after using it.
+- *Why unparsed*: Requires board token placement, persistence, and monster placement triggers.
+
+### Condition System Cards
+
+**Potion of Recovery** (ID: 153)
+> Use at any time. End one condition on your Hero or an adjacent Hero. Discard this card after using it.
+- *Why unparsed*: Condition system (poisoned, dazed, etc.) not yet implemented.
+
+### Level System Cards
+
+**Tome of Experience** (ID: 163)
+> Use while your Hero is level 1. Your Hero becomes level 2. (Flip over your Hero Card.)
+- *Why unparsed*: Heroes level up automatically on natural 20 with 5+ XP. Manual level-up would bypass this system.
+
+---
+
+*Last updated: See git commit history for this file.*
