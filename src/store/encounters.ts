@@ -214,8 +214,10 @@ export function resolveEncounterEffect(
           case 'all-heroes':
           case 'heroes-on-tile':
           case 'heroes-within-1-tile':
-            // For now, treat all area targets as all heroes
-            // Full tile-based targeting would require position info
+            // TODO: Implement proper tile-based targeting for 'heroes-on-tile' and 'heroes-within-1-tile'
+            // This would require passing hero positions and tile information to the resolver.
+            // For now, treat all area targets as all heroes (conservative approach that ensures
+            // no heroes are unfairly spared from attacks that should hit them).
             return heroHpList.map(h => h.heroId);
           default:
             return [activeHeroId];
@@ -230,6 +232,7 @@ export function resolveEncounterEffect(
         }
         
         // Roll attack (d20 + attack bonus vs AC)
+        // Note: randomFn must return values in [0, 1) range to produce valid d20 rolls (1-20)
         const roll = Math.floor(randomFn() * 20) + 1;
         const total = roll + effect.attackBonus;
         const isHit = total >= hp.ac;
