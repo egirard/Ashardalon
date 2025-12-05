@@ -164,6 +164,15 @@
   let drawnTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
 
+  // Map control state
+  let mapControlMode: boolean = $state(false);
+  let manualZoom: number = $state(1); // User-controlled zoom level
+  let panOffset: { x: number; y: number } = $state({ x: 0, y: 0 });
+  let isPanning: boolean = $state(false);
+  let lastPanPoint: { x: number; y: number } = $state({ x: 0, y: 0 });
+  let lastPinchDistance: number = $state(0);
+  let dungeonMapRef: HTMLDivElement | null = $state(null);
+
   // Derived map bounds - recalculates when dungeon changes
   let mapBounds = $derived(getMapBoundsFromDungeon(dungeon));
 
@@ -436,10 +445,13 @@
     return { width: TILE_IMAGE_WIDTH, height: NORMAL_TILE_IMAGE_HEIGHT };
   }
 
-  // Calculate scale to fit the map in the available space
+  // Base scale calculated to fit the map in the available space
+  let baseScale: number = $state(1);
+  
+  // Calculate base scale to fit the map in the available space
   $effect(() => {
     if (boardContainerRef) {
-      const calculateScale = () => {
+      const calculateBaseScale = () => {
         const container = boardContainerRef;
         if (!container) return;
 
@@ -456,17 +468,25 @@
 
         // Use the smaller scale to ensure it fits, capped between MIN and MAX
         const newScale = Math.min(scaleX, scaleY, MAX_SCALE);
-        mapScale = Math.max(newScale, MIN_SCALE);
+        baseScale = Math.max(newScale, MIN_SCALE);
+        
+        // Update mapScale with combined scale
+        mapScale = baseScale * manualZoom;
       };
 
-      calculateScale();
+      calculateBaseScale();
 
       // Recalculate on resize
-      const resizeObserver = new ResizeObserver(calculateScale);
+      const resizeObserver = new ResizeObserver(calculateBaseScale);
       resizeObserver.observe(boardContainerRef);
 
       return () => resizeObserver.disconnect();
     }
+  });
+
+  // Update mapScale whenever manualZoom changes
+  $effect(() => {
+    mapScale = baseScale * manualZoom;
   });
 
   function getHeroInfo(heroId: string): Hero | undefined {
@@ -898,6 +918,98 @@
     const inventory = heroInventories[heroId];
     return inventory?.items?.length ?? 0;
   }
+
+  // Map control constants
+  const MAP_ZOOM_MIN = 0.5;  // Minimum zoom (50% of base scale)
+  const MAP_ZOOM_MAX = 3;    // Maximum zoom (300% of base scale)
+  const MAP_ZOOM_STEP = 0.1; // Zoom step for buttons
+
+  // Toggle map control mode
+  function toggleMapControlMode() {
+    mapControlMode = !mapControlMode;
+    if (!mapControlMode) {
+      // Reset pan and zoom when exiting control mode
+      manualZoom = 1;
+      panOffset = { x: 0, y: 0 };
+    }
+  }
+
+  // Handle zoom in
+  function handleZoomIn() {
+    manualZoom = Math.min(MAP_ZOOM_MAX, manualZoom + MAP_ZOOM_STEP);
+  }
+
+  // Handle zoom out
+  function handleZoomOut() {
+    manualZoom = Math.max(MAP_ZOOM_MIN, manualZoom - MAP_ZOOM_STEP);
+  }
+
+  // Handle zoom slider change
+  function handleZoomSlider(event: Event) {
+    const target = event.target as HTMLInputElement;
+    manualZoom = parseFloat(target.value);
+  }
+
+  // Mouse/touch pan handlers
+  function handlePanStart(event: MouseEvent | TouchEvent) {
+    if (!mapControlMode) return;
+    
+    isPanning = true;
+    
+    if (event instanceof MouseEvent) {
+      lastPanPoint = { x: event.clientX, y: event.clientY };
+    } else if (event.touches.length === 1) {
+      lastPanPoint = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    } else if (event.touches.length === 2) {
+      // Start pinch-to-zoom
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      lastPinchDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+    }
+    
+    event.preventDefault();
+  }
+
+  function handlePanMove(event: MouseEvent | TouchEvent) {
+    if (!mapControlMode || !isPanning) return;
+    
+    if (event instanceof MouseEvent) {
+      const deltaX = event.clientX - lastPanPoint.x;
+      const deltaY = event.clientY - lastPanPoint.y;
+      panOffset = { x: panOffset.x + deltaX, y: panOffset.y + deltaY };
+      lastPanPoint = { x: event.clientX, y: event.clientY };
+    } else if (event.touches.length === 1) {
+      const deltaX = event.touches[0].clientX - lastPanPoint.x;
+      const deltaY = event.touches[0].clientY - lastPanPoint.y;
+      panOffset = { x: panOffset.x + deltaX, y: panOffset.y + deltaY };
+      lastPanPoint = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    } else if (event.touches.length === 2) {
+      // Handle pinch-to-zoom
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+      
+      if (lastPinchDistance > 0) {
+        const zoomDelta = (currentDistance - lastPinchDistance) * 0.01;
+        manualZoom = Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, manualZoom + zoomDelta));
+      }
+      
+      lastPinchDistance = currentDistance;
+    }
+    
+    event.preventDefault();
+  }
+
+  function handlePanEnd() {
+    isPanning = false;
+    lastPinchDistance = 0;
+  }
+
+  // Reset map view to default
+  function resetMapView() {
+    manualZoom = 1;
+    panOffset = { x: 0, y: 0 };
+  }
 </script>
 
 <div class="game-board" data-testid="game-board">
@@ -975,15 +1087,26 @@
     <div class="board-container" bind:this={boardContainerRef}>
       <div
         class="dungeon-map"
+        class:map-control-active={mapControlMode}
+        bind:this={dungeonMapRef}
         data-testid="dungeon-map"
-        style="transform: scale({mapScale}); width: {mapBounds.width}px; height: {mapBounds.height}px;"
-        onclick={handleTileClick}
-        onkeydown={handleTileKeydown}
+        style="transform: scale({mapScale}) translate({panOffset.x / mapScale}px, {panOffset.y / mapScale}px); width: {mapBounds.width}px; height: {mapBounds.height}px;"
+        onclick={mapControlMode ? undefined : handleTileClick}
+        onkeydown={mapControlMode ? undefined : handleTileKeydown}
+        onmousedown={mapControlMode ? handlePanStart : undefined}
+        onmousemove={mapControlMode ? handlePanMove : undefined}
+        onmouseup={mapControlMode ? handlePanEnd : undefined}
+        onmouseleave={mapControlMode ? handlePanEnd : undefined}
+        ontouchstart={mapControlMode ? handlePanStart : undefined}
+        ontouchmove={mapControlMode ? handlePanMove : undefined}
+        ontouchend={mapControlMode ? handlePanEnd : undefined}
         role="button"
         tabindex="0"
-        aria-label={showingMovement
-          ? "Click to hide movement options"
-          : "Click to show movement options for current hero"}
+        aria-label={mapControlMode
+          ? "Map control mode: drag to pan, use controls to zoom"
+          : showingMovement
+            ? "Click to hide movement options"
+            : "Click to show movement options for current hero"}
       >
         <!-- Render all tiles -->
         {#each dungeon.tiles as tile (tile.id)}
@@ -1096,6 +1219,63 @@
         <HealingSurgeCounter surges={partyResources.healingSurges} />
         
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
+
+        <!-- Map Control Toggle Button -->
+        <button
+          class="map-control-button"
+          class:active={mapControlMode}
+          data-testid="map-control-button"
+          onclick={toggleMapControlMode}
+          aria-pressed={mapControlMode}
+        >
+          🗺️ {mapControlMode ? 'Exit Map Control' : 'Control Map'}
+        </button>
+
+        <!-- Zoom Controls (only shown when in map control mode) -->
+        {#if mapControlMode}
+          <div class="map-zoom-controls" data-testid="map-zoom-controls">
+            <button
+              class="zoom-button"
+              data-testid="zoom-out-button"
+              onclick={handleZoomOut}
+              disabled={manualZoom <= MAP_ZOOM_MIN}
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <input
+              type="range"
+              class="zoom-slider"
+              data-testid="zoom-slider"
+              min={MAP_ZOOM_MIN}
+              max={MAP_ZOOM_MAX}
+              step={MAP_ZOOM_STEP}
+              value={manualZoom}
+              oninput={handleZoomSlider}
+              aria-label="Zoom level"
+            />
+            <button
+              class="zoom-button"
+              data-testid="zoom-in-button"
+              onclick={handleZoomIn}
+              disabled={manualZoom >= MAP_ZOOM_MAX}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <span class="zoom-level" data-testid="zoom-level">
+              {Math.round(manualZoom * 100)}%
+            </span>
+            <button
+              class="reset-view-button"
+              data-testid="reset-view-button"
+              onclick={resetMapView}
+              aria-label="Reset map view"
+            >
+              ↺
+            </button>
+          </div>
+        {/if}
 
         <button
           class="end-phase-button"
@@ -1625,6 +1805,143 @@
   }
 
   .reset-button:hover {
+    background: rgba(85, 85, 85, 0.9);
+    color: #fff;
+  }
+
+  /* Map control styles */
+  .dungeon-map.map-control-active {
+    cursor: grab;
+  }
+
+  .dungeon-map.map-control-active:active {
+    cursor: grabbing;
+  }
+
+  /* Map control button */
+  .map-control-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(100, 100, 150, 0.8);
+    color: #fff;
+    border: 1px solid #7777aa;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .map-control-button:hover {
+    background: rgba(120, 120, 180, 0.9);
+  }
+
+  .map-control-button.active {
+    background: rgba(255, 165, 0, 0.8);
+    border-color: #ffa500;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
+  }
+
+  .map-control-button.active:hover {
+    background: rgba(255, 180, 0, 0.9);
+  }
+
+  /* Zoom controls container */
+  .map-zoom-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #ffa500;
+  }
+
+  /* Zoom buttons */
+  .zoom-button {
+    width: 32px;
+    height: 32px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    background: rgba(100, 100, 150, 0.8);
+    color: #fff;
+    border: 1px solid #7777aa;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .zoom-button:hover:not(:disabled) {
+    background: rgba(120, 120, 180, 0.9);
+  }
+
+  .zoom-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Zoom slider */
+  .zoom-slider {
+    width: 100px;
+    height: 8px;
+    appearance: none;
+    background: rgba(100, 100, 150, 0.5);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .zoom-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #ffa500;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease-out;
+  }
+
+  .zoom-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  .zoom-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #ffa500;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  /* Zoom level display */
+  .zoom-level {
+    font-size: 0.75rem;
+    color: #fff;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  /* Reset view button */
+  .reset-view-button {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    background: rgba(68, 68, 68, 0.8);
+    color: #ccc;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reset-view-button:hover {
     background: rgba(85, 85, 85, 0.9);
     color: #fff;
   }
