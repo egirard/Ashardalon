@@ -6,6 +6,8 @@ import gameReducer, {
   showMovement,
   hideMovement,
   moveHero,
+  completeMove,
+  undoAction,
   endHeroPhase,
   endExplorationPhase,
   endVillainPhase,
@@ -527,13 +529,21 @@ describe("gameSlice", () => {
     });
 
     it("should clear movement overlay after moving", () => {
-      const state = gameReducer(
-        stateWithMovement,
-        moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }),
+      // With incremental movement, overlay is recalculated for remaining movement
+      // It's only cleared when all movement is used or completeMove is called
+      const stateAfterMove = gameReducer(
+        { ...stateWithMovement, validMoveSquares: [{ x: 3, y: 2 }] },
+        moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }),
       );
 
-      expect(state.validMoveSquares).toEqual([]);
-      expect(state.showingMovement).toBe(false);
+      // After one move step, movement overlay shows remaining movement options
+      expect(stateAfterMove.showingMovement).toBe(true);
+      expect(stateAfterMove.incrementalMovement?.remainingMovement).toBe(4);
+
+      // After completing the move, overlay is cleared
+      const stateAfterComplete = gameReducer(stateAfterMove, completeMove());
+      expect(stateAfterComplete.validMoveSquares).toEqual([]);
+      expect(stateAfterComplete.showingMovement).toBe(false);
     });
 
     it("should not move hero to an invalid destination", () => {
@@ -1731,11 +1741,22 @@ describe("gameSlice", () => {
         },
       });
 
-      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }));
+      // With incremental movement, a single step doesn't mark the move as complete
+      // The move action is only marked when all movement is used or completeMove is called
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
 
-      expect(state.heroTurnActions.actionsTaken).toEqual(["move"]);
-      expect(state.heroTurnActions.canMove).toBe(true); // Can still move (for double move)
-      expect(state.heroTurnActions.canAttack).toBe(true); // Can still attack
+      // With incremental movement, movement is in progress but not yet complete
+      expect(stateAfterMove.incrementalMovement?.inProgress).toBe(true);
+      expect(stateAfterMove.incrementalMovement?.remainingMovement).toBe(4); // 5 - 1 = 4
+      expect(stateAfterMove.heroTurnActions.actionsTaken).toEqual([]); // Not yet committed
+      expect(stateAfterMove.heroTurnActions.canMove).toBe(true);
+      expect(stateAfterMove.heroTurnActions.canAttack).toBe(true);
+
+      // After completing the move, the action is tracked
+      const stateAfterComplete = gameReducer(stateAfterMove, completeMove());
+      expect(stateAfterComplete.heroTurnActions.actionsTaken).toEqual(["move"]);
+      expect(stateAfterComplete.heroTurnActions.canMove).toBe(true); // Can still move (for double move)
+      expect(stateAfterComplete.heroTurnActions.canAttack).toBe(true); // Can still attack
     });
 
     it("should track attack action and disable further attacks", () => {
@@ -1836,7 +1857,9 @@ describe("gameSlice", () => {
         },
       });
 
-      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }));
+      // With incremental movement, we need to move and then complete the move
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      const state = gameReducer(stateAfterMove, completeMove());
 
       expect(state.heroTurnActions.actionsTaken).toEqual(["attack", "move"]);
       expect(state.heroTurnActions.canMove).toBe(false); // Turn should end
@@ -1844,7 +1867,7 @@ describe("gameSlice", () => {
     });
 
     it("should not allow more moves after double move", () => {
-      // Start with a move already taken
+      // Start with a move already taken (previous move was completed)
       const initialState = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 3, y: 2 } }],
@@ -1871,7 +1894,9 @@ describe("gameSlice", () => {
         },
       });
 
-      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 3 } }));
+      // With incremental movement, we need to move and then complete the move
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 3 }, speed: 5 }));
+      const state = gameReducer(stateAfterMove, completeMove());
 
       expect(state.heroTurnActions.actionsTaken).toEqual(["move", "move"]);
       expect(state.heroTurnActions.canMove).toBe(false); // Turn should end after double move
@@ -3623,6 +3648,288 @@ describe("gameSlice", () => {
       expect(state.drawnTreasure).toBeNull();
       expect(state.heroInventories).toEqual({});
       expect(state.treasureDrawnThisTurn).toBe(false);
+    });
+  });
+
+  describe("incremental movement", () => {
+    const createMovementTestState = () => createGameState({
+      currentScreen: "game-board",
+      heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+      turnState: {
+        currentHeroIndex: 0,
+        currentPhase: "hero-phase",
+        turnNumber: 1,
+      },
+      validMoveSquares: [{ x: 3, y: 2 }, { x: 3, y: 3 }, { x: 2, y: 3 }],
+      showingMovement: true,
+      dungeon: {
+        tiles: [
+          {
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      },
+    });
+
+    it("should track remaining movement after a step", () => {
+      const initialState = createMovementTestState();
+      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+
+      expect(state.incrementalMovement).not.toBeNull();
+      expect(state.incrementalMovement?.heroId).toBe("quinn");
+      expect(state.incrementalMovement?.totalSpeed).toBe(5);
+      expect(state.incrementalMovement?.remainingMovement).toBe(4); // 5 - 1 = 4
+      expect(state.incrementalMovement?.inProgress).toBe(true);
+      expect(state.incrementalMovement?.startingPosition).toEqual({ x: 2, y: 2 });
+    });
+
+    it("should allow multiple incremental steps", () => {
+      const initialState = createMovementTestState();
+      
+      // First step
+      const stateAfterFirst = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      expect(stateAfterFirst.incrementalMovement?.remainingMovement).toBe(4);
+      
+      // Second step (need to add the new position to valid squares first)
+      const stateWithUpdatedSquares = {
+        ...stateAfterFirst,
+        validMoveSquares: [{ x: 3, y: 3 }],
+      };
+      const stateAfterSecond = gameReducer(stateWithUpdatedSquares, moveHero({ heroId: "quinn", position: { x: 3, y: 3 }, speed: 5 }));
+      expect(stateAfterSecond.incrementalMovement?.remainingMovement).toBe(3);
+      expect(stateAfterSecond.incrementalMovement?.inProgress).toBe(true);
+    });
+
+    it("should mark movement complete when all movement is used", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 3, y: 2 }],
+        showingMovement: true,
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+      });
+
+      // With speed 1, one step uses all movement
+      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 1 }));
+
+      expect(state.incrementalMovement?.inProgress).toBe(false);
+      expect(state.incrementalMovement?.remainingMovement).toBe(0);
+      expect(state.heroTurnActions.actionsTaken).toEqual(["move"]);
+    });
+
+    it("should allow completing move early with completeMove action", () => {
+      const initialState = createMovementTestState();
+      
+      // Take a step
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      expect(stateAfterMove.incrementalMovement?.remainingMovement).toBe(4);
+      
+      // Complete the move early
+      const stateAfterComplete = gameReducer(stateAfterMove, completeMove());
+      
+      expect(stateAfterComplete.incrementalMovement?.inProgress).toBe(false);
+      expect(stateAfterComplete.incrementalMovement?.remainingMovement).toBe(0);
+      expect(stateAfterComplete.heroTurnActions.actionsTaken).toEqual(["move"]);
+      expect(stateAfterComplete.showingMovement).toBe(false);
+    });
+
+    it("should finalize movement and clear undo when attack is performed", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 2, y: 3 }],
+        showingMovement: true,
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+      });
+
+      // Take a step
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 2, y: 3 }, speed: 5 }));
+      expect(stateAfterMove.incrementalMovement?.inProgress).toBe(true);
+      expect(stateAfterMove.undoSnapshot).not.toBeNull();
+      
+      // Attack
+      const attackResult = {
+        roll: 15,
+        attackBonus: 6,
+        total: 21,
+        targetAC: 14,
+        isHit: true,
+        damage: 2,
+        isCritical: false,
+      };
+      const stateAfterAttack = gameReducer(stateAfterMove, setAttackResult({
+        result: attackResult,
+        targetInstanceId: "kobold-0",
+        attackName: "Mace",
+      }));
+      
+      // Movement should be finalized and undo cleared
+      expect(stateAfterAttack.incrementalMovement?.inProgress).toBe(false);
+      expect(stateAfterAttack.undoSnapshot).toBeNull();
+      // Should have both move and attack in actions
+      expect(stateAfterAttack.heroTurnActions.actionsTaken).toEqual(["move", "attack"]);
+    });
+  });
+
+  describe("undo functionality", () => {
+    const createUndoTestState = () => createGameState({
+      currentScreen: "game-board",
+      heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+      turnState: {
+        currentHeroIndex: 0,
+        currentPhase: "hero-phase",
+        turnNumber: 1,
+      },
+      validMoveSquares: [{ x: 3, y: 2 }, { x: 3, y: 3 }],
+      showingMovement: true,
+      dungeon: {
+        tiles: [
+          {
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      },
+    });
+
+    it("should create undo snapshot when moving", () => {
+      const initialState = createUndoTestState();
+      const state = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+
+      expect(state.undoSnapshot).not.toBeNull();
+      expect(state.undoSnapshot?.heroTokens[0].position).toEqual({ x: 2, y: 2 }); // Original position
+      expect(state.undoSnapshot?.actionType).toBe("start-move");
+    });
+
+    it("should restore position when undoing a move", () => {
+      const initialState = createUndoTestState();
+      
+      // Move
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      const quinnAfterMove = stateAfterMove.heroTokens.find(t => t.heroId === "quinn");
+      expect(quinnAfterMove?.position).toEqual({ x: 3, y: 2 });
+      
+      // Undo
+      const stateAfterUndo = gameReducer(stateAfterMove, undoAction());
+      const quinnAfterUndo = stateAfterUndo.heroTokens.find(t => t.heroId === "quinn");
+      expect(quinnAfterUndo?.position).toEqual({ x: 2, y: 2 });
+    });
+
+    it("should restore incremental movement state when undoing", () => {
+      const initialState = createUndoTestState();
+      
+      // Move twice
+      const stateAfterFirst = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      const stateWithUpdatedSquares = {
+        ...stateAfterFirst,
+        validMoveSquares: [{ x: 3, y: 3 }],
+      };
+      const stateAfterSecond = gameReducer(stateWithUpdatedSquares, moveHero({ heroId: "quinn", position: { x: 3, y: 3 }, speed: 5 }));
+      
+      expect(stateAfterSecond.incrementalMovement?.remainingMovement).toBe(3);
+      
+      // Undo second move
+      const stateAfterUndo = gameReducer(stateAfterSecond, undoAction());
+      
+      // Should be back at first step's state
+      expect(stateAfterUndo.heroTokens.find(t => t.heroId === "quinn")?.position).toEqual({ x: 3, y: 2 });
+      expect(stateAfterUndo.incrementalMovement?.remainingMovement).toBe(4);
+    });
+
+    it("should clear undo snapshot after undoing", () => {
+      const initialState = createUndoTestState();
+      
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      expect(stateAfterMove.undoSnapshot).not.toBeNull();
+      
+      const stateAfterUndo = gameReducer(stateAfterMove, undoAction());
+      expect(stateAfterUndo.undoSnapshot).toBeNull();
+    });
+
+    it("should not undo if no snapshot exists", () => {
+      const initialState = createUndoTestState();
+      
+      // Try to undo without having made a move
+      const stateAfterUndo = gameReducer(initialState, undoAction());
+      
+      // State should be unchanged
+      const quinn = stateAfterUndo.heroTokens.find(t => t.heroId === "quinn");
+      expect(quinn?.position).toEqual({ x: 2, y: 2 });
+    });
+
+    it("should clear undo snapshot when ending hero phase", () => {
+      const initialState = createUndoTestState();
+      
+      // Move
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      expect(stateAfterMove.undoSnapshot).not.toBeNull();
+      
+      // End hero phase
+      const stateAfterEnd = gameReducer(stateAfterMove, endHeroPhase());
+      expect(stateAfterEnd.undoSnapshot).toBeNull();
+    });
+
+    it("should recalculate valid movement squares after undo", () => {
+      const initialState = createUndoTestState();
+      
+      // Move
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 }));
+      
+      // Undo
+      const stateAfterUndo = gameReducer(stateAfterMove, undoAction());
+      
+      // Should show movement options again
+      expect(stateAfterUndo.showingMovement).toBe(true);
+      expect(stateAfterUndo.validMoveSquares.length).toBeGreaterThan(0);
     });
   });
 });

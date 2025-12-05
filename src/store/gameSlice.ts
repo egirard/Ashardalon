@@ -190,6 +190,10 @@ export interface GameState {
   heroInventories: Record<string, HeroInventory>;
   /** Whether treasure has been drawn this turn (only one treasure per turn) */
   treasureDrawnThisTurn: boolean;
+  /** Incremental movement state: tracks remaining movement for step-by-step movement */
+  incrementalMovement: IncrementalMovementState | null;
+  /** Undo state: snapshot of reversible state before last action (for undo functionality) */
+  undoSnapshot: UndoSnapshot | null;
 }
 
 /**
@@ -220,6 +224,39 @@ export interface PendingMoveAttackState {
   movementCompleted: boolean;
   /** The hero's starting position before the move */
   startPosition: Position;
+}
+
+/**
+ * State for tracking incremental (step-by-step) movement.
+ * Allows players to move one square at a time instead of using all movement at once.
+ */
+export interface IncrementalMovementState {
+  /** Hero ID that is currently moving */
+  heroId: string;
+  /** Total movement speed for this move action */
+  totalSpeed: number;
+  /** Remaining movement squares available */
+  remainingMovement: number;
+  /** Starting position before this movement action began */
+  startingPosition: Position;
+  /** Whether movement is currently in progress (can be cancelled before another action) */
+  inProgress: boolean;
+}
+
+/**
+ * Snapshot of reversible game state for undo functionality.
+ * Only stores state that can be undone (positions, turn actions).
+ * Irreversible actions (die rolls, tile reveals) clear the undo snapshot.
+ */
+export interface UndoSnapshot {
+  /** Hero token positions before the action */
+  heroTokens: HeroToken[];
+  /** Hero turn actions state before the action */
+  heroTurnActions: HeroTurnActions;
+  /** Incremental movement state before the action (if any) */
+  incrementalMovement: IncrementalMovementState | null;
+  /** Type of action that was taken (for display/logging) */
+  actionType: 'move' | 'start-move';
 }
 
 const initialState: GameState = {
@@ -261,6 +298,8 @@ const initialState: GameState = {
   drawnTreasure: null,
   heroInventories: {},
   treasureDrawnThisTurn: false,
+  incrementalMovement: null,
+  undoSnapshot: null,
 };
 
 /**
@@ -483,6 +522,7 @@ export const gameSlice = createSlice({
     },
     /**
      * Show valid movement squares for the specified hero
+     * Supports incremental movement: if movement is in progress, uses remaining movement
      */
     showMovement: (
       state,
@@ -497,9 +537,14 @@ export const gameSlice = createSlice({
       const token = state.heroTokens.find((t) => t.heroId === heroId);
       
       if (token) {
+        // Use remaining movement if incremental movement is in progress, otherwise use full speed
+        const effectiveSpeed = state.incrementalMovement?.inProgress 
+          ? state.incrementalMovement.remainingMovement 
+          : speed;
+        
         state.validMoveSquares = getValidMoveSquares(
           token.position,
-          speed,
+          effectiveSpeed,
           state.heroTokens,
           heroId,
           state.dungeon,
@@ -516,12 +561,13 @@ export const gameSlice = createSlice({
     },
     /**
      * Move the current hero to a new position (must be a valid move square)
+     * Supports incremental movement: tracks remaining movement and allows step-by-step moves
      */
     moveHero: (
       state,
-      action: PayloadAction<{ heroId: string; position: Position }>,
+      action: PayloadAction<{ heroId: string; position: Position; speed?: number }>,
     ) => {
-      const { heroId, position } = action.payload;
+      const { heroId, position, speed } = action.payload;
       
       // Only allow move during hero phase and if hero can move
       if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canMove) {
@@ -534,14 +580,117 @@ export const gameSlice = createSlice({
       }
       
       const token = state.heroTokens.find((t) => t.heroId === heroId);
-      if (token) {
-        token.position = position;
-        // Clear movement overlay after moving
+      if (!token) return;
+      
+      // Calculate distance moved (for incremental movement tracking)
+      const distance = Math.max(
+        Math.abs(position.x - token.position.x),
+        Math.abs(position.y - token.position.y)
+      );
+      
+      // Create undo snapshot before the move (for reversible action)
+      state.undoSnapshot = {
+        heroTokens: state.heroTokens.map(t => ({ ...t, position: { ...t.position } })),
+        heroTurnActions: { ...state.heroTurnActions, actionsTaken: [...state.heroTurnActions.actionsTaken] },
+        incrementalMovement: state.incrementalMovement ? { ...state.incrementalMovement, startingPosition: { ...state.incrementalMovement.startingPosition } } : null,
+        actionType: state.incrementalMovement?.inProgress ? 'move' : 'start-move',
+      };
+      
+      // Initialize or update incremental movement state
+      if (!state.incrementalMovement?.inProgress) {
+        // Starting a new movement action
+        const heroSpeed = speed ?? 5; // Default speed if not provided
+        state.incrementalMovement = {
+          heroId,
+          totalSpeed: heroSpeed,
+          remainingMovement: heroSpeed - distance,
+          startingPosition: { ...token.position },
+          inProgress: true,
+        };
+      } else {
+        // Continuing incremental movement
+        state.incrementalMovement.remainingMovement -= distance;
+      }
+      
+      // Move the hero
+      token.position = position;
+      
+      // Check if all movement is used or if this completes the move action
+      if (state.incrementalMovement.remainingMovement <= 0) {
+        // Movement complete - mark move action as taken
+        state.incrementalMovement.inProgress = false;
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+        // Clear movement overlay
         state.validMoveSquares = [];
         state.showingMovement = false;
-        
-        // Track the move action
-        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+      } else {
+        // Still have remaining movement - recalculate valid squares
+        state.validMoveSquares = getValidMoveSquares(
+          position,
+          state.incrementalMovement.remainingMovement,
+          state.heroTokens,
+          heroId,
+          state.dungeon,
+        );
+      }
+    },
+    /**
+     * Complete the current move action (end movement early, discarding remaining movement)
+     * Called when player wants to stop moving before using all their movement
+     */
+    completeMove: (state) => {
+      if (state.turnState.currentPhase !== "hero-phase") return;
+      if (!state.incrementalMovement?.inProgress) return;
+      
+      // Mark movement as complete and discard remaining movement
+      state.incrementalMovement.inProgress = false;
+      state.incrementalMovement.remainingMovement = 0;
+      
+      // Track the move action
+      state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+      
+      // Clear movement overlay
+      state.validMoveSquares = [];
+      state.showingMovement = false;
+      
+      // Clear undo snapshot (completing the move is a commitment)
+      state.undoSnapshot = null;
+    },
+    /**
+     * Undo the last reversible action (movement only, not attacks or die rolls)
+     * Restores hero position and movement state to before the last move
+     */
+    undoAction: (state) => {
+      if (state.turnState.currentPhase !== "hero-phase") return;
+      if (!state.undoSnapshot) return;
+      
+      // Restore hero positions
+      state.heroTokens = state.undoSnapshot.heroTokens;
+      
+      // Restore turn actions state
+      state.heroTurnActions = state.undoSnapshot.heroTurnActions;
+      
+      // Restore incremental movement state
+      state.incrementalMovement = state.undoSnapshot.incrementalMovement;
+      
+      // Clear the undo snapshot (can only undo once)
+      state.undoSnapshot = null;
+      
+      // Recalculate valid movement squares if movement is in progress or can still move
+      if (state.incrementalMovement?.inProgress || state.heroTurnActions.canMove) {
+        const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+        if (currentToken) {
+          const speed = state.incrementalMovement?.remainingMovement ?? state.incrementalMovement?.totalSpeed ?? 5;
+          state.validMoveSquares = getValidMoveSquares(
+            currentToken.position,
+            speed,
+            state.heroTokens,
+            currentHeroId,
+            state.dungeon,
+          );
+          state.showingMovement = true;
+        }
       }
     },
     resetGame: (state) => {
@@ -584,9 +733,16 @@ export const gameSlice = createSlice({
       state.drawnTreasure = null;
       state.heroInventories = {};
       state.treasureDrawnThisTurn = false;
+      state.incrementalMovement = null;
+      state.undoSnapshot = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
+     * 
+     * IMPORTANT: Exploration involves tile reveals which are irreversible.
+     * When ending hero phase:
+     * - Any in-progress incremental movement is finalized
+     * - The undo snapshot is cleared (cannot undo after phase ends)
      */
     endHeroPhase: (state) => {
       if (state.turnState.currentPhase !== "hero-phase") {
@@ -596,6 +752,17 @@ export const gameSlice = createSlice({
       // Clear movement overlay when exiting hero phase
       state.validMoveSquares = [];
       state.showingMovement = false;
+      
+      // Clear undo snapshot - ending phase commits all actions
+      state.undoSnapshot = null;
+      
+      // Finalize any in-progress incremental movement
+      if (state.incrementalMovement?.inProgress) {
+        state.incrementalMovement.inProgress = false;
+        state.incrementalMovement.remainingMovement = 0;
+        // Track the move action since we're committing to it
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+      }
       
       // Clear any previously spawned monster display
       state.recentlySpawnedMonsterId = null;
@@ -759,6 +926,10 @@ export const gameSlice = createSlice({
       // Reset treasure drawn flag for the new turn
       state.treasureDrawnThisTurn = false;
       
+      // Clear incremental movement and undo state for new turn
+      state.incrementalMovement = null;
+      state.undoSnapshot = null;
+      
       // Check if the new hero needs a healing surge (at 0 HP at turn start)
       const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
       if (currentHeroId) {
@@ -841,6 +1012,11 @@ export const gameSlice = createSlice({
     /**
      * Set the attack result and apply damage to the target monster
      * Also handles level up on natural 20 with 5+ XP
+     * 
+     * IMPORTANT: Attacks are irreversible actions (involve die rolls).
+     * When an attack is performed:
+     * - Any in-progress incremental movement is finalized (remaining movement discarded)
+     * - The undo snapshot is cleared (cannot undo after die roll)
      */
     setAttackResult: (
       state,
@@ -854,6 +1030,17 @@ export const gameSlice = createSlice({
       const { result, targetInstanceId, attackName } = action.payload;
       state.attackTargetId = targetInstanceId;
       state.attackName = attackName;
+      
+      // Clear undo snapshot - attacks involve die rolls and are irreversible
+      state.undoSnapshot = null;
+      
+      // Finalize any in-progress incremental movement (discard remaining movement)
+      if (state.incrementalMovement?.inProgress) {
+        state.incrementalMovement.inProgress = false;
+        state.incrementalMovement.remainingMovement = 0;
+        // Track the move action since we're committing to it before attacking
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+      }
       
       // Clear any previous notifications
       state.defeatedMonsterXp = null;
@@ -1394,7 +1581,9 @@ export const {
   setHeroPosition, 
   showMovement, 
   hideMovement, 
-  moveHero, 
+  moveHero,
+  completeMove,
+  undoAction,
   resetGame,
   endHeroPhase,
   endExplorationPhase,
