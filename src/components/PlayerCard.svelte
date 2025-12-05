@@ -16,7 +16,7 @@
   let { hero, heroHpState, heroPowerCards, isActive, turnPhase, turnNumber }: Props = $props();
 
   // Get power cards for display
-  let powerCards = $derived((): { card: PowerCard; isFlipped: boolean }[] => {
+  let powerCards = $derived.by(() => {
     if (!heroPowerCards) return [];
     
     const cards: { card: PowerCard; isFlipped: boolean }[] = [];
@@ -67,7 +67,7 @@
   let hpPercentage = $derived(Math.max(0, Math.min(100, (heroHpState.currentHp / heroHpState.maxHp) * 100)));
   
   // HP bar color based on health percentage
-  let hpBarColor = $derived(() => {
+  let hpBarColor = $derived.by(() => {
     if (hpPercentage <= 25) return '#e53935'; // Red
     if (hpPercentage <= 50) return '#ff9800'; // Orange
     return '#4caf50'; // Green
@@ -131,7 +131,7 @@
       <div class="hp-bar-background">
         <div 
           class="hp-bar-fill" 
-          style="width: {hpPercentage}%; background-color: {hpBarColor()};"
+          style="width: {hpPercentage}%; background-color: {hpBarColor};"
         ></div>
       </div>
       <span class="hp-text">
@@ -169,9 +169,9 @@
   </div>
 
   <!-- Power Cards Section -->
-  {#if powerCards().length > 0}
+  {#if powerCards.length > 0}
     <div class="power-cards-section" data-testid="player-card-powers">
-      {#each powerCards() as { card, isFlipped } (card.id)}
+      {#each powerCards as { card, isFlipped } (card.id)}
         <div 
           class="power-card-mini"
           class:flipped={isFlipped}
