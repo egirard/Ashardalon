@@ -611,21 +611,21 @@ export function getDamageBonusFromItems(inventory: HeroInventory): number {
 /**
  * Effect types that are fully implemented
  */
-const IMPLEMENTED_EFFECT_TYPES: TreasureEffectType[] = [
+const IMPLEMENTED_EFFECT_TYPES = [
   'attack-bonus',
   'ac-bonus',
   'speed-bonus',
   'damage-bonus',
   'healing',
-];
+] as const;
 
 /**
  * Effect types that are partially implemented (some functionality works)
  */
-const PARTIALLY_IMPLEMENTED_EFFECT_TYPES: TreasureEffectType[] = [
+const PARTIALLY_IMPLEMENTED_EFFECT_TYPES = [
   'attack-action',
   'trap-disable', // Data model only, trap system not implemented
-];
+] as const;
 
 /**
  * Check if a treasure card effect is fully implemented
