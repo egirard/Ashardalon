@@ -114,6 +114,11 @@ const DEFAULT_PARTY_RESOURCES: PartyResources = {
   healingSurges: 2, // Starting healing surges for the party
 };
 
+/**
+ * Default hero speed used as fallback when speed is not provided
+ */
+const DEFAULT_HERO_SPEED = 5;
+
 export interface GameState {
   currentScreen: GameScreen;
   heroTokens: HeroToken[];
@@ -257,6 +262,32 @@ export interface UndoSnapshot {
   incrementalMovement: IncrementalMovementState | null;
   /** Type of action that was taken (for display/logging) */
   actionType: 'move' | 'start-move';
+}
+
+/**
+ * Helper function to create a deep clone of state for undo snapshots
+ * This ensures the snapshot is independent of the current state
+ */
+function createUndoSnapshot(
+  heroTokens: HeroToken[],
+  heroTurnActions: HeroTurnActions,
+  incrementalMovement: IncrementalMovementState | null,
+  actionType: 'move' | 'start-move'
+): UndoSnapshot {
+  return {
+    heroTokens: heroTokens.map(t => ({ ...t, position: { ...t.position } })),
+    heroTurnActions: { 
+      ...heroTurnActions, 
+      actionsTaken: [...heroTurnActions.actionsTaken] 
+    },
+    incrementalMovement: incrementalMovement 
+      ? { 
+          ...incrementalMovement, 
+          startingPosition: { ...incrementalMovement.startingPosition } 
+        } 
+      : null,
+    actionType,
+  };
 }
 
 const initialState: GameState = {
@@ -589,17 +620,17 @@ export const gameSlice = createSlice({
       );
       
       // Create undo snapshot before the move (for reversible action)
-      state.undoSnapshot = {
-        heroTokens: state.heroTokens.map(t => ({ ...t, position: { ...t.position } })),
-        heroTurnActions: { ...state.heroTurnActions, actionsTaken: [...state.heroTurnActions.actionsTaken] },
-        incrementalMovement: state.incrementalMovement ? { ...state.incrementalMovement, startingPosition: { ...state.incrementalMovement.startingPosition } } : null,
-        actionType: state.incrementalMovement?.inProgress ? 'move' : 'start-move',
-      };
+      state.undoSnapshot = createUndoSnapshot(
+        state.heroTokens,
+        state.heroTurnActions,
+        state.incrementalMovement,
+        state.incrementalMovement?.inProgress ? 'move' : 'start-move'
+      );
       
       // Initialize or update incremental movement state
       if (!state.incrementalMovement?.inProgress) {
         // Starting a new movement action
-        const heroSpeed = speed ?? 5; // Default speed if not provided
+        const heroSpeed = speed ?? DEFAULT_HERO_SPEED;
         state.incrementalMovement = {
           heroId,
           totalSpeed: heroSpeed,
@@ -681,7 +712,7 @@ export const gameSlice = createSlice({
         const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
         const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
         if (currentToken) {
-          const speed = state.incrementalMovement?.remainingMovement ?? state.incrementalMovement?.totalSpeed ?? 5;
+          const speed = state.incrementalMovement?.remainingMovement ?? state.incrementalMovement?.totalSpeed ?? DEFAULT_HERO_SPEED;
           state.validMoveSquares = getValidMoveSquares(
             currentToken.position,
             speed,
