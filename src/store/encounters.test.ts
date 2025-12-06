@@ -366,15 +366,11 @@ describe("encounters", () => {
         { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
       ];
       
-      // Suppress console warning for this test
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
       const result = resolveEncounterEffect(encounter, heroHpList, 'quinn');
       
+      // Environment effects don't apply damage during encounter resolution
+      // They are tracked in game state and applied at appropriate phases
       expect(result[0].currentHp).toBe(8); // HP unchanged
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('not yet implemented'));
-      
-      consoleSpy.mockRestore();
     });
 
     it("should not modify HP for unimplemented trap effect", () => {

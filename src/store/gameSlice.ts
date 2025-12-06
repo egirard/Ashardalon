@@ -63,6 +63,8 @@ import {
   resolveEncounterEffect,
   canCancelEncounter,
   cancelEncounter,
+  isEnvironmentCard,
+  activateEnvironment,
 } from "./encounters";
 import {
   initializeTreasureDeck,
@@ -182,6 +184,8 @@ export interface GameState {
   encounterDeck: EncounterDeck;
   /** Currently drawn encounter card (displayed during villain phase) */
   drawnEncounter: EncounterCard | null;
+  /** Active environment state - tracks persistent environment effects */
+  activeEnvironmentId: string | null;
   /** Whether to show the action surge prompt at start of turn (hero can voluntarily use a surge) */
   showActionSurgePrompt: boolean;
   /** Multi-attack state: tracks remaining attacks when using cards like Reaping Strike */
@@ -323,6 +327,7 @@ const initialState: GameState = {
   defeatReason: null,
   encounterDeck: { drawPile: [], discardPile: [] },
   drawnEncounter: null,
+  activeEnvironmentId: null,
   showActionSurgePrompt: false,
   multiAttackState: null,
   pendingMoveAttack: null,
@@ -1000,27 +1005,39 @@ export const gameSlice = createSlice({
      */
     dismissEncounterCard: (state) => {
       if (state.drawnEncounter) {
-        // Get the current hero ID for active-hero effects
-        const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
-        
-        if (activeHeroId) {
-          // Apply the encounter effect
-          state.heroHp = resolveEncounterEffect(
-            state.drawnEncounter,
-            state.heroHp,
-            activeHeroId
+        // Check if this is an environment card
+        if (isEnvironmentCard(state.drawnEncounter)) {
+          // Activate the environment (replaces any existing environment)
+          state.activeEnvironmentId = activateEnvironment(
+            state.drawnEncounter.id,
+            state.activeEnvironmentId
           );
+          // Environment cards are not discarded - they remain active
+          // The old environment (if any) is implicitly replaced
+        } else {
+          // Get the current hero ID for active-hero effects
+          const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
           
-          // Check for party defeat (all heroes at 0 HP)
-          const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
-          if (allHeroesDefeated) {
-            state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
-            state.currentScreen = "defeat";
+          if (activeHeroId) {
+            // Apply the encounter effect
+            state.heroHp = resolveEncounterEffect(
+              state.drawnEncounter,
+              state.heroHp,
+              activeHeroId
+            );
+            
+            // Check for party defeat (all heroes at 0 HP)
+            const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+            if (allHeroesDefeated) {
+              state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
+              state.currentScreen = "defeat";
+            }
           }
+          
+          // Discard non-environment encounters
+          state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
         }
         
-        // Discard the encounter
-        state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
         state.drawnEncounter = null;
       }
     },

@@ -659,6 +659,15 @@ export interface EncounterDeck {
 }
 
 /**
+ * Active environment state tracking
+ * Environments are persistent dungeon-wide effects that remain active until replaced
+ */
+export interface EnvironmentState {
+  /** Currently active environment card ID, or null if no environment is active */
+  activeEnvironmentId: string | null;
+}
+
+/**
  * All encounter cards from Wrath of Ashardalon (Cards #51-103)
  * 
  * Effect Implementation Status:
