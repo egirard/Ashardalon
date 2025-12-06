@@ -65,6 +65,7 @@ import {
   cancelEncounter,
   isEnvironmentCard,
   activateEnvironment,
+  applyEndOfHeroPhaseEnvironmentEffects,
 } from "./encounters";
 import {
   initializeTreasureDeck,
@@ -886,6 +887,36 @@ export const gameSlice = createSlice({
               
               state.monsterDeck = updatedMonsterDeck;
             }
+          }
+        }
+      }
+      
+      // Apply environment effects that trigger at end of Hero Phase
+      if (state.activeEnvironmentId) {
+        const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        const activeHeroPos = state.heroTokens[state.turnState.currentHeroIndex]?.position;
+        
+        if (activeHeroId && activeHeroPos) {
+          const allHeroPositions = state.heroTokens.map(t => ({
+            heroId: t.heroId,
+            position: t.position
+          }));
+          
+          state.heroHp = applyEndOfHeroPhaseEnvironmentEffects(
+            state.activeEnvironmentId,
+            state.heroHp,
+            activeHeroId,
+            activeHeroPos,
+            allHeroPositions,
+            state.dungeon
+          );
+          
+          // Check for party defeat after environment effect
+          const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+          if (allHeroesDefeated) {
+            state.defeatReason = `The party was overwhelmed by environment effects.`;
+            state.currentScreen = "defeat";
+            return;
           }
         }
       }

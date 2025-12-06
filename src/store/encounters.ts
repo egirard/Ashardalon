@@ -309,3 +309,164 @@ export function resolveEncounterEffect(
       return heroHpList;
   }
 }
+
+/**
+ * Apply environment effects at the end of Hero Phase
+ * Returns updated hero HP states after applying any environment effects
+ * 
+ * Environment effects that trigger at end of Hero Phase:
+ * - Hidden Snipers: Active hero takes 1 damage if ending phase alone on tile
+ * - Walls of Magma: Active hero takes 1 damage if ending phase adjacent to wall
+ */
+export function applyEndOfHeroPhaseEnvironmentEffects(
+  environmentId: string | null,
+  heroHpList: HeroHpState[],
+  activeHeroId: string,
+  heroPosition: { x: number; y: number },
+  allHeroPositions: Array<{ heroId: string; position: { x: number; y: number } }>,
+  dungeon: any // DungeonState type
+): HeroHpState[] {
+  if (!environmentId) {
+    return heroHpList;
+  }
+  
+  const environment = getActiveEnvironment(environmentId);
+  if (!environment) {
+    return heroHpList;
+  }
+  
+  let updatedHpList = [...heroHpList];
+  
+  switch (environmentId) {
+    case 'hidden-snipers': {
+      // Check if active hero is alone on their tile
+      const heroesOnSameTile = allHeroPositions.filter(h => {
+        if (h.heroId === activeHeroId) return false; // Don't count the active hero
+        // Simple same-tile check: on start tile, check sub-tile; on other tiles, check tile
+        const activeHeroTile = dungeon.tiles.find((t: any) => {
+          const bounds = getTileBoundsSimple(t, dungeon);
+          return heroPosition.x >= bounds.minX && heroPosition.x <= bounds.maxX &&
+                 heroPosition.y >= bounds.minY && heroPosition.y <= bounds.maxY;
+        });
+        const otherHeroTile = dungeon.tiles.find((t: any) => {
+          const bounds = getTileBoundsSimple(t, dungeon);
+          return h.position.x >= bounds.minX && h.position.x <= bounds.maxX &&
+                 h.position.y >= bounds.minY && h.position.y <= bounds.maxY;
+        });
+        
+        // For start tile, need to check sub-tiles (north/south halves)
+        if (activeHeroTile?.id === 'start-tile' && otherHeroTile?.id === 'start-tile') {
+          const activeSubTile = heroPosition.y <= 3 ? 'north' : 'south';
+          const otherSubTile = h.position.y <= 3 ? 'north' : 'south';
+          return activeSubTile === otherSubTile;
+        }
+        
+        return activeHeroTile?.id === otherHeroTile?.id;
+      });
+      
+      if (heroesOnSameTile.length === 0) {
+        // Hero is alone on tile, apply 1 damage
+        updatedHpList = updatedHpList.map(hp => {
+          if (hp.heroId === activeHeroId) {
+            return applyDamageToHero(hp, 1);
+          }
+          return hp;
+        });
+      }
+      break;
+    }
+    
+    case 'walls-of-magma': {
+      // Check if active hero is adjacent to a wall
+      const isAdjacentToWall = checkAdjacentToWall(heroPosition, dungeon);
+      
+      if (isAdjacentToWall) {
+        // Hero is adjacent to wall, apply 1 damage
+        updatedHpList = updatedHpList.map(hp => {
+          if (hp.heroId === activeHeroId) {
+            return applyDamageToHero(hp, 1);
+          }
+          return hp;
+        });
+      }
+      break;
+    }
+    
+    // Other environments don't trigger at end of Hero Phase
+    default:
+      break;
+  }
+  
+  return updatedHpList;
+}
+
+/**
+ * Helper function to get tile bounds (simplified version for environment checks)
+ */
+function getTileBoundsSimple(tile: any, dungeon: any): { minX: number; maxX: number; minY: number; maxY: number } {
+  if (tile.id === 'start-tile') {
+    return { minX: 1, maxX: 3, minY: 0, maxY: 7 };
+  }
+  const col = tile.position.col;
+  const row = tile.position.row;
+  return {
+    minX: col * 4,
+    maxX: col * 4 + 3,
+    minY: row * 4,
+    maxY: row * 4 + 3,
+  };
+}
+
+/**
+ * Check if a position is adjacent to a wall
+ */
+function checkAdjacentToWall(position: { x: number; y: number }, dungeon: any): boolean {
+  // Find the tile at this position
+  const tile = dungeon.tiles.find((t: any) => {
+    const bounds = getTileBoundsSimple(t, dungeon);
+    return position.x >= bounds.minX && position.x <= bounds.maxX &&
+           position.y >= bounds.minY && position.y <= bounds.maxY;
+  });
+  
+  if (!tile) {
+    return false;
+  }
+  
+  const bounds = getTileBoundsSimple(tile, dungeon);
+  const localX = position.x - bounds.minX;
+  const localY = position.y - bounds.minY;
+  
+  // Check if on start tile (special handling)
+  if (tile.id === 'start-tile') {
+    // On start tile, x=0 is wall, also check staircase area
+    if (position.x === 0) return true;
+    // Staircase is at x: 1-2, y: 3-4
+    if ((position.x === 1 || position.x === 2) && (position.y === 3 || position.y === 4)) {
+      // Adjacent to staircase edge
+      if (position.x === 0 || position.x === 3 || position.y === 2 || position.y === 5) {
+        return true;
+      }
+    }
+  }
+  
+  // Check if position is adjacent to a wall edge
+  const tileSize = 4;
+  
+  // North edge (y=0 in local coords)
+  if (localY === 0 && tile.edges.north === 'wall') return true;
+  if (localY === 1 && tile.edges.north === 'wall') return true; // One square away from north wall
+  
+  // South edge
+  if (localY === tileSize - 1 && tile.edges.south === 'wall') return true;
+  if (localY === tileSize - 2 && tile.edges.south === 'wall') return true; // One square away from south wall
+  
+  // West edge
+  if (localX === 0 && tile.edges.west === 'wall') return true;
+  if (localX === 1 && tile.edges.west === 'wall') return true; // One square away from west wall
+  
+  // East edge
+  if (localX === tileSize - 1 && tile.edges.east === 'wall') return true;
+  if (localX === tileSize - 2 && tile.edges.east === 'wall') return true; // One square away from east wall
+  
+  return false;
+}

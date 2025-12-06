@@ -10,6 +10,7 @@ import {
   applyDamageToHero,
   applyDamageToAllHeroes,
   resolveEncounterEffect,
+  applyEndOfHeroPhaseEnvironmentEffects,
 } from "./encounters";
 import type { EncounterDeck, TurnState, HeroHpState, EncounterCard } from "./types";
 import { INITIAL_ENCOUNTER_DECK, ENCOUNTER_CARDS } from "./types";
@@ -523,6 +524,170 @@ describe("encounters", () => {
       for (const id of INITIAL_ENCOUNTER_DECK) {
         expect(cardIds).toContain(id);
       }
+    });
+  });
+
+  describe("environment effects", () => {
+    describe("applyEndOfHeroPhaseEnvironmentEffects", () => {
+      it("should apply Hidden Snipers damage when hero is alone on tile", () => {
+        
+        
+        const heroHpList: HeroHpState[] = [
+          { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: 'vistra', currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ];
+        
+        const dungeon = {
+          tiles: [
+            { id: 'start-tile', position: { col: 0, row: 0 } },
+            { id: 'tile-1', position: { col: 1, row: 0 } },
+          ],
+        };
+        
+        // Quinn is alone on tile-1, Vistra is on start-tile
+        const allHeroPositions = [
+          { heroId: 'quinn', position: { x: 4, y: 0 } }, // tile-1
+          { heroId: 'vistra', position: { x: 2, y: 2 } }, // start-tile
+        ];
+        
+        const result = applyEndOfHeroPhaseEnvironmentEffects(
+          'hidden-snipers',
+          heroHpList,
+          'quinn', // active hero
+          { x: 4, y: 0 }, // active hero position
+          allHeroPositions,
+          dungeon
+        );
+        
+        // Quinn should take 1 damage
+        expect(result[0].currentHp).toBe(7);
+        // Vistra is not the active hero, no damage
+        expect(result[1].currentHp).toBe(10);
+      });
+
+      it("should not apply Hidden Snipers damage when hero is not alone on tile", () => {
+        
+        
+        const heroHpList: HeroHpState[] = [
+          { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: 'vistra', currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+        ];
+        
+        const dungeon = {
+          tiles: [
+            { id: 'start-tile', position: { col: 0, row: 0 } },
+          ],
+        };
+        
+        // Both heroes on start-tile (same sub-tile)
+        const allHeroPositions = [
+          { heroId: 'quinn', position: { x: 2, y: 2 } }, // start-tile north
+          { heroId: 'vistra', position: { x: 3, y: 2 } }, // start-tile north
+        ];
+        
+        const result = applyEndOfHeroPhaseEnvironmentEffects(
+          'hidden-snipers',
+          heroHpList,
+          'quinn', // active hero
+          { x: 2, y: 2 }, // active hero position
+          allHeroPositions,
+          dungeon
+        );
+        
+        // No damage - hero is not alone
+        expect(result[0].currentHp).toBe(8);
+        expect(result[1].currentHp).toBe(10);
+      });
+
+      it("should apply Walls of Magma damage when hero is adjacent to wall", () => {
+        
+        
+        const heroHpList: HeroHpState[] = [
+          { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ];
+        
+        const dungeon = {
+          tiles: [
+            { 
+              id: 'tile-1', 
+              position: { col: 1, row: 0 },
+              edges: { north: 'wall', south: 'open', east: 'open', west: 'open' }
+            },
+          ],
+        };
+        
+        const allHeroPositions = [
+          { heroId: 'quinn', position: { x: 4, y: 0 } }, // tile-1, at north edge (adjacent to wall)
+        ];
+        
+        const result = applyEndOfHeroPhaseEnvironmentEffects(
+          'walls-of-magma',
+          heroHpList,
+          'quinn', // active hero
+          { x: 4, y: 0 }, // active hero position (local y=0, which is wall edge)
+          allHeroPositions,
+          dungeon
+        );
+        
+        // Quinn should take 1 damage
+        expect(result[0].currentHp).toBe(7);
+      });
+
+      it("should not apply Walls of Magma damage when hero is not adjacent to wall", () => {
+        
+        
+        const heroHpList: HeroHpState[] = [
+          { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ];
+        
+        const dungeon = {
+          tiles: [
+            { 
+              id: 'tile-1', 
+              position: { col: 1, row: 0 },
+              edges: { north: 'open', south: 'open', east: 'open', west: 'open' }
+            },
+          ],
+        };
+        
+        const allHeroPositions = [
+          { heroId: 'quinn', position: { x: 5, y: 1 } }, // tile-1, center
+        ];
+        
+        const result = applyEndOfHeroPhaseEnvironmentEffects(
+          'walls-of-magma',
+          heroHpList,
+          'quinn', // active hero
+          { x: 5, y: 1 }, // active hero position (center, not adjacent to walls)
+          allHeroPositions,
+          dungeon
+        );
+        
+        // No damage - no walls nearby
+        expect(result[0].currentHp).toBe(8);
+      });
+
+      it("should return unchanged HP list when no environment is active", () => {
+        
+        
+        const heroHpList: HeroHpState[] = [
+          { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        ];
+        
+        const dungeon = { tiles: [] };
+        const allHeroPositions = [{ heroId: 'quinn', position: { x: 2, y: 2 } }];
+        
+        const result = applyEndOfHeroPhaseEnvironmentEffects(
+          null, // no active environment
+          heroHpList,
+          'quinn',
+          { x: 2, y: 2 },
+          allHeroPositions,
+          dungeon
+        );
+        
+        expect(result[0].currentHp).toBe(8);
+      });
     });
   });
 });
