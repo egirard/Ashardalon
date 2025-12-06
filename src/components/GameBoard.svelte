@@ -1084,6 +1084,7 @@
           isActive={isActiveHero(hero.id)}
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+          partySurges={partyResources.healingSurges}
         />
       {/if}
     {/each}
@@ -1108,6 +1109,7 @@
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+            partySurges={partyResources.healingSurges}
           />
         {/if}
       {/each}
@@ -1397,6 +1399,7 @@
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+            partySurges={partyResources.healingSurges}
           />
         {/if}
       {/each}
@@ -1420,6 +1423,7 @@
           isActive={isActiveHero(hero.id)}
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+          partySurges={partyResources.healingSurges}
         />
       {/if}
     {/each}

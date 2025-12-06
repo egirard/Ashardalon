@@ -6,6 +6,16 @@
   import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
 
+  /**
+   * Condition/status effect that can affect a hero
+   */
+  export interface HeroCondition {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+  }
+
   interface Props {
     hero: Hero;
     heroHpState: HeroHpState;
@@ -14,9 +24,16 @@
     isActive: boolean;
     turnPhase?: string;
     turnNumber?: number;
+    /** Active conditions affecting this hero (e.g., poisoned, dazed) */
+    conditions?: HeroCondition[];
+    /** Number of healing surges available to the party */
+    partySurges?: number;
   }
 
-  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber }: Props = $props();
+  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges }: Props = $props();
+  
+  // Check if hero is knocked out (0 HP)
+  let isKnockedOut = $derived(heroHpState.currentHp === 0);
 
   // Get power cards for display
   let powerCards = $derived.by(() => {
@@ -136,15 +153,24 @@
 <div 
   class="player-card" 
   class:active={isActive}
+  class:knocked-out={isKnockedOut}
   data-testid={isActive ? "turn-indicator" : `player-dashboard-${hero.id}`}
   data-hero-id={hero.id}
 >
+  <!-- KO Overlay (shown when hero is at 0 HP) -->
+  {#if isKnockedOut}
+    <div class="ko-overlay" data-testid="ko-overlay">
+      <span class="ko-text">💀 DOWNED</span>
+    </div>
+  {/if}
+
   <!-- Header with portrait and name -->
   <div class="card-header">
     <img
       src={assetPath(hero.imagePath)}
       alt={hero.name}
       class="hero-portrait"
+      class:portrait-ko={isKnockedOut}
     />
     <div class="hero-identity">
       <span class="hero-name" data-testid="player-card-name">{isActive ? `${hero.name}'s Turn` : hero.name}</span>
@@ -163,10 +189,26 @@
     {/if}
   </div>
 
+  <!-- Conditions Section (shown when hero has active conditions) -->
+  {#if conditions.length > 0}
+    <div class="conditions-section" data-testid="player-card-conditions">
+      {#each conditions as condition (condition.id)}
+        <div 
+          class="condition-badge"
+          title="{condition.name}: {condition.description}"
+          data-testid={`condition-${condition.id}`}
+        >
+          <span class="condition-icon">{condition.icon}</span>
+          <span class="condition-name">{condition.name}</span>
+        </div>
+      {/each}
+    </div>
+  {/if}
+
   <!-- Stats Section -->
   <div class="stats-section">
     <!-- HP Bar -->
-    <div class="hp-container" data-testid="hero-hp">
+    <div class="hp-container" class:hp-ko={isKnockedOut} data-testid="hero-hp">
       <div class="hp-bar-background">
         <div 
           class="hp-bar-fill" 
@@ -174,7 +216,7 @@
         ></div>
       </div>
       <span class="hp-text">
-        <span class="hp-icon">❤️</span>
+        <span class="hp-icon">{isKnockedOut ? '💀' : '❤️'}</span>
         HP: {heroHpState.currentHp}/{heroHpState.maxHp}
       </span>
     </div>
@@ -247,10 +289,23 @@
       {/each}
     </div>
   {/if}
+
+  <!-- Party Surge Counter (shown when surges are available) -->
+  {#if partySurges !== undefined}
+    <div class="party-surge-section" data-testid="player-card-surges">
+      <span class="surge-icon">❤️‍🩹</span>
+      <span class="surge-label">Party Surges:</span>
+      <span class="surge-count" class:no-surges={partySurges === 0}>{partySurges}</span>
+      {#if partySurges === 0}
+        <span class="surge-warning">⚠️</span>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>
   .player-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -552,5 +607,130 @@
   .treasure-item-mini.flipped .treasure-name {
     text-decoration: line-through;
     color: #999;
+  }
+
+  /* KO State Styles */
+  .player-card.knocked-out {
+    border-color: #b71c1c;
+    background: rgba(50, 20, 20, 0.95);
+    box-shadow: 0 0 15px rgba(183, 28, 28, 0.4);
+  }
+
+  .ko-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .ko-text {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ff5252;
+    text-shadow: 0 0 10px rgba(255, 82, 82, 0.8);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
+  }
+
+  .portrait-ko {
+    filter: grayscale(80%) brightness(0.6);
+    border-color: #b71c1c !important;
+  }
+
+  .hp-ko {
+    background: rgba(183, 28, 28, 0.3);
+    border-radius: 4px;
+    padding: 0.1rem;
+  }
+
+  /* Conditions Section */
+  .conditions-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+  }
+
+  .condition-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.4rem;
+    background: rgba(156, 39, 176, 0.3);
+    border: 1px solid rgba(156, 39, 176, 0.6);
+    border-radius: 12px;
+    font-size: 0.6rem;
+    cursor: help;
+    transition: all 0.2s ease;
+  }
+
+  .condition-badge:hover {
+    background: rgba(156, 39, 176, 0.5);
+  }
+
+  .condition-icon {
+    font-size: 0.7rem;
+  }
+
+  .condition-name {
+    color: #ce93d8;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Party Surge Section */
+  .party-surge-section {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.4rem;
+    background: rgba(231, 76, 60, 0.15);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 4px;
+    font-size: 0.65rem;
+  }
+
+  .party-surge-section .surge-icon {
+    font-size: 0.75rem;
+  }
+
+  .party-surge-section .surge-label {
+    color: #e74c3c;
+    font-weight: bold;
+  }
+
+  .party-surge-section .surge-count {
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.8rem;
+    min-width: 1rem;
+    text-align: center;
+  }
+
+  .party-surge-section .surge-count.no-surges {
+    color: #ff5252;
+  }
+
+  .party-surge-section .surge-warning {
+    font-size: 0.7rem;
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
   }
 </style>
