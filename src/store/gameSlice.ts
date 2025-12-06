@@ -1540,12 +1540,26 @@ export const gameSlice = createSlice({
     /**
      * Set hero HP directly (for testing purposes)
      */
-    setHeroHp: (state, action: PayloadAction<{ heroId: string; hp: number }>) => {
-      const { heroId, hp } = action.payload;
+    setHeroHp: (state, action: PayloadAction<{ heroId: string; hp: number; currentHp?: number; maxHp?: number }>) => {
+      const { heroId, hp, currentHp, maxHp } = action.payload;
       const heroHp = state.heroHp.find(h => h.heroId === heroId);
       if (heroHp) {
-        heroHp.currentHp = Math.max(0, hp);
+        if (hp !== undefined) {
+          heroHp.currentHp = Math.max(0, hp);
+        }
+        if (currentHp !== undefined) {
+          heroHp.currentHp = Math.max(0, currentHp);
+        }
+        if (maxHp !== undefined) {
+          heroHp.maxHp = maxHp;
+        }
       }
+    },
+    /**
+     * Set active environment directly (for testing purposes)
+     */
+    setActiveEnvironment: (state, action: PayloadAction<string | null>) => {
+      state.activeEnvironmentId = action.payload;
     },
     /**
      * Set party resources directly (for testing purposes)
@@ -1695,5 +1709,6 @@ export const {
   useTreasureItem,
   setTreasureDeck,
   setHeroInventories,
+  setActiveEnvironment,
 } = gameSlice.actions;
 export default gameSlice.reducer;
