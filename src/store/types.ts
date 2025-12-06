@@ -9,6 +9,16 @@ export interface HeroAttack {
 }
 
 /**
+ * Condition/status effect that can affect a hero (e.g., poisoned, dazed, slowed)
+ */
+export interface HeroCondition {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+}
+
+/**
  * Hero level (1 or 2)
  */
 export type HeroLevel = 1 | 2;
