@@ -1080,6 +1080,7 @@
           {hero}
           {heroHpState}
           heroPowerCards={heroPowerCards[hero.id]}
+          heroInventory={heroInventories[hero.id]}
           isActive={isActiveHero(hero.id)}
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
@@ -1103,6 +1104,7 @@
             {hero}
             {heroHpState}
             heroPowerCards={heroPowerCards[hero.id]}
+            heroInventory={heroInventories[hero.id]}
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
@@ -1391,6 +1393,7 @@
             {hero}
             {heroHpState}
             heroPowerCards={heroPowerCards[hero.id]}
+            heroInventory={heroInventories[hero.id]}
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
@@ -1413,6 +1416,7 @@
           {hero}
           {heroHpState}
           heroPowerCards={heroPowerCards[hero.id]}
+          heroInventory={heroInventories[hero.id]}
           isActive={isActiveHero(hero.id)}
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
