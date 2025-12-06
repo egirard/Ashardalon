@@ -2,18 +2,21 @@
   import type { Hero, HeroHpState } from '../store/types';
   import type { HeroPowerCards, PowerCard } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
+  import type { HeroInventory, TreasureCard } from '../store/treasure';
+  import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
 
   interface Props {
     hero: Hero;
     heroHpState: HeroHpState;
     heroPowerCards?: HeroPowerCards;
+    heroInventory?: HeroInventory;
     isActive: boolean;
     turnPhase?: string;
     turnNumber?: number;
   }
 
-  let { hero, heroHpState, heroPowerCards, isActive, turnPhase, turnNumber }: Props = $props();
+  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber }: Props = $props();
 
   // Get power cards for display
   let powerCards = $derived.by(() => {
@@ -90,6 +93,42 @@
       case 'daily': return 'D';
       case 'utility': return 'U';
       default: return '';
+    }
+  }
+
+  // Get treasure items for display
+  let treasureItems = $derived.by(() => {
+    if (!heroInventory || !heroInventory.items) return [];
+    
+    const items: { card: TreasureCard; isFlipped: boolean }[] = [];
+    
+    for (const item of heroInventory.items) {
+      const card = getTreasureById(item.cardId);
+      if (card) {
+        items.push({ card, isFlipped: item.isFlipped });
+      }
+    }
+    
+    return items;
+  });
+
+  // Get treasure item effect icon based on type
+  function getTreasureIcon(effectType: string): string {
+    switch (effectType) {
+      case 'attack-bonus': return '⚔️';
+      case 'damage-bonus': return '💥';
+      case 'ac-bonus': return '🛡️';
+      case 'speed-bonus': return '🏃';
+      case 'healing': return '❤️';
+      case 'reroll': return '🎲';
+      case 'flip-power': return '🔄';
+      case 'attack-action': return '🎯';
+      case 'monster-control': return '👹';
+      case 'movement': return '✈️';
+      case 'level-up': return '⭐';
+      case 'trap-disable': return '🔓';
+      case 'condition-removal': return '💊';
+      default: return '📦';
     }
   }
 </script>
@@ -182,6 +221,25 @@
             {getPowerCardAbbrev(card.type)}
           </span>
           <span class="power-name">{card.name}</span>
+          {#if isFlipped}
+            <span class="flipped-indicator">✗</span>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- Treasure Items Section -->
+  {#if treasureItems.length > 0}
+    <div class="treasure-items-section" data-testid="player-card-items">
+      {#each treasureItems as { card, isFlipped } (card.id)}
+        <div 
+          class="treasure-item-mini"
+          class:flipped={isFlipped}
+          title="{card.name}: {card.effect.description}"
+        >
+          <span class="treasure-icon">{getTreasureIcon(card.effect.type)}</span>
+          <span class="treasure-name">{card.name}</span>
           {#if isFlipped}
             <span class="flipped-indicator">✗</span>
           {/if}
@@ -449,5 +507,44 @@
     color: #e53935;
     font-weight: bold;
     flex-shrink: 0;
+  }
+
+  /* Treasure Items Section */
+  .treasure-items-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-top: 1px solid rgba(255, 215, 0, 0.3);
+    padding-top: 0.4rem;
+  }
+
+  .treasure-item-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.3rem;
+    background: rgba(139, 115, 85, 0.3);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    border-radius: 3px;
+    font-size: 0.55rem;
+    max-width: 100%;
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+  }
+
+  .treasure-item-mini.flipped {
+    opacity: 0.4;
+  }
+
+  .treasure-icon {
+    font-size: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .treasure-name {
+    color: #ffd700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
