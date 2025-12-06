@@ -719,12 +719,18 @@
 
   .party-surge-section .surge-warning {
     font-size: 0.7rem;
-    animation: blink 1s ease-in-out infinite;
+    animation: blink-then-highlight 1s ease-in-out 3;
+    animation-fill-mode: forwards;
   }
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
+  @keyframes blink-then-highlight {
+    0%, 100% { opacity: 1; color: inherit; }
     50% { opacity: 0.3; }
+  }
+
+  /* After animation ends, show red highlight */
+  .party-surge-section .surge-warning {
+    color: #ff5252;
   }
 
   /* Respect user's reduced motion preference */
