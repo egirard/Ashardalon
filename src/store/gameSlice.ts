@@ -72,6 +72,7 @@ import {
   addTreasureToInventory,
   flipTreasureInInventory,
   removeTreasureFromInventory,
+  getAcBonusFromItems,
   type TreasureDeck,
   type TreasureCard,
   type HeroInventory,
@@ -1311,7 +1312,7 @@ export const gameSlice = createSlice({
       const monster = controlledMonsters[state.villainPhaseMonsterIndex];
       if (!monster) return;
 
-      // Build hero HP and AC maps
+      // Build hero HP and AC maps (AC includes item bonuses)
       const heroHpMap: Record<string, number> = {};
       const heroAcMap: Record<string, number> = {};
       for (const hp of state.heroHp) {
@@ -1320,7 +1321,10 @@ export const gameSlice = createSlice({
       for (const token of state.heroTokens) {
         const hero = AVAILABLE_HEROES.find(h => h.id === token.heroId);
         if (hero) {
-          heroAcMap[token.heroId] = hero.ac;
+          const inventory = state.heroInventories[token.heroId];
+          const baseAc = hero.ac;
+          const itemAcBonus = inventory ? getAcBonusFromItems(inventory) : 0;
+          heroAcMap[token.heroId] = baseAc + itemAcBonus;
         }
       }
 

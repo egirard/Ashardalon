@@ -1608,6 +1608,54 @@ describe("gameSlice", () => {
       // Attack result should be set
       expect(state.monsterAttackResult).not.toBeNull();
     });
+
+    it("should include AC bonus from equipped items when monster attacks", () => {
+      // Create a state where the hero has an Amulet of Protection (+1 AC)
+      // Quinn's base AC is 17, with Amulet it should be 18
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }], // Adjacent to monster
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "open", south: "open", east: "open", west: "open" },
+            },
+          ],
+          unexploredEdges: [],
+          tileDeck: [],
+        },
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        villainPhaseMonsterIndex: 0,
+        monsterMoveActionId: null,
+        heroInventories: {
+          quinn: {
+            heroId: "quinn",
+            items: [{ cardId: 136, isFlipped: false }], // Amulet of Protection (+1 AC)
+          },
+        },
+      });
+
+      // Use a fixed random that will always hit without item bonus (roll 11 + 7 = 18 vs AC 17 hits, vs AC 18 misses)
+      const state = gameReducer(initialState, activateNextMonster({ randomFn: () => 0.5 })); // Roll ~11
+
+      // The attack should have been made against AC 18 (17 base + 1 from Amulet)
+      expect(state.monsterAttackResult).not.toBeNull();
+      // Kobold attack bonus is +7, roll of ~11, total 18, vs AC 18 = exact hit (equals or beats)
+      // This test verifies the AC bonus is considered in the attack resolution
+      expect(state.monsterAttackResult?.targetAC).toBe(18);
+    });
   });
 
   describe("dismissMonsterMoveAction", () => {
