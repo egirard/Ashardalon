@@ -79,13 +79,14 @@
     resolveAttack,
     getAdjacentMonsters,
     getMonsterAC,
+    applyItemBonusesToAttack,
+    calculateTotalSpeed,
   } from "../store/combat";
   import { findTileAtPosition } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
-  import { getAttackBonusFromItems, getDamageBonusFromItems, getSpeedBonusFromItems } from "../store/treasure";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -773,10 +774,7 @@
     const hero = getHeroInfo(heroId);
     if (!hero) return 0;
     
-    const inventory = heroInventories[heroId];
-    const itemSpeedBonus = inventory ? getSpeedBonusFromItems(inventory) : 0;
-    
-    return hero.speed + itemSpeedBonus;
+    return calculateTotalSpeed(hero.speed, heroInventories[heroId]);
   }
 
   // Default damage for power cards without explicit damage value
@@ -796,21 +794,19 @@
     const monsterAC = getMonsterAC(monster.monsterId);
     if (monsterAC === undefined) return;
 
-    // Get item bonuses from hero's inventory
-    const inventory = heroInventories[currentHeroId];
-    const itemAttackBonus = inventory ? getAttackBonusFromItems(inventory) : 0;
-    const itemDamageBonus = inventory ? getDamageBonusFromItems(inventory) : 0;
-
-    // Create attack stats from power card + item bonuses
+    // Create base attack from power card
     // TODO: Some power cards like 'Ray of Frost' have range > 1 - implement ranged targeting
-    const attack = {
+    const baseAttack = {
       name: powerCard.name,
-      attackBonus: powerCard.attackBonus + itemAttackBonus,
-      damage: (powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE) + itemDamageBonus,
+      attackBonus: powerCard.attackBonus,
+      damage: powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE,
       range: 1,
     };
 
-    const result = resolveAttack(attack, monsterAC);
+    // Apply item bonuses from hero's inventory
+    const attackWithBonuses = applyItemBonusesToAttack(baseAttack, heroInventories[currentHeroId]);
+
+    const result = resolveAttack(attackWithBonuses, monsterAC);
     store.dispatch(setAttackResult({ result, targetInstanceId, attackName: powerCard.name }));
     
     // Flip the power card if it's a daily (at-wills can be used repeatedly)

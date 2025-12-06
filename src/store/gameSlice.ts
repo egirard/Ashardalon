@@ -52,6 +52,7 @@ import {
   checkHealingSurgeNeeded,
   useHealingSurge,
   checkPartyDefeat,
+  calculateTotalAC,
 } from "./combat";
 import {
   initializeEncounterDeck,
@@ -72,7 +73,6 @@ import {
   addTreasureToInventory,
   flipTreasureInInventory,
   removeTreasureFromInventory,
-  getAcBonusFromItems,
   type TreasureDeck,
   type TreasureCard,
   type HeroInventory,
@@ -1321,10 +1321,7 @@ export const gameSlice = createSlice({
       for (const token of state.heroTokens) {
         const hero = AVAILABLE_HEROES.find(h => h.id === token.heroId);
         if (hero) {
-          const inventory = state.heroInventories[token.heroId];
-          const baseAc = hero.ac;
-          const itemAcBonus = inventory ? getAcBonusFromItems(inventory) : 0;
-          heroAcMap[token.heroId] = baseAc + itemAcBonus;
+          heroAcMap[token.heroId] = calculateTotalAC(hero.ac, state.heroInventories[token.heroId]);
         }
       }
 
