@@ -1,20 +1,10 @@
 <script lang="ts">
-  import type { Hero, HeroHpState } from '../store/types';
+  import type { Hero, HeroHpState, HeroCondition } from '../store/types';
   import type { HeroPowerCards, PowerCard } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
   import type { HeroInventory, TreasureCard } from '../store/treasure';
   import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
-
-  /**
-   * Condition/status effect that can affect a hero
-   */
-  export interface HeroCondition {
-    id: string;
-    name: string;
-    icon: string;
-    description: string;
-  }
 
   interface Props {
     hero: Hero;
@@ -34,6 +24,9 @@
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
+  
+  // Check if no party surges remain (for warning display)
+  let noSurgesRemaining = $derived(partySurges === 0);
 
   // Get power cards for display
   let powerCards = $derived.by(() => {
@@ -295,8 +288,8 @@
     <div class="party-surge-section" data-testid="player-card-surges">
       <span class="surge-icon">❤️‍🩹</span>
       <span class="surge-label">Party Surges:</span>
-      <span class="surge-count" class:no-surges={partySurges === 0}>{partySurges}</span>
-      {#if partySurges === 0}
+      <span class="surge-count" class:no-surges={noSurgesRemaining}>{partySurges}</span>
+      {#if noSurgesRemaining}
         <span class="surge-warning">⚠️</span>
       {/if}
     </div>
@@ -732,5 +725,16 @@
   @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
+  }
+
+  /* Respect user's reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .ko-text {
+      animation: none;
+    }
+
+    .party-surge-section .surge-warning {
+      animation: none;
+    }
   }
 </style>
