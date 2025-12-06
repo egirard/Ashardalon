@@ -112,10 +112,16 @@ Passive bonuses from equipped items are calculated by helper functions:
 - `getAcBonusFromItems(inventory)` - Sums AC bonuses
 - `getSpeedBonusFromItems(inventory)` - Sums speed bonuses
 
-These are used by combat resolution functions:
-- `applyItemBonusesToAttack(baseAttack, inventory)`
-- `calculateTotalAC(baseAC, inventory)`
-- `calculateTotalSpeed(baseSpeed, inventory)`
+These bonuses are integrated into gameplay:
+- **Attack bonuses**: Applied when attacking with power cards in `GameBoard.svelte`
+- **Damage bonuses**: Applied when attacking with power cards in `GameBoard.svelte`
+- **AC bonuses**: Applied when monsters attack in `gameSlice.ts` (via `activateNextMonster`)
+- **Speed bonuses**: Applied to movement calculations in `GameBoard.svelte`
+
+Helper functions for computing total stats:
+- `applyItemBonusesToAttack(baseAttack, inventory)` - Returns attack with bonuses
+- `calculateTotalAC(baseAC, inventory)` - Returns AC with bonuses
+- `calculateTotalSpeed(baseSpeed, inventory)` - Returns speed with bonuses
 
 ### Implementation Status Check
 The `treasure.ts` module provides functions to check implementation status:

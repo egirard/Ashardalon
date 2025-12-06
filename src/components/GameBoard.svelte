@@ -85,6 +85,7 @@
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
+  import { getAttackBonusFromItems, getDamageBonusFromItems, getSpeedBonusFromItems } from "../store/treasure";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -288,9 +289,9 @@
     const currentHero = getHeroInfo(currentHeroId);
     if (!currentHero) return;
     
-    // Auto-show movement options for the current hero
+    // Auto-show movement options for the current hero (including item speed bonuses)
     store.dispatch(
-      showMovement({ heroId: currentHeroId, speed: currentHero.speed }),
+      showMovement({ heroId: currentHeroId, speed: getTotalSpeed(currentHeroId) }),
     );
   });
 
@@ -650,9 +651,9 @@
     if (showingMovement) {
       store.dispatch(hideMovement());
     } else {
-      // Show movement options for the current hero
+      // Show movement options for the current hero (including item speed bonuses)
       store.dispatch(
-        showMovement({ heroId: currentHeroId, speed: currentHero.speed }),
+        showMovement({ heroId: currentHeroId, speed: getTotalSpeed(currentHeroId) }),
       );
     }
   }
@@ -665,7 +666,8 @@
     const currentHero = getHeroInfo(currentHeroId);
     if (!currentHero) return;
 
-    store.dispatch(moveHero({ heroId: currentHeroId, position, speed: currentHero.speed }));
+    // Use total speed including item bonuses
+    store.dispatch(moveHero({ heroId: currentHeroId, position, speed: getTotalSpeed(currentHeroId) }));
   }
 
   // Handle completing the current move action early
@@ -766,6 +768,17 @@
     return AVAILABLE_HEROES.find((h) => h.id === heroId);
   }
 
+  // Calculate total speed for a hero including item bonuses
+  function getTotalSpeed(heroId: string): number {
+    const hero = getHeroInfo(heroId);
+    if (!hero) return 0;
+    
+    const inventory = heroInventories[heroId];
+    const itemSpeedBonus = inventory ? getSpeedBonusFromItems(inventory) : 0;
+    
+    return hero.speed + itemSpeedBonus;
+  }
+
   // Default damage for power cards without explicit damage value
   const DEFAULT_POWER_CARD_DAMAGE = 1;
 
@@ -783,12 +796,17 @@
     const monsterAC = getMonsterAC(monster.monsterId);
     if (monsterAC === undefined) return;
 
-    // Create attack stats from power card
+    // Get item bonuses from hero's inventory
+    const inventory = heroInventories[currentHeroId];
+    const itemAttackBonus = inventory ? getAttackBonusFromItems(inventory) : 0;
+    const itemDamageBonus = inventory ? getDamageBonusFromItems(inventory) : 0;
+
+    // Create attack stats from power card + item bonuses
     // TODO: Some power cards like 'Ray of Frost' have range > 1 - implement ranged targeting
     const attack = {
       name: powerCard.name,
-      attackBonus: powerCard.attackBonus,
-      damage: powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE,
+      attackBonus: powerCard.attackBonus + itemAttackBonus,
+      damage: (powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE) + itemDamageBonus,
       range: 1,
     };
 
