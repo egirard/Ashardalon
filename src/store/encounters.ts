@@ -160,6 +160,36 @@ export function applyDamageToAllHeroes(
 }
 
 /**
+ * Check if an encounter card is an environment card
+ */
+export function isEnvironmentCard(encounter: EncounterCard): boolean {
+  return encounter.type === 'environment';
+}
+
+/**
+ * Activate an environment card
+ * If an environment is already active, it is replaced by the new one
+ * Returns the new active environment ID
+ */
+export function activateEnvironment(
+  encounterId: string,
+  currentEnvironmentId: string | null
+): string {
+  // New environment replaces any existing one
+  return encounterId;
+}
+
+/**
+ * Get the active environment card by ID
+ */
+export function getActiveEnvironment(environmentId: string | null): EncounterCard | null {
+  if (!environmentId) {
+    return null;
+  }
+  return getEncounterById(environmentId) ?? null;
+}
+
+/**
  * Resolve an encounter effect
  * Returns updated hero HP states
  * 
@@ -168,9 +198,9 @@ export function applyDamageToAllHeroes(
  * - damage (all-heroes): Deals damage to all heroes
  * - damage (heroes-on-tile): Deals damage to all heroes (treated as all-heroes for now)
  * - attack: Makes attack roll vs AC and deals damage on hit
+ * - environment: Persistent global effect (now tracked in game state)
  * 
  * Not yet implemented effects (will log a warning):
- * - environment: Persistent global effect
  * - curse: Persistent hero debuff
  * - trap: Persistent trap with trigger
  * - hazard: Hazard marker placement
@@ -247,9 +277,8 @@ export function resolveEncounterEffect(
     }
     
     case 'environment':
-      // Environment effects are NOT YET IMPLEMENTED
-      // Would need to track active environment effects in game state
-      console.warn(`Environment effect '${encounter.name}' is not yet implemented`);
+      // Environment effects are tracked in game state and applied at appropriate phases
+      // No immediate effect on hero HP during encounter resolution
       return heroHpList;
       
     case 'curse':

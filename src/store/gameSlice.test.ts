@@ -3104,7 +3104,7 @@ describe("gameSlice", () => {
       expect(state.defeatReason).toContain("Unbearable Heat");
     });
 
-    it("should not apply damage for unimplemented environment effect", () => {
+    it("should activate environment card when dismissed", () => {
       const initialState = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
@@ -3124,15 +3124,18 @@ describe("gameSlice", () => {
           imagePath: "test.png",
         },
         encounterDeck: { drawPile: [], discardPile: [] },
+        activeEnvironmentId: null,
       });
 
       
       const state = gameReducer(initialState, dismissEncounterCard());
 
-      // HP unchanged for unimplemented effect
+      // HP unchanged during encounter resolution - environment effects apply at appropriate phases
       expect(state.heroHp[0].currentHp).toBe(8);
       expect(state.drawnEncounter).toBeNull();
-      expect(state.encounterDeck.discardPile).toContain("hidden-snipers");
+      // Environment cards are not discarded - they become the active environment
+      expect(state.encounterDeck.discardPile).not.toContain("hidden-snipers");
+      expect(state.activeEnvironmentId).toBe("hidden-snipers");
     });
   });
 
