@@ -470,3 +470,20 @@ function checkAdjacentToWall(position: { x: number; y: number }, dungeon: any): 
   
   return false;
 }
+
+/**
+ * Check which heroes need monsters spawned for Surrounded! environment
+ * Returns list of hero IDs that don't control at least one monster
+ */
+export function getHeroesNeedingMonsters(
+  heroTokens: Array<{ heroId: string }>,
+  monsters: Array<{ controllerId: string }>
+): string[] {
+  return heroTokens
+    .map(t => t.heroId)
+    .filter(heroId => {
+      // Check if this hero controls at least one monster
+      const controlsMonster = monsters.some(m => m.controllerId === heroId);
+      return !controlsMonster;
+    });
+}

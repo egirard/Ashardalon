@@ -164,6 +164,7 @@
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
   let drawnEncounter: EncounterCardType | null = $state(null);
+  let activeEnvironmentId: string | null = $state(null);
   let showActionSurgePrompt: boolean = $state(false);
   let multiAttackState: MultiAttackState | null = $state(null);
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
@@ -217,6 +218,7 @@
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
+      activeEnvironmentId = state.game.activeEnvironmentId;
       showActionSurgePrompt = state.game.showActionSurgePrompt;
       multiAttackState = state.game.multiAttackState;
       pendingMoveAttack = state.game.pendingMoveAttack;
@@ -257,6 +259,7 @@
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
+    activeEnvironmentId = state.game.activeEnvironmentId;
     showActionSurgePrompt = state.game.showActionSurgePrompt;
     multiAttackState = state.game.multiAttackState;
     pendingMoveAttack = state.game.pendingMoveAttack;
@@ -1250,6 +1253,22 @@
         <!-- Healing Surge Counter -->
         <HealingSurgeCounter surges={partyResources.healingSurges} />
         
+        <!-- Active Environment Indicator -->
+        {#if activeEnvironmentId}
+          <div class="environment-indicator" data-testid="environment-indicator">
+            <div class="environment-icon">🌫️</div>
+            <div class="environment-name">
+              {activeEnvironmentId === 'hidden-snipers' ? 'Hidden Snipers' :
+               activeEnvironmentId === 'walls-of-magma' ? 'Walls of Magma' :
+               activeEnvironmentId === 'dragons-tribute' ? "Dragon's Tribute" :
+               activeEnvironmentId === 'high-alert' ? 'High Alert' :
+               activeEnvironmentId === 'kobold-trappers' ? 'Kobold Trappers' :
+               activeEnvironmentId === 'surrounded' ? 'Surrounded!' :
+               'Environment'}
+            </div>
+          </div>
+        {/if}
+        
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
         <!-- Map Control Toggle Button -->
@@ -1969,5 +1988,33 @@
   .undo-button:hover {
     background: rgba(255, 165, 0, 0.95);
     box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
+  }
+
+  /* Environment indicator */
+  .environment-indicator {
+    position: absolute;
+    top: 10rem;
+    right: 1rem;
+    background: rgba(139, 92, 246, 0.9);
+    border: 2px solid #8b5cf6;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    z-index: 15;
+    min-width: 150px;
+  }
+
+  .environment-icon {
+    font-size: 1.5rem;
+  }
+
+  .environment-name {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 </style>
