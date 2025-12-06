@@ -534,6 +534,7 @@
 
   .treasure-item-mini.flipped {
     opacity: 0.4;
+    border-style: dashed;
   }
 
   .treasure-icon {
@@ -546,5 +547,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .treasure-item-mini.flipped .treasure-name {
+    text-decoration: line-through;
+    color: #999;
   }
 </style>
