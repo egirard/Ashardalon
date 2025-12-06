@@ -1,4 +1,4 @@
-import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources } from './types';
+import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile } from './types';
 import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK, ENCOUNTER_CANCEL_COST } from './types';
 
 /**
@@ -324,7 +324,7 @@ export function applyEndOfHeroPhaseEnvironmentEffects(
   activeHeroId: string,
   heroPosition: { x: number; y: number },
   allHeroPositions: Array<{ heroId: string; position: { x: number; y: number } }>,
-  dungeon: any // DungeonState type
+  dungeon: DungeonState
 ): HeroHpState[] {
   if (!environmentId) {
     return heroHpList;
@@ -403,7 +403,7 @@ export function applyEndOfHeroPhaseEnvironmentEffects(
 /**
  * Helper function to get tile bounds (simplified version for environment checks)
  */
-function getTileBoundsSimple(tile: any, dungeon: any): { minX: number; maxX: number; minY: number; maxY: number } {
+function getTileBoundsSimple(tile: PlacedTile, dungeon: DungeonState): { minX: number; maxX: number; minY: number; maxY: number } {
   if (tile.id === 'start-tile') {
     return { minX: 1, maxX: 3, minY: 0, maxY: 7 };
   }
@@ -419,8 +419,10 @@ function getTileBoundsSimple(tile: any, dungeon: any): { minX: number; maxX: num
 
 /**
  * Check if a position is adjacent to a wall
+ * Note: "Adjacent" here means on or one square away from a wall edge
+ * This is the game rule for Walls of Magma
  */
-function checkAdjacentToWall(position: { x: number; y: number }, dungeon: any): boolean {
+function checkAdjacentToWall(position: { x: number; y: number }, dungeon: DungeonState): boolean {
   // Find the tile at this position
   const tile = dungeon.tiles.find((t: any) => {
     const bounds = getTileBoundsSimple(t, dungeon);
@@ -438,15 +440,16 @@ function checkAdjacentToWall(position: { x: number; y: number }, dungeon: any): 
   
   // Check if on start tile (special handling)
   if (tile.id === 'start-tile') {
-    // On start tile, x=0 is wall, also check staircase area
-    if (position.x === 0) return true;
-    // Staircase is at x: 1-2, y: 3-4
-    if ((position.x === 1 || position.x === 2) && (position.y === 3 || position.y === 4)) {
-      // Adjacent to staircase edge
-      if (position.x === 0 || position.x === 3 || position.y === 2 || position.y === 5) {
-        return true;
-      }
-    }
+    // On start tile, x=0 is wall
+    if (position.x === 0 || position.x === 1) return true;
+    // Staircase is at x: 1-2, y: 3-4, check if adjacent to it
+    // Adjacent to staircase means being at the edge positions
+    const isNearStaircase = 
+      (position.x === 1 && (position.y === 2 || position.y === 5)) || // Left of staircase
+      (position.x === 2 && (position.y === 2 || position.y === 5)) || // Right of staircase
+      (position.y === 3 && (position.x === 0 || position.x === 3)) || // Above staircase
+      (position.y === 4 && (position.x === 0 || position.x === 3));   // Below staircase
+    if (isNearStaircase) return true;
   }
   
   // Check if position is adjacent to a wall edge

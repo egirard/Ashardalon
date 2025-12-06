@@ -56,7 +56,7 @@
     PartyResources,
     EncounterCard as EncounterCardType,
   } from "../store/types";
-  import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES } from "../store/types";
+  import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES, ENCOUNTER_CARDS } from "../store/types";
   import { assetPath } from "../utils";
   import MovementOverlay from "./MovementOverlay.svelte";
   import TileDeckCounter from "./TileDeckCounter.svelte";
@@ -1255,16 +1255,11 @@
         
         <!-- Active Environment Indicator -->
         {#if activeEnvironmentId}
+          {@const environmentCard = ENCOUNTER_CARDS.find(c => c.id === activeEnvironmentId)}
           <div class="environment-indicator" data-testid="environment-indicator">
             <div class="environment-icon">🌫️</div>
             <div class="environment-name">
-              {activeEnvironmentId === 'hidden-snipers' ? 'Hidden Snipers' :
-               activeEnvironmentId === 'walls-of-magma' ? 'Walls of Magma' :
-               activeEnvironmentId === 'dragons-tribute' ? "Dragon's Tribute" :
-               activeEnvironmentId === 'high-alert' ? 'High Alert' :
-               activeEnvironmentId === 'kobold-trappers' ? 'Kobold Trappers' :
-               activeEnvironmentId === 'surrounded' ? 'Surrounded!' :
-               'Environment'}
+              {environmentCard?.name ?? 'Environment'}
             </div>
           </div>
         {/if}

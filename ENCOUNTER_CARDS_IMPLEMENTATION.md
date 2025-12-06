@@ -29,7 +29,7 @@ These effect types display the card description and resolve to the discard pile,
 | Effect Type | Description | Cards Count | Notes |
 |-------------|-------------|-------------|-------|
 | `curse` | Persistent debuff attached to hero | 8 cards | Requires hero status tracking system |
-| `environment` | Persistent dungeon-wide effect | 6 cards | Requires global effect system |
+| `environment` | Persistent dungeon-wide effect | 6 cards | ✅ Implemented (2 of 6 cards fully functional) |
 | `trap` | Persistent trap with triggered effects | 4 cards | Requires trap marker/trigger system |
 | `hazard` | Hazard marker with ongoing effects | 3 cards | Requires hazard marker system |
 | `special` | Complex effects (tile/monster manipulation) | 14 cards | Requires additional game logic |
@@ -53,12 +53,12 @@ These effect types display the card description and resolve to the discard pile,
 
 | ID | Name | Effect Summary | Implementation Status |
 |----|------|----------------|----------------------|
-| dragons-tribute | Dragon's Tribute | Draw 2 treasures, discard higher | ⚠️ Display only |
-| hidden-snipers | Hidden Snipers | 1 damage when alone on tile | ⚠️ Display only |
-| high-alert | High Alert | Pass monster card to right each turn | ⚠️ Display only |
-| kobold-trappers | Kobold Trappers | -4 to trap disable rolls | ⚠️ Display only |
-| surrounded | Surrounded! | Spawn monster if hero has none | ⚠️ Display only |
-| walls-of-magma | Walls of Magma | 1 damage when adjacent to wall | ⚠️ Display only |
+| dragons-tribute | Dragon's Tribute | Draw 2 treasures, discard higher | ⚠️ Tracked, not enforced (requires treasure draw UI changes) |
+| hidden-snipers | Hidden Snipers | 1 damage when alone on tile | ✅ Fully Implemented |
+| high-alert | High Alert | Pass monster card to right each turn | ⚠️ Tracked, not enforced (requires multiplayer card passing) |
+| kobold-trappers | Kobold Trappers | -4 to trap disable rolls | ⚠️ Tracked, not enforced (traps not yet implemented) |
+| surrounded | Surrounded! | Spawn monster if hero has none | ⚠️ Tracked, helper function added (monster spawning deferred) |
+| walls-of-magma | Walls of Magma | 1 damage when adjacent to wall | ✅ Fully Implemented |
 
 ### Event Cards - Damage Effects (2 cards)
 
@@ -148,10 +148,17 @@ To fully implement all encounter cards, the following systems would need to be a
 - Track curses attached to heroes
 - Integrate status effects with attack/damage resolution
 
-### 2. Environment System
-- Track active environment card
-- Apply environment effects during appropriate phases
-- Replace environment when new one is drawn
+### 2. Environment System ✅ Implemented
+- ✅ Track active environment card in game state
+- ✅ Apply environment effects during appropriate phases
+- ✅ Replace environment when new one is drawn
+- ✅ Display active environment in UI
+- ✅ Hidden Snipers: Apply 1 damage to active hero when ending Hero Phase alone on tile
+- ✅ Walls of Magma: Apply 1 damage to active hero when ending Hero Phase adjacent to wall
+- ⚠️ Surrounded!: Helper function added, full implementation requires monster spawning logic
+- ⚠️ High Alert: Requires multiplayer card passing mechanism (not in current game state)
+- ⚠️ Dragon's Tribute: Requires treasure draw UI changes to draw 2 and choose
+- ⚠️ Kobold Trappers: Requires trap system implementation
 
 ### 3. Trap/Hazard System
 - Place markers on tiles
@@ -171,6 +178,7 @@ The current UI properly:
 - ✅ Displays encounter card name, description, and effect summary
 - ✅ Shows appropriate icons for each encounter type
 - ✅ Provides Accept button to resolve the encounter
+- ✅ Displays active environment card indicator with name and icon
 - ✅ Provides Cancel button (5 XP cost) to skip the encounter
 - ✅ Applies damage effects immediately upon accepting
 - ✅ Shows console warnings for unimplemented effects
