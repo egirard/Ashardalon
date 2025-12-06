@@ -174,5 +174,75 @@ test.describe('030 - Player Card Display', () => {
         expect(dailyState?.isFlipped).toBe(true);
       }
     });
+
+    // STEP 7: Verify party surge counter is displayed on player card
+    await screenshots.capture(page, 'player-card-with-party-surges', {
+      programmaticCheck: async () => {
+        // Verify party surge section is visible
+        await expect(page.locator('[data-testid="player-card-surges"]')).toBeVisible();
+        
+        // Verify initial surge count (2 surges at game start)
+        await expect(page.locator('[data-testid="player-card-surges"]')).toContainText('2');
+        
+        // Verify store state has correct surge count
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.partyResources.healingSurges).toBe(2);
+      }
+    });
+
+    // STEP 8: Set hero HP to 0 to test KO state display
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroHp',
+        payload: { heroId: 'vistra', hp: 0 }
+      });
+    });
+
+    await screenshots.capture(page, 'player-card-ko-state', {
+      programmaticCheck: async () => {
+        // Verify KO overlay is visible
+        await expect(page.locator('[data-testid="ko-overlay"]')).toBeVisible();
+        
+        // Verify KO text is displayed
+        await expect(page.locator('[data-testid="ko-overlay"]')).toContainText('DOWNED');
+        
+        // Verify HP shows 0
+        await expect(page.locator('[data-testid="hero-hp"]')).toContainText('HP: 0/10');
+        
+        // Verify store state shows 0 HP
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.heroHp[0].currentHp).toBe(0);
+      }
+    });
+
+    // STEP 9: Set party surges to 0 to verify warning display
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setPartyResources',
+        payload: { healingSurges: 0 }
+      });
+    });
+
+    await screenshots.capture(page, 'player-card-no-surges-warning', {
+      programmaticCheck: async () => {
+        // Verify party surge section shows 0 with warning
+        await expect(page.locator('[data-testid="player-card-surges"]')).toContainText('0');
+        
+        // Verify the warning indicator is visible (⚠️)
+        await expect(page.locator('[data-testid="player-card-surges"]')).toContainText('⚠️');
+        
+        // Verify store state has 0 surges
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.partyResources.healingSurges).toBe(0);
+      }
+    });
   });
 });
