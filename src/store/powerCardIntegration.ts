@@ -9,12 +9,20 @@ import type { GameState } from './gameSlice';
 import {
   type EventHookState,
   type AnyGameEvent,
+  type GameEventType,
   registerEventHook,
   unregisterPowerCardHooks,
   triggerEvent,
   createEventHookState,
 } from './gameEvents';
 import { getPowerCardHooks } from './powerCardHooks';
+
+/**
+ * Tile dimension constants (should match values in types.ts and powerCardEffects.ts)
+ */
+const TILE_WIDTH = 4;
+const NORMAL_TILE_HEIGHT = 4;
+const START_TILE_HEIGHT = 8;
 
 /**
  * Initialize event hook state for a new game
@@ -54,7 +62,7 @@ export function registerHeroPowerCardHooks(
     for (const { eventType, hook, priority } of hooks) {
       newState = registerEventHook(
         newState,
-        eventType as any,
+        eventType as GameEventType,
         hook,
         cardId,
         heroPowerCards.heroId,
@@ -153,10 +161,6 @@ function getTileIdForPosition(
   // Implementation depends on how tiles are stored
   // For now, use a simple approach based on tile grid positions
   
-  const TILE_WIDTH = 4;
-  const NORMAL_TILE_HEIGHT = 4;
-  const START_TILE_HEIGHT = 8;
-  
   // Check start tile first
   if (position.x >= 0 && position.x < TILE_WIDTH &&
       position.y >= 0 && position.y < START_TILE_HEIGHT) {
@@ -197,6 +201,7 @@ export function getCurrentHeroId(gameState: GameState): string {
 /**
  * Calculate modified encounter cancel cost with Perseverance effect
  * This applies the Perseverance power card's cost reduction
+ * Only applies if a hero on the active hero's tile has Perseverance active
  */
 export function calculateEncounterCancelCost(
   gameState: GameState,
@@ -215,16 +220,23 @@ export function calculateEncounterCancelCost(
     return baseCost;
   }
   
-  // Check if any hero has Perseverance active
-  // (This would be tracked via registered hooks)
-  const heroCount = countHeroesOnTile(gameState, tileId);
+  // Check if any hero on the tile has Perseverance (ID 10) active
+  const heroesOnTile = gameState.heroTokens.filter(token => {
+    const heroTileId = getTileIdForPosition(gameState, token.position);
+    return heroTileId === tileId;
+  });
   
-  // Perseverance reduces cost by number of heroes on tile
-  // The actual check for whether Perseverance is active would be done
-  // by checking if there's a registered hook for encounter-draw
+  // Check if any of these heroes has Perseverance active (not flipped)
+  const hasPerseveranceActive = heroesOnTile.some(hero =>
+    isPowerCardHookActive(hookState, 10, hero.heroId)
+  );
   
-  // For now, return base cost minus hero count (capped at 0)
-  // The hook system will determine if this applies
+  if (!hasPerseveranceActive) {
+    return baseCost;
+  }
+  
+  // Perseverance reduces cost by number of heroes on tile (including caster)
+  const heroCount = heroesOnTile.length;
   return Math.max(0, baseCost - heroCount);
 }
 
