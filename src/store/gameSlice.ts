@@ -79,6 +79,7 @@ import {
   tileHasHazard,
 } from "./trapsHazards";
 import { activateVillainPhaseTraps } from "./villainPhaseTraps";
+import { checkBladeBarrierDamage } from "./powerCardEffects";
 import {
   initializeTreasureDeck,
   drawTreasure,
@@ -910,6 +911,25 @@ export const gameSlice = createSlice({
                   state.monsters.push(monsterInstance);
                   state.monsterInstanceCounter += 1;
                   state.recentlySpawnedMonsterId = monsterInstance.instanceId;
+                  
+                  // Check for Blade Barrier tokens at spawn position
+                  const bladeBarrierCheck = checkBladeBarrierDamage(
+                    monsterInstance.position,
+                    state.boardTokens || []
+                  );
+                  
+                  if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+                    // Deal 1 damage to the monster
+                    const monster = state.monsters.find(m => m.instanceId === monsterInstance.instanceId);
+                    if (monster) {
+                      monster.currentHp = Math.max(0, monster.currentHp - 1);
+                    }
+                    
+                    // Remove the blade barrier token
+                    state.boardTokens = state.boardTokens.filter(
+                      token => token.id !== bladeBarrierCheck.tokenToRemove
+                    );
+                  }
                 }
               }
               // Note: If no valid spawn position, monster card is still drawn but not placed
