@@ -9,7 +9,9 @@ export interface HeroAttack {
 }
 
 /**
- * Condition/status effect that can affect a hero (e.g., poisoned, dazed, slowed)
+ * Condition/status effect that can affect a hero or monster (e.g., poisoned, dazed, slowed)
+ * This interface is used for UI display of status effects.
+ * Actual status tracking is done via StatusEffect interface in statusEffects.ts
  */
 export interface HeroCondition {
   id: string;
@@ -146,8 +148,8 @@ export interface MonsterCardTactics {
  * 
  * IMPLEMENTATION STATUS:
  * - kobold: ✅ FULLY IMPLEMENTED (attack-only behavior)
- * - snake: ⚠️ PARTIALLY IMPLEMENTED (move-and-attack works, but Poisoned status not applied)
- * - cultist: ⚠️ PARTIALLY IMPLEMENTED (move-and-attack works, but Poisoned status not applied)
+ * - snake: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
+ * - cultist: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * 
  * See MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
  */
@@ -161,13 +163,11 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Bite', attackBonus: 7, damage: 1, statusEffect: 'poisoned' },
     moveAttackRange: 1,
-    implementationNotes: 'Poisoned status effect not yet implemented. Damage is dealt but status is not applied.',
   },
   cultist: {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Dagger', attackBonus: 6, damage: 1, statusEffect: 'poisoned' },
     moveAttackRange: 1,
-    implementationNotes: 'Poisoned status effect not yet implemented. Damage is dealt but status is not applied.',
   },
 };
 

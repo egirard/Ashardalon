@@ -304,6 +304,35 @@ export interface UndoSnapshot {
 }
 
 /**
+ * Helper function to apply status effect from monster attack if applicable
+ * This helper eliminates code duplication between attack and move-and-attack cases
+ */
+function applyMonsterAttackStatusEffect(
+  state: GameState,
+  monsterId: string,
+  monsterInstanceId: string,
+  targetHeroId: string
+): void {
+  const tactics = MONSTER_TACTICS[monsterId];
+  if (tactics?.adjacentAttack.statusEffect) {
+    const heroHpIndex = state.heroHp.findIndex(h => h.heroId === targetHeroId);
+    if (heroHpIndex !== -1) {
+      const heroHp = state.heroHp[heroHpIndex];
+      const statusType = tactics.adjacentAttack.statusEffect as StatusEffectType;
+      state.heroHp[heroHpIndex] = {
+        ...heroHp,
+        statuses: applyStatusEffect(
+          heroHp.statuses ?? [],
+          statusType,
+          monsterInstanceId,
+          state.turnState.turnNumber
+        ),
+      };
+    }
+  }
+}
+
+/**
  * Helper function to create a deep clone of state for undo snapshots
  * This ensures the snapshot is independent of the current state
  */
@@ -1553,24 +1582,7 @@ export const gameSlice = createSlice({
         
         // Apply status effect if the attack has one and hit
         if (result.result.isHit) {
-          const monsterDef = getMonsterById(monster.monsterId);
-          const tactics = MONSTER_TACTICS[monster.monsterId];
-          if (tactics?.adjacentAttack.statusEffect) {
-            const heroHpIndex = state.heroHp.findIndex(h => h.heroId === result.targetId);
-            if (heroHpIndex !== -1) {
-              const heroHp = state.heroHp[heroHpIndex];
-              const statusType = tactics.adjacentAttack.statusEffect as StatusEffectType;
-              state.heroHp[heroHpIndex] = {
-                ...heroHp,
-                statuses: applyStatusEffect(
-                  heroHp.statuses ?? [],
-                  statusType,
-                  monster.instanceId,
-                  state.turnState.turnNumber
-                ),
-              };
-            }
-          }
+          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId);
         }
       } else if (result.type === 'move-and-attack') {
         // Handle move-and-attack: monster moves adjacent AND attacks in same turn
@@ -1608,24 +1620,7 @@ export const gameSlice = createSlice({
         
         // Apply status effect if the attack has one and hit
         if (result.result.isHit) {
-          const monsterDef = getMonsterById(monster.monsterId);
-          const tactics = MONSTER_TACTICS[monster.monsterId];
-          if (tactics?.adjacentAttack.statusEffect) {
-            const heroHpIndex = state.heroHp.findIndex(h => h.heroId === result.targetId);
-            if (heroHpIndex !== -1) {
-              const heroHp = state.heroHp[heroHpIndex];
-              const statusType = tactics.adjacentAttack.statusEffect as StatusEffectType;
-              state.heroHp[heroHpIndex] = {
-                ...heroHp,
-                statuses: applyStatusEffect(
-                  heroHp.statuses ?? [],
-                  statusType,
-                  monster.instanceId,
-                  state.turnState.turnNumber
-                ),
-              };
-            }
-          }
+          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId);
         }
       }
       // Note: For result.type === 'none', no visual feedback is needed - monster couldn't act
