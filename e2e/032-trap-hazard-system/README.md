@@ -29,15 +29,15 @@ Hazards are markers with ongoing effects:
 ## Screenshots
 
 ### Step 1: Character Selection
-![Character Select](032-trap-hazard-system-spec-ts-snapshots/character-select-screen-chromium-linux.png)
+![Character Select](032-trap-hazard-system.spec.ts-snapshots/000-character-select-screen-chromium-linux.png)
 *Initial character selection screen*
 
 ### Step 2: Game Started (No Traps/Hazards)
-![Game Started](032-trap-hazard-system-spec-ts-snapshots/game-started-no-traps-chromium-linux.png)
+![Game Started](032-trap-hazard-system.spec.ts-snapshots/001-game-started-no-traps-chromium-linux.png)
 *Game board with Quinn positioned, no traps or hazards present*
 
 ### Step 3: Trap/Hazard State Verification
-![State Verified](032-trap-hazard-system-spec-ts-snapshots/game-state-has-trap-hazard-arrays-chromium-linux.png)
+![State Verified](032-trap-hazard-system.spec.ts-snapshots/002-game-state-has-trap-hazard-arrays-chromium-linux.png)
 *Game state includes trap and hazard tracking arrays and counters*
 
 ## Technical Implementation
