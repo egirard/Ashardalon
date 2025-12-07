@@ -8,6 +8,9 @@ jobs:
   check-e2e-tests:
     name: Verify PR includes E2E tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       e2e_tests_found: ${{ steps.changed-files.outputs.e2e_tests_found }}
       src_files_changed: ${{ steps.changed-files.outputs.src_files_changed }}
@@ -151,6 +154,9 @@ jobs:
   run-e2e-tests:
     name: Run E2E tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write  # For uploading artifacts
     needs: check-e2e-tests
     if: needs.check-e2e-tests.outputs.e2e_tests_found == 'true'
     
