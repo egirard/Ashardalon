@@ -4,6 +4,69 @@
 
 As a player, when a monster with a status effect attack (like a snake) hits my hero, I want to see the status effect applied, displayed, and processed correctly so that I understand how conditions affect gameplay.
 
+## Screenshots
+
+This test captures screenshots at key points to visually demonstrate status effect functionality. Screenshots are generated automatically on first run with `--update-snapshots` and stored in `034-status-effects.spec.ts-snapshots/`.
+
+### Test 1: Apply and Display Hero Status Effects
+
+#### 000 - Initial State (No Status)
+![Initial no status](034-status-effects.spec.ts-snapshots/000-initial-no-status-chromium-linux.png)
+- Hero card visible at bottom of screen
+- No condition badges displayed
+- Hero at full HP (8/8)
+
+#### 001 - Poisoned Status Applied
+![Poisoned status](034-status-effects.spec.ts-snapshots/001-poisoned-status-applied-chromium-linux.png)
+- Poisoned icon (🤢) displayed on hero card
+- Status badge visible in conditions section
+- Hero still at full HP
+
+#### 002 - Multiple Status Effects
+![Multiple statuses](034-status-effects.spec.ts-snapshots/002-multiple-status-effects-chromium-linux.png)
+- Three status icons displayed: poisoned (🤢), dazed (😵), slowed (🐌)
+- All badges visible and properly spaced
+- Status section expanded to show all conditions
+
+#### 003 - Status Removed (Others Remain)
+![Status removed](034-status-effects.spec.ts-snapshots/003-poisoned-removed-others-remain-chromium-linux.png)
+- Poisoned icon removed
+- Dazed and slowed icons still displayed
+- Demonstrates selective status removal
+
+### Test 2: Process Status Effects
+
+#### 000 - Initial HP Full
+![Initial HP](034-status-effects.spec.ts-snapshots/000-initial-hp-full-chromium-linux.png)
+- Hero at full HP (8/8)
+- HP indicator in turn info shows 8/8
+
+#### 001 - Ongoing Damage Applied (Before Processing)
+![Ongoing damage before](034-status-effects.spec.ts-snapshots/001-ongoing-damage-applied-before-process-chromium-linux.png)
+- Ongoing damage icon (🔥) displayed
+- HP still at 8/8 (not yet processed)
+- Status visible but damage not yet applied
+
+#### 002 - HP Reduced After Processing
+![HP reduced](034-status-effects.spec.ts-snapshots/002-hp-reduced-after-processing-chromium-linux.png)
+- HP reduced to 6/8 (2 damage from ongoing effect)
+- Status still present (persists)
+- HP indicator updated in turn info
+
+### Test 3: Monster Status Effects
+
+#### 000 - Monster with Slowed Status
+![Monster slowed](034-status-effects.spec.ts-snapshots/000-monster-with-slowed-status-chromium-linux.png)
+- Kobold monster token visible on board
+- Slowed icon (🐌) displayed on monster token
+- Status badge positioned near monster
+
+#### 001 - Monster Status Removed
+![Monster status removed](034-status-effects.spec.ts-snapshots/001-monster-status-removed-chromium-linux.png)
+- Monster still visible
+- Status badge no longer displayed
+- Clean monster token without conditions
+
 ## Test Scenarios
 
 ### 1. Snake Attack Applies Poisoned Status
