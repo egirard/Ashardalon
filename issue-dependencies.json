@@ -1,0 +1,93 @@
+{
+  "repository": "egirard/Ashardalon",
+  "generated_at": "2025-12-07T03:19:00Z",
+  "dependencies": {
+    "34": {
+      "title": "Win Adventure",
+      "blocked_by": [102, 107],
+      "blocking": [],
+      "reason": "Needs player state tracking (#102) and encounter system for villain spawning (#107)"
+    },
+    "102": {
+      "title": "Fully implement player cards",
+      "blocked_by": [],
+      "blocking": [34],
+      "reason": "Foundation issue - provides player/hero state tracking"
+    },
+    "103": {
+      "title": "Fully implement treasure cards",
+      "blocked_by": [],
+      "blocking": [126],
+      "reason": "Foundation issue - special encounters need treasure placement"
+    },
+    "107": {
+      "title": "Track remaining work to fully implement encounter cards",
+      "blocked_by": [],
+      "blocking": [34, 125, 126],
+      "reason": "Meta-issue tracking encounter card implementation"
+    },
+    "122": {
+      "title": "Implement status/condition and multi-step power card effects",
+      "blocked_by": [],
+      "blocking": [],
+      "reason": "Foundation issue - provides status/condition system (soft dependency for #127 and #126)"
+    },
+    "123": {
+      "title": "Implement conditional effects and utility capabilities for power cards",
+      "blocked_by": [],
+      "blocking": [],
+      "reason": "Independent power card functionality"
+    },
+    "124": {
+      "title": "Implement board tokens for power cards that create persistent entities",
+      "blocked_by": [],
+      "blocking": [127],
+      "reason": "Foundation issue - provides board token system needed for traps/hazards"
+    },
+    "125": {
+      "title": "Integrate and Test Remaining Encounter Mechanics (Display-Only → Full Implementation)",
+      "blocked_by": [107, 126, 127],
+      "blocking": [],
+      "reason": "Integration issue - requires all encounter subsystems to be implemented first"
+    },
+    "126": {
+      "title": "Implement Tile, Monster Deck Manipulation, and Special Encounter Mechanics",
+      "blocked_by": [103, 107],
+      "blocking": [125],
+      "reason": "Needs treasure system (#103) for treasure placement and encounter tracking (#107)"
+    },
+    "127": {
+      "title": "Implement Trap and Hazard Systems for Encounter Cards",
+      "blocked_by": [124],
+      "blocking": [125],
+      "reason": "Needs board token system (#124) for persistent trap/hazard markers"
+    }
+  },
+  "work_order": {
+    "phase_1_foundation": {
+      "description": "Foundation issues with no blockers - can be worked on in parallel",
+      "issues": [102, 103, 122, 123, 124]
+    },
+    "phase_2_encounter_system": {
+      "description": "Encounter system implementation",
+      "issues": [107, 126, 127],
+      "notes": "#107 is meta-issue, #126 needs #103 and #107, #127 needs #124"
+    },
+    "phase_3_integration": {
+      "description": "Integration of all encounter mechanics",
+      "issues": [125],
+      "notes": "Requires #107, #126, and #127 to be completed"
+    },
+    "phase_4_features": {
+      "description": "Feature completion",
+      "issues": [34],
+      "notes": "Requires #102 and #107 to be completed"
+    }
+  },
+  "dependency_comments": {
+    "34": "## Dependencies\n\nThis issue is blocked by the following issues and should not be started until they are completed:\n\n- [ ] #102 - Fully implement player cards (provides player/hero state tracking)\n- [ ] #107 - Track remaining work to fully implement encounter cards (provides encounter system for villain spawning)\n\nSee [ISSUE_DEPENDENCIES.md](https://github.com/egirard/Ashardalon/blob/main/ISSUE_DEPENDENCIES.md) for the full dependency analysis.",
+    "125": "## Dependencies\n\nThis issue is blocked by the following issues and should not be started until they are completed:\n\n- [ ] #107 - Track remaining work to fully implement encounter cards (meta-issue for tracking)\n- [ ] #126 - Implement Tile, Monster Deck Manipulation, and Special Encounter Mechanics\n- [ ] #127 - Implement Trap and Hazard Systems for Encounter Cards\n\nSee [ISSUE_DEPENDENCIES.md](https://github.com/egirard/Ashardalon/blob/main/ISSUE_DEPENDENCIES.md) for the full dependency analysis.",
+    "126": "## Dependencies\n\nThis issue is blocked by the following issues and should not be started until they are completed:\n\n- [ ] #103 - Fully implement treasure cards (special encounters need treasure placement)\n- [ ] #107 - Track remaining work to fully implement encounter cards (subset of encounter functionality)\n\nSee [ISSUE_DEPENDENCIES.md](https://github.com/egirard/Ashardalon/blob/main/ISSUE_DEPENDENCIES.md) for the full dependency analysis.",
+    "127": "## Dependencies\n\nThis issue is blocked by the following issues and should not be started until they are completed:\n\n- [ ] #124 - Implement board tokens for power cards that create persistent entities (needs board token system for persistent markers)\n\nSee [ISSUE_DEPENDENCIES.md](https://github.com/egirard/Ashardalon/blob/main/ISSUE_DEPENDENCIES.md) for the full dependency analysis."
+  }
+}
