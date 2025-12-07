@@ -24,6 +24,7 @@ import {
   TrapState,
   HazardState,
   BoardTokenState,
+  MONSTER_TACTICS,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -1049,8 +1050,28 @@ export const gameSlice = createSlice({
       state.incrementalMovement = null;
       state.undoSnapshot = null;
       
-      // Check if the new hero needs a healing surge (at 0 HP at turn start)
+      // Process status effects at the start of the new hero's turn
       const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (currentHeroId) {
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+        if (heroHpIndex !== -1) {
+          const heroHp = state.heroHp[heroHpIndex];
+          const { processStatusEffectsStartOfTurn } = require('./statusEffects');
+          const { updatedStatuses, ongoingDamage } = processStatusEffectsStartOfTurn(
+            heroHp.statuses ?? [],
+            state.turnState.turnNumber
+          );
+          
+          // Apply ongoing damage and update statuses
+          state.heroHp[heroHpIndex] = {
+            ...heroHp,
+            currentHp: Math.max(0, heroHp.currentHp - ongoingDamage),
+            statuses: updatedStatuses,
+          };
+        }
+      }
+      
+      // Check if the new hero needs a healing surge (at 0 HP at turn start)
       if (currentHeroId) {
         const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
         if (heroHpIndex !== -1) {
@@ -1523,6 +1544,29 @@ export const gameSlice = createSlice({
             }
           }
         }
+        
+        // Apply status effect if the attack has one and hit
+        if (result.result.isHit) {
+          const monsterDef = getMonsterById(monster.monsterId);
+          const tactics = MONSTER_TACTICS[monster.monsterId];
+          if (tactics?.adjacentAttack.statusEffect) {
+            const heroHpIndex = state.heroHp.findIndex(h => h.heroId === result.targetId);
+            if (heroHpIndex !== -1) {
+              const heroHp = state.heroHp[heroHpIndex];
+              const { applyStatusEffect } = require('./statusEffects');
+              const statusType = tactics.adjacentAttack.statusEffect as any;
+              state.heroHp[heroHpIndex] = {
+                ...heroHp,
+                statuses: applyStatusEffect(
+                  heroHp.statuses ?? [],
+                  statusType,
+                  monster.instanceId,
+                  state.turnState.turnNumber
+                ),
+              };
+            }
+          }
+        }
       } else if (result.type === 'move-and-attack') {
         // Handle move-and-attack: monster moves adjacent AND attacks in same turn
         // First, update monster position
@@ -1553,6 +1597,29 @@ export const gameSlice = createSlice({
             const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
             if (allHeroesDefeated) {
               state.currentScreen = "defeat";
+            }
+          }
+        }
+        
+        // Apply status effect if the attack has one and hit
+        if (result.result.isHit) {
+          const monsterDef = getMonsterById(monster.monsterId);
+          const tactics = MONSTER_TACTICS[monster.monsterId];
+          if (tactics?.adjacentAttack.statusEffect) {
+            const heroHpIndex = state.heroHp.findIndex(h => h.heroId === result.targetId);
+            if (heroHpIndex !== -1) {
+              const heroHp = state.heroHp[heroHpIndex];
+              const { applyStatusEffect } = require('./statusEffects');
+              const statusType = tactics.adjacentAttack.statusEffect as any;
+              state.heroHp[heroHpIndex] = {
+                ...heroHp,
+                statuses: applyStatusEffect(
+                  heroHp.statuses ?? [],
+                  statusType,
+                  monster.instanceId,
+                  state.turnState.turnNumber
+                ),
+              };
             }
           }
         }
