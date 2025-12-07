@@ -6,14 +6,23 @@ import type { BoardTokenState, Position, DungeonState, MonsterState } from './ty
 import { createBoardToken } from './boardTokens';
 
 /**
+ * Tile dimension constants
+ */
+const TILE_WIDTH = 4;
+const NORMAL_TILE_HEIGHT = 4;
+const START_TILE_HEIGHT = 8;
+const TILE_BORDER_SIZE = 1; // Wall border thickness in squares
+
+/**
  * Get all valid squares on a specific tile for token placement
+ * Valid squares are interior squares, excluding the border walls
  */
 export function getTileSquares(tileId: string, dungeon: DungeonState): Position[] {
   const tile = dungeon.tiles.find(t => t.id === tileId);
   if (!tile) return [];
 
-  const tileWidth = 4;
-  const tileHeight = tile.id === 'start-tile' ? 8 : 4;
+  const tileWidth = TILE_WIDTH;
+  const tileHeight = tile.id === 'start-tile' ? START_TILE_HEIGHT : NORMAL_TILE_HEIGHT;
   
   const minX = tile.position.col * tileWidth;
   const maxX = minX + tileWidth - 1;
@@ -24,10 +33,13 @@ export function getTileSquares(tileId: string, dungeon: DungeonState): Position[
   for (let x = minX; x <= maxX; x++) {
     for (let y = minY; y <= maxY; y++) {
       // Exclude wall squares (outer border of each tile)
-      // For a 4x4 tile at position (0, 0), valid squares are (1,1) to (2,2)
+      // Interior squares are those not on the border
       const localX = x - minX;
       const localY = y - minY;
-      if (localX >= 1 && localX <= 2 && localY >= 1 && localY <= 2) {
+      const isInteriorX = localX >= TILE_BORDER_SIZE && localX < tileWidth - TILE_BORDER_SIZE;
+      const isInteriorY = localY >= TILE_BORDER_SIZE && localY < tileHeight - TILE_BORDER_SIZE;
+      
+      if (isInteriorX && isInteriorY) {
         squares.push({ x, y });
       }
     }
@@ -126,13 +138,12 @@ export function getFlamingSphereDamageTargets(
   monsters: MonsterState[]
 ): MonsterState[] {
   // Get all monsters on the same tile as the token
-  // For simplicity, we consider monsters within the same 4x4 tile grid
-  const tokenTileX = Math.floor(token.position.x / 4);
-  const tokenTileY = Math.floor(token.position.y / 4);
+  const tokenTileX = Math.floor(token.position.x / TILE_WIDTH);
+  const tokenTileY = Math.floor(token.position.y / TILE_WIDTH);
   
   return monsters.filter(monster => {
-    const monsterTileX = Math.floor(monster.position.x / 4);
-    const monsterTileY = Math.floor(monster.position.y / 4);
+    const monsterTileX = Math.floor(monster.position.x / TILE_WIDTH);
+    const monsterTileY = Math.floor(monster.position.y / TILE_WIDTH);
     return monsterTileX === tokenTileX && monsterTileY === tokenTileY;
   });
 }
@@ -145,10 +156,10 @@ export function isWithinTiles(
   toPosition: Position,
   tileDistance: number
 ): boolean {
-  const fromTileX = Math.floor(fromPosition.x / 4);
-  const fromTileY = Math.floor(fromPosition.y / 4);
-  const toTileX = Math.floor(toPosition.x / 4);
-  const toTileY = Math.floor(toPosition.y / 4);
+  const fromTileX = Math.floor(fromPosition.x / TILE_WIDTH);
+  const fromTileY = Math.floor(fromPosition.y / TILE_WIDTH);
+  const toTileX = Math.floor(toPosition.x / TILE_WIDTH);
+  const toTileY = Math.floor(toPosition.y / TILE_WIDTH);
   
   const tileDiffX = Math.abs(toTileX - fromTileX);
   const tileDiffY = Math.abs(toTileY - fromTileY);

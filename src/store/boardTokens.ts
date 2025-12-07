@@ -7,6 +7,13 @@ import type {
 } from './types';
 
 /**
+ * Tile dimension constants (shared with powerCardEffects.ts)
+ */
+const TILE_WIDTH = 4;
+const NORMAL_TILE_HEIGHT = 4;
+const START_TILE_HEIGHT = 8;
+
+/**
  * Create a board token instance
  */
 export function createBoardToken(
@@ -193,8 +200,8 @@ function getTileBoundsForPosition(tile: PlacedTile): {
   minY: number;
   maxY: number;
 } {
-  const tileWidth = 4;
-  const tileHeight = tile.id === 'start-tile' ? 8 : 4;
+  const tileWidth = TILE_WIDTH;
+  const tileHeight = tile.id === 'start-tile' ? START_TILE_HEIGHT : NORMAL_TILE_HEIGHT;
   
   const minX = tile.position.col * tileWidth;
   const maxX = minX + tileWidth - 1;
