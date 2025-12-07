@@ -1,0 +1,195 @@
+name: Check E2E Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'e2e/**'
+
+jobs:
+  check-e2e-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history to compare with base branch
+      
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            src/**
+            public/**
+            index.html
+      
+      - name: Check for E2E tests
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Get changed files
+            const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ');
+            console.log('Changed files:', changedFiles);
+            
+            // Check if any source files changed
+            const sourceFilesChanged = changedFiles.some(file => 
+              file.startsWith('src/') || 
+              file.startsWith('public/') || 
+              file === 'index.html'
+            );
+            
+            if (!sourceFilesChanged) {
+              console.log('No source files changed, skipping E2E test check');
+              return;
+            }
+            
+            // Get all files in the PR
+            const { data: prFiles } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            // Check if E2E tests were added or modified
+            const e2eFilesChanged = prFiles.some(file => 
+              file.filename.startsWith('e2e/') && 
+              file.filename.endsWith('.spec.ts')
+            );
+            
+            // Check PR body for E2E exemption markers
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const prBody = pr.body || '';
+            
+            // Check if PR is marked as not requiring E2E tests
+            const isDocumentationOnly = prBody.includes('- [x] ❌ No - This PR is documentation/config/refactoring only');
+            const isE2ETestsIncluded = prBody.includes('- [x] ✅ Yes - E2E tests included');
+            
+            console.log('Source files changed:', sourceFilesChanged);
+            console.log('E2E files changed:', e2eFilesChanged);
+            console.log('Documentation only:', isDocumentationOnly);
+            console.log('E2E tests included checkbox:', isE2ETestsIncluded);
+            
+            // If source files changed but no E2E tests and not marked as exempt
+            if (sourceFilesChanged && !e2eFilesChanged && !isDocumentationOnly) {
+              const message = `## ⚠️ E2E Tests Required
+              
+              This PR modifies source files but does not include E2E tests.
+              
+              **Changed source files:**
+              ${changedFiles.filter(f => f.startsWith('src/') || f.startsWith('public/') || f === 'index.html').map(f => `- \`${f}\``).join('\n')}
+              
+              **Required actions:**
+              
+              1. If this PR includes user-facing changes:
+                 - Add E2E tests following [E2E_TEST_GUIDELINES.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/E2E_TEST_GUIDELINES.md)
+                 - Check the "✅ Yes - E2E tests included" box in the PR description
+                 - Complete the E2E test checklist
+              
+              2. If this PR does NOT require E2E tests (documentation/config/refactoring only):
+                 - Check the "❌ No - This PR is documentation/config/refactoring only" box in the PR description
+                 - Explain why E2E tests are not needed
+              
+              **E2E Test Creation Guide:**
+              - Create directory: \`e2e/###-feature-name/\`
+              - Write spec: \`###-feature-name.spec.ts\`
+              - Capture screenshots with programmatic verification
+              - Generate baselines: \`npm run test:e2e -- --update-snapshots\`
+              - Commit baseline screenshots
+              - Create test README with screenshot links
+              - Update \`e2e/README.md\`
+              
+              See [AGENT_PROBLEM_STATEMENT.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/AGENT_PROBLEM_STATEMENT.md) for detailed requirements.`;
+              
+              // Post comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message
+              });
+              
+              core.setFailed('E2E tests are required for this PR. Please add E2E tests or mark as exempt.');
+            } else if (e2eFilesChanged) {
+              console.log('✅ E2E tests found in this PR');
+              
+              // Verify baseline screenshots exist
+              const e2eTestDirs = new Set();
+              prFiles.forEach(file => {
+                const match = file.filename.match(/^e2e\/(\d+-[^/]+)\//);
+                if (match) {
+                  e2eTestDirs.add(match[1]);
+                }
+              });
+              
+              console.log('E2E test directories found:', Array.from(e2eTestDirs));
+              
+              // Check if screenshots are included
+              const hasScreenshots = prFiles.some(file => 
+                file.filename.includes('/screenshots/') && 
+                file.filename.endsWith('.png')
+              );
+              
+              if (!hasScreenshots && e2eTestDirs.size > 0) {
+                const warning = `## ⚠️ Missing Baseline Screenshots
+                
+                E2E tests were added but no baseline screenshots were committed.
+                
+                **Action required:**
+                Generate baseline screenshots with: \`npm run test:e2e -- --update-snapshots\`
+                Then commit the generated screenshots.
+                
+                See [E2E_TEST_GUIDELINES.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/E2E_TEST_GUIDELINES.md) for details.`;
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: warning
+                });
+              }
+            } else if (isDocumentationOnly) {
+              console.log('✅ PR marked as documentation/config only - E2E tests not required');
+            } else {
+              console.log('✅ No source files changed or E2E tests not applicable');
+            }
+      
+      - name: Setup Node.js
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run E2E tests
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: npm run test:e2e
+        continue-on-error: false
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
