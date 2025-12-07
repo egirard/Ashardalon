@@ -51,11 +51,15 @@ def load_dependencies() -> Dict[str, Any]:
         sys.exit(1)
 
 
-def check_existing_comment(issue_number: int, token: str) -> bool:
+def check_existing_comment(issue_number: int, token: str, dry_run: bool = False) -> bool:
     """Check if issue already has a dependency comment."""
+    if dry_run:
+        # Skip API check in dry-run mode
+        return False
+    
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/issues/{issue_number}/comments"
     headers = {
-        "Authorization": f"token {token}",
+        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "issue-dependencies-script"
     }
@@ -86,7 +90,7 @@ def add_comment_to_issue(issue_number: int, comment_body: str, token: str, dry_r
     
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/issues/{issue_number}/comments"
     headers = {
-        "Authorization": f"token {token}",
+        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json",
         "Content-Type": "application/json",
         "User-Agent": "issue-dependencies-script"
@@ -169,7 +173,7 @@ def main():
         print(f"  Blocked by: {', '.join(f'#{num}' for num in blocked_by)}")
         
         # Check if already has dependency comment
-        if not args.dry_run and check_existing_comment(issue_number, token):
+        if check_existing_comment(issue_number, token or "", args.dry_run):
             print(f"  ⚠️  Already has a Dependencies section. Skipping to avoid duplicates.")
             skip_count += 1
             print()
