@@ -1,0 +1,23 @@
+name: e2e-required
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-e2e-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run PR E2E presence check
+        uses: actions/setup-node@v4
+      - name: Node (for script)
+        run: |
+          node --version
+      - name: Install deps
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+      - name: Run PR E2E checker
+        run: |
+          # This script fails the job if modified production files are not accompanied by tests
+          node .github/scripts/pr-e2e-check.cjs
