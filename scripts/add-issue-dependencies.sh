@@ -144,7 +144,7 @@ local_count=0
 local_total=${#DEPENDENCIES[@]}
 
 for issue_number in "${!DEPENDENCIES[@]}"; do
-    ((local_count++)) || true
+    ((local_count++))
     blockers="${DEPENDENCIES[$issue_number]}"
     
     echo "[$local_count/$local_total] Issue #${issue_number} blocked by: #${blockers//,/, #}"
