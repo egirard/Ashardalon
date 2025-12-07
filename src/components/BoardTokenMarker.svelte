@@ -30,27 +30,43 @@
   }
 </script>
 
-<div
-  class="board-token"
-  class:clickable={onClick !== undefined}
-  class:movable={token.canMove}
-  style="left: {pixelX}px; top: {pixelY}px; width: {cellSize}px; height: {cellSize}px; --token-color: {displayInfo.color};"
-  data-testid="board-token"
-  data-token-id={token.id}
-  data-token-type={token.type}
-  title="{displayInfo.name}{showCharges ? ` (${token.charges} charges)` : ''}"
-  onclick={handleClick}
-  onkeydown={(e) => e.key === 'Enter' && handleClick()}
-  role={onClick ? 'button' : undefined}
-  tabindex={onClick ? 0 : undefined}
->
-  <div class="token-content">
-    <span class="token-emoji">{displayInfo.emoji}</span>
-    {#if showCharges}
-      <span class="token-charges">{token.charges}</span>
-    {/if}
+{#if onClick}
+  <button
+    class="board-token"
+    class:clickable={true}
+    class:movable={token.canMove}
+    style="left: {pixelX}px; top: {pixelY}px; width: {cellSize}px; height: {cellSize}px; --token-color: {displayInfo.color};"
+    data-testid="board-token"
+    data-token-id={token.id}
+    data-token-type={token.type}
+    title="{displayInfo.name}{showCharges ? ` (${token.charges} charges)` : ''}"
+    onclick={handleClick}
+  >
+    <div class="token-content">
+      <span class="token-emoji">{displayInfo.emoji}</span>
+      {#if showCharges}
+        <span class="token-charges">{token.charges}</span>
+      {/if}
+    </div>
+  </button>
+{:else}
+  <div
+    class="board-token"
+    class:movable={token.canMove}
+    style="left: {pixelX}px; top: {pixelY}px; width: {cellSize}px; height: {cellSize}px; --token-color: {displayInfo.color};"
+    data-testid="board-token"
+    data-token-id={token.id}
+    data-token-type={token.type}
+    title="{displayInfo.name}{showCharges ? ` (${token.charges} charges)` : ''}"
+  >
+    <div class="token-content">
+      <span class="token-emoji">{displayInfo.emoji}</span>
+      {#if showCharges}
+        <span class="token-charges">{token.charges}</span>
+      {/if}
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .board-token {
@@ -63,6 +79,8 @@
     background: radial-gradient(circle, var(--token-color) 0%, rgba(0, 0, 0, 0.3) 100%);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 12px var(--token-color);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    padding: 0;
   }
   
   .board-token.clickable {

@@ -66,6 +66,7 @@
   import EncounterCard from "./EncounterCard.svelte";
   import TrapMarker from "./TrapMarker.svelte";
   import HazardMarker from "./HazardMarker.svelte";
+  import BoardTokenMarker from "./BoardTokenMarker.svelte";
   import PowerCardAttackPanel from "./PowerCardAttackPanel.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
@@ -169,6 +170,7 @@
   let activeEnvironmentId: string | null = $state(null);
   let traps: import("../store/types").TrapState[] = $state([]);
   let hazards: import("../store/types").HazardState[] = $state([]);
+  let boardTokens: import("../store/types").BoardTokenState[] = $state([]);
   let showActionSurgePrompt: boolean = $state(false);
   let multiAttackState: MultiAttackState | null = $state(null);
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
@@ -225,6 +227,7 @@
       activeEnvironmentId = state.game.activeEnvironmentId;
       traps = state.game.traps;
       hazards = state.game.hazards;
+      boardTokens = state.game.boardTokens;
       showActionSurgePrompt = state.game.showActionSurgePrompt;
       multiAttackState = state.game.multiAttackState;
       pendingMoveAttack = state.game.pendingMoveAttack;
@@ -268,6 +271,7 @@
     activeEnvironmentId = state.game.activeEnvironmentId;
     traps = state.game.traps;
     hazards = state.game.hazards;
+    boardTokens = state.game.boardTokens;
     showActionSurgePrompt = state.game.showActionSurgePrompt;
     multiAttackState = state.game.multiAttackState;
     pendingMoveAttack = state.game.pendingMoveAttack;
@@ -1258,6 +1262,17 @@
         {#each hazards as hazard (hazard.id)}
           <HazardMarker
             hazard={hazard}
+            cellSize={TILE_CELL_SIZE}
+            tileOffsetX={TOKEN_OFFSET_X}
+            tileOffsetY={TOKEN_OFFSET_Y}
+            tilePixelOffset={{ x: 0, y: 0 }}
+          />
+        {/each}
+        
+        <!-- Board tokens (Blade Barrier, Flaming Sphere, etc.) -->
+        {#each boardTokens as token (token.id)}
+          <BoardTokenMarker
+            {token}
             cellSize={TILE_CELL_SIZE}
             tileOffsetX={TOKEN_OFFSET_X}
             tileOffsetY={TOKEN_OFFSET_Y}
