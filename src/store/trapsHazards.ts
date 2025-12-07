@@ -10,6 +10,14 @@ import type {
 } from './types';
 
 /**
+ * Start tile bounds constants
+ */
+const START_TILE_MIN_X = 1;
+const START_TILE_MAX_X = 3;
+const START_TILE_MIN_Y = 0;
+const START_TILE_MAX_Y = 7;
+
+/**
  * Create a trap instance from an encounter card
  */
 export function createTrapInstance(
@@ -228,8 +236,8 @@ export function moveTowardPosition(
     // Check if position is on a valid tile (simple check - on any placed tile)
     const isOnTile = dungeon.tiles.some(tile => {
       if (tile.id === 'start-tile') {
-        return adjacentPos.x >= 1 && adjacentPos.x <= 3 && 
-               adjacentPos.y >= 0 && adjacentPos.y <= 7;
+        return adjacentPos.x >= START_TILE_MIN_X && adjacentPos.x <= START_TILE_MAX_X && 
+               adjacentPos.y >= START_TILE_MIN_Y && adjacentPos.y <= START_TILE_MAX_Y;
       }
       const col = tile.position.col;
       const row = tile.position.row;
@@ -273,7 +281,8 @@ export function spreadLavaFlow(
     // Check if on a tile
     return dungeon.tiles.some(tile => {
       if (tile.id === 'start-tile') {
-        return pos.x >= 1 && pos.x <= 3 && pos.y >= 0 && pos.y <= 7;
+        return pos.x >= START_TILE_MIN_X && pos.x <= START_TILE_MAX_X && 
+               pos.y >= START_TILE_MIN_Y && pos.y <= START_TILE_MAX_Y;
       }
       const col = tile.position.col;
       const row = tile.position.row;
