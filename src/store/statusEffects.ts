@@ -95,8 +95,11 @@ export const STATUS_EFFECT_DEFINITIONS: Record<StatusEffectType, HeroCondition> 
 /**
  * Apply a status effect to a character
  * @param existingStatuses Current status effects on the character
- * @param newStatus Status effect to apply
+ * @param statusType Type of status effect to apply
+ * @param source Source of the status (power card ID, monster ID, or encounter ID)
  * @param turnNumber Current game turn number
+ * @param duration Optional duration in turns
+ * @param data Optional additional data for the status effect
  * @returns Updated status effects array
  */
 export function applyStatusEffect(
