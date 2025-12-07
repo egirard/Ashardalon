@@ -541,6 +541,7 @@ export const gameSlice = createSlice({
           ac,
           surgeValue,
           attackBonus,
+          statuses: [], // Initialize with no status effects
         };
       });
 
@@ -1871,6 +1872,141 @@ export const gameSlice = createSlice({
     setBoardTokens: (state, action: PayloadAction<BoardTokenState[]>) => {
       state.boardTokens = action.payload;
     },
+    /**
+     * Apply a status effect to a hero
+     */
+    applyHeroStatus: (state, action: PayloadAction<{
+      heroId: string;
+      statusType: import('./statusEffects').StatusEffectType;
+      source: string;
+      duration?: number;
+      data?: import('./statusEffects').StatusEffect['data'];
+    }>) => {
+      const { heroId, statusType, source, duration, data } = action.payload;
+      const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
+      
+      if (heroHpIndex !== -1) {
+        const heroHp = state.heroHp[heroHpIndex];
+        const { applyStatusEffect } = require('./statusEffects');
+        state.heroHp[heroHpIndex] = {
+          ...heroHp,
+          statuses: applyStatusEffect(
+            heroHp.statuses ?? [],
+            statusType,
+            source,
+            state.turnState.turnNumber,
+            duration,
+            data
+          ),
+        };
+      }
+    },
+    /**
+     * Remove a status effect from a hero
+     */
+    removeHeroStatus: (state, action: PayloadAction<{
+      heroId: string;
+      statusType: import('./statusEffects').StatusEffectType;
+    }>) => {
+      const { heroId, statusType } = action.payload;
+      const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
+      
+      if (heroHpIndex !== -1) {
+        const heroHp = state.heroHp[heroHpIndex];
+        const { removeStatusEffect } = require('./statusEffects');
+        state.heroHp[heroHpIndex] = {
+          ...heroHp,
+          statuses: removeStatusEffect(heroHp.statuses ?? [], statusType),
+        };
+      }
+    },
+    /**
+     * Remove all status effects from a hero
+     */
+    clearHeroStatuses: (state, action: PayloadAction<string>) => {
+      const heroId = action.payload;
+      const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
+      
+      if (heroHpIndex !== -1) {
+        state.heroHp[heroHpIndex] = {
+          ...state.heroHp[heroHpIndex],
+          statuses: [],
+        };
+      }
+    },
+    /**
+     * Apply a status effect to a monster
+     */
+    applyMonsterStatus: (state, action: PayloadAction<{
+      monsterInstanceId: string;
+      statusType: import('./statusEffects').StatusEffectType;
+      source: string;
+      duration?: number;
+      data?: import('./statusEffects').StatusEffect['data'];
+    }>) => {
+      const { monsterInstanceId, statusType, source, duration, data } = action.payload;
+      const monsterIndex = state.monsters.findIndex(m => m.instanceId === monsterInstanceId);
+      
+      if (monsterIndex !== -1) {
+        const monster = state.monsters[monsterIndex];
+        const { applyStatusEffect } = require('./statusEffects');
+        state.monsters[monsterIndex] = {
+          ...monster,
+          statuses: applyStatusEffect(
+            monster.statuses ?? [],
+            statusType,
+            source,
+            state.turnState.turnNumber,
+            duration,
+            data
+          ),
+        };
+      }
+    },
+    /**
+     * Remove a status effect from a monster
+     */
+    removeMonsterStatus: (state, action: PayloadAction<{
+      monsterInstanceId: string;
+      statusType: import('./statusEffects').StatusEffectType;
+    }>) => {
+      const { monsterInstanceId, statusType } = action.payload;
+      const monsterIndex = state.monsters.findIndex(m => m.instanceId === monsterInstanceId);
+      
+      if (monsterIndex !== -1) {
+        const monster = state.monsters[monsterIndex];
+        const { removeStatusEffect } = require('./statusEffects');
+        state.monsters[monsterIndex] = {
+          ...monster,
+          statuses: removeStatusEffect(monster.statuses ?? [], statusType),
+        };
+      }
+    },
+    /**
+     * Process status effects at the start of a hero's turn (apply ongoing damage, expire durations)
+     */
+    processHeroStatusEffects: (state, action: PayloadAction<string>) => {
+      const heroId = action.payload;
+      const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
+      
+      if (heroHpIndex !== -1) {
+        const heroHp = state.heroHp[heroHpIndex];
+        const { processStatusEffectsStartOfTurn } = require('./statusEffects');
+        const { updatedStatuses, ongoingDamage } = processStatusEffectsStartOfTurn(
+          heroHp.statuses ?? [],
+          state.turnState.turnNumber
+        );
+        
+        // Apply ongoing damage
+        const newHp = Math.max(0, heroHp.currentHp - ongoingDamage);
+        
+        state.heroHp[heroHpIndex] = {
+          ...heroHp,
+          currentHp: newHp,
+          statuses: updatedStatuses,
+        };
+      }
+    },
   },
 });
 
@@ -1919,5 +2055,11 @@ export const {
   moveBoardToken,
   decrementBoardTokenCharges,
   setBoardTokens,
+  applyHeroStatus,
+  removeHeroStatus,
+  clearHeroStatuses,
+  applyMonsterStatus,
+  removeMonsterStatus,
+  processHeroStatusEffects,
 } = gameSlice.actions;
 export default gameSlice.reducer;
