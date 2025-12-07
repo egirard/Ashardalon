@@ -46,6 +46,9 @@ export function activateVillainPhaseTraps(
   let updatedTrapCounter = trapInstanceCounter;
   let updatedHazardCounter = hazardInstanceCounter;
 
+  // Track which lava tiles have already applied damage this phase
+  const lavaProcessed = new Set<string>();
+
   // Process each trap
   for (const trap of traps) {
     const encounter = getEncounterById(trap.encounterId);
@@ -53,25 +56,29 @@ export function activateVillainPhaseTraps(
 
     switch (trap.encounterId) {
       case 'lava-flow': {
-        // 1. Damage heroes on lava tiles
+        // 1. Damage heroes on lava tiles (only once per tile per villain phase)
+        const lavaKey = `${trap.position.x},${trap.position.y}`;
+        if (!lavaProcessed.has(lavaKey)) {
+          updatedHp = applyDamageToHeroesOnTile(trap.position, 1, updatedHp, heroTokens);
+          lavaProcessed.add(lavaKey);
+        }
+        
+        // 2. Spread to one adjacent tile (once per lava flow trap)
         const allLavaPositions = updatedTraps
           .filter(t => t.encounterId === 'lava-flow')
           .map(t => t.position);
         
-        for (const lavaPos of allLavaPositions) {
-          updatedHp = applyDamageToHeroesOnTile(lavaPos, 1, updatedHp, heroTokens);
-        }
-        
-        // 2. Spread to one adjacent tile (once per lava flow trap, not per tile)
-        // Only spread from this specific trap
         const newLavaPos = spreadLavaFlow(trap.position, allLavaPositions, dungeon, randomFn);
         if (newLavaPos) {
+          const encounter = getEncounterById('lava-flow');
+          const disableDC = encounter?.effect.type === 'trap' ? encounter.effect.disableDC : 10;
+          
           // Create new trap instance at the spread location
           const newTrap: TrapState = {
             id: `trap-${updatedTrapCounter++}`,
             encounterId: 'lava-flow',
             position: newLavaPos,
-            disableDC: 10,
+            disableDC,
           };
           updatedTraps.push(newTrap);
         }
