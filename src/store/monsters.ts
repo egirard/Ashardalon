@@ -105,6 +105,7 @@ export function createMonsterInstance(
     currentHp: monster.hp,
     controllerId,
     tileId,
+    statuses: [], // Initialize with no status effects
   };
 }
 

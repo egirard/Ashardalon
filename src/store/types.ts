@@ -235,6 +235,8 @@ export interface MonsterState {
   currentHp: number;
   controllerId: string;  // Hero ID who controls this monster
   tileId: string;        // Tile where the monster was spawned
+  /** Active status effects on this monster */
+  statuses?: import('./statusEffects').StatusEffect[];
 }
 
 /**
@@ -377,6 +379,8 @@ export interface HeroHpState {
   ac: number;
   surgeValue: number;
   attackBonus: number;
+  /** Active status effects on this hero */
+  statuses?: import('./statusEffects').StatusEffect[];
 }
 
 /**
