@@ -90,6 +90,7 @@
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
+  import { getStatusDisplayData } from "../store/statusEffects";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -1100,6 +1101,7 @@
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
           partySurges={partyResources.healingSurges}
+          conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
         />
       {/if}
     {/each}
@@ -1125,6 +1127,7 @@
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
             partySurges={partyResources.healingSurges}
+            conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           />
         {/if}
       {/each}
@@ -1459,6 +1462,7 @@
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
             partySurges={partyResources.healingSurges}
+            conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           />
         {/if}
       {/each}
@@ -1483,6 +1487,7 @@
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
           partySurges={partyResources.healingSurges}
+          conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
         />
       {/if}
     {/each}
