@@ -1,7 +1,8 @@
 <script lang="ts">
-  import type { MonsterState, Monster } from '../store/types';
+  import type { MonsterState, Monster, HeroCondition } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { assetPath } from '../utils';
+  import { getStatusDisplayData } from '../store/statusEffects';
   
   interface Props {
     monster: MonsterState;
@@ -15,6 +16,12 @@
   
   // Get monster definition
   const monsterDef = $derived(MONSTERS.find(m => m.id === monster.monsterId));
+  
+  // Get status display data
+  const statusConditions = $derived.by(() => {
+    if (!monster.statuses || monster.statuses.length === 0) return [];
+    return getStatusDisplayData(monster.statuses);
+  });
   
   // Calculate pixel position
   const style = $derived(() => {
@@ -38,6 +45,21 @@
       class="token-image"
     />
     <span class="token-label">{monsterDef.name}</span>
+    
+    <!-- Status effects badges -->
+    {#if statusConditions.length > 0}
+      <div class="status-badges" data-testid="monster-status-badges">
+        {#each statusConditions as condition (condition.id)}
+          <span 
+            class="status-badge"
+            title="{condition.name}: {condition.description}"
+            data-testid={`monster-status-${condition.id}`}
+          >
+            {condition.icon}
+          </span>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -77,5 +99,22 @@
     overflow: hidden;
     text-overflow: ellipsis;
     border: 1px solid var(--monster-color-primary);
+  }
+  
+  .status-badges {
+    display: flex;
+    gap: 2px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .status-badge {
+    font-size: 0.75rem;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    padding: 1px 3px;
+    cursor: help;
   }
 </style>
