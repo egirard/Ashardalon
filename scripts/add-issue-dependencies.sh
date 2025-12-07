@@ -140,14 +140,14 @@ echo "Analyzing dependencies from ISSUE_DEPENDENCIES.md..."
 echo ""
 
 # Process each issue with dependencies
-local_count=0
-local_total=${#DEPENDENCIES[@]}
+count=0
+total=${#DEPENDENCIES[@]}
 
 for issue_number in "${!DEPENDENCIES[@]}"; do
-    local_count=$((local_count + 1))
+    count=$((count + 1))
     blockers="${DEPENDENCIES[$issue_number]}"
     
-    echo "[$local_count/$local_total] Issue #${issue_number} blocked by: #${blockers//,/, #}"
+    echo "[$count/$total] Issue #${issue_number} blocked by: #${blockers//,/, #}"
     add_dependency_to_issue "$issue_number" "$blockers"
 done
 
