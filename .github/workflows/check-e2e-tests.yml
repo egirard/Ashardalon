@@ -162,15 +162,13 @@ jobs:
               console.log('✅ No source files changed or E2E tests not applicable');
             }
       
-      - name: Setup Node.js
+      - name: Setup Bun
         if: steps.changed-files.outputs.any_changed == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+        uses: oven-sh/setup-bun@v2
       
       - name: Install dependencies
         if: steps.changed-files.outputs.any_changed == 'true'
-        run: npm ci
+        run: bun install
       
       - name: Install Playwright Browsers
         if: steps.changed-files.outputs.any_changed == 'true'
@@ -178,7 +176,7 @@ jobs:
       
       - name: Run E2E tests
         if: steps.changed-files.outputs.any_changed == 'true'
-        run: npm run test:e2e
+        run: bun run test:e2e
         continue-on-error: false
       
       - name: Upload test results
