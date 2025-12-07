@@ -33,9 +33,6 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const path = require('path');
-            
             // Get changed files
             const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ');
             console.log('Changed files:', changedFiles);
@@ -75,13 +72,11 @@ jobs:
             const prBody = pr.body || '';
             
             // Check if PR is marked as not requiring E2E tests
-            const isDocumentationOnly = prBody.includes('- [x] ❌ No - This PR is documentation/config/refactoring only');
-            const isE2ETestsIncluded = prBody.includes('- [x] ✅ Yes - E2E tests included');
+            const isDocumentationOnly = prBody.includes('- [x] ❌ No - This PR is documentation/config/refactoring only (no UI changes)');
             
             console.log('Source files changed:', sourceFilesChanged);
             console.log('E2E files changed:', e2eFilesChanged);
             console.log('Documentation only:', isDocumentationOnly);
-            console.log('E2E tests included checkbox:', isE2ETestsIncluded);
             
             // If source files changed but no E2E tests and not marked as exempt
             if (sourceFilesChanged && !e2eFilesChanged && !isDocumentationOnly) {
