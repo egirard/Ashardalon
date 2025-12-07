@@ -11,6 +11,9 @@ jobs:
     outputs:
       e2e_tests_found: ${{ steps.changed-files.outputs.e2e_tests_found }}
       src_files_changed: ${{ steps.changed-files.outputs.src_files_changed }}
+    env:
+      E2E_TEST_PATTERN: '^e2e/[0-9]{3}-.*\.spec\.ts$'
+      SRC_FILE_PATTERN: '^src/.*\.(ts|tsx|js|jsx|svelte)$'
     
     steps:
       - name: Checkout code
@@ -32,7 +35,7 @@ jobs:
           echo "$CHANGED_FILES"
           
           # Check if any e2e test files were added or modified
-          E2E_FILES=$(echo "$CHANGED_FILES" | grep -E '^e2e/[0-9]{3}-.*\.spec\.ts$' || true)
+          E2E_FILES=$(echo "$CHANGED_FILES" | grep -E "$E2E_TEST_PATTERN" || true)
           
           if [ -n "$E2E_FILES" ]; then
             echo "e2e_tests_found=true" >> $GITHUB_OUTPUT
@@ -44,7 +47,7 @@ jobs:
           fi
           
           # Check if any source files (src/) were changed
-          SRC_FILES=$(echo "$CHANGED_FILES" | grep -E '^src/.*\.(ts|tsx|js|jsx|svelte)$' || true)
+          SRC_FILES=$(echo "$CHANGED_FILES" | grep -E "$SRC_FILE_PATTERN" || true)
           
           if [ -n "$SRC_FILES" ]; then
             echo "src_files_changed=true" >> $GITHUB_OUTPUT
@@ -87,7 +90,7 @@ jobs:
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           
           # Get changed e2e test files
-          E2E_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -E '^e2e/[0-9]{3}-.*\.spec\.ts$' || true)
+          E2E_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA | grep -E "$E2E_TEST_PATTERN" || true)
           
           VALIDATION_FAILED=false
           
@@ -149,7 +152,7 @@ jobs:
     name: Run E2E tests
     runs-on: ubuntu-latest
     needs: check-e2e-tests
-    if: needs.check-e2e-tests.outputs.e2e_tests_found == 'true' || github.event.pull_request.base.ref == 'main'
+    if: needs.check-e2e-tests.outputs.e2e_tests_found == 'true'
     
     steps:
       - name: Checkout code
