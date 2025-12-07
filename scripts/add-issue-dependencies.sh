@@ -45,8 +45,8 @@ if ! command -v gh &> /dev/null; then
     exit 1
 fi
 
-# Check if gh is authenticated
-if ! gh auth status &> /dev/null; then
+# Check if gh is authenticated (skip check in dry-run mode)
+if [[ "$DRY_RUN" != true ]] && ! gh auth status &> /dev/null; then
     echo "Error: GitHub CLI is not authenticated."
     echo "Please run: gh auth login"
     exit 1
@@ -144,7 +144,7 @@ local_count=0
 local_total=${#DEPENDENCIES[@]}
 
 for issue_number in "${!DEPENDENCIES[@]}"; do
-    ((local_count++))
+    local_count=$((local_count + 1))
     blockers="${DEPENDENCIES[$issue_number]}"
     
     echo "[$local_count/$local_total] Issue #${issue_number} blocked by: #${blockers//,/, #}"
