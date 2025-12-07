@@ -1,6 +1,6 @@
 # Agent problem statement template (required for automated coding agents)
 
-When invoking the coding agent (github-coding-agent-*), always construct the `problem_statement` by appending the following required section *verbatim* (replace `<FEATURE_NAME>` with the actual feature being implemented):
+When invoking the coding agent (github-coding-agent-*), always construct the `problem_statement` by appending the following required section *verbatim*:
 
 ---
 
