@@ -112,20 +112,17 @@ export function getPowerCardHooks(powerCardId: number): Array<{
 
 /**
  * Perseverance (ID 10): Reduce encounter cancel cost by heroes on tile
- * Note: This requires game state context to count heroes, so it will be
- * handled specially in the game slice
+ * Note: The actual cost reduction is calculated in powerCardIntegration.calculateEncounterCancelCost()
+ * based on hero positions. This hook serves as a marker that Perseverance is active.
+ * The game slice checks for active Perseverance hooks when calculating encounter cancel cost.
  */
 function createPerseveranceHook(): EventHook<EncounterDrawEvent> {
   return (event: EncounterDrawEvent): EventHookResponse => {
-    // This hook is a marker that Perseverance is active
-    // The actual cost reduction is calculated in the game slice
-    // based on hero positions
-    return {
-      // Signal that this card modifies encounter cancel cost
-      modifiedEvent: {
-        // Cost reduction will be applied by game slice
-      },
-    };
+    // This hook's presence indicates Perseverance is active
+    // The cost reduction logic is in calculateEncounterCancelCost()
+    // which checks isPowerCardHookActive(hookState, 10, heroId)
+    // and reduces cost by the number of heroes on the active hero's tile
+    return null;
   };
 }
 
