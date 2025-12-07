@@ -288,15 +288,35 @@ export function resolveEncounterEffect(
       return heroHpList;
       
     case 'trap':
-      // Trap effects are NOT YET IMPLEMENTED  
-      // Would need persistent trap state and villain phase triggers
-      console.warn(`Trap effect '${encounter.name}' is not yet implemented`);
+      // Trap placement is handled separately in game slice
+      // No immediate damage during encounter resolution
       return heroHpList;
       
     case 'hazard':
-      // Hazard effects are NOT YET IMPLEMENTED
-      // Would need hazard marker placement and ongoing effects
-      console.warn(`Hazard effect '${encounter.name}' is not yet implemented`);
+      // Hazard placement is handled separately in game slice
+      // For hazards with immediate attacks (Cave In, Pit), apply them here
+      if (effect.attackBonus !== undefined && effect.damage !== undefined) {
+        // Make attack rolls against heroes on the tile (treated as all heroes for now)
+        const targetHeroIds = heroHpList.map(h => h.heroId);
+        
+        return heroHpList.map(hp => {
+          if (!targetHeroIds.includes(hp.heroId)) {
+            return hp;
+          }
+          
+          // Roll attack
+          const roll = Math.floor(randomFn() * 20) + 1;
+          const total = roll + effect.attackBonus;
+          const isHit = total >= hp.ac;
+          
+          if (isHit) {
+            return applyDamageToHero(hp, effect.damage);
+          } else if (effect.missDamage !== undefined && effect.missDamage > 0) {
+            return applyDamageToHero(hp, effect.missDamage);
+          }
+          return hp;
+        });
+      }
       return heroHpList;
       
     case 'special':
@@ -489,4 +509,18 @@ export function getHeroesNeedingMonsters(
       const controlsMonster = monsters.some(m => m.controllerId === heroId);
       return !controlsMonster;
     });
+}
+
+/**
+ * Check if an encounter card should place a trap marker
+ */
+export function shouldPlaceTrapMarker(encounter: EncounterCard): boolean {
+  return encounter.effect.type === 'trap';
+}
+
+/**
+ * Check if an encounter card should place a hazard marker
+ */
+export function shouldPlaceHazardMarker(encounter: EncounterCard): boolean {
+  return encounter.effect.type === 'hazard';
 }

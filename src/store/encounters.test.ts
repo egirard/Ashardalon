@@ -374,7 +374,7 @@ describe("encounters", () => {
       expect(result[0].currentHp).toBe(8); // HP unchanged
     });
 
-    it("should not modify HP for unimplemented trap effect", () => {
+    it("should not modify HP for trap effect (placement handled separately)", () => {
       const encounter: EncounterCard = {
         id: 'poisoned-dart-trap',
         name: 'Poisoned Dart Trap',
@@ -388,14 +388,10 @@ describe("encounters", () => {
         { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
       ];
       
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
       const result = resolveEncounterEffect(encounter, heroHpList, 'quinn');
       
+      // Traps don't apply immediate damage - they are placed and activate during villain phase
       expect(result[0].currentHp).toBe(8); // HP unchanged
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('not yet implemented'));
-      
-      consoleSpy.mockRestore();
     });
 
     it("should apply attack damage to active hero when roll hits", () => {

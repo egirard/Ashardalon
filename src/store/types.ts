@@ -668,6 +668,34 @@ export interface EnvironmentState {
 }
 
 /**
+ * Trap state - represents an active trap placed on the board
+ * Traps trigger effects during Villain Phase and can be disabled with DC rolls
+ */
+export interface TrapState {
+  /** Unique identifier for this trap instance */
+  id: string;
+  /** The encounter card ID that created this trap */
+  encounterId: string;
+  /** Position on the board (global coordinates) */
+  position: { x: number; y: number };
+  /** DC (difficulty class) for disabling the trap */
+  disableDC: number;
+}
+
+/**
+ * Hazard state - represents an active hazard marker on the board
+ * Hazards have ongoing effects when heroes enter or remain on the tile
+ */
+export interface HazardState {
+  /** Unique identifier for this hazard instance */
+  id: string;
+  /** The encounter card ID that created this hazard */
+  encounterId: string;
+  /** Position on the board (global coordinates) */
+  position: { x: number; y: number };
+}
+
+/**
  * All encounter cards from Wrath of Ashardalon (Cards #51-103)
  * 
  * Effect Implementation Status:

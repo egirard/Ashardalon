@@ -21,6 +21,8 @@ import {
   HeroLevel,
   EncounterDeck,
   EncounterCard,
+  TrapState,
+  HazardState,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -66,7 +68,16 @@ import {
   isEnvironmentCard,
   activateEnvironment,
   applyEndOfHeroPhaseEnvironmentEffects,
+  shouldPlaceTrapMarker,
+  shouldPlaceHazardMarker,
 } from "./encounters";
+import {
+  createTrapInstance,
+  createHazardInstance,
+  tileHasTrap,
+  tileHasHazard,
+} from "./trapsHazards";
+import { activateVillainPhaseTraps } from "./villainPhaseTraps";
 import {
   initializeTreasureDeck,
   drawTreasure,
@@ -187,6 +198,14 @@ export interface GameState {
   drawnEncounter: EncounterCard | null;
   /** Active environment state - tracks persistent environment effects */
   activeEnvironmentId: string | null;
+  /** Active traps on the board */
+  traps: TrapState[];
+  /** Active hazards on the board */
+  hazards: HazardState[];
+  /** Counter for generating unique trap instance IDs */
+  trapInstanceCounter: number;
+  /** Counter for generating unique hazard instance IDs */
+  hazardInstanceCounter: number;
   /** Whether to show the action surge prompt at start of turn (hero can voluntarily use a surge) */
   showActionSurgePrompt: boolean;
   /** Multi-attack state: tracks remaining attacks when using cards like Reaping Strike */
@@ -329,6 +348,10 @@ const initialState: GameState = {
   encounterDeck: { drawPile: [], discardPile: [] },
   drawnEncounter: null,
   activeEnvironmentId: null,
+  traps: [],
+  hazards: [],
+  trapInstanceCounter: 0,
+  hazardInstanceCounter: 0,
   showActionSurgePrompt: false,
   multiAttackState: null,
   pendingMoveAttack: null,
@@ -1036,6 +1059,9 @@ export const gameSlice = createSlice({
      */
     dismissEncounterCard: (state) => {
       if (state.drawnEncounter) {
+        const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+        const activeHeroPosition = activeHeroToken?.position;
+        
         // Check if this is an environment card
         if (isEnvironmentCard(state.drawnEncounter)) {
           // Activate the environment (replaces any existing environment)
@@ -1045,9 +1071,57 @@ export const gameSlice = createSlice({
           );
           // Environment cards are not discarded - they remain active
           // The old environment (if any) is implicitly replaced
+        } else if (shouldPlaceTrapMarker(state.drawnEncounter)) {
+          // Place trap marker on active hero's tile (if no trap already there)
+          if (activeHeroPosition && !tileHasTrap(activeHeroPosition, state.traps)) {
+            const trap = createTrapInstance(
+              state.drawnEncounter.id,
+              state.drawnEncounter,
+              activeHeroPosition,
+              state.trapInstanceCounter
+            );
+            state.traps.push(trap);
+            state.trapInstanceCounter++;
+          }
+          
+          // Discard the trap encounter card
+          state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+        } else if (shouldPlaceHazardMarker(state.drawnEncounter)) {
+          // Place hazard marker on active hero's tile (if no hazard already there)
+          if (activeHeroPosition && !tileHasHazard(activeHeroPosition, state.hazards)) {
+            const hazard = createHazardInstance(
+              state.drawnEncounter.id,
+              activeHeroPosition,
+              state.hazardInstanceCounter
+            );
+            state.hazards.push(hazard);
+            state.hazardInstanceCounter++;
+          }
+          
+          // Get the current hero ID for active-hero effects
+          const activeHeroId = activeHeroToken?.heroId;
+          
+          if (activeHeroId) {
+            // Apply immediate hazard effects (Cave In, Pit)
+            state.heroHp = resolveEncounterEffect(
+              state.drawnEncounter,
+              state.heroHp,
+              activeHeroId
+            );
+            
+            // Check for party defeat (all heroes at 0 HP)
+            const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+            if (allHeroesDefeated) {
+              state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
+              state.currentScreen = "defeat";
+            }
+          }
+          
+          // Discard the hazard encounter card
+          state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
         } else {
           // Get the current hero ID for active-hero effects
-          const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+          const activeHeroId = activeHeroToken?.heroId;
           
           if (activeHeroId) {
             // Apply the encounter effect
@@ -1473,6 +1547,70 @@ export const gameSlice = createSlice({
      */
     dismissMonsterMoveAction: (state) => {
       state.monsterMoveActionId = null;
+    },
+    /**
+     * Activate all traps and hazards during villain phase
+     * This should be called after all monsters have been activated
+     */
+    activateVillainPhaseTrapsAction: (state, action: PayloadAction<{ randomFn?: () => number }>) => {
+      if (state.turnState.currentPhase !== "villain-phase") {
+        return;
+      }
+      
+      const randomFn = action.payload?.randomFn ?? Math.random;
+      const result = activateVillainPhaseTraps(
+        state.traps,
+        state.hazards,
+        state.heroHp,
+        state.heroTokens,
+        state.dungeon,
+        state.trapInstanceCounter,
+        state.hazardInstanceCounter,
+        randomFn
+      );
+      
+      state.heroHp = result.heroHp;
+      state.traps = result.traps;
+      state.hazards = result.hazards;
+      state.trapInstanceCounter = result.trapInstanceCounter;
+      state.hazardInstanceCounter = result.hazardInstanceCounter;
+      
+      // Check for party defeat (all heroes at 0 HP)
+      const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+      if (allHeroesDefeated) {
+        state.defeatReason = "The party was overwhelmed by traps.";
+        state.currentScreen = "defeat";
+      }
+    },
+    /**
+     * Attempt to disable a trap
+     * Hero must be on the same tile as the trap
+     */
+    attemptDisableTrap: (state, action: PayloadAction<{ trapId: string; randomFn?: () => number }>) => {
+      const { trapId, randomFn = Math.random } = action.payload;
+      const trap = state.traps.find(t => t.id === trapId);
+      
+      if (!trap) return;
+      
+      // Check if active hero is on the trap tile
+      const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+      if (!activeHeroToken) return;
+      
+      const isOnTile = 
+        activeHeroToken.position.x === trap.position.x &&
+        activeHeroToken.position.y === trap.position.y;
+      
+      if (!isOnTile) return;
+      
+      // Roll d20 vs DC
+      const roll = Math.floor(randomFn() * 20) + 1;
+      const success = roll >= trap.disableDC;
+      
+      if (success) {
+        // Remove the trap
+        state.traps = state.traps.filter(t => t.id !== trapId);
+      }
+      // If failed, trap remains active
     },
     /**
      * Dismiss the healing surge notification
