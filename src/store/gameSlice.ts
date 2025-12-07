@@ -94,6 +94,13 @@ import {
   type TreasureCard,
   type HeroInventory,
 } from "./treasure";
+import {
+  applyStatusEffect,
+  removeStatusEffect,
+  processStatusEffectsStartOfTurn,
+  type StatusEffect,
+  type StatusEffectType,
+} from "./statusEffects";
 
 /**
  * Default turn state for the beginning of a game
@@ -1056,7 +1063,6 @@ export const gameSlice = createSlice({
         const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
         if (heroHpIndex !== -1) {
           const heroHp = state.heroHp[heroHpIndex];
-          const { processStatusEffectsStartOfTurn } = require('./statusEffects');
           const { updatedStatuses, ongoingDamage } = processStatusEffectsStartOfTurn(
             heroHp.statuses ?? [],
             state.turnState.turnNumber
@@ -1553,8 +1559,7 @@ export const gameSlice = createSlice({
             const heroHpIndex = state.heroHp.findIndex(h => h.heroId === result.targetId);
             if (heroHpIndex !== -1) {
               const heroHp = state.heroHp[heroHpIndex];
-              const { applyStatusEffect } = require('./statusEffects');
-              const statusType = tactics.adjacentAttack.statusEffect as any;
+              const statusType = tactics.adjacentAttack.statusEffect as StatusEffectType;
               state.heroHp[heroHpIndex] = {
                 ...heroHp,
                 statuses: applyStatusEffect(
@@ -1609,8 +1614,7 @@ export const gameSlice = createSlice({
             const heroHpIndex = state.heroHp.findIndex(h => h.heroId === result.targetId);
             if (heroHpIndex !== -1) {
               const heroHp = state.heroHp[heroHpIndex];
-              const { applyStatusEffect } = require('./statusEffects');
-              const statusType = tactics.adjacentAttack.statusEffect as any;
+              const statusType = tactics.adjacentAttack.statusEffect as StatusEffectType;
               state.heroHp[heroHpIndex] = {
                 ...heroHp,
                 statuses: applyStatusEffect(
@@ -1944,17 +1948,16 @@ export const gameSlice = createSlice({
      */
     applyHeroStatus: (state, action: PayloadAction<{
       heroId: string;
-      statusType: import('./statusEffects').StatusEffectType;
+      statusType: StatusEffectType;
       source: string;
       duration?: number;
-      data?: import('./statusEffects').StatusEffect['data'];
+      data?: StatusEffect['data'];
     }>) => {
       const { heroId, statusType, source, duration, data } = action.payload;
       const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
       
       if (heroHpIndex !== -1) {
         const heroHp = state.heroHp[heroHpIndex];
-        const { applyStatusEffect } = require('./statusEffects');
         state.heroHp[heroHpIndex] = {
           ...heroHp,
           statuses: applyStatusEffect(
@@ -1973,14 +1976,13 @@ export const gameSlice = createSlice({
      */
     removeHeroStatus: (state, action: PayloadAction<{
       heroId: string;
-      statusType: import('./statusEffects').StatusEffectType;
+      statusType: StatusEffectType;
     }>) => {
       const { heroId, statusType } = action.payload;
       const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
       
       if (heroHpIndex !== -1) {
         const heroHp = state.heroHp[heroHpIndex];
-        const { removeStatusEffect } = require('./statusEffects');
         state.heroHp[heroHpIndex] = {
           ...heroHp,
           statuses: removeStatusEffect(heroHp.statuses ?? [], statusType),
@@ -2006,17 +2008,16 @@ export const gameSlice = createSlice({
      */
     applyMonsterStatus: (state, action: PayloadAction<{
       monsterInstanceId: string;
-      statusType: import('./statusEffects').StatusEffectType;
+      statusType: StatusEffectType;
       source: string;
       duration?: number;
-      data?: import('./statusEffects').StatusEffect['data'];
+      data?: StatusEffect['data'];
     }>) => {
       const { monsterInstanceId, statusType, source, duration, data } = action.payload;
       const monsterIndex = state.monsters.findIndex(m => m.instanceId === monsterInstanceId);
       
       if (monsterIndex !== -1) {
         const monster = state.monsters[monsterIndex];
-        const { applyStatusEffect } = require('./statusEffects');
         state.monsters[monsterIndex] = {
           ...monster,
           statuses: applyStatusEffect(
@@ -2035,14 +2036,13 @@ export const gameSlice = createSlice({
      */
     removeMonsterStatus: (state, action: PayloadAction<{
       monsterInstanceId: string;
-      statusType: import('./statusEffects').StatusEffectType;
+      statusType: StatusEffectType;
     }>) => {
       const { monsterInstanceId, statusType } = action.payload;
       const monsterIndex = state.monsters.findIndex(m => m.instanceId === monsterInstanceId);
       
       if (monsterIndex !== -1) {
         const monster = state.monsters[monsterIndex];
-        const { removeStatusEffect } = require('./statusEffects');
         state.monsters[monsterIndex] = {
           ...monster,
           statuses: removeStatusEffect(monster.statuses ?? [], statusType),
@@ -2058,7 +2058,6 @@ export const gameSlice = createSlice({
       
       if (heroHpIndex !== -1) {
         const heroHp = state.heroHp[heroHpIndex];
-        const { processStatusEffectsStartOfTurn } = require('./statusEffects');
         const { updatedStatuses, ongoingDamage } = processStatusEffectsStartOfTurn(
           heroHp.statuses ?? [],
           state.turnState.turnNumber
