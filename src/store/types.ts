@@ -696,6 +696,32 @@ export interface HazardState {
 }
 
 /**
+ * Board token type - represents tokens created by power cards
+ */
+export type BoardTokenType = 'blade-barrier' | 'flaming-sphere' | 'mirror-image' | 'wizard-eye';
+
+/**
+ * Board token state - represents tokens placed by power cards on the board
+ * Examples: Blade Barrier tokens, Flaming Sphere, Wizard Eye, Mirror Image tokens
+ */
+export interface BoardTokenState {
+  /** Unique identifier for this token instance */
+  id: string;
+  /** Type of token (determines appearance and behavior) */
+  type: BoardTokenType;
+  /** The power card ID that created this token */
+  powerCardId: number;
+  /** Hero ID who placed this token */
+  ownerId: string;
+  /** Position on the board (global coordinates) */
+  position: { x: number; y: number };
+  /** Optional: Number of charges/uses remaining (e.g., Flaming Sphere has 3 charges) */
+  charges?: number;
+  /** Optional: Whether this token can be moved by the owner */
+  canMove?: boolean;
+}
+
+/**
  * All encounter cards from Wrath of Ashardalon (Cards #51-103)
  * 
  * Effect Implementation Status:

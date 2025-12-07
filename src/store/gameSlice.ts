@@ -23,6 +23,7 @@ import {
   EncounterCard,
   TrapState,
   HazardState,
+  BoardTokenState,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
 import {
@@ -206,6 +207,10 @@ export interface GameState {
   trapInstanceCounter: number;
   /** Counter for generating unique hazard instance IDs */
   hazardInstanceCounter: number;
+  /** Board tokens placed by power cards (Blade Barrier, Flaming Sphere, etc.) */
+  boardTokens: BoardTokenState[];
+  /** Counter for generating unique board token instance IDs */
+  boardTokenInstanceCounter: number;
   /** Whether to show the action surge prompt at start of turn (hero can voluntarily use a surge) */
   showActionSurgePrompt: boolean;
   /** Multi-attack state: tracks remaining attacks when using cards like Reaping Strike */
@@ -352,6 +357,8 @@ const initialState: GameState = {
   hazards: [],
   trapInstanceCounter: 0,
   hazardInstanceCounter: 0,
+  boardTokens: [],
+  boardTokenInstanceCounter: 0,
   showActionSurgePrompt: false,
   multiAttackState: null,
   pendingMoveAttack: null,
@@ -1805,6 +1812,45 @@ export const gameSlice = createSlice({
     setHeroInventories: (state, action: PayloadAction<Record<string, HeroInventory>>) => {
       state.heroInventories = action.payload;
     },
+    /**
+     * Place a board token on the board (e.g., Blade Barrier, Flaming Sphere)
+     */
+    placeBoardToken: (state, action: PayloadAction<BoardTokenState>) => {
+      state.boardTokens.push(action.payload);
+    },
+    /**
+     * Remove a board token by ID
+     */
+    removeBoardToken: (state, action: PayloadAction<string>) => {
+      state.boardTokens = state.boardTokens.filter(token => token.id !== action.payload);
+    },
+    /**
+     * Move a board token to a new position
+     */
+    moveBoardToken: (state, action: PayloadAction<{ tokenId: string; position: Position }>) => {
+      const token = state.boardTokens.find(t => t.id === action.payload.tokenId);
+      if (token) {
+        token.position = action.payload.position;
+      }
+    },
+    /**
+     * Decrement charges on a token and remove if depleted
+     */
+    decrementBoardTokenCharges: (state, action: PayloadAction<string>) => {
+      const token = state.boardTokens.find(t => t.id === action.payload);
+      if (token && token.charges !== undefined) {
+        token.charges -= 1;
+        if (token.charges <= 0) {
+          state.boardTokens = state.boardTokens.filter(t => t.id !== action.payload);
+        }
+      }
+    },
+    /**
+     * Set board tokens directly (for testing purposes)
+     */
+    setBoardTokens: (state, action: PayloadAction<BoardTokenState[]>) => {
+      state.boardTokens = action.payload;
+    },
   },
 });
 
@@ -1848,5 +1894,10 @@ export const {
   setTreasureDeck,
   setHeroInventories,
   setActiveEnvironment,
+  placeBoardToken,
+  removeBoardToken,
+  moveBoardToken,
+  decrementBoardTokenCharges,
+  setBoardTokens,
 } = gameSlice.actions;
 export default gameSlice.reducer;
