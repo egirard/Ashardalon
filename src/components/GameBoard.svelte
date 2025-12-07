@@ -64,6 +64,8 @@
   import MonsterToken from "./MonsterToken.svelte";
   import MonsterCard from "./MonsterCard.svelte";
   import EncounterCard from "./EncounterCard.svelte";
+  import TrapMarker from "./TrapMarker.svelte";
+  import HazardMarker from "./HazardMarker.svelte";
   import PowerCardAttackPanel from "./PowerCardAttackPanel.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
@@ -165,6 +167,8 @@
   let attackName: string | null = $state(null);
   let drawnEncounter: EncounterCardType | null = $state(null);
   let activeEnvironmentId: string | null = $state(null);
+  let traps: import("../store/types").TrapState[] = $state([]);
+  let hazards: import("../store/types").HazardState[] = $state([]);
   let showActionSurgePrompt: boolean = $state(false);
   let multiAttackState: MultiAttackState | null = $state(null);
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
@@ -219,6 +223,8 @@
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
       activeEnvironmentId = state.game.activeEnvironmentId;
+      traps = state.game.traps;
+      hazards = state.game.hazards;
       showActionSurgePrompt = state.game.showActionSurgePrompt;
       multiAttackState = state.game.multiAttackState;
       pendingMoveAttack = state.game.pendingMoveAttack;
@@ -260,6 +266,8 @@
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
     activeEnvironmentId = state.game.activeEnvironmentId;
+    traps = state.game.traps;
+    hazards = state.game.hazards;
     showActionSurgePrompt = state.game.showActionSurgePrompt;
     multiAttackState = state.game.multiAttackState;
     pendingMoveAttack = state.game.pendingMoveAttack;
@@ -1232,6 +1240,28 @@
             tileOffsetX={TOKEN_OFFSET_X}
             tileOffsetY={TOKEN_OFFSET_Y}
             tilePixelOffset={getTilePixelOffsetById(monsterState.tileId)}
+          />
+        {/each}
+        
+        <!-- Trap markers -->
+        {#each traps as trap (trap.id)}
+          <TrapMarker
+            trap={trap}
+            cellSize={TILE_CELL_SIZE}
+            tileOffsetX={TOKEN_OFFSET_X}
+            tileOffsetY={TOKEN_OFFSET_Y}
+            tilePixelOffset={{ x: 0, y: 0 }}
+          />
+        {/each}
+        
+        <!-- Hazard markers -->
+        {#each hazards as hazard (hazard.id)}
+          <HazardMarker
+            hazard={hazard}
+            cellSize={TILE_CELL_SIZE}
+            tileOffsetX={TOKEN_OFFSET_X}
+            tileOffsetY={TOKEN_OFFSET_Y}
+            tilePixelOffset={{ x: 0, y: 0 }}
           />
         {/each}
       </div>
