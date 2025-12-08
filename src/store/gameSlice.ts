@@ -1247,25 +1247,22 @@ export const gameSlice = createSlice({
             }
           }
           
-          // Deadly Poison: Poisoned heroes take 1 damage
+          // Deadly Poison: Each hero that is currently Poisoned takes 1 damage
           else if (encounterId === 'deadly-poison') {
-            const activeHeroId = activeHeroToken?.heroId;
-            if (activeHeroId) {
-              state.heroHp = state.heroHp.map(hp => {
-                // Check if hero is poisoned
-                const isPoisoned = hp.statuses?.some(s => s.type === 'poisoned');
-                if (isPoisoned) {
-                  return { ...hp, currentHp: Math.max(0, hp.currentHp - 1) };
-                }
-                return hp;
-              });
-              
-              // Check for party defeat
-              const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
-              if (allHeroesDefeated) {
-                state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
-                state.currentScreen = "defeat";
+            state.heroHp = state.heroHp.map(hp => {
+              // Check if hero is poisoned
+              const isPoisoned = hp.statuses?.some(s => s.type === 'poisoned');
+              if (isPoisoned) {
+                return { ...hp, currentHp: Math.max(0, hp.currentHp - 1) };
               }
+              return hp;
+            });
+            
+            // Check for party defeat
+            const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+            if (allHeroesDefeated) {
+              state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
+              state.currentScreen = "defeat";
             }
           }
           

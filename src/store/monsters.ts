@@ -356,6 +356,9 @@ export function filterMonsterDeckByCategory(
  * @param targetPosition - The position to move toward (hero's position)
  * @param dungeon - Current dungeon state
  * @returns Updated monster position, or null if monster cannot move
+ * 
+ * @deprecated Not yet implemented - requires pathfinding integration with monster AI system.
+ * This function is a placeholder for future Quick Advance encounter card implementation.
  */
 export function moveMonsterTowardTarget(
   monster: MonsterState,
@@ -363,9 +366,8 @@ export function moveMonsterTowardTarget(
   dungeon: DungeonState
 ): Position | null {
   // TODO: Implement pathfinding to move monster one tile closer
-  // For now, return null to indicate no movement
-  // This will be implemented when the full monster AI system supports
-  // more complex movement commands
+  // This requires integration with the monster AI pathfinding system
+  // and proper tile-to-tile movement logic
   return null;
 }
 
