@@ -524,3 +524,60 @@ export function shouldPlaceTrapMarker(encounter: EncounterCard): boolean {
 export function shouldPlaceHazardMarker(encounter: EncounterCard): boolean {
   return encounter.effect.type === 'hazard';
 }
+
+/**
+ * Check if a special encounter requires a follow-up encounter draw
+ * Cards like Ancient Spirit's Blessing, Deadly Poison, Hidden Treasure, and Quick Advance
+ * instruct: "Draw another Encounter Card"
+ */
+export function shouldDrawAnotherEncounter(encounterId: string): boolean {
+  const followUpCards = [
+    'ancient-spirits-blessing',
+    'deadly-poison',
+    'hidden-treasure',
+    'quick-advance',
+  ];
+  return followUpCards.includes(encounterId);
+}
+
+/**
+ * Get the monster category to filter for based on encounter card
+ * Used by cards like Hall of Orcs, Duergar Outpost, etc.
+ */
+export function getMonsterCategoryForEncounter(encounterId: string): string | null {
+  const categoryMap: Record<string, string> = {
+    'duergar-outpost': 'devil',
+    'hall-of-orcs': 'orc',
+    'kobold-warren': 'reptile',
+    'unnatural-corruption': 'aberrant',
+    'spotted': 'sentry',
+  };
+  return categoryMap[encounterId] ?? null;
+}
+
+/**
+ * Check if an encounter card manipulates monster deck
+ */
+export function isMonsterDeckManipulationCard(encounterId: string): boolean {
+  const deckCards = [
+    'duergar-outpost',
+    'hall-of-orcs',
+    'kobold-warren',
+    'unnatural-corruption',
+    'spotted',
+  ];
+  return deckCards.includes(encounterId);
+}
+
+/**
+ * Check if an encounter card manipulates tile deck
+ */
+export function isTileDeckManipulationCard(encounterId: string): boolean {
+  const deckCards = [
+    'lost',
+    'occupied-lair',
+    'scream-of-sentry',
+    'spotted',
+  ];
+  return deckCards.includes(encounterId);
+}
