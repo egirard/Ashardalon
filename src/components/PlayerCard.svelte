@@ -144,21 +144,21 @@
     }
   }
 
-  // Check if a treasure item can be used (clickable)
+  // Check if a treasure item can be actively used (clicked by player)
   function isItemUsable(card: TreasureCard, isFlipped: boolean): boolean {
     // Can't use already-flipped items
     if (isFlipped) return false;
     
-    // Only consumable and action items can be used directly
+    // Only consumable and action items can be used directly by clicking
     // Immediate (passive) items are always active and don't need to be "used"
     // Reaction items need specific triggers (not implemented yet)
     return card.usage === 'consumable' || card.usage === 'action';
   }
 
-  // Handle using a treasure item
-  function handleUseTreasureItem(cardId: number) {
-    if (onUseTreasureItem && isActive) {
-      onUseTreasureItem(cardId);
+  // Handle using a treasure item - validates usability before invoking callback
+  function handleUseTreasureItem(card: TreasureCard, isFlipped: boolean) {
+    if (onUseTreasureItem && isActive && isItemUsable(card, isFlipped)) {
+      onUseTreasureItem(card.id);
     }
   }
 </script>
@@ -293,7 +293,7 @@
             class="treasure-item-mini usable"
             class:flipped={isFlipped}
             title="{card.name}: {card.effect.description} (Click to use)"
-            onclick={() => handleUseTreasureItem(card.id)}
+            onclick={() => handleUseTreasureItem(card, isFlipped)}
           >
             <span class="treasure-icon">{getTreasureIcon(card.effect.type)}</span>
             <span class="treasure-name">{card.name}</span>
@@ -622,13 +622,13 @@
     text-align: left;
   }
 
-  .treasure-item-mini.usable {
+  button.treasure-item-mini.usable {
     cursor: pointer;
     background: rgba(46, 125, 50, 0.3);
     border-color: rgba(76, 175, 80, 0.7);
   }
 
-  .treasure-item-mini.usable:hover {
+  button.treasure-item-mini.usable:hover {
     background: rgba(46, 125, 50, 0.5);
     border-color: #4caf50;
     transform: translateY(-1px);
