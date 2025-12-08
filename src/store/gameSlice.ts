@@ -1228,7 +1228,7 @@ export const gameSlice = createSlice({
             if (category) {
               const result = filterMonsterDeckByCategory(
                 state.monsterDeck,
-                category as any, // Type assertion for now
+                category,
                 5
               );
               state.monsterDeck = result.deck;
