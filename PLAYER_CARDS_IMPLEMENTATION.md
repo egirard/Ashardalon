@@ -206,7 +206,8 @@ Player cards are fully implemented with all features requested in the issue:
 
 ## References
 
-- Original Implementation Commit: Referenced in issue #[number]
+- E2E Test Implementation: Commit 231f87c "Add E2E test baseline screenshots for status effects"
 - E2E Test: `e2e/030-player-card-display/`
 - Component: `src/components/PlayerCard.svelte`
 - Test README: `e2e/030-player-card-display/README.md`
+- Status Effects: `src/store/statusEffects.ts`
