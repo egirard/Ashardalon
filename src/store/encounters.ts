@@ -544,8 +544,8 @@ export function shouldDrawAnotherEncounter(encounterId: string): boolean {
  * Get the monster category to filter for based on encounter card
  * Used by cards like Hall of Orcs, Duergar Outpost, etc.
  */
-export function getMonsterCategoryForEncounter(encounterId: string): string | null {
-  const categoryMap: Record<string, string> = {
+export function getMonsterCategoryForEncounter(encounterId: string): import('./types').MonsterCategory | null {
+  const categoryMap: Record<string, import('./types').MonsterCategory> = {
     'duergar-outpost': 'devil',
     'hall-of-orcs': 'orc',
     'kobold-warren': 'reptile',
