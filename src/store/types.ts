@@ -215,13 +215,13 @@ export interface HeroToken {
 /**
  * Monster category types for encounter card filtering
  * Based on Wrath of Ashardalon creature types:
- * - Devil: Infernal creatures (Legion Devil, etc.)
- * - Orc: Orcish creatures (Orc Archer, Orc Smasher, etc.)
- * - Reptile: Reptilian creatures (Kobolds, Snakes, etc.)
- * - Aberrant: Aberrations (Gibbering Mouther, Grell, etc.)
- * - Sentry: Guards and watchmen
- * - Beast: Natural creatures (Cave Bear, etc.)
- * - Humanoid: Human-like creatures (Cultist, Duergar, etc.)
+ * - 'devil': Infernal creatures (Legion Devil, etc.)
+ * - 'orc': Orcish creatures (Orc Archer, Orc Smasher, etc.)
+ * - 'reptile': Reptilian creatures (Kobolds, Snakes, etc.)
+ * - 'aberrant': Aberrations (Gibbering Mouther, Grell, etc.)
+ * - 'sentry': Guards and watchmen
+ * - 'beast': Natural creatures (Cave Bear, etc.)
+ * - 'humanoid': Human-like creatures (Cultist, Duergar, etc.)
  */
 export type MonsterCategory = 'devil' | 'orc' | 'reptile' | 'aberrant' | 'sentry' | 'beast' | 'humanoid';
 
