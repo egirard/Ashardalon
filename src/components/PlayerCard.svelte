@@ -18,9 +18,11 @@
     conditions?: HeroCondition[];
     /** Number of healing surges available to the party */
     partySurges?: number;
+    /** Callback when a treasure item is used */
+    onUseTreasureItem?: (cardId: number) => void;
   }
 
-  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges }: Props = $props();
+  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges, onUseTreasureItem }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -139,6 +141,24 @@
       case 'trap-disable': return '🔓';
       case 'condition-removal': return '💊';
       default: return '📦';
+    }
+  }
+
+  // Check if a treasure item can be used (clickable)
+  function isItemUsable(card: TreasureCard, isFlipped: boolean): boolean {
+    // Can't use already-flipped items
+    if (isFlipped) return false;
+    
+    // Only consumable and action items can be used directly
+    // Immediate (passive) items are always active and don't need to be "used"
+    // Reaction items need specific triggers (not implemented yet)
+    return card.usage === 'consumable' || card.usage === 'action';
+  }
+
+  // Handle using a treasure item
+  function handleUseTreasureItem(cardId: number) {
+    if (onUseTreasureItem && isActive) {
+      onUseTreasureItem(cardId);
     }
   }
 </script>
@@ -268,17 +288,32 @@
   {#if treasureItems.length > 0}
     <div class="treasure-items-section" data-testid="player-card-items">
       {#each treasureItems as { card, isFlipped } (card.id)}
-        <div 
-          class="treasure-item-mini"
-          class:flipped={isFlipped}
-          title="{card.name}: {card.effect.description}"
-        >
-          <span class="treasure-icon">{getTreasureIcon(card.effect.type)}</span>
-          <span class="treasure-name">{card.name}</span>
-          {#if isFlipped}
-            <span class="flipped-indicator">✗</span>
-          {/if}
-        </div>
+        {#if isItemUsable(card, isFlipped) && isActive}
+          <button 
+            class="treasure-item-mini usable"
+            class:flipped={isFlipped}
+            title="{card.name}: {card.effect.description} (Click to use)"
+            onclick={() => handleUseTreasureItem(card.id)}
+          >
+            <span class="treasure-icon">{getTreasureIcon(card.effect.type)}</span>
+            <span class="treasure-name">{card.name}</span>
+            {#if isFlipped}
+              <span class="flipped-indicator">✗</span>
+            {/if}
+          </button>
+        {:else}
+          <div 
+            class="treasure-item-mini"
+            class:flipped={isFlipped}
+            title="{card.name}: {card.effect.description}"
+          >
+            <span class="treasure-icon">{getTreasureIcon(card.effect.type)}</span>
+            <span class="treasure-name">{card.name}</span>
+            {#if isFlipped}
+              <span class="flipped-indicator">✗</span>
+            {/if}
+          </div>
+        {/if}
       {/each}
     </div>
   {/if}
@@ -577,7 +612,27 @@
     font-size: 0.55rem;
     max-width: 100%;
     overflow: hidden;
-    transition: opacity 0.2s ease;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    color: inherit;
+  }
+
+  /* Reset button styles for usable items */
+  button.treasure-item-mini {
+    text-align: left;
+  }
+
+  .treasure-item-mini.usable {
+    cursor: pointer;
+    background: rgba(46, 125, 50, 0.3);
+    border-color: rgba(76, 175, 80, 0.7);
+  }
+
+  .treasure-item-mini.usable:hover {
+    background: rgba(46, 125, 50, 0.5);
+    border-color: #4caf50;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
   .treasure-item-mini.flipped {

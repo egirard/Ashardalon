@@ -32,6 +32,7 @@
     clearMoveAttack,
     assignTreasureToHero,
     dismissTreasureCard,
+    useTreasureItem,
     type MultiAttackState,
     type PendingMoveAttackState,
     type IncrementalMovementState,
@@ -977,6 +978,11 @@
     store.dispatch(dismissTreasureCard());
   }
 
+  // Handle using a treasure item (consumable or action)
+  function handleUseTreasureItem(heroId: string, cardId: number) {
+    store.dispatch(useTreasureItem({ heroId, cardId }));
+  }
+
   // Get hero inventory item count for display
   function getHeroInventoryCount(heroId: string): number {
     const inventory = heroInventories[heroId];
@@ -1102,6 +1108,7 @@
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
           partySurges={partyResources.healingSurges}
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+          onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
         />
       {/if}
     {/each}
@@ -1128,6 +1135,7 @@
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
             partySurges={partyResources.healingSurges}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+            onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           />
         {/if}
       {/each}
@@ -1463,6 +1471,7 @@
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
             partySurges={partyResources.healingSurges}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+            onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           />
         {/if}
       {/each}
@@ -1488,6 +1497,7 @@
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
           partySurges={partyResources.healingSurges}
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+          onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
         />
       {/if}
     {/each}
