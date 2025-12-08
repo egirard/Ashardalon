@@ -139,6 +139,24 @@ Each item in a hero's inventory tracks:
 
 Flipped items do NOT provide passive bonuses until refreshed.
 
+### Using Consumable and Action Items
+Players can use consumable and action treasure items directly from their inventory during the Hero Phase:
+
+- **UI Integration**: Items displayed in PlayerCard.svelte show which items are usable
+- **Visual Feedback**: Usable items have a green border and hover effect
+- **Click to Use**: During the active hero's turn, clicking a usable item triggers its effect
+- **Item Types**:
+  - **Consumable items** (e.g., Potion of Healing) - Used once and then discarded
+  - **Action items** (e.g., Ring of Shooting Stars) - Flip after use, can't be used again until refreshed
+  - **Passive items** (e.g., +1 Magic Sword) - Always active, not clickable
+  - **Reaction items** (e.g., Lucky Charm) - Require specific triggers (not yet fully implemented)
+- **Restrictions**: Items can only be used:
+  - During the active hero's Hero Phase
+  - If the item is not already flipped
+  - If the item is consumable or action type
+
+The `useTreasureItem` action handles healing effects currently. Future enhancements will support attack actions and other item effects.
+
 ---
 
 ## Unparsed Cards Reference
