@@ -11,6 +11,10 @@ import {
   applyDamageToAllHeroes,
   resolveEncounterEffect,
   applyEndOfHeroPhaseEnvironmentEffects,
+  shouldDrawAnotherEncounter,
+  getMonsterCategoryForEncounter,
+  isMonsterDeckManipulationCard,
+  isTileDeckManipulationCard,
 } from "./encounters";
 import type { EncounterDeck, TurnState, HeroHpState, EncounterCard } from "./types";
 import { INITIAL_ENCOUNTER_DECK, ENCOUNTER_CARDS } from "./types";
@@ -684,6 +688,65 @@ describe("encounters", () => {
         
         expect(result[0].currentHp).toBe(8);
       });
+    });
+  });
+
+  describe("shouldDrawAnotherEncounter", () => {
+    it("should return true for cards that trigger another encounter draw", () => {
+      expect(shouldDrawAnotherEncounter('ancient-spirits-blessing')).toBe(true);
+      expect(shouldDrawAnotherEncounter('deadly-poison')).toBe(true);
+      expect(shouldDrawAnotherEncounter('hidden-treasure')).toBe(true);
+      expect(shouldDrawAnotherEncounter('quick-advance')).toBe(true);
+    });
+
+    it("should return false for cards that don't trigger another encounter", () => {
+      expect(shouldDrawAnotherEncounter('lost')).toBe(false);
+      expect(shouldDrawAnotherEncounter('revel-in-destruction')).toBe(false);
+      expect(shouldDrawAnotherEncounter('frenzied-leap')).toBe(false);
+    });
+  });
+
+  describe("getMonsterCategoryForEncounter", () => {
+    it("should return correct category for deck manipulation cards", () => {
+      expect(getMonsterCategoryForEncounter('duergar-outpost')).toBe('devil');
+      expect(getMonsterCategoryForEncounter('hall-of-orcs')).toBe('orc');
+      expect(getMonsterCategoryForEncounter('kobold-warren')).toBe('reptile');
+      expect(getMonsterCategoryForEncounter('unnatural-corruption')).toBe('aberrant');
+      expect(getMonsterCategoryForEncounter('spotted')).toBe('sentry');
+    });
+
+    it("should return null for non-deck manipulation cards", () => {
+      expect(getMonsterCategoryForEncounter('lost')).toBeNull();
+      expect(getMonsterCategoryForEncounter('frenzied-leap')).toBeNull();
+    });
+  });
+
+  describe("isMonsterDeckManipulationCard", () => {
+    it("should return true for monster deck manipulation cards", () => {
+      expect(isMonsterDeckManipulationCard('duergar-outpost')).toBe(true);
+      expect(isMonsterDeckManipulationCard('hall-of-orcs')).toBe(true);
+      expect(isMonsterDeckManipulationCard('kobold-warren')).toBe(true);
+      expect(isMonsterDeckManipulationCard('unnatural-corruption')).toBe(true);
+      expect(isMonsterDeckManipulationCard('spotted')).toBe(true);
+    });
+
+    it("should return false for non-monster deck cards", () => {
+      expect(isMonsterDeckManipulationCard('lost')).toBe(false);
+      expect(isMonsterDeckManipulationCard('frenzied-leap')).toBe(false);
+    });
+  });
+
+  describe("isTileDeckManipulationCard", () => {
+    it("should return true for tile deck manipulation cards", () => {
+      expect(isTileDeckManipulationCard('lost')).toBe(true);
+      expect(isTileDeckManipulationCard('occupied-lair')).toBe(true);
+      expect(isTileDeckManipulationCard('scream-of-sentry')).toBe(true);
+      expect(isTileDeckManipulationCard('spotted')).toBe(true);
+    });
+
+    it("should return false for non-tile deck cards", () => {
+      expect(isTileDeckManipulationCard('frenzied-leap')).toBe(false);
+      expect(isTileDeckManipulationCard('revel-in-destruction')).toBe(false);
     });
   });
 });

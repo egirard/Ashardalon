@@ -35,6 +35,9 @@ import {
   drawTile,
   updateDungeonAfterExploration,
   getTileDefinition,
+  moveBottomTileToTop,
+  drawTileFromBottom,
+  shuffleTileDeck,
 } from "./exploration";
 import {
   initializeMonsterDeck,
@@ -43,6 +46,9 @@ import {
   getMonsterSpawnPosition,
   discardMonster,
   getMonsterById,
+  filterMonsterDeckByCategory,
+  healMonster,
+  drawMonsterFromBottom,
 } from "./monsters";
 import {
   executeMonsterTurn,
@@ -72,6 +78,10 @@ import {
   applyEndOfHeroPhaseEnvironmentEffects,
   shouldPlaceTrapMarker,
   shouldPlaceHazardMarker,
+  shouldDrawAnotherEncounter,
+  getMonsterCategoryForEncounter,
+  isMonsterDeckManipulationCard,
+  isTileDeckManipulationCard,
 } from "./encounters";
 import {
   createTrapInstance,
@@ -1203,6 +1213,84 @@ export const gameSlice = createSlice({
           
           // Discard the hazard encounter card
           state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+        } else if (state.drawnEncounter.effect.type === 'special') {
+          // Handle special encounter cards
+          const encounterId = state.drawnEncounter.id;
+          
+          // Lost: Move bottom tile to top
+          if (encounterId === 'lost') {
+            state.dungeon.tileDeck = moveBottomTileToTop(state.dungeon.tileDeck);
+          }
+          
+          // Monster deck manipulation cards
+          else if (isMonsterDeckManipulationCard(encounterId)) {
+            const category = getMonsterCategoryForEncounter(encounterId);
+            if (category) {
+              const result = filterMonsterDeckByCategory(
+                state.monsterDeck,
+                category as any, // Type assertion for now
+                5
+              );
+              state.monsterDeck = result.deck;
+            }
+          }
+          
+          // Revel in Destruction: Heal a damaged monster 1 HP
+          else if (encounterId === 'revel-in-destruction') {
+            // Find first damaged monster
+            const damagedMonster = state.monsters.find(m => {
+              const monsterDef = getMonsterById(m.monsterId);
+              return monsterDef && m.currentHp < monsterDef.maxHp;
+            });
+            if (damagedMonster) {
+              damagedMonster.currentHp = healMonster(damagedMonster, 1);
+            }
+          }
+          
+          // Deadly Poison: Poisoned heroes take 1 damage
+          else if (encounterId === 'deadly-poison') {
+            const activeHeroId = activeHeroToken?.heroId;
+            if (activeHeroId) {
+              state.heroHp = state.heroHp.map(hp => {
+                // Check if hero is poisoned
+                const isPoisoned = hp.statuses?.some(s => s.type === 'poisoned');
+                if (isPoisoned) {
+                  return { ...hp, currentHp: Math.max(0, hp.currentHp - 1) };
+                }
+                return hp;
+              });
+              
+              // Check for party defeat
+              const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+              if (allHeroesDefeated) {
+                state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
+                state.currentScreen = "defeat";
+              }
+            }
+          }
+          
+          // For other special cards, just log a warning for now
+          else {
+            console.warn(`Special encounter '${state.drawnEncounter.name}' (${encounterId}) effect not yet implemented`);
+          }
+          
+          // Discard the encounter card
+          state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+          
+          // Check if we need to draw another encounter card
+          if (shouldDrawAnotherEncounter(encounterId)) {
+            const { encounterId: nextEncounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+            state.encounterDeck = updatedDeck;
+            
+            if (nextEncounterId) {
+              const nextEncounter = getEncounterById(nextEncounterId);
+              if (nextEncounter) {
+                state.drawnEncounter = nextEncounter;
+                // Don't clear drawnEncounter - let the UI show the new card
+                return;
+              }
+            }
+          }
         } else {
           // Get the current hero ID for active-hero effects
           const activeHeroId = activeHeroToken?.heroId;
