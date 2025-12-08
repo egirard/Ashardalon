@@ -12,6 +12,9 @@ import {
   updateDungeonAfterExploration,
   shuffleArray,
   START_TILE_EDGE_POSITIONS,
+  drawTileFromBottom,
+  moveBottomTileToTop,
+  shuffleTileDeck,
 } from "./exploration";
 import type { DungeonState, HeroToken, PlacedTile, TileEdge } from "./types";
 
@@ -614,6 +617,93 @@ describe("exploration", () => {
       const original = [...array];
       shuffleArray(array);
       expect(array).toEqual(original);
+    });
+  });
+
+  describe("drawTileFromBottom", () => {
+    it("should draw the last tile from the deck", () => {
+      const deck = ['tile-a', 'tile-b', 'tile-c'];
+
+      const result = drawTileFromBottom(deck);
+
+      expect(result.drawnTile).toBe('tile-c');
+      expect(result.remainingDeck).toEqual(['tile-a', 'tile-b']);
+    });
+
+    it("should return null when deck is empty", () => {
+      const deck: string[] = [];
+
+      const result = drawTileFromBottom(deck);
+
+      expect(result.drawnTile).toBeNull();
+      expect(result.remainingDeck).toEqual([]);
+    });
+
+    it("should handle single tile deck", () => {
+      const deck = ['tile-a'];
+
+      const result = drawTileFromBottom(deck);
+
+      expect(result.drawnTile).toBe('tile-a');
+      expect(result.remainingDeck).toEqual([]);
+    });
+  });
+
+  describe("moveBottomTileToTop", () => {
+    it("should move bottom tile to top of deck", () => {
+      const deck = ['tile-a', 'tile-b', 'tile-c'];
+
+      const result = moveBottomTileToTop(deck);
+
+      expect(result).toEqual(['tile-c', 'tile-a', 'tile-b']);
+    });
+
+    it("should handle empty deck", () => {
+      const deck: string[] = [];
+
+      const result = moveBottomTileToTop(deck);
+
+      expect(result).toEqual([]);
+    });
+
+    it("should handle single tile deck", () => {
+      const deck = ['tile-a'];
+
+      const result = moveBottomTileToTop(deck);
+
+      expect(result).toEqual(['tile-a']);
+    });
+
+    it("should not modify original deck", () => {
+      const deck = ['tile-a', 'tile-b', 'tile-c'];
+      const original = [...deck];
+
+      moveBottomTileToTop(deck);
+
+      expect(deck).toEqual(original);
+    });
+  });
+
+  describe("shuffleTileDeck", () => {
+    it("should shuffle the tile deck", () => {
+      const deck = ['tile-a', 'tile-b', 'tile-c', 'tile-d', 'tile-e'];
+
+      const result1 = shuffleTileDeck(deck, () => 0.1);
+      const result2 = shuffleTileDeck(deck, () => 0.9);
+
+      // Different random seeds should produce different orders
+      expect(result1.join(',')).not.toBe(result2.join(','));
+    });
+
+    it("should maintain all tiles", () => {
+      const deck = ['tile-a', 'tile-b', 'tile-c'];
+
+      const result = shuffleTileDeck(deck);
+
+      expect(result).toHaveLength(3);
+      expect(result).toContain('tile-a');
+      expect(result).toContain('tile-b');
+      expect(result).toContain('tile-c');
     });
   });
 });

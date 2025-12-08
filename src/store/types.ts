@@ -213,6 +213,19 @@ export interface HeroToken {
 }
 
 /**
+ * Monster category types for encounter card filtering
+ * Based on Wrath of Ashardalon creature types:
+ * - Devil: Infernal creatures (Legion Devil, etc.)
+ * - Orc: Orcish creatures (Orc Archer, Orc Smasher, etc.)
+ * - Reptile: Reptilian creatures (Kobolds, Snakes, etc.)
+ * - Aberrant: Aberrations (Gibbering Mouther, Grell, etc.)
+ * - Sentry: Guards and watchmen
+ * - Beast: Natural creatures (Cave Bear, etc.)
+ * - Humanoid: Human-like creatures (Cultist, Duergar, etc.)
+ */
+export type MonsterCategory = 'devil' | 'orc' | 'reptile' | 'aberrant' | 'sentry' | 'beast' | 'humanoid';
+
+/**
  * Monster definition representing a monster type
  */
 export interface Monster {
@@ -223,6 +236,8 @@ export interface Monster {
   maxHp: number;
   xp: number;     // Experience Points value
   imagePath: string;
+  /** Monster category for encounter card filtering */
+  category: MonsterCategory;
 }
 
 /**
@@ -264,9 +279,9 @@ export interface MonsterDeck {
  * Available monsters in the game
  */
 export const MONSTERS: Monster[] = [
-  { id: 'kobold', name: 'Kobold Dragonshield', ac: 14, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_KoboldDragonshield.png' },
-  { id: 'snake', name: 'Snake', ac: 12, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_Snake.png' },
-  { id: 'cultist', name: 'Cultist', ac: 13, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_Cultist.png' },
+  { id: 'kobold', name: 'Kobold Dragonshield', ac: 14, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_KoboldDragonshield.png', category: 'reptile' },
+  { id: 'snake', name: 'Snake', ac: 12, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_Snake.png', category: 'reptile' },
+  { id: 'cultist', name: 'Cultist', ac: 13, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_Cultist.png', category: 'humanoid' },
 ];
 
 /**

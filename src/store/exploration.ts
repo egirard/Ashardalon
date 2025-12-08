@@ -295,6 +295,44 @@ export function drawTile(deck: string[]): { drawnTile: string | null; remainingD
 }
 
 /**
+ * Draw a tile from the bottom of the deck
+ * Used by special encounter cards like Lost and Occupied Lair
+ */
+export function drawTileFromBottom(deck: string[]): { drawnTile: string | null; remainingDeck: string[] } {
+  if (deck.length === 0) {
+    return { drawnTile: null, remainingDeck: [] };
+  }
+  
+  const drawnTile = deck[deck.length - 1];
+  return { drawnTile, remainingDeck: deck.slice(0, -1) };
+}
+
+/**
+ * Move bottom tile to top of deck
+ * Used by encounter card "Lost" - take bottom tile and place it on top without looking
+ */
+export function moveBottomTileToTop(deck: string[]): string[] {
+  if (deck.length <= 1) {
+    return deck;
+  }
+  
+  const bottomTile = deck[deck.length - 1];
+  const remainingDeck = deck.slice(0, -1);
+  return [bottomTile, ...remainingDeck];
+}
+
+/**
+ * Shuffle the tile deck in place
+ * Used by encounter cards that require shuffling
+ */
+export function shuffleTileDeck(
+  deck: string[],
+  randomFn: () => number = Math.random
+): string[] {
+  return shuffleArray(deck, randomFn);
+}
+
+/**
  * Update dungeon state after exploration
  */
 export function updateDungeonAfterExploration(

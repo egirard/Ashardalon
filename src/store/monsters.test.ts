@@ -11,6 +11,9 @@ import {
   isPositionOccupiedByMonster,
   getMonsterSpawnPosition,
   shuffleArray,
+  drawMonsterFromBottom,
+  filterMonsterDeckByCategory,
+  healMonster,
 } from './monsters';
 import type { MonsterDeck, MonsterState, PlacedTile } from './types';
 import { INITIAL_MONSTER_DECK, MONSTERS } from './types';
@@ -448,6 +451,107 @@ describe('monsters', () => {
       const position = getMonsterSpawnPosition(tile, monsters);
       // Should still return black spot since monster is on different tile
       expect(position).toEqual({ x: 2, y: 1 });
+    });
+  });
+
+  describe('drawMonsterFromBottom', () => {
+    it('should draw the last monster from the deck', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'cultist'],
+        discardPile: [],
+      };
+
+      const result = drawMonsterFromBottom(deck);
+
+      expect(result.monster).toBe('cultist');
+      expect(result.deck.drawPile).toEqual(['kobold', 'snake']);
+    });
+
+    it('should return null when deck is empty', () => {
+      const deck: MonsterDeck = {
+        drawPile: [],
+        discardPile: ['kobold'],
+      };
+
+      const result = drawMonsterFromBottom(deck);
+
+      expect(result.monster).toBeNull();
+      expect(result.deck.drawPile).toEqual([]);
+    });
+  });
+
+  describe('filterMonsterDeckByCategory', () => {
+    it('should filter monsters by category and place on top', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'cultist', 'kobold', 'snake'],
+        discardPile: [],
+      };
+
+      // Filter for reptiles (kobold and snake are reptiles, cultist is humanoid)
+      const result = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.5);
+
+      // Should have 4 reptiles (2 kobolds + 2 snakes) on top of deck
+      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(4);
+      
+      // Cultist should be discarded
+      expect(result.discardedMonsters).toContain('cultist');
+    });
+
+    it('should shuffle matching cards before placing on top', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'kobold', 'snake', 'kobold'],
+        discardPile: [],
+      };
+
+      const result1 = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.1);
+      const result2 = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.9);
+
+      // Different random seeds should produce different orders
+      expect(result1.deck.drawPile.join(',')).not.toBe(result2.deck.drawPile.join(','));
+    });
+
+    it('should discard all cards if none match category', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'kobold'],
+        discardPile: [],
+      };
+
+      // Filter for devils (none exist in this deck)
+      const result = filterMonsterDeckByCategory(deck, 'devil', 3, () => 0.5);
+
+      // All cards should be discarded
+      expect(result.discardedMonsters).toHaveLength(3);
+      expect(result.deck.discardPile).toHaveLength(3);
+    });
+  });
+
+  describe('healMonster', () => {
+    it('should restore HP to monster', () => {
+      const monster: MonsterState = {
+        monsterId: 'cultist',
+        instanceId: 'cultist-0',
+        position: { x: 0, y: 0 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'tile-0',
+      };
+
+      const newHp = healMonster(monster, 1);
+      expect(newHp).toBe(2);
+    });
+
+    it('should not exceed max HP', () => {
+      const monster: MonsterState = {
+        monsterId: 'cultist', // cultist has maxHp of 2
+        instanceId: 'cultist-0',
+        position: { x: 0, y: 0 },
+        currentHp: 2,
+        controllerId: 'quinn',
+        tileId: 'tile-0',
+      };
+
+      const newHp = healMonster(monster, 5);
+      expect(newHp).toBe(2); // Should cap at maxHp
     });
   });
 });

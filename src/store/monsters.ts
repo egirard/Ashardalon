@@ -1,4 +1,4 @@
-import type { MonsterDeck, Monster, MonsterState, Position, PlacedTile, DungeonState } from './types';
+import type { MonsterDeck, Monster, MonsterState, Position, PlacedTile, DungeonState, MonsterCategory } from './types';
 import { MONSTERS, INITIAL_MONSTER_DECK } from './types';
 
 /**
@@ -265,4 +265,126 @@ export function getMonsterSpawnPosition(
   
   // No valid spawn position found
   return null;
+}
+
+/**
+ * Draw a monster from the bottom of the deck
+ * Used by special encounter cards like Occupied Lair
+ */
+export function drawMonsterFromBottom(
+  deck: MonsterDeck
+): { monster: string | null; deck: MonsterDeck } {
+  if (deck.drawPile.length === 0) {
+    return { monster: null, deck };
+  }
+  
+  const monster = deck.drawPile[deck.drawPile.length - 1];
+  return {
+    monster,
+    deck: {
+      drawPile: deck.drawPile.slice(0, -1),
+      discardPile: deck.discardPile,
+    },
+  };
+}
+
+/**
+ * Filter monster deck by category and place matching cards on top
+ * Used by encounter cards like Hall of Orcs, Duergar Outpost, etc.
+ * 
+ * Process:
+ * 1. Draw specified number of cards from top of deck
+ * 2. Filter out cards that don't match the category
+ * 3. Shuffle matching cards and place on top of deck
+ * 4. Discard non-matching cards
+ * 
+ * @param deck - The current monster deck
+ * @param category - Monster category to filter for
+ * @param count - Number of cards to draw (default: 5)
+ * @param randomFn - Random function for shuffling
+ * @returns Updated deck with filtered cards on top, and array of discarded monster IDs
+ */
+export function filterMonsterDeckByCategory(
+  deck: MonsterDeck,
+  category: MonsterCategory,
+  count: number = 5,
+  randomFn: () => number = Math.random
+): { deck: MonsterDeck; discardedMonsters: string[] } {
+  const drawnCards: string[] = [];
+  let currentDeck = { ...deck };
+  
+  // Draw cards from the deck
+  for (let i = 0; i < count; i++) {
+    const result = drawMonster(currentDeck, randomFn);
+    if (result.monster) {
+      drawnCards.push(result.monster);
+      currentDeck = result.deck;
+    }
+  }
+  
+  // Filter cards by category
+  const matchingCards: string[] = [];
+  const discardedCards: string[] = [];
+  
+  for (const monsterId of drawnCards) {
+    const monster = getMonsterById(monsterId);
+    if (monster && monster.category === category) {
+      matchingCards.push(monsterId);
+    } else {
+      discardedCards.push(monsterId);
+    }
+  }
+  
+  // Shuffle matching cards
+  const shuffledMatching = shuffleArray(matchingCards, randomFn);
+  
+  // Place matching cards on top of deck, discard non-matching
+  return {
+    deck: {
+      drawPile: [...shuffledMatching, ...currentDeck.drawPile],
+      discardPile: [...currentDeck.discardPile, ...discardedCards],
+    },
+    discardedMonsters: discardedCards,
+  };
+}
+
+/**
+ * Move a monster one tile closer to a target position
+ * Used by encounter cards like Quick Advance
+ * 
+ * @param monster - The monster to move
+ * @param targetPosition - The position to move toward (hero's position)
+ * @param dungeon - Current dungeon state
+ * @returns Updated monster position, or null if monster cannot move
+ */
+export function moveMonsterTowardTarget(
+  monster: MonsterState,
+  targetPosition: Position,
+  dungeon: DungeonState
+): Position | null {
+  // TODO: Implement pathfinding to move monster one tile closer
+  // For now, return null to indicate no movement
+  // This will be implemented when the full monster AI system supports
+  // more complex movement commands
+  return null;
+}
+
+/**
+ * Heal a monster by restoring HP
+ * Used by encounter cards like Revel in Destruction
+ * 
+ * @param monster - The monster to heal
+ * @param amount - Amount of HP to restore
+ * @returns Updated current HP (capped at maxHp)
+ */
+export function healMonster(
+  monster: MonsterState,
+  amount: number
+): number {
+  const monsterDef = getMonsterById(monster.monsterId);
+  if (!monsterDef) {
+    return monster.currentHp;
+  }
+  
+  return Math.min(monster.currentHp + amount, monsterDef.maxHp);
 }
