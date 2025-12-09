@@ -28,6 +28,9 @@ e2e/
 | [011-hero-turn-structure](011-hero-turn-structure/README.md) | Hero turn action enforcement: valid move/attack sequences |
 | [025-treasure-on-defeat](025-treasure-on-defeat/README.md) | Treasure drawing on monster defeat |
 | [027-treasure-cards](027-treasure-cards/README.md) | Complete treasure card system: draw, view, assign, discard |
+| [036-encounter-effect-notifications](036-encounter-effect-notifications/README.md) | Special encounter cards display effect notifications |
+| [037-curse-and-special-events](037-curse-and-special-events/README.md) | Curse cards apply status effects |
+| [038-encounter-cards-comprehensive](038-encounter-cards-comprehensive/README.md) | **Comprehensive**: All encounter types tested (damage, attack, curse, environment, trap, hazard, special) |
 
 ## Running Tests
 
