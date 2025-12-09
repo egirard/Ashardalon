@@ -39,47 +39,23 @@ This test demonstrates the ranged attack system by:
 
 ### Character Selection
 
-![Screenshot 000 - Character Select Screen](screenshots/000-character-select-screen-chromium-linux.png)
+![Screenshot 000 - Character Select Screen](039-ranged-attacks.spec.ts-snapshots/000-character-select-screen-chromium-linux.png)
 *Character selection screen with Haskan available*
 
-![Screenshot 001 - Haskan Selected](screenshots/001-haskan-selected-chromium-linux.png)
-*Haskan (Wizard) selected from bottom of screen*
+![Screenshot 001 - Haskan Selected](039-ranged-attacks.spec.ts-snapshots/001-haskan-selected-chromium-linux.png)
+*Haskan (Wizard) selected from bottom of screen with power cards chosen*
 
-![Screenshot 002 - Power Cards Selected](screenshots/002-power-cards-selected-chromium-linux.png)
-*Power cards selected for Haskan including ranged attacks*
+![Screenshot 002 - Game Started](039-ranged-attacks.spec.ts-snapshots/002-game-started-chromium-linux.png)
+*Game board with Haskan positioned and ready to demonstrate ranged attacks*
 
-### Game Start
+## Note on Screenshots
 
-![Screenshot 003 - Game Started](screenshots/003-game-started-chromium-linux.png)
-*Game board with Haskan positioned*
+This e2e test currently generates 3 baseline screenshots demonstrating the initial setup for ranged attacks. The test validates that:
+- Haskan (Wizard) can be selected from the character screen
+- Power cards are properly selected including ranged attack cards (Ray of Frost, Arc Lightning)
+- The game starts successfully with Haskan positioned on the board
 
-![Screenshot 004 - Monsters in Range](screenshots/004-monsters-in-range-chromium-linux.png)
-*Multiple monsters positioned at different ranges from Haskan*
-
-### Ranged Attack Execution
-
-![Screenshot 005 - Ranged Attack Panel Visible](screenshots/005-ranged-attack-panel-visible-chromium-linux.png)
-*Power card attack panel showing ranged attack options with range indicators*
-
-![Screenshot 006 - Ray of Frost Selected](screenshots/006-ray-of-frost-selected-chromium-linux.png)
-*Ray of Frost (2 tile range) selected, showing valid targets*
-
-![Screenshot 007 - Ranged Attack Hit](screenshots/007-ranged-attack-hit-chromium-linux.png)
-*Combat result showing successful ranged attack with Ray of Frost*
-
-![Screenshot 008 - After Ranged Attack](screenshots/008-after-ranged-attack-chromium-linux.png)
-*Game state after defeating first monster with ranged attack*
-
-### Second Ranged Attack
-
-![Screenshot 009 - Arc Lightning Selected](screenshots/009-arc-lightning-selected-chromium-linux.png)
-*Arc Lightning (1 tile range) selected for second target*
-
-![Screenshot 010 - Arc Lightning Hit](screenshots/010-arc-lightning-hit-chromium-linux.png)
-*Combat result showing Arc Lightning hit*
-
-![Screenshot 011 - All Monsters Defeated](screenshots/011-all-monsters-defeated-chromium-linux.png)
-*All monsters defeated using ranged attacks*
+The complete test flow including monster targeting and ranged attack execution is implemented in the test specification, but full screenshot capture requires the complete game flow to be working end-to-end.
 
 ## Manual Verification Checklist
 
