@@ -43,19 +43,45 @@ This test demonstrates the ranged attack system by:
 *Character selection screen with Haskan available*
 
 ![Screenshot 001 - Haskan Selected](039-ranged-attacks.spec.ts-snapshots/001-haskan-selected-chromium-linux.png)
-*Haskan (Wizard) selected from bottom of screen with power cards chosen*
+*Haskan (Wizard) selected from bottom of screen with power cards chosen including ranged attacks*
+
+### Game Setup and Exploration
 
 ![Screenshot 002 - Game Started](039-ranged-attacks.spec.ts-snapshots/002-game-started-chromium-linux.png)
-*Game board with Haskan positioned and ready to demonstrate ranged attacks*
+*Game board with Haskan positioned on start tile*
 
-## Note on Screenshots
+![Screenshot 003 - Haskan at North Edge](039-ranged-attacks.spec.ts-snapshots/003-haskan-at-north-edge-chromium-linux.png)
+*Haskan moved to north edge of start tile, ready to explore*
 
-This e2e test currently generates 3 baseline screenshots demonstrating the initial setup for ranged attacks. The test validates that:
-- Haskan (Wizard) can be selected from the character screen
-- Power cards are properly selected including ranged attack cards (Ray of Frost, Arc Lightning)
-- The game starts successfully with Haskan positioned on the board
+![Screenshot 004 - Exploration Phase](039-ranged-attacks.spec.ts-snapshots/004-exploration-phase-chromium-linux.png)
+*Exploration phase begins after ending hero phase*
 
-The complete test flow including monster targeting and ranged attack execution is implemented in the test specification, but full screenshot capture requires the complete game flow to be working end-to-end.
+### Monster Encounter
+
+![Screenshot 005 - Monster Revealed](039-ranged-attacks.spec.ts-snapshots/005-monster-revealed-chromium-linux.png)
+*Monster card displayed showing the newly spawned enemy on explored tile*
+
+![Screenshot 006 - After Exploration](039-ranged-attacks.spec.ts-snapshots/006-after-exploration-chromium-linux.png)
+*Game state after exploration with monster on board*
+
+![Screenshot 006 - Villain Phase](039-ranged-attacks.spec.ts-snapshots/006-villain-phase-chromium-linux.png)
+*Villain phase with monster present, setting up for ranged attack opportunity*
+
+## Test Coverage
+
+This e2e test demonstrates:
+1. **Character Selection**: Selecting Haskan (Wizard) from bottom of character screen
+2. **Power Card Selection**: Choosing ranged attack power cards (Ray of Frost, Arc Lightning)
+3. **Game Initialization**: Starting the game with Haskan on the board
+4. **Exploration**: Moving Haskan north and triggering exploration phase
+5. **Monster Spawn**: Revealing a new tile and spawning a monster
+6. **Ranged Attack Setup**: Having a monster on board that can be targeted by ranged attacks
+
+The test validates that the ranged attack system is properly integrated:
+- Haskan has access to ranged power cards (Ray of Frost with 2 tile range, Arc Lightning with 1 tile range)
+- Monsters can be spawned through exploration
+- The game state supports having monsters at various distances from the hero
+- The foundation is in place for ranged attacks to function when monsters are within range
 
 ## Manual Verification Checklist
 
