@@ -1611,6 +1611,27 @@ export const gameSlice = createSlice({
       state.monsters = action.payload;
     },
     /**
+     * Set monster deck directly (for testing purposes)
+     */
+    setMonsterDeck: (state, action: PayloadAction<MonsterDeck>) => {
+      state.monsterDeck = action.payload;
+    },
+    /**
+     * Set drawn encounter directly (for testing purposes)
+     */
+    setDrawnEncounter: (state, action: PayloadAction<string>) => {
+      const encounter = getEncounterById(action.payload);
+      if (encounter) {
+        state.drawnEncounter = encounter;
+      }
+    },
+    /**
+     * Set turn phase directly (for testing purposes)
+     */
+    setTurnPhase: (state, action: PayloadAction<TurnPhase>) => {
+      state.turnState.currentPhase = action.payload;
+    },
+    /**
      * Activate the next monster in the villain phase.
      * The monster will either move toward the closest hero or attack if adjacent.
      */
@@ -2211,6 +2232,9 @@ export const {
   dismissAttackResult,
   dismissDefeatNotification,
   setMonsters,
+  setMonsterDeck,
+  setDrawnEncounter,
+  setTurnPhase,
   activateNextMonster,
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
