@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC, canLevelUp, levelUpHero, calculateDamage, checkHealingSurgeNeeded, useHealingSurge, checkPartyDefeat, applyItemBonusesToAttack, calculateTotalAC, calculateTotalSpeed } from './combat';
-import type { HeroAttack, MonsterState, HeroHpState, PartyResources } from './types';
+import { rollD20, resolveAttack, arePositionsAdjacent, getAdjacentMonsters, getMonsterAC, canLevelUp, levelUpHero, calculateDamage, checkHealingSurgeNeeded, useHealingSurge, checkPartyDefeat, applyItemBonusesToAttack, calculateTotalAC, calculateTotalSpeed, getChebyshevDistance, getManhattanDistance, isWithinTileRange, isWithinSquareRange, getMonstersWithinRange, getMonstersOnSameTile } from './combat';
+import type { HeroAttack, MonsterState, HeroHpState, PartyResources, DungeonState } from './types';
 import type { HeroInventory } from './treasure';
 
 describe('rollD20', () => {
@@ -773,5 +773,237 @@ describe('calculateTotalSpeed', () => {
       items: [{ cardId: 138, isFlipped: true }]
     };
     expect(calculateTotalSpeed(6, inventory)).toBe(6);
+  });
+});
+
+describe('getChebyshevDistance', () => {
+  it('should calculate distance for same position', () => {
+    expect(getChebyshevDistance({ x: 2, y: 2 }, { x: 2, y: 2 })).toBe(0);
+  });
+
+  it('should calculate distance for orthogonal movement', () => {
+    // Moving 3 squares horizontally
+    expect(getChebyshevDistance({ x: 2, y: 2 }, { x: 5, y: 2 })).toBe(3);
+    // Moving 4 squares vertically
+    expect(getChebyshevDistance({ x: 2, y: 2 }, { x: 2, y: 6 })).toBe(4);
+  });
+
+  it('should calculate distance for diagonal movement', () => {
+    // Diagonal movement: max of differences is the distance
+    expect(getChebyshevDistance({ x: 2, y: 2 }, { x: 5, y: 5 })).toBe(3);
+    expect(getChebyshevDistance({ x: 0, y: 0 }, { x: 4, y: 3 })).toBe(4);
+  });
+
+  it('should handle negative coordinates', () => {
+    expect(getChebyshevDistance({ x: 2, y: 2 }, { x: -2, y: -2 })).toBe(4);
+    expect(getChebyshevDistance({ x: -5, y: 3 }, { x: 1, y: -1 })).toBe(6);
+  });
+
+  it('should be symmetric', () => {
+    const pos1 = { x: 2, y: 3 };
+    const pos2 = { x: 7, y: 8 };
+    expect(getChebyshevDistance(pos1, pos2)).toBe(getChebyshevDistance(pos2, pos1));
+  });
+});
+
+describe('getManhattanDistance', () => {
+  it('should calculate distance for same position', () => {
+    expect(getManhattanDistance({ x: 2, y: 2 }, { x: 2, y: 2 })).toBe(0);
+  });
+
+  it('should calculate distance for orthogonal movement', () => {
+    // Moving 3 squares horizontally
+    expect(getManhattanDistance({ x: 2, y: 2 }, { x: 5, y: 2 })).toBe(3);
+    // Moving 4 squares vertically
+    expect(getManhattanDistance({ x: 2, y: 2 }, { x: 2, y: 6 })).toBe(4);
+  });
+
+  it('should calculate distance for diagonal movement', () => {
+    // Manhattan distance is sum of absolute differences
+    expect(getManhattanDistance({ x: 2, y: 2 }, { x: 5, y: 5 })).toBe(6);
+    expect(getManhattanDistance({ x: 0, y: 0 }, { x: 4, y: 3 })).toBe(7);
+  });
+
+  it('should handle negative coordinates', () => {
+    expect(getManhattanDistance({ x: 2, y: 2 }, { x: -2, y: -2 })).toBe(8);
+    expect(getManhattanDistance({ x: -5, y: 3 }, { x: 1, y: -1 })).toBe(10);
+  });
+
+  it('should be symmetric', () => {
+    const pos1 = { x: 2, y: 3 };
+    const pos2 = { x: 7, y: 8 };
+    expect(getManhattanDistance(pos1, pos2)).toBe(getManhattanDistance(pos2, pos1));
+  });
+});
+
+describe('isWithinTileRange', () => {
+  it('should return true for same position', () => {
+    expect(isWithinTileRange({ x: 2, y: 2 }, { x: 2, y: 2 }, 0)).toBe(true);
+    expect(isWithinTileRange({ x: 2, y: 2 }, { x: 2, y: 2 }, 1)).toBe(true);
+  });
+
+  it('should correctly check within 1 tile (4 squares)', () => {
+    const heroPos = { x: 10, y: 10 };
+    
+    // Exactly 4 squares away (edge of 1 tile)
+    expect(isWithinTileRange(heroPos, { x: 14, y: 10 }, 1)).toBe(true);
+    expect(isWithinTileRange(heroPos, { x: 10, y: 14 }, 1)).toBe(true);
+    expect(isWithinTileRange(heroPos, { x: 14, y: 14 }, 1)).toBe(true);
+    
+    // 5 squares away (beyond 1 tile)
+    expect(isWithinTileRange(heroPos, { x: 15, y: 10 }, 1)).toBe(false);
+    expect(isWithinTileRange(heroPos, { x: 10, y: 15 }, 1)).toBe(false);
+  });
+
+  it('should correctly check within 2 tiles (8 squares)', () => {
+    const heroPos = { x: 10, y: 10 };
+    
+    // Exactly 8 squares away
+    expect(isWithinTileRange(heroPos, { x: 18, y: 10 }, 2)).toBe(true);
+    expect(isWithinTileRange(heroPos, { x: 10, y: 18 }, 2)).toBe(true);
+    expect(isWithinTileRange(heroPos, { x: 18, y: 18 }, 2)).toBe(true);
+    
+    // 9 squares away (beyond 2 tiles)
+    expect(isWithinTileRange(heroPos, { x: 19, y: 10 }, 2)).toBe(false);
+  });
+
+  it('should handle negative coordinates', () => {
+    expect(isWithinTileRange({ x: 0, y: 0 }, { x: -3, y: -3 }, 1)).toBe(true);
+    expect(isWithinTileRange({ x: 0, y: 0 }, { x: -5, y: 0 }, 1)).toBe(false);
+  });
+});
+
+describe('isWithinSquareRange', () => {
+  it('should return true for same position', () => {
+    expect(isWithinSquareRange({ x: 2, y: 2 }, { x: 2, y: 2 }, 0)).toBe(true);
+  });
+
+  it('should correctly check Manhattan distance', () => {
+    const heroPos = { x: 10, y: 10 };
+    
+    // 3 squares Manhattan distance
+    expect(isWithinSquareRange(heroPos, { x: 13, y: 10 }, 3)).toBe(true);
+    expect(isWithinSquareRange(heroPos, { x: 12, y: 11 }, 3)).toBe(true);
+    
+    // 4 squares Manhattan distance
+    expect(isWithinSquareRange(heroPos, { x: 14, y: 10 }, 3)).toBe(false);
+    expect(isWithinSquareRange(heroPos, { x: 12, y: 12 }, 3)).toBe(false);
+  });
+});
+
+describe('getMonstersWithinRange', () => {
+  // Create a simple dungeon with start tile and one regular tile
+  const dungeon: DungeonState = {
+    tiles: [
+      {
+        id: 'start',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        edges: { north: 'unexplored', east: 'unexplored', south: 'unexplored', west: 'wall' },
+      },
+      {
+        id: 'tile-north',
+        tileType: 'normal',
+        position: { col: 0, row: -1 },
+        edges: { north: 'wall', east: 'wall', south: 'open', west: 'wall' },
+        tileDefId: 'tile-1',
+      },
+    ],
+    unexploredEdges: [],
+    tileDeck: [],
+  };
+
+  const monsters: MonsterState[] = [
+    // Monster on start tile at local (2, 2) = global (2, 2)
+    { monsterId: 'kobold', instanceId: 'kobold-adjacent', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'start' },
+    // Monster on start tile at local (2, 5) = global (2, 5)
+    { monsterId: 'snake', instanceId: 'snake-sametile', position: { x: 2, y: 5 }, currentHp: 1, controllerId: 'quinn', tileId: 'start' },
+    // Monster on north tile at local (2, 2) = global (2, -2)
+    { monsterId: 'cultist', instanceId: 'cultist-neartile', position: { x: 2, y: 2 }, currentHp: 2, controllerId: 'quinn', tileId: 'tile-north' },
+  ];
+
+  it('should find monsters within 1 tile range', () => {
+    const heroPos = { x: 2, y: 1 }; // On start tile
+    const inRange = getMonstersWithinRange(heroPos, monsters, 1, dungeon);
+    
+    // kobold at (2,2) is 1 square away (within 1 tile = 4 squares)
+    // snake at (2,5) is 4 squares away (within 1 tile)
+    // cultist at (2,-2) is 3 squares away (within 1 tile)
+    expect(inRange).toHaveLength(3);
+    expect(inRange.map(m => m.instanceId)).toContain('kobold-adjacent');
+    expect(inRange.map(m => m.instanceId)).toContain('snake-sametile');
+    expect(inRange.map(m => m.instanceId)).toContain('cultist-neartile');
+  });
+
+  it('should find monsters within 2 tile range', () => {
+    const heroPos = { x: 2, y: 5 }; // On start tile
+    const inRange = getMonstersWithinRange(heroPos, monsters, 2, dungeon);
+    
+    // All monsters should be within 2 tiles (8 squares)
+    expect(inRange).toHaveLength(3);
+  });
+
+  it('should return empty array when no monsters in range', () => {
+    const heroPos = { x: 2, y: 1 };
+    // Create monsters far away
+    const farMonsters: MonsterState[] = [
+      { monsterId: 'kobold', instanceId: 'kobold-far', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-north' },
+    ];
+    
+    const inRange = getMonstersWithinRange(heroPos, farMonsters, 0, dungeon);
+    expect(inRange).toHaveLength(0);
+  });
+});
+
+describe('getMonstersOnSameTile', () => {
+  const dungeon: DungeonState = {
+    tiles: [
+      {
+        id: 'start',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        edges: { north: 'unexplored', east: 'unexplored', south: 'unexplored', west: 'wall' },
+      },
+      {
+        id: 'tile-north',
+        tileType: 'normal',
+        position: { col: 0, row: -1 },
+        edges: { north: 'wall', east: 'wall', south: 'open', west: 'wall' },
+        tileDefId: 'tile-1',
+      },
+    ],
+    unexploredEdges: [],
+    tileDeck: [],
+  };
+
+  const monsters: MonsterState[] = [
+    { monsterId: 'kobold', instanceId: 'kobold-1', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'start' },
+    { monsterId: 'snake', instanceId: 'snake-1', position: { x: 2, y: 5 }, currentHp: 1, controllerId: 'quinn', tileId: 'start' },
+    { monsterId: 'cultist', instanceId: 'cultist-1', position: { x: 2, y: 2 }, currentHp: 2, controllerId: 'quinn', tileId: 'tile-north' },
+  ];
+
+  it('should find all monsters on the same tile', () => {
+    const heroPos = { x: 2, y: 3 }; // On start tile
+    const sameTile = getMonstersOnSameTile(heroPos, monsters, dungeon);
+    
+    expect(sameTile).toHaveLength(2);
+    expect(sameTile.map(m => m.instanceId)).toContain('kobold-1');
+    expect(sameTile.map(m => m.instanceId)).toContain('snake-1');
+    expect(sameTile.map(m => m.instanceId)).not.toContain('cultist-1');
+  });
+
+  it('should return empty array when hero is not on a tile', () => {
+    const heroPos = { x: 100, y: 100 }; // Off the map
+    const sameTile = getMonstersOnSameTile(heroPos, monsters, dungeon);
+    
+    expect(sameTile).toHaveLength(0);
+  });
+
+  it('should only return monsters on the exact tile', () => {
+    const heroPos = { x: 2, y: -2 }; // On tile-north
+    const sameTile = getMonstersOnSameTile(heroPos, monsters, dungeon);
+    
+    expect(sameTile).toHaveLength(1);
+    expect(sameTile[0].instanceId).toBe('cultist-1');
   });
 });

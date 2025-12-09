@@ -275,3 +275,106 @@ export function getAdjacentMonsters(
     return arePositionsAdjacent(position, monsterGlobalPos);
   });
 }
+
+/**
+ * Calculate Chebyshev distance (chessboard distance) between two positions.
+ * This is the maximum of the absolute differences in coordinates.
+ * Used for "tile" range in the game (e.g., "within 1 tile" means Chebyshev distance <= 4).
+ * 
+ * @param pos1 First position
+ * @param pos2 Second position
+ * @returns Chebyshev distance in squares
+ */
+export function getChebyshevDistance(pos1: Position, pos2: Position): number {
+  return Math.max(Math.abs(pos1.x - pos2.x), Math.abs(pos1.y - pos2.y));
+}
+
+/**
+ * Calculate Manhattan distance (taxicab distance) between two positions.
+ * This is the sum of absolute differences in coordinates.
+ * Used for "square" range in the game.
+ * 
+ * @param pos1 First position
+ * @param pos2 Second position
+ * @returns Manhattan distance in squares
+ */
+export function getManhattanDistance(pos1: Position, pos2: Position): number {
+  return Math.abs(pos1.x - pos2.x) + Math.abs(pos1.y - pos2.y);
+}
+
+/**
+ * Check if a position is within a certain number of tiles (using Chebyshev distance).
+ * According to the game rules, "within N tiles" uses the chessboard/Chebyshev metric.
+ * 
+ * Examples:
+ * - "within 1 tile" means Chebyshev distance <= 4 (one 4x4 tile away)
+ * - "within 2 tiles" means Chebyshev distance <= 8 (two 4x4 tiles away)
+ * 
+ * @param pos1 First position
+ * @param pos2 Second position
+ * @param tileRange Number of tiles
+ * @returns true if pos2 is within tileRange tiles of pos1
+ */
+export function isWithinTileRange(pos1: Position, pos2: Position, tileRange: number): boolean {
+  const squareDistance = getChebyshevDistance(pos1, pos2);
+  // Each tile is 4x4 squares, so N tiles = N * 4 squares
+  return squareDistance <= tileRange * 4;
+}
+
+/**
+ * Check if a position is within a certain number of squares (using Manhattan distance).
+ * This is used for abilities that specify "within X squares" instead of tiles.
+ * 
+ * @param pos1 First position
+ * @param pos2 Second position
+ * @param squareRange Number of squares
+ * @returns true if pos2 is within squareRange squares of pos1
+ */
+export function isWithinSquareRange(pos1: Position, pos2: Position, squareRange: number): boolean {
+  return getManhattanDistance(pos1, pos2) <= squareRange;
+}
+
+/**
+ * Find all monsters within a given tile range of a hero position.
+ * Uses Chebyshev distance (chessboard metric) for tile counting.
+ * 
+ * @param position Hero's global position
+ * @param monsters List of monsters (with local tile positions)
+ * @param tileRange Number of tiles (1 = within 1 tile, 2 = within 2 tiles, etc.)
+ * @param dungeon Dungeon state for coordinate conversion
+ * @returns Array of monsters within range
+ */
+export function getMonstersWithinRange(
+  position: Position,
+  monsters: MonsterState[],
+  tileRange: number,
+  dungeon: DungeonState
+): MonsterState[] {
+  return monsters.filter(monster => {
+    // Convert monster's local position to global coordinates
+    const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
+    if (!monsterGlobalPos) return false;
+    
+    // Check if within tile range
+    return isWithinTileRange(position, monsterGlobalPos, tileRange);
+  });
+}
+
+/**
+ * Find all monsters on the same tile as a hero position.
+ * 
+ * @param position Hero's global position
+ * @param monsters List of monsters (with local tile positions)
+ * @param dungeon Dungeon state for coordinate conversion
+ * @returns Array of monsters on the same tile
+ */
+export function getMonstersOnSameTile(
+  position: Position,
+  monsters: MonsterState[],
+  dungeon: DungeonState
+): MonsterState[] {
+  const heroTile = findTileAtPosition(position, dungeon);
+  if (!heroTile) return [];
+  
+  return monsters.filter(monster => monster.tileId === heroTile.id);
+}
