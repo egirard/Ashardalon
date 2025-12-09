@@ -191,10 +191,17 @@ This comprehensive E2E test demonstrates the complete encounter card system func
 ## Implementation Summary
 
 **Total Encounter Cards**: 53
-- **Fully Implemented**: 16 cards (damage + attack effects)
-- **Curses**: 8 cards (status effects working)
-- **Environments**: 6 cards (tracking working, 2 effects fully functional)
-- **Display Only**: 23 cards (traps, hazards, special effects)
+- **Fully Implemented**: 26 cards
+  - Damage effects: 2 cards
+  - Attack effects: 14 cards
+  - Curse effects: 8 cards (status effects working)
+  - Environment effects: 2 cards (Hidden Snipers, Walls of Magma)
+- **Partially Implemented**: 4 cards
+  - Environment effects: 4 cards (tracked but not fully enforced)
+- **Display Only**: 23 cards
+  - Special effects: 16 cards
+  - Trap effects: 4 cards
+  - Hazard effects: 3 cards
 
 See `ENCOUNTER_CARDS_IMPLEMENTATION.md` for complete card-by-card breakdown.
 
