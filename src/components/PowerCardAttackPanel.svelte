@@ -1,10 +1,13 @@
 <script lang="ts">
-  import type { MonsterState } from '../store/types';
+  import type { MonsterState, Position, DungeonState } from '../store/types';
   import { MONSTERS } from '../store/types';
   import type { PowerCard, HeroPowerCards, PowerCardState } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst, getActionDescription } from '../store/actionCardParser';
   import type { MultiAttackState, PendingMoveAttackState } from '../store/gameSlice';
+  import { store } from '../store';
+  import { isWithinTileRange, arePositionsAdjacent, getMonsterGlobalPosition, getMonstersOnSameTile } from '../store/combat';
+  import { findTileAtPosition } from '../store/movement';
   
   interface Props {
     heroPowerCards: HeroPowerCards;
@@ -58,6 +61,52 @@
   function getMonsterName(monsterId: string): string {
     const monster = MONSTERS.find(m => m.id === monsterId);
     return monster?.name || 'Unknown';
+  }
+
+  // Check if a monster can be targeted by a specific power card
+  function canTargetMonster(cardId: number, monster: MonsterState): boolean {
+    const card = getPowerCardById(cardId);
+    if (!card) return false;
+
+    const parsed = parseActionCard(card);
+    if (!parsed.attack) return false;
+
+    // Get current hero position and dungeon state
+    const state = store.getState();
+    const currentHeroToken = state.game.heroTokens[state.game.turnState.currentHeroIndex];
+    if (!currentHeroToken) return false;
+
+    const heroPos = currentHeroToken.position;
+    const dungeon = state.game.dungeon;
+
+    // Convert monster position to global coordinates
+    const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
+    if (!monsterGlobalPos) return false;
+
+    // Check based on target type
+    switch (parsed.attack.targetType) {
+      case 'adjacent':
+        // Adjacent/melee - must be adjacent
+        return arePositionsAdjacent(heroPos, monsterGlobalPos);
+      
+      case 'tile':
+        // "On your tile" - must be on same tile
+        const heroTile = findTileAtPosition(heroPos, dungeon);
+        return heroTile !== null && monster.tileId === heroTile.id;
+      
+      case 'within-tiles':
+        // "Within N tiles" - use tile range
+        return isWithinTileRange(heroPos, monsterGlobalPos, parsed.attack.range);
+      
+      default:
+        // Default to adjacent
+        return arePositionsAdjacent(heroPos, monsterGlobalPos);
+    }
+  }
+
+  // Get monsters that can be targeted by the selected card
+  function getValidTargetsForCard(cardId: number): MonsterState[] {
+    return adjacentMonsters.filter(monster => canTargetMonster(cardId, monster));
   }
   
   function handleCardSelect(cardId: number) {
@@ -199,6 +248,17 @@
             <div class="card-stats">
               <span class="attack-bonus">+{card.attackBonus}</span>
               <span class="damage">{card.damage} dmg</span>
+              {#if parsed.attack}
+                {#if parsed.attack.targetType === 'within-tiles' && parsed.attack.range > 0}
+                  <span class="range-indicator" data-testid="range-indicator-{card.id}">
+                    Range: {parsed.attack.range} tile{parsed.attack.range > 1 ? 's' : ''}
+                  </span>
+                {:else if parsed.attack.targetType === 'tile'}
+                  <span class="range-indicator" data-testid="range-indicator-{card.id}">
+                    On tile
+                  </span>
+                {/if}
+              {/if}
             </div>
             {#if parsed.attack && (parsed.attack.attackCount > 1 || parsed.attack.maxTargets > 1)}
               <div class="card-effect" data-testid="card-effect-{card.id}">
@@ -215,6 +275,7 @@
       {@const activeCardId = multiAttackState?.cardId ?? selectedCardId}
       {@const selectedCard = activeCardId ? getPowerCardById(activeCardId) : null}
       {@const parsed = selectedCard ? parseActionCard(selectedCard) : null}
+      {@const validTargets = activeCardId ? getValidTargetsForCard(activeCardId) : adjacentMonsters}
       <div class="target-selection" data-testid="target-selection">
         <div class="target-header">
           {#if multiAttackState}
@@ -224,7 +285,7 @@
           {/if}
         </div>
         <div class="target-list">
-          {#each adjacentMonsters as monster (monster.instanceId)}
+          {#each validTargets as monster (monster.instanceId)}
             {@const isValidTarget = !multiAttackState?.sameTarget || 
                                     multiAttackState.targetInstanceId === monster.instanceId ||
                                     multiAttackState.attacksCompleted === 0}
@@ -355,6 +416,7 @@
     gap: 1rem;
     font-size: 0.8rem;
     color: #aaa;
+    flex-wrap: wrap;
   }
   
   .attack-bonus {
@@ -364,6 +426,12 @@
   
   .damage {
     color: #e76f51;
+  }
+
+  .range-indicator {
+    color: #64b5f6;
+    font-style: italic;
+    font-size: 0.75rem;
   }
   
   .target-selection {
