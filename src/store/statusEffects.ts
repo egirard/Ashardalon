@@ -17,7 +17,16 @@ export type StatusEffectType =
   | 'immobilized'
   | 'stunned'
   | 'blinded'
-  | 'ongoing-damage';
+  | 'ongoing-damage'
+  // Curse types
+  | 'curse-gap-in-armor'
+  | 'curse-bad-luck'
+  | 'curse-bloodlust'
+  | 'curse-cage'
+  | 'curse-dragon-fear'
+  | 'curse-terrifying-roar'
+  | 'curse-time-leap'
+  | 'curse-wrath-of-enemy';
 
 /**
  * Active status effect on a character (hero or monster)
@@ -89,6 +98,55 @@ export const STATUS_EFFECT_DEFINITIONS: Record<StatusEffectType, HeroCondition> 
     name: 'Ongoing Damage',
     icon: '🔥',
     description: 'Taking damage at the start of each turn',
+  },
+  // Curse definitions
+  'curse-gap-in-armor': {
+    id: 'curse-gap-in-armor',
+    name: 'A Gap in the Armor',
+    icon: '🛡️',
+    description: 'AC -4. Removed if hero does not move during Hero Phase.',
+  },
+  'curse-bad-luck': {
+    id: 'curse-bad-luck',
+    name: 'Bad Luck',
+    icon: '🎲',
+    description: 'Draw extra encounter at Villain Phase start. Roll 10+ to remove.',
+  },
+  'curse-bloodlust': {
+    id: 'curse-bloodlust',
+    name: 'Bloodlust',
+    icon: '🩸',
+    description: 'Take 1 damage at Hero Phase start. Removed when defeating a monster.',
+  },
+  'curse-cage': {
+    id: 'curse-cage',
+    name: 'Cage',
+    icon: '⛓️',
+    description: 'AC -2, cannot move. Hero on tile can Roll 10+ to remove.',
+  },
+  'curse-dragon-fear': {
+    id: 'curse-dragon-fear',
+    name: 'Dragon Fear',
+    icon: '🐉',
+    description: 'Take 1 damage when moving to new tile. Roll 10+ to remove.',
+  },
+  'curse-terrifying-roar': {
+    id: 'curse-terrifying-roar',
+    name: 'Terrifying Roar',
+    icon: '😱',
+    description: 'Attack -4 penalty. Roll 10+ to remove.',
+  },
+  'curse-time-leap': {
+    id: 'curse-time-leap',
+    name: 'Time Leap',
+    icon: '⏰',
+    description: 'Hero removed from play until next Hero Phase.',
+  },
+  'curse-wrath-of-enemy': {
+    id: 'curse-wrath-of-enemy',
+    name: 'Wrath of the Enemy',
+    icon: '👿',
+    description: 'Closest monster moves adjacent. Roll 10+ to remove.',
   },
 };
 
@@ -276,7 +334,8 @@ export function getModifiedDamage(statuses: StatusEffect[], baseDamage: number):
  */
 export function canMove(statuses: StatusEffect[]): boolean {
   return !hasStatusEffect(statuses, 'immobilized') && 
-         !hasStatusEffect(statuses, 'stunned');
+         !hasStatusEffect(statuses, 'stunned') &&
+         !hasStatusEffect(statuses, 'curse-cage');
 }
 
 /**
@@ -295,4 +354,61 @@ export function canAttack(statuses: StatusEffect[]): boolean {
  */
 export function isDazed(statuses: StatusEffect[]): boolean {
   return hasStatusEffect(statuses, 'dazed');
+}
+
+/**
+ * Check if a character has any curse active
+ * @param statuses Current status effects
+ * @returns True if character has any curse
+ */
+export function hasCurse(statuses: StatusEffect[]): boolean {
+  return statuses.some(s => s.type.startsWith('curse-'));
+}
+
+/**
+ * Get all active curses on a character
+ * @param statuses Current status effects
+ * @returns Array of curse status effects
+ */
+export function getCurses(statuses: StatusEffect[]): StatusEffect[] {
+  return statuses.filter(s => s.type.startsWith('curse-'));
+}
+
+/**
+ * Calculate AC modifier from status effects and curses
+ * @param statuses Current status effects
+ * @param baseAC Base armor class
+ * @returns Modified AC
+ */
+export function getModifiedAC(statuses: StatusEffect[], baseAC: number): number {
+  let modifier = 0;
+  
+  if (hasStatusEffect(statuses, 'curse-gap-in-armor')) {
+    modifier -= 4;
+  }
+  
+  if (hasStatusEffect(statuses, 'curse-cage')) {
+    modifier -= 2;
+  }
+  
+  return baseAC + modifier;
+}
+
+/**
+ * Update attack bonus to account for curses
+ * @param statuses Current status effects
+ * @param baseAttackBonus Base attack bonus
+ * @returns Modified attack bonus
+ */
+export function getModifiedAttackBonusWithCurses(
+  statuses: StatusEffect[],
+  baseAttackBonus: number
+): number {
+  let bonus = getModifiedAttackBonus(statuses, baseAttackBonus);
+  
+  if (hasStatusEffect(statuses, 'curse-terrifying-roar')) {
+    bonus -= 4;
+  }
+  
+  return bonus;
 }

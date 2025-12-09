@@ -1,5 +1,6 @@
 import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory } from './types';
 import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK, ENCOUNTER_CANCEL_COST } from './types';
+import type { StatusEffectType } from './statusEffects';
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -282,9 +283,9 @@ export function resolveEncounterEffect(
       return heroHpList;
       
     case 'curse':
-      // Curse effects are NOT YET IMPLEMENTED
-      // Would need to track curse duration on heroes
-      console.warn(`Curse effect '${encounter.name}' is not yet implemented`);
+      // Apply curse as a status effect to the active hero
+      // Import will be added at the top of the file
+      // For now, we return the heroHpList unchanged and let gameSlice handle the curse application
       return heroHpList;
       
     case 'trap':
@@ -328,6 +329,25 @@ export function resolveEncounterEffect(
     default:
       return heroHpList;
   }
+}
+
+/**
+ * Map encounter card ID to curse status effect type
+ * Returns null if the encounter is not a curse
+ */
+export function getCurseStatusType(encounterId: string): StatusEffectType | null {
+  const curseMap: Record<string, StatusEffectType> = {
+    'gap-in-armor': 'curse-gap-in-armor',
+    'bad-luck': 'curse-bad-luck',
+    'bloodlust': 'curse-bloodlust',
+    'cage': 'curse-cage',
+    'dragon-fear': 'curse-dragon-fear',
+    'terrifying-roar': 'curse-terrifying-roar',
+    'time-leap': 'curse-time-leap',
+    'wrath-of-enemy': 'curse-wrath-of-enemy',
+  };
+  
+  return curseMap[encounterId] ?? null;
 }
 
 /**
