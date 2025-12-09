@@ -303,12 +303,17 @@ export function getManhattanDistance(pos1: Position, pos2: Position): number {
 }
 
 /**
+ * Size of a standard tile in squares (tiles are 4x4 grids)
+ */
+const TILE_SIZE_IN_SQUARES = 4;
+
+/**
  * Check if a position is within a certain number of tiles (using Chebyshev distance).
  * According to the game rules, "within N tiles" uses the chessboard/Chebyshev metric.
  * 
  * Examples:
- * - "within 1 tile" means Chebyshev distance <= 4 (one 4x4 tile away)
- * - "within 2 tiles" means Chebyshev distance <= 8 (two 4x4 tiles away)
+ * - "within 1 tile" means Chebyshev distance <= TILE_SIZE_IN_SQUARES (one 4x4 tile away)
+ * - "within 2 tiles" means Chebyshev distance <= 2 * TILE_SIZE_IN_SQUARES (two 4x4 tiles away)
  * 
  * @param pos1 First position
  * @param pos2 Second position
@@ -317,8 +322,8 @@ export function getManhattanDistance(pos1: Position, pos2: Position): number {
  */
 export function isWithinTileRange(pos1: Position, pos2: Position, tileRange: number): boolean {
   const squareDistance = getChebyshevDistance(pos1, pos2);
-  // Each tile is 4x4 squares, so N tiles = N * 4 squares
-  return squareDistance <= tileRange * 4;
+  // Each tile is TILE_SIZE_IN_SQUARES x TILE_SIZE_IN_SQUARES squares
+  return squareDistance <= tileRange * TILE_SIZE_IN_SQUARES;
 }
 
 /**

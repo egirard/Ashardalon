@@ -73,11 +73,14 @@
 
     // Get current hero position and dungeon state
     const state = store.getState();
+    if (!state.game || !state.game.turnState) return false;
+    
     const currentHeroToken = state.game.heroTokens[state.game.turnState.currentHeroIndex];
     if (!currentHeroToken) return false;
 
     const heroPos = currentHeroToken.position;
     const dungeon = state.game.dungeon;
+    if (!dungeon) return false;
 
     // Convert monster position to global coordinates
     const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
