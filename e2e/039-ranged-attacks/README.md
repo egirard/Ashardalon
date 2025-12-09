@@ -43,7 +43,7 @@ This test demonstrates the ranged attack system by:
 *Character selection screen with Haskan available*
 
 ![Screenshot 001 - Haskan Selected](039-ranged-attacks.spec.ts-snapshots/001-haskan-selected-chromium-linux.png)
-*Haskan (Wizard) selected from bottom of screen with power cards chosen including ranged attacks*
+*Haskan (Wizard) selected from bottom of screen with ranged power cards chosen*
 
 ### Game Setup and Exploration
 
@@ -59,29 +59,53 @@ This test demonstrates the ranged attack system by:
 ### Monster Encounter
 
 ![Screenshot 005 - Monster Revealed](039-ranged-attacks.spec.ts-snapshots/005-monster-revealed-chromium-linux.png)
-*Monster card displayed showing the newly spawned enemy on explored tile*
+*Monster card displayed showing the cultist spawned on the explored tile*
 
-![Screenshot 006 - After Exploration](039-ranged-attacks.spec.ts-snapshots/006-after-exploration-chromium-linux.png)
-*Game state after exploration with monster on board*
+### Ranged Attack Execution
 
-![Screenshot 006 - Villain Phase](039-ranged-attacks.spec.ts-snapshots/006-villain-phase-chromium-linux.png)
-*Villain phase with monster present, setting up for ranged attack opportunity*
+![Screenshot 006 - Hero Phase Ready to Attack](039-ranged-attacks.spec.ts-snapshots/006-hero-phase-ready-to-attack-chromium-linux.png)
+*Back in hero phase with the cultist on board, ready for ranged attack*
+
+![Screenshot 007 - Ranged Attack Panel Available](039-ranged-attacks.spec.ts-snapshots/007-ranged-attack-panel-available-chromium-linux.png)
+*Power card attack panel showing available ranged attack cards*
+
+![Screenshot 008 - Ranged Card Selected](039-ranged-attacks.spec.ts-snapshots/008-ranged-card-selected-chromium-linux.png)
+*Arc Lightning ranged attack card selected, showing cultist as valid target*
+
+![Screenshot 009 - Ranged Attack Result](039-ranged-attacks.spec.ts-snapshots/009-ranged-attack-result-chromium-linux.png)
+*Combat result showing successful ranged attack hit on the cultist*
+
+![Screenshot 010 - After Ranged Attack](039-ranged-attacks.spec.ts-snapshots/010-after-ranged-attack-chromium-linux.png)
+*Game state after completing the ranged attack*
 
 ## Test Coverage
 
-This e2e test demonstrates:
+This e2e test demonstrates the complete ranged attack feature:
+
 1. **Character Selection**: Selecting Haskan (Wizard) from bottom of character screen
 2. **Power Card Selection**: Choosing ranged attack power cards (Ray of Frost, Arc Lightning)
 3. **Game Initialization**: Starting the game with Haskan on the board
-4. **Exploration**: Moving Haskan north and triggering exploration phase
-5. **Monster Spawn**: Revealing a new tile and spawning a monster
-6. **Ranged Attack Setup**: Having a monster on board that can be targeted by ranged attacks
+4. **Movement**: Moving Haskan to the north edge to prepare for exploration
+5. **Exploration**: Triggering exploration phase and drawing a new tile
+6. **Monster Spawn**: Revealing a cultist monster on the explored tile
+7. **Return to Hero Phase**: Completing the villain phase to return to hero turn
+8. **Ranged Attack Setup**: Power card attack panel appears with ranged cards available
+9. **Card Selection**: Selecting Arc Lightning (ranged attack with 1 tile range)
+10. **Target Selection**: Cultist appears as a valid target for the ranged attack
+11. **Attack Execution**: Successfully executing the ranged attack and hitting the cultist
+12. **Combat Resolution**: Viewing the combat result and completing the attack
 
-The test validates that the ranged attack system is properly integrated:
-- Haskan has access to ranged power cards (Ray of Frost with 2 tile range, Arc Lightning with 1 tile range)
-- Monsters can be spawned through exploration
-- The game state supports having monsters at various distances from the hero
-- The foundation is in place for ranged attacks to function when monsters are within range
+### Key Features Validated
+
+- ✅ Ranged power cards (Arc Lightning, Ray of Frost) are properly loaded
+- ✅ Monsters can be spawned through exploration at various distances
+- ✅ Power card attack panel correctly displays when monsters are in range
+- ✅ Ranged attack cards show range indicators
+- ✅ Target selection filters monsters based on card range
+- ✅ Combat system successfully executes ranged attacks
+- ✅ Attack results are properly displayed and handled
+
+The test proves that players can successfully use ranged attacks to defeat monsters from a distance, demonstrating the complete implementation of the ranged attack feature.
 
 ## Manual Verification Checklist
 

@@ -108,157 +108,162 @@ test.describe('039 - Ranged Attacks', () => {
       await expect(page.locator('[data-testid="monster-card"]')).not.toBeVisible();
     }
     
-    // STEP 4: Advance to villain phase
-    // Should still be in exploration phase, need to end it
-    if (await page.locator('[data-testid="turn-phase"]').textContent() === 'Exploration Phase') {
-      await page.locator('[data-testid="end-phase-button"]').click();
-    }
-    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
-    
-    // Check for and dismiss any overlays (encounter cards, combat results, etc.)
+    // STEP 4: Complete villain phase and return to hero phase
+    // Helper to dismiss any overlays
     const dismissOverlays = async () => {
-      const encounterCard = page.locator('[data-testid="encounter-card"]');
-      const combatResult = page.locator('[data-testid="combat-result"]');
-      const monsterMoveAction = page.locator('[data-testid="monster-move-action"]');
+      const overlays = [
+        { selector: '[data-testid="encounter-card"]', dismiss: '[data-testid="dismiss-encounter-card"]' },
+        { selector: '[data-testid="combat-result"]', dismiss: '[data-testid="dismiss-combat-result"]' },
+        { selector: '[data-testid="monster-move-action"]', dismiss: '[data-testid="dismiss-monster-action"]' },
+      ];
       
-      if (await encounterCard.isVisible()) {
-        await page.locator('[data-testid="dismiss-encounter-card"]').click();
-      }
-      if (await combatResult.isVisible()) {
-        await page.locator('[data-testid="dismiss-combat-result"]').click();
-      }
-      if (await monsterMoveAction.isVisible()) {
-        await page.locator('[data-testid="dismiss-monster-action"]').click();
+      for (const overlay of overlays) {
+        if (await page.locator(overlay.selector).isVisible()) {
+          await page.locator(overlay.dismiss).click();
+          await page.locator(overlay.selector).waitFor({ state: 'hidden' });
+        }
       }
     };
     
+    // Dismiss any immediate overlays
     await dismissOverlays();
     
-    // Check what phase we're in - might be Villain or already Hero
-    const phaseText = await page.locator('[data-testid="turn-phase"]').textContent();
+    // Advance through phases to get back to Hero phase
+    let currentPhase = await page.locator('[data-testid="turn-phase"]').textContent();
     
-    await screenshots.capture(page, 'after-exploration', {
-      programmaticCheck: async () => {
-        const state = await page.evaluate(() => {
-          return (window as any).__REDUX_STORE__.getState();
-        });
-        // Should have at least one monster spawned
-        expect(state.game.monsters.length).toBeGreaterThan(0);
-      }
-    });
+    // If in Exploration, end it
+    if (currentPhase === 'Exploration Phase') {
+      await page.locator('[data-testid="end-phase-button"]').click();
+      await dismissOverlays();
+      currentPhase = await page.locator('[data-testid="turn-phase"]').textContent();
+    }
     
-    // If still in Villain phase, advance to Hero phase
-    if (phaseText === 'Villain Phase') {
-      // Keep dismissing overlays until we can end the phase
-      let attempts = 0;
-      while (attempts < 10) {
+    // If in Villain phase, complete it
+    if (currentPhase === 'Villain Phase') {
+      await screenshots.capture(page, 'villain-phase-with-monster', {
+        programmaticCheck: async () => {
+          const state = await page.evaluate(() => {
+            return (window as any).__REDUX_STORE__.getState();
+          });
+          expect(state.game.monsters.length).toBeGreaterThan(0);
+          await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
+        }
+      });
+      
+      // Dismiss all overlays and end villain phase
+      for (let i = 0; i < 20; i++) {
         await dismissOverlays();
         const endButton = page.locator('[data-testid="end-phase-button"]');
-        if (await endButton.isVisible() && await endButton.isEnabled()) {
-          try {
+        try {
+          if (await endButton.isVisible({ timeout: 1000 })) {
             await endButton.click({ timeout: 2000 });
             break;
-          } catch (e) {
-            // Button might be obscured, try again
           }
+        } catch (e) {
+          // Continue trying
         }
-        attempts++;
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(200);
       }
     }
     
     // Wait for Hero phase
-    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase', { timeout: 10000 });
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase', { timeout: 15000 });
+    await dismissOverlays();
     
-    // STEP 5: New hero phase - now we can use ranged attacks
-    // Check if there are monsters in range (the monster should be on the explored tile)
+    // STEP 5: Execute ranged attack
     const state = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState();
     });
     
-    // If no monsters or not in range, we need to verify ranged attacks would work if they were
-    if (state.game.monsters.length > 0) {
-      // Check if power card attack panel is visible
-      const panelVisible = await page.locator('[data-testid="power-card-attack-panel"]').isVisible();
-      
-      if (panelVisible) {
-        await screenshots.capture(page, 'ranged-attack-panel-available', {
-          programmaticCheck: async () => {
-            await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
-            // At least one attack card should be available
-            const attackCards = await page.locator('[data-testid^="attack-card-"]').count();
-            expect(attackCards).toBeGreaterThan(0);
-          }
+    await screenshots.capture(page, 'hero-phase-ready-to-attack', {
+      programmaticCheck: async () => {
+        const currentState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
         });
-        
-        // Try to select a ranged attack card (Ray of Frost or Arc Lightning)
-        const rayOfFrostCard = page.locator('[data-testid="attack-card-44"]');
-        const arcLightningCard = page.locator('[data-testid="attack-card-42"]');
-        
-        const rayVisible = await rayOfFrostCard.isVisible();
-        const arcVisible = await arcLightningCard.isVisible();
-        
-        if (rayVisible || arcVisible) {
-          const cardToUse = rayVisible ? rayOfFrostCard : arcLightningCard;
-          const cardName = rayVisible ? 'Ray of Frost' : 'Arc Lightning';
-          
-          await cardToUse.click();
-          
-          await screenshots.capture(page, 'ranged-card-selected', {
-            programmaticCheck: async () => {
-              await expect(cardToUse).toHaveClass(/selected/);
-              await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
-            }
-          });
-          
-          // Check if there are targetable monsters
-          const targetButtons = await page.locator('[data-testid^="attack-target-"]').count();
-          
-          if (targetButtons > 0) {
-            // Seed random for deterministic combat
-            await page.evaluate(() => {
-              (window as any).__originalRandom = Math.random;
-              Math.random = () => 0.85; // Roll 18
-            });
-            
-            // Click first available target
-            await page.locator('[data-testid^="attack-target-"]').first().click();
-            
-            // Restore random
-            await page.evaluate(() => {
-              if ((window as any).__originalRandom) {
-                Math.random = (window as any).__originalRandom;
-              }
-            });
-            
-            // Wait for combat result
-            await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
-            
-            await screenshots.capture(page, 'ranged-attack-result', {
-              programmaticCheck: async () => {
-                await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-                const resultState = await page.evaluate(() => {
-                  return (window as any).__REDUX_STORE__.getState();
-                });
-                expect(resultState.game.attackResult).not.toBeNull();
-              }
-            });
-            
-            // Dismiss result
-            await page.locator('[data-testid="dismiss-combat-result"]').click();
-            
-            await screenshots.capture(page, 'after-ranged-attack', {
-              programmaticCheck: async () => {
-                const finalState = await page.evaluate(() => {
-                  return (window as any).__REDUX_STORE__.getState();
-                });
-                expect(finalState.game.attackResult).toBeNull();
-              }
-            });
-          }
-        }
+        expect(currentState.game.monsters.length).toBeGreaterThan(0);
+        await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
       }
+    });
+    
+    // Wait for and verify power card attack panel is visible
+    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
+    
+    await screenshots.capture(page, 'ranged-attack-panel-available', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        const attackCards = await page.locator('[data-testid^="attack-card-"]').count();
+        expect(attackCards).toBeGreaterThan(0);
+      }
+    });
+    
+    // Select Ray of Frost or Arc Lightning for ranged attack
+    const rayOfFrostCard = page.locator('[data-testid="attack-card-44"]');
+    const arcLightningCard = page.locator('[data-testid="attack-card-42"]');
+    
+    let cardToUse = rayOfFrostCard;
+    let cardName = 'Ray of Frost';
+    
+    if (await arcLightningCard.isVisible()) {
+      cardToUse = arcLightningCard;
+      cardName = 'Arc Lightning';
     }
+    
+    await cardToUse.click();
+    
+    await screenshots.capture(page, 'ranged-card-selected', {
+      programmaticCheck: async () => {
+        await expect(cardToUse).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
+      }
+    });
+    
+    // Verify we have targetable monsters and attack the cultist
+    const targetButtons = await page.locator('[data-testid^="attack-target-"]').count();
+    expect(targetButtons).toBeGreaterThan(0);
+    
+    // Seed random for deterministic combat result
+    await page.evaluate(() => {
+      (window as any).__originalRandom = Math.random;
+      Math.random = () => 0.85; // Will roll 18
+    });
+    
+    // Click the first available target (cultist)
+    await page.locator('[data-testid^="attack-target-"]').first().click();
+    
+    // Restore random
+    await page.evaluate(() => {
+      if ((window as any).__originalRandom) {
+        Math.random = (window as any).__originalRandom;
+      }
+    });
+    
+    // Wait for combat result
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
+    
+    await screenshots.capture(page, 'ranged-attack-result', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+        const resultState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(resultState.game.attackResult).not.toBeNull();
+        expect(resultState.game.attackResult.isHit).toBe(true);
+      }
+    });
+    
+    // Dismiss combat result
+    await page.locator('[data-testid="dismiss-combat-result"]').click();
+    await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
+    
+    await screenshots.capture(page, 'after-ranged-attack', {
+      programmaticCheck: async () => {
+        const finalState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(finalState.game.attackResult).toBeNull();
+        // Monster should be defeated if it had low HP
+      }
+    });
   });
   
   test('Verifies Haskan has ranged attack power cards', async ({ page }) => {
