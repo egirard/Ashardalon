@@ -87,6 +87,8 @@
     getMonsterAC,
     applyItemBonusesToAttack,
     calculateTotalSpeed,
+    getMonstersWithinRange,
+    getMonstersOnSameTile,
   } from "../store/combat";
   import { findTileAtPosition } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
@@ -803,6 +805,56 @@
     return getAdjacentMonsters(currentToken.position, monsters, tileId, dungeon);
   }
 
+  // Get all monsters that can be targeted by available power cards
+  // This includes adjacent monsters and monsters within range of ranged power cards
+  function getTargetableMonstersForCurrentHero(): MonsterState[] {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return [];
+
+    const currentToken = heroTokens.find((t) => t.heroId === currentHeroId);
+    if (!currentToken) return [];
+
+    const currentHeroPowerCards = heroPowerCards[currentHeroId];
+    if (!currentHeroPowerCards) return [];
+
+    // Get the maximum range from all available (unflipped) power cards
+    let maxRange = 0;
+    let hasOnTileAttack = false;
+    
+    for (const cardState of currentHeroPowerCards.cardStates) {
+      if (cardState.isFlipped) continue; // Skip used cards
+      
+      const card = getPowerCardById(cardState.cardId);
+      if (!card || card.attackBonus === undefined) continue;
+      
+      const parsed = parseActionCard(card);
+      if (parsed.attack) {
+        if (parsed.attack.targetType === 'tile') {
+          hasOnTileAttack = true;
+        } else if (parsed.attack.targetType === 'within-tiles') {
+          maxRange = Math.max(maxRange, parsed.attack.range);
+        } else {
+          // Adjacent/melee attacks (range 0)
+          maxRange = Math.max(maxRange, 0);
+        }
+      }
+    }
+
+    // If there's an "on your tile" attack, include all monsters on the same tile
+    if (hasOnTileAttack && maxRange === 0) {
+      return getMonstersOnSameTile(currentToken.position, monsters, dungeon);
+    }
+
+    // If maxRange is 0, only return adjacent monsters (melee only)
+    if (maxRange === 0) {
+      const tileId = getCurrentHeroTileId();
+      return getAdjacentMonsters(currentToken.position, monsters, tileId, dungeon);
+    }
+
+    // Return monsters within the maximum range
+    return getMonstersWithinRange(currentToken.position, monsters, maxRange, dungeon);
+  }
+
   // Get the full hero object from AVAILABLE_HEROES by ID
   function getFullHeroInfo(heroId: string): Hero | undefined {
     return AVAILABLE_HEROES.find((h) => h.id === heroId);
@@ -1466,11 +1518,11 @@
           {@const currentHeroPowerCards = currentHeroId
             ? heroPowerCards[currentHeroId]
             : undefined}
-          {@const adjacentMonsters = getAdjacentMonstersForCurrentHero()}
-          {#if currentHeroPowerCards && adjacentMonsters.length > 0}
+          {@const targetableMonsters = getTargetableMonstersForCurrentHero()}
+          {#if currentHeroPowerCards && targetableMonsters.length > 0}
             <PowerCardAttackPanel
               heroPowerCards={currentHeroPowerCards}
-              {adjacentMonsters}
+              adjacentMonsters={targetableMonsters}
               onAttackWithCard={handleAttackWithCard}
               {multiAttackState}
               onStartMultiAttack={handleStartMultiAttack}
