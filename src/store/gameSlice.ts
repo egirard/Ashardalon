@@ -1297,6 +1297,137 @@ export const gameSlice = createSlice({
             }
           }
           
+          // Thief in the Dark: Active hero discards a treasure
+          else if (encounterId === 'thief-in-dark') {
+            const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+            if (activeHeroId) {
+              const inventory = state.heroInventories[activeHeroId];
+              if (inventory && inventory.items.length > 0) {
+                // Remove the first treasure item
+                const removedItem = inventory.items[0];
+                state.heroInventories[activeHeroId] = {
+                  ...inventory,
+                  items: inventory.items.slice(1),
+                };
+                state.encounterEffectMessage = `${activeHeroId} lost ${removedItem.name}`;
+              } else {
+                state.encounterEffectMessage = 'No treasure to lose';
+              }
+            }
+          }
+          
+          // Wandering Monster: Draw a monster and place on closest unexplored edge
+          else if (encounterId === 'wandering-monster') {
+            const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+            if (activeHeroToken) {
+              // Draw a monster
+              const { monsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+              state.monsterDeck = updatedMonsterDeck;
+              
+              if (monsterId) {
+                const monsterDef = getMonsterById(monsterId);
+                if (monsterDef) {
+                  // Find closest unexplored edge to active hero
+                  const spawnPosition = getMonsterSpawnPosition(
+                    activeHeroToken.position,
+                    state.dungeon
+                  );
+                  
+                  if (spawnPosition) {
+                    // Create monster instance
+                    const monster = createMonsterInstance(
+                      monsterId,
+                      activeHeroToken.heroId,
+                      spawnPosition.position,
+                      spawnPosition.tileId,
+                      state.monsterInstanceCounter
+                    );
+                    
+                    state.monsters.push(monster);
+                    state.monsterInstanceCounter++;
+                    state.recentlySpawnedMonsterId = monster.instanceId;
+                    state.encounterEffectMessage = `${monsterDef.name} spawned`;
+                  }
+                }
+              }
+            }
+          }
+          
+          // Quick Advance: Move a monster closer to active hero
+          else if (encounterId === 'quick-advance') {
+            const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+            if (activeHeroToken && state.monsters.length > 0) {
+              // Find a monster not on active hero's tile
+              const monstersNotOnTile = state.monsters.filter(m => {
+                return m.tileId !== activeHeroToken.tileId || 
+                       m.position.x !== activeHeroToken.position.x || 
+                       m.position.y !== activeHeroToken.position.y;
+              });
+              
+              if (monstersNotOnTile.length > 0) {
+                // Move the first such monster
+                const monsterToMove = monstersNotOnTile[0];
+                const monsterDef = getMonsterById(monsterToMove.monsterId);
+                
+                // Use monster AI to move toward hero
+                const result = executeMonsterTurn(
+                  monsterToMove,
+                  state.heroTokens,
+                  state.heroHp.reduce((acc, hp) => ({ ...acc, [hp.heroId]: hp.currentHp }), {}),
+                  state.heroHp.reduce((acc, hp) => ({ ...acc, [hp.heroId]: hp.ac }), {}),
+                  state.monsters,
+                  state.dungeon,
+                  Math.random
+                );
+                
+                if (result.type === 'move') {
+                  const newTileId = findTileForGlobalPosition(result.destination, state.dungeon);
+                  if (newTileId) {
+                    const localPos = globalToLocalPosition(result.destination, newTileId, state.dungeon);
+                    if (localPos) {
+                      monsterToMove.position = localPos;
+                      monsterToMove.tileId = newTileId;
+                      state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} moved closer`;
+                    }
+                  }
+                }
+              } else {
+                state.encounterEffectMessage = 'No monster to move';
+              }
+            }
+          }
+          
+          // Ancient Spirit's Blessing: Flip up a used Daily Power
+          else if (encounterId === 'ancient-spirits-blessing') {
+            // Find first hero with a used daily power
+            let powerRestored = false;
+            for (const heroId in state.heroInventories) {
+              const inventory = state.heroInventories[heroId];
+              if (inventory.dailyPowers) {
+                for (let i = 0; i < inventory.dailyPowers.length; i++) {
+                  if (inventory.dailyPowers[i].used) {
+                    // Flip the power back up
+                    state.heroInventories[heroId] = {
+                      ...inventory,
+                      dailyPowers: [
+                        ...inventory.dailyPowers.slice(0, i),
+                        { ...inventory.dailyPowers[i], used: false },
+                        ...inventory.dailyPowers.slice(i + 1),
+                      ],
+                    };
+                    state.encounterEffectMessage = `${inventory.dailyPowers[i].name} restored`;
+                    powerRestored = true;
+                    break;
+                  }
+                }
+                if (powerRestored) break;
+              }
+            }
+            if (!powerRestored) {
+              state.encounterEffectMessage = 'No used daily powers to restore';
+            }
+          }
+          
           // For other special cards, just log a warning for now
           else {
             console.warn(`Special encounter '${state.drawnEncounter.name}' (${encounterId}) effect not yet implemented`);
