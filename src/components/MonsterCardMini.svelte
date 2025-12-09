@@ -15,7 +15,7 @@
   
   // Calculate HP percentage for health bar
   let hpPercentage = $derived.by(() => {
-    if (!monsterDef) return 0;
+    if (!monsterDef || monsterDef.hp === 0) return 0;
     return Math.max(0, Math.min(100, (monster.currentHp / monsterDef.hp) * 100));
   });
   
@@ -43,8 +43,8 @@
       <div class="mini-info">
         <span class="mini-name" data-testid="monster-mini-name">{monsterDef.name}</span>
         <div class="mini-stats">
-          <span class="mini-stat" title="Armor Class">🛡️ {monsterDef.ac}</span>
-          <span class="mini-stat" title="Experience Points">⭐ {monsterDef.xp}</span>
+          <span class="mini-stat" title="Armor Class" aria-label="Armor Class {monsterDef.ac}">🛡️ {monsterDef.ac}</span>
+          <span class="mini-stat" title="Experience Points" aria-label="Experience Points {monsterDef.xp}">⭐ {monsterDef.xp}</span>
         </div>
       </div>
     </div>

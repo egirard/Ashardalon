@@ -584,8 +584,8 @@
     return monsters.filter((m) => m.controllerId === heroId);
   }
 
-  // Get the currently activating monster during villain phase
-  function getActivatingMonsterId(): string | null {
+  // Get the currently activating monster during villain phase (memoized)
+  let activatingMonsterId = $derived.by(() => {
     if (turnState.currentPhase !== 'villain-phase') return null;
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return null;
@@ -594,7 +594,7 @@
     if (villainPhaseMonsterIndex >= controlledMonsters.length) return null;
     
     return controlledMonsters[villainPhaseMonsterIndex]?.instanceId ?? null;
-  }
+  });
 
   // Check if all controlled monsters have been activated
   function allMonstersActivated(): boolean {
@@ -1137,7 +1137,7 @@
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           controlledMonsters={getMonstersForHero(hero.id)}
-          activatingMonsterId={getActivatingMonsterId()}
+          activatingMonsterId={activatingMonsterId}
         />
       {/if}
     {/each}
@@ -1166,7 +1166,7 @@
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             controlledMonsters={getMonstersForHero(hero.id)}
-            activatingMonsterId={getActivatingMonsterId()}
+            activatingMonsterId={activatingMonsterId}
           />
         {/if}
       {/each}
@@ -1504,7 +1504,7 @@
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             controlledMonsters={getMonstersForHero(hero.id)}
-            activatingMonsterId={getActivatingMonsterId()}
+            activatingMonsterId={activatingMonsterId}
           />
         {/if}
       {/each}
@@ -1532,7 +1532,7 @@
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           controlledMonsters={getMonstersForHero(hero.id)}
-          activatingMonsterId={getActivatingMonsterId()}
+          activatingMonsterId={activatingMonsterId}
         />
       {/if}
     {/each}
