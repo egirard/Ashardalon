@@ -22,6 +22,7 @@
     shouldAutoEndHeroTurn,
     dismissLevelUpNotification,
     dismissHealingSurgeNotification,
+    dismissEncounterEffectMessage,
     useVoluntaryActionSurge,
     skipActionSurge,
     startMultiAttack,
@@ -76,6 +77,7 @@
   import DefeatAnimation from "./DefeatAnimation.svelte";
   import LevelUpAnimation from "./LevelUpAnimation.svelte";
   import HealingSurgeAnimation from "./HealingSurgeAnimation.svelte";
+  import EncounterEffectNotification from "./EncounterEffectNotification.svelte";
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import PlayerCard from "./PlayerCard.svelte";
@@ -165,6 +167,7 @@
   let levelUpOldStats: HeroHpState | null = $state(null);
   let healingSurgeUsedHeroId: string | null = $state(null);
   let healingSurgeHpRestored: number | null = $state(null);
+  let encounterEffectMessage: string | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
@@ -223,6 +226,7 @@
       levelUpOldStats = state.game.levelUpOldStats;
       healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
+      encounterEffectMessage = state.game.encounterEffectMessage;
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
@@ -267,6 +271,7 @@
     levelUpOldStats = state.game.levelUpOldStats;
     healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
+    encounterEffectMessage = state.game.encounterEffectMessage;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
@@ -934,6 +939,11 @@
     store.dispatch(dismissHealingSurgeNotification());
   }
 
+  // Handle dismissing the encounter effect notification
+  function handleDismissEncounterEffectMessage() {
+    store.dispatch(dismissEncounterEffectMessage());
+  }
+
   // Handle dismissing the encounter card and applying its effect
   function handleDismissEncounterCard() {
     store.dispatch(dismissEncounterCard());
@@ -1587,6 +1597,14 @@
       heroId={healingSurgeUsedHeroId}
       hpRestored={healingSurgeHpRestored}
       onDismiss={handleDismissHealingSurgeNotification}
+    />
+  {/if}
+
+  <!-- Encounter Effect Notification (shown after special encounter card effects) -->
+  {#if encounterEffectMessage}
+    <EncounterEffectNotification
+      message={encounterEffectMessage}
+      onDismiss={handleDismissEncounterEffectMessage}
     />
   {/if}
 

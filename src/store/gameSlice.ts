@@ -248,6 +248,8 @@ export interface GameState {
   incrementalMovement: IncrementalMovementState | null;
   /** Undo state: snapshot of reversible state before last action (for undo functionality) */
   undoSnapshot: UndoSnapshot | null;
+  /** Encounter effect message to display to player (null if no message) */
+  encounterEffectMessage: string | null;
 }
 
 /**
@@ -416,6 +418,7 @@ const initialState: GameState = {
   treasureDrawnThisTurn: false,
   incrementalMovement: null,
   undoSnapshot: null,
+  encounterEffectMessage: null,
 };
 
 /**
@@ -1219,7 +1222,9 @@ export const gameSlice = createSlice({
           
           // Lost: Move bottom tile to top
           if (encounterId === 'lost') {
+            const deckSize = state.dungeon.tileDeck.length;
             state.dungeon.tileDeck = moveBottomTileToTop(state.dungeon.tileDeck);
+            state.encounterEffectMessage = `Bottom tile moved to top of deck (${deckSize} tiles remaining)`;
           }
           
           // Monster deck manipulation cards
@@ -1232,6 +1237,12 @@ export const gameSlice = createSlice({
                 5
               );
               state.monsterDeck = result.deck;
+              
+              // Build message about what happened
+              const kept = 5 - result.discardedMonsters.length;
+              const discarded = result.discardedMonsters.length;
+              const categoryName = category.charAt(0).toUpperCase() + category.slice(1) + (kept !== 1 ? 's' : '');
+              state.encounterEffectMessage = `Drew 5 monster cards. ${kept} ${categoryName} placed on top, ${discarded} discarded.`;
             }
           }
           
@@ -1243,12 +1254,21 @@ export const gameSlice = createSlice({
               return monsterDef && m.currentHp < monsterDef.maxHp;
             });
             if (damagedMonster) {
+              const monsterDef = getMonsterById(damagedMonster.monsterId);
+              const oldHp = damagedMonster.currentHp;
               damagedMonster.currentHp = healMonster(damagedMonster, 1);
+              state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} healed: ${oldHp} → ${damagedMonster.currentHp} HP`;
+            } else {
+              state.encounterEffectMessage = 'No damaged monsters to heal';
             }
           }
           
           // Deadly Poison: Each hero that is currently Poisoned takes 1 damage
           else if (encounterId === 'deadly-poison') {
+            const poisonedHeroes = state.heroHp.filter(hp => 
+              hp.statuses?.some(s => s.type === 'poisoned')
+            );
+            
             state.heroHp = state.heroHp.map(hp => {
               // Check if hero is poisoned
               const isPoisoned = hp.statuses?.some(s => s.type === 'poisoned');
@@ -1257,6 +1277,15 @@ export const gameSlice = createSlice({
               }
               return hp;
             });
+            
+            if (poisonedHeroes.length > 0) {
+              const heroNames = poisonedHeroes.map(h => 
+                state.heroTokens.find(t => t.heroId === h.heroId)?.heroId || 'Hero'
+              ).join(', ');
+              state.encounterEffectMessage = `${poisonedHeroes.length} poisoned ${poisonedHeroes.length === 1 ? 'hero' : 'heroes'} took 1 damage`;
+            } else {
+              state.encounterEffectMessage = 'No poisoned heroes';
+            }
             
             // Check for party defeat
             const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
@@ -1269,6 +1298,7 @@ export const gameSlice = createSlice({
           // For other special cards, just log a warning for now
           else {
             console.warn(`Special encounter '${state.drawnEncounter.name}' (${encounterId}) effect not yet implemented`);
+            state.encounterEffectMessage = 'Effect not yet implemented';
           }
           
           // Discard the encounter card
@@ -1799,6 +1829,12 @@ export const gameSlice = createSlice({
       state.healingSurgeHpRestored = null;
     },
     /**
+     * Dismiss the encounter effect message notification
+     */
+    dismissEncounterEffectMessage: (state) => {
+      state.encounterEffectMessage = null;
+    },
+    /**
      * Use an action surge voluntarily at the start of a hero's turn.
      * This heals the hero by their surge value (capped at maxHp).
      */
@@ -2179,6 +2215,7 @@ export const {
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
   dismissHealingSurgeNotification,
+  dismissEncounterEffectMessage,
   setHeroHp,
   dismissLevelUpNotification,
   setPartyResources,
