@@ -823,8 +823,8 @@
       }
     }
 
-    // If there's an "on your tile" attack, include all monsters on the same tile
-    if (hasOnTileAttack && maxRange === 0) {
+    // If there's an "on your tile" attack available, include all monsters on the same tile
+    if (hasOnTileAttack) {
       return getMonstersOnSameTile(currentToken.position, monsters, dungeon);
     }
 
