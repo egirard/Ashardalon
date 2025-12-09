@@ -1347,8 +1347,14 @@ export const gameSlice = createSlice({
                     state.monsterInstanceCounter++;
                     state.recentlySpawnedMonsterId = monster.instanceId;
                     state.encounterEffectMessage = `${monsterDef.name} spawned`;
+                  } else {
+                    state.encounterEffectMessage = 'No unexplored edge to spawn monster';
                   }
+                } else {
+                  state.encounterEffectMessage = 'Monster not found in database';
                 }
+              } else {
+                state.encounterEffectMessage = 'No monsters available in deck';
               }
             }
           }
