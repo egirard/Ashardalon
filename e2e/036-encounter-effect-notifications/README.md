@@ -48,14 +48,45 @@ This test verifies that special encounter cards display user-visible notificatio
 
 ## Screenshots
 
-1. `000-character-select-screen.png` - Initial character selection
-2. `001-game-state-ready-for-encounter.png` - Game board ready for encounter
-3. `002-hall-of-orcs-encounter-card-displayed.png` - Hall of Orcs encounter card
-4. `003-encounter-effect-notification-displayed.png` - **Deck manipulation notification**
-5. `004-notification-dismissed.png` - Notification dismissed, game continues
-6. `005-revel-in-destruction-encounter-card.png` - Revel in Destruction encounter
-7. `006-revel-in-destruction-effect-notification.png` - **Monster healing notification**
-8. `007-monster-healed-notification-dismissed.png` - Final state verification
+### 1. Character Select Screen
+![000-character-select-screen](036-encounter-effect-notifications.spec.ts-snapshots/000-character-select-screen-chromium-linux.png)
+
+Initial character selection screen showing Quinn available for selection.
+
+### 2. Game State Ready for Encounter
+![001-game-state-ready-for-encounter](036-encounter-effect-notifications.spec.ts-snapshots/001-game-state-ready-for-encounter-chromium-linux.png)
+
+Game board with Quinn positioned and monster deck configured for testing.
+
+### 3. Hall of Orcs Encounter Card
+![002-hall-of-orcs-encounter-card-displayed](036-encounter-effect-notifications.spec.ts-snapshots/002-hall-of-orcs-encounter-card-displayed-chromium-linux.png)
+
+Hall of Orcs encounter card displayed with description and Accept/Cancel buttons.
+
+### 4. Deck Manipulation Notification ⭐
+![003-encounter-effect-notification-displayed](036-encounter-effect-notifications.spec.ts-snapshots/003-encounter-effect-notification-displayed-chromium-linux.png)
+
+**Key Screenshot**: Encounter effect notification showing "Drew 5 monster cards. 0 Orcs placed on top, 5 discarded." This demonstrates the user-visible feedback for deck manipulation effects.
+
+### 5. Notification Dismissed
+![004-notification-dismissed](036-encounter-effect-notifications.spec.ts-snapshots/004-notification-dismissed-chromium-linux.png)
+
+Game continues after dismissing the notification.
+
+### 6. Revel in Destruction Encounter Card
+![005-revel-in-destruction-encounter-card](036-encounter-effect-notifications.spec.ts-snapshots/005-revel-in-destruction-encounter-card-chromium-linux.png)
+
+Revel in Destruction encounter card displayed, about to heal a damaged monster.
+
+### 7. Monster Healing Notification ⭐
+![006-revel-in-destruction-effect-notification](036-encounter-effect-notifications.spec.ts-snapshots/006-revel-in-destruction-effect-notification-chromium-linux.png)
+
+**Key Screenshot**: Encounter effect notification showing "Cultist healed: 1 → 2 HP". This demonstrates the user-visible feedback for monster healing effects.
+
+### 8. Final State Verification
+![007-monster-healed-notification-dismissed](036-encounter-effect-notifications.spec.ts-snapshots/007-monster-healed-notification-dismissed-chromium-linux.png)
+
+Game state after monster healing, verifying the effect was applied correctly.
 
 ## Related Encounter Cards
 
