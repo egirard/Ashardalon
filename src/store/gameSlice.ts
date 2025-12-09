@@ -82,7 +82,9 @@ import {
   getMonsterCategoryForEncounter,
   isMonsterDeckManipulationCard,
   isTileDeckManipulationCard,
+  getCurseStatusType,
 } from "./encounters";
+import { applyStatusEffect, processStatusEffectsStartOfTurn } from "./statusEffects";
 import {
   createTrapInstance,
   createHazardInstance,
@@ -1318,6 +1320,32 @@ export const gameSlice = createSlice({
               }
             }
           }
+        } else if (state.drawnEncounter.effect.type === 'curse') {
+          // Apply curse as a status effect to the active hero
+          const activeHeroId = activeHeroToken?.heroId;
+          
+          if (activeHeroId) {
+            const curseType = getCurseStatusType(state.drawnEncounter.id);
+            if (curseType) {
+              const heroHpIndex = state.heroHp.findIndex(h => h.heroId === activeHeroId);
+              if (heroHpIndex !== -1) {
+                const heroHp = state.heroHp[heroHpIndex];
+                const updatedStatuses = applyStatusEffect(
+                  heroHp.statuses ?? [],
+                  curseType,
+                  state.drawnEncounter.id,
+                  state.turnState.turnNumber
+                );
+                state.heroHp[heroHpIndex] = {
+                  ...heroHp,
+                  statuses: updatedStatuses,
+                };
+              }
+            }
+          }
+          
+          // Discard curse encounter card
+          state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
         } else {
           // Get the current hero ID for active-hero effects
           const activeHeroId = activeHeroToken?.heroId;
