@@ -6,6 +6,7 @@
   import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
   import MonsterCardMini from './MonsterCardMini.svelte';
+  import { HeartIcon, SkullIcon, SwordIcon, ShieldIcon, LightningIcon, DiceIcon, TargetIcon, StarIcon, XIcon, WarningIcon, BandageIcon } from './icons';
 
   interface Props {
     hero: Hero;
@@ -129,23 +130,30 @@
     return items;
   });
 
-  // Get treasure item effect icon based on type
-  function getTreasureIcon(effectType: string): string {
+  // Get treasure item effect icon component based on type
+  function getTreasureIconComponent(effectType: string) {
     switch (effectType) {
-      case 'attack-bonus': return '⚔️';
-      case 'damage-bonus': return '💥';
-      case 'ac-bonus': return '🛡️';
-      case 'speed-bonus': return '🏃';
-      case 'healing': return '❤️';
-      case 'reroll': return '🎲';
-      case 'flip-power': return '🔄';
-      case 'attack-action': return '🎯';
-      case 'monster-control': return '👹';
-      case 'movement': return '✈️';
-      case 'level-up': return '⭐';
-      case 'trap-disable': return '🔓';
-      case 'condition-removal': return '💊';
-      default: return '📦';
+      case 'attack-bonus':
+      case 'damage-bonus':
+        return SwordIcon;
+      case 'ac-bonus':
+        return ShieldIcon;
+      case 'healing':
+        return HeartIcon;
+      case 'reroll':
+        return DiceIcon;
+      case 'attack-action':
+        return TargetIcon;
+      case 'level-up':
+        return StarIcon;
+      case 'speed-bonus':
+      case 'flip-power':
+      case 'monster-control':
+      case 'movement':
+      case 'trap-disable':
+      case 'condition-removal':
+      default:
+        return StarIcon; // Default icon for less common effects
     }
   }
 
@@ -178,7 +186,9 @@
   <!-- KO Overlay (shown when hero is at 0 HP) -->
   {#if isKnockedOut}
     <div class="ko-overlay" data-testid="ko-overlay">
-      <span class="ko-text">💀 DOWNED</span>
+      <span class="ko-text">
+        <SkullIcon size={20} color="#fff" ariaLabel="Downed" /> DOWNED
+      </span>
     </div>
   {/if}
 
@@ -194,7 +204,9 @@
       <span class="hero-name" data-testid="player-card-name">{isActive ? `${hero.name}'s Turn` : hero.name}</span>
       <span class="hero-class">{hero.heroClass}</span>
       {#if heroHpState.level === 2}
-        <span class="hero-level" data-testid="hero-level">Level 2 ⭐</span>
+        <span class="hero-level" data-testid="hero-level">
+          Level 2 <StarIcon size={14} ariaLabel="Level 2" />
+        </span>
       {/if}
     </div>
     {#if isActive && turnPhase}
@@ -234,7 +246,11 @@
         ></div>
       </div>
       <span class="hp-text">
-        <span class="hp-icon">{isKnockedOut ? '💀' : '❤️'}</span>
+        {#if isKnockedOut}
+          <SkullIcon size={16} ariaLabel="Knocked out" />
+        {:else}
+          <HeartIcon size={16} ariaLabel="Health" />
+        {/if}
         HP: {heroHpState.currentHp}/{heroHpState.maxHp}
       </span>
     </div>
@@ -242,17 +258,17 @@
     <!-- Core Stats -->
     <div class="core-stats">
       <div class="stat" data-testid="player-card-ac">
-        <span class="stat-icon">🛡️</span>
+        <ShieldIcon size={16} ariaLabel="Armor Class" />
         <span class="stat-label">AC</span>
         <span class="stat-value">{heroHpState.ac}</span>
       </div>
       <div class="stat" data-testid="player-card-surge">
-        <span class="stat-icon">⚡</span>
+        <LightningIcon size={16} ariaLabel="Surge" />
         <span class="stat-label">Surge</span>
         <span class="stat-value">{heroHpState.surgeValue}</span>
       </div>
       <div class="stat" data-testid="player-card-speed">
-        <span class="stat-icon">🏃</span>
+        <LightningIcon size={16} ariaLabel="Speed" />
         <span class="stat-label">Spd</span>
         <span class="stat-value">{hero.speed}</span>
       </div>
@@ -260,7 +276,7 @@
 
     <!-- Attack Info -->
     <div class="attack-info" data-testid="player-card-attack">
-      <span class="attack-icon">⚔️</span>
+      <SwordIcon size={16} ariaLabel="Attack" />
       <span class="attack-name">{hero.attack.name}</span>
       <span class="attack-bonus">+{heroHpState.attackBonus}</span>
       <span class="attack-damage">{hero.attack.damage} dmg</span>
@@ -282,7 +298,9 @@
           </span>
           <span class="power-name">{card.name}</span>
           {#if isFlipped}
-            <span class="flipped-indicator">✗</span>
+            <span class="flipped-indicator">
+              <XIcon size={14} ariaLabel="Used" />
+            </span>
           {/if}
         </div>
       {/each}
@@ -300,10 +318,14 @@
             title="{card.name}: {card.effect.description} (Click to use)"
             onclick={() => handleUseTreasureItem(card, isFlipped)}
           >
-            <span class="treasure-icon">{getTreasureIcon(card.effect.type)}</span>
+            <span class="treasure-icon">
+              <svelte:component this={getTreasureIconComponent(card.effect.type)} size={14} ariaLabel={card.effect.type} />
+            </span>
             <span class="treasure-name">{card.name}</span>
             {#if isFlipped}
-              <span class="flipped-indicator">✗</span>
+              <span class="flipped-indicator">
+                <XIcon size={14} ariaLabel="Used" />
+              </span>
             {/if}
           </button>
         {:else}
@@ -312,10 +334,14 @@
             class:flipped={isFlipped}
             title="{card.name}: {card.effect.description}"
           >
-            <span class="treasure-icon">{getTreasureIcon(card.effect.type)}</span>
+            <span class="treasure-icon">
+              <svelte:component this={getTreasureIconComponent(card.effect.type)} size={14} ariaLabel={card.effect.type} />
+            </span>
             <span class="treasure-name">{card.name}</span>
             {#if isFlipped}
-              <span class="flipped-indicator">✗</span>
+              <span class="flipped-indicator">
+                <XIcon size={14} ariaLabel="Used" />
+              </span>
             {/if}
           </div>
         {/if}
@@ -338,11 +364,11 @@
   <!-- Party Surge Counter (shown when surges are available) -->
   {#if partySurges !== undefined}
     <div class="party-surge-section" data-testid="player-card-surges">
-      <span class="surge-icon">❤️‍🩹</span>
+      <BandageIcon size={16} ariaLabel="Healing Surges" />
       <span class="surge-label">Party Surges:</span>
       <span class="surge-count" class:no-surges={noSurgesRemaining}>{partySurges}</span>
       {#if noSurgesRemaining}
-        <span class="surge-warning">⚠️</span>
+        <WarningIcon size={16} ariaLabel="No surges remaining" />
       {/if}
     </div>
   {/if}
@@ -489,10 +515,6 @@
     justify-content: flex-end;
   }
 
-  .hp-icon {
-    font-size: 0.65rem;
-  }
-
   /* Core Stats */
   .core-stats {
     display: flex;
@@ -508,10 +530,6 @@
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
     flex: 1;
-  }
-
-  .stat-icon {
-    font-size: 0.7rem;
   }
 
   .stat-label {
@@ -536,10 +554,6 @@
     border: 1px solid rgba(139, 69, 19, 0.5);
     border-radius: 4px;
     font-size: 0.7rem;
-  }
-
-  .attack-icon {
-    font-size: 0.75rem;
   }
 
   .attack-name {
@@ -777,10 +791,6 @@
     font-size: 0.65rem;
   }
 
-  .party-surge-section .surge-icon {
-    font-size: 0.75rem;
-  }
-
   .party-surge-section .surge-label {
     color: #e74c3c;
     font-weight: bold;
@@ -798,29 +808,9 @@
     color: #ff5252;
   }
 
-  .party-surge-section .surge-warning {
-    font-size: 0.7rem;
-    animation: blink-then-highlight 1s ease-in-out 3;
-    animation-fill-mode: forwards;
-  }
-
-  @keyframes blink-then-highlight {
-    0%, 100% { opacity: 1; color: inherit; }
-    50% { opacity: 0.3; }
-  }
-
-  /* After animation ends, show red highlight */
-  .party-surge-section .surge-warning {
-    color: #ff5252;
-  }
-
   /* Respect user's reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
     .ko-text {
-      animation: none;
-    }
-
-    .party-surge-section .surge-warning {
       animation: none;
     }
   }

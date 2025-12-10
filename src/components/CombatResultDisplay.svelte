@@ -2,6 +2,7 @@
   import type { AttackResult } from '../store/types';
   import type { EdgePosition } from '../store/heroesSlice';
   import { getEdgeRotation } from '../utils';
+  import { SwordIcon } from './icons';
   
   interface Props {
     result: AttackResult;
@@ -93,11 +94,13 @@
     
     <div class="result-section">
       {#if result.isCritical}
-        <span class="result-text critical" data-testid="result-text">⚔️ CRITICAL HIT!</span>
+        <span class="result-text critical" data-testid="result-text">
+          <SwordIcon size={20} ariaLabel="Critical" /> CRITICAL HIT!
+        </span>
       {:else if result.isHit}
-        <span class="result-text hit" data-testid="result-text">✅ HIT!</span>
+        <span class="result-text hit" data-testid="result-text">HIT!</span>
       {:else}
-        <span class="result-text miss" data-testid="result-text">❌ MISS!</span>
+        <span class="result-text miss" data-testid="result-text">MISS!</span>
       {/if}
       
       {#if result.isHit}

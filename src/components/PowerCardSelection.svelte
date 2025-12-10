@@ -17,6 +17,7 @@
     HERO_CUSTOM_ABILITIES,
   } from '../store/powerCards';
   import { getEdgeRotation } from '../utils';
+  import { CheckIcon, CircleIcon } from './icons';
 
   interface Props {
     hero: Hero;
@@ -40,7 +41,7 @@
       ? 'Pick first of two'
       : selection.atWills.length === 1
         ? 'Pick second of two'
-        : '✓ Complete'
+        : 'Complete'
   );
 
   // Check if selection is complete
@@ -96,12 +97,14 @@
     
     <div class="selection-status" data-testid="selection-status">
       {#if isSelectionComplete}
-        <span class="status-complete">✓ Selection Complete</span>
+        <span class="status-complete">
+          <CheckIcon size={14} ariaLabel="Complete" /> Selection Complete
+        </span>
       {:else}
         <span class="status-incomplete">
-          Select: 1 Utility ({selection.utility ? '✓' : '○'}), 
+          Select: 1 Utility ({#if selection.utility}<CheckIcon size={12} ariaLabel="Selected" />{:else}<CircleIcon size={12} ariaLabel="Not selected" />{/if}), 
           2 At-Wills ({selection.atWills.length}/2), 
-          1 Daily ({selection.daily ? '✓' : '○'})
+          1 Daily ({#if selection.daily}<CheckIcon size={12} ariaLabel="Selected" />{:else}<CircleIcon size={12} ariaLabel="Not selected" />{/if})
         </span>
       {/if}
     </div>

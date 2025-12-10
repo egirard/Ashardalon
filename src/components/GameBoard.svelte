@@ -40,6 +40,7 @@
     type UndoSnapshot,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
+  import { TargetIcon, CheckIcon } from './icons';
   import type {
     HeroToken,
     Hero,
@@ -1380,7 +1381,9 @@
       <div class="board-controls">
         <!-- Objective Display -->
         <div class="objective-display" data-testid="objective-display">
-          <span class="objective-label">🎯 Objective:</span>
+          <span class="objective-label">
+            <TargetIcon size={16} ariaLabel="Objective" /> Objective:
+          </span>
           <span class="objective-text">{scenario.objective}</span>
           <span class="objective-progress" data-testid="objective-progress">
             {scenario.monstersDefeated} / {scenario.monstersToDefeat} defeated
@@ -1481,7 +1484,7 @@
                 data-testid="complete-move-button"
                 onclick={handleCompleteMove}
               >
-                ✓ Complete Move
+                <CheckIcon size={14} ariaLabel="Complete" /> Complete Move
               </button>
             {/if}
             

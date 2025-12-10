@@ -1,6 +1,7 @@
 <script lang="ts">
   import { AVAILABLE_HEROES } from "../store/types";
   import { assetPath } from "../utils";
+  import { HeartIcon } from './icons';
 
   interface Props {
     heroId: string;
@@ -37,7 +38,7 @@
     </div>
     
     <div class="hp-restored-section" data-testid="hp-restored-section">
-      <span class="hp-icon">❤️</span>
+      <HeartIcon size={24} ariaLabel="Health restored" />
       <span class="hp-value">+{hpRestored} HP</span>
       <span class="hp-text">restored</span>
     </div>
@@ -150,10 +151,6 @@
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1.5rem;
-  }
-  
-  .hp-icon {
-    font-size: 1.5rem;
   }
   
   .hp-value {

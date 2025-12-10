@@ -3,6 +3,7 @@
   import { ENCOUNTER_CANCEL_COST } from '../store/types';
   import { assetPath, getEdgeRotation } from '../utils';
   import type { EdgePosition } from '../store/heroesSlice';
+  import { LightningIcon, WarningIcon, CrystalIcon } from './icons';
   
   interface Props {
     encounter: EncounterCard;
@@ -36,21 +37,19 @@
     }
   }
   
-  // Get the type icon for the encounter
-  function getTypeIcon(type: EncounterType): string {
+  // Get the type icon component for the encounter
+  function getTypeIconComponent(type: EncounterType) {
     switch (type) {
       case 'event':
-        return '⚡';
+        return LightningIcon;
       case 'trap':
-        return '⚠️';
       case 'hazard':
-        return '☠️';
+        return WarningIcon;
       case 'curse':
-        return '🔮';
+        return CrystalIcon;
       case 'environment':
-        return '🌫️';
       default:
-        return '❓';
+        return LightningIcon;
     }
   }
   
@@ -126,7 +125,8 @@
   >
     <div class="card-header">
       <span class="type-badge" data-testid="encounter-type">
-        {getTypeIcon(encounter.type)} {encounter.type.toUpperCase()}
+        <svelte:component this={getTypeIconComponent(encounter.type)} size={16} ariaLabel={encounter.type} />
+        {encounter.type.toUpperCase()}
       </span>
       <button 
         class="dismiss-button" 
@@ -148,7 +148,7 @@
         onerror={(e) => { 
           const img = e.target as HTMLImageElement;
           if (img && encounter) {
-            img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23333" width="100" height="100"/><text x="50" y="50" fill="%23fff" text-anchor="middle" dominant-baseline="central" font-size="40">' + getTypeIcon(encounter.type) + '</text></svg>';
+            img.style.display = 'none';
           }
         }}
       />

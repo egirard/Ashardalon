@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { HeartIcon } from './icons';
+  
   interface Props {
     surges: number;
   }
@@ -7,7 +9,7 @@
 </script>
 
 <div class="healing-surge-counter" data-testid="healing-surge-counter">
-  <span class="surge-icon" aria-label="Healing Surges">❤️</span>
+  <HeartIcon size={16} ariaLabel="Healing Surges" />
   <span class="surge-label">Surges:</span>
   <span class="surge-value" data-testid="surge-value">{surges}</span>
 </div>
@@ -23,9 +25,7 @@
     border: 1px solid rgba(231, 76, 60, 0.3);
   }
   
-  .surge-icon {
-    font-size: 1rem;
-  }
+
   
   .surge-label {
     font-size: 0.8rem;

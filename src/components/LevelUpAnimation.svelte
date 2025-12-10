@@ -2,6 +2,7 @@
   import type { HeroHpState } from '../store/types';
   import { AVAILABLE_HEROES } from '../store/types';
   import { assetPath } from '../utils';
+  import { StarIcon, SwordIcon } from './icons';
   
   interface Props {
     heroId: string;
@@ -105,12 +106,13 @@
     </div>
     
     <div class="xp-spent-section" data-testid="xp-spent-section">
-      <span class="xp-icon">⭐</span>
+      <StarIcon size={20} ariaLabel="Experience spent" />
       <span class="xp-text">5 XP spent</span>
     </div>
     
     <div class="critical-bonus-section" data-testid="critical-bonus">
-      <span class="bonus-text">⚔️ Critical attacks now deal +1 damage!</span>
+      <SwordIcon size={20} ariaLabel="Critical bonus" />
+      <span class="bonus-text">Critical attacks now deal +1 damage!</span>
     </div>
     
     <button 
@@ -316,10 +318,6 @@
     margin-bottom: 0.75rem;
     font-size: 0.9rem;
     color: #f4a261;
-  }
-  
-  .xp-icon {
-    font-size: 1rem;
   }
   
   .xp-text {

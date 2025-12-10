@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { LightningIcon } from './icons';
+  
   interface Props {
     message: string;
     onDismiss: () => void;
@@ -12,7 +14,7 @@
     <h2 class="notification-title" data-testid="notification-title">Encounter Effect</h2>
     
     <div class="icon-section">
-      <span class="effect-icon">⚡</span>
+      <LightningIcon size={48} ariaLabel="Effect" />
     </div>
     
     <div class="message-section" data-testid="effect-message">
@@ -85,8 +87,7 @@
     margin-bottom: 1.5rem;
   }
   
-  .effect-icon {
-    font-size: 3rem;
+  .icon-section :global(.icon-wrapper) {
     display: inline-block;
     animation: pulse 2s infinite;
   }

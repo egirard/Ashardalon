@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { StarIcon } from './icons';
+  
   interface Props {
     xp: number;
   }
@@ -7,7 +9,7 @@
 </script>
 
 <div class="xp-counter" data-testid="xp-counter">
-  <span class="xp-icon" aria-label="Experience Points">⭐</span>
+  <StarIcon size={16} ariaLabel="Experience Points" />
   <span class="xp-label">XP:</span>
   <span class="xp-value" data-testid="xp-value">{xp}</span>
 </div>
@@ -23,9 +25,7 @@
     border: 1px solid rgba(255, 215, 0, 0.3);
   }
   
-  .xp-icon {
-    font-size: 1rem;
-  }
+
   
   .xp-label {
     font-size: 0.8rem;
