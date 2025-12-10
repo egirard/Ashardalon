@@ -1,6 +1,10 @@
 <script lang="ts">
   import html2canvas from 'html2canvas';
 
+  // Repository configuration
+  const REPO_OWNER = 'egirard';
+  const REPO_NAME = 'Ashardalon';
+
   /**
    * Captures a screenshot of the current game screen and opens a pre-filled GitHub issue.
    */
@@ -42,22 +46,26 @@
       `.trim();
 
       // Create the GitHub issue URL with pre-filled content
-      const repoOwner = 'egirard';
-      const repoName = 'Ashardalon';
       const issueTitle = encodeURIComponent('User Feedback - ' + timestamp);
       const issueBodyEncoded = encodeURIComponent(issueBody);
       const labels = 'UserGenerated';
 
-      const githubIssueUrl = `https://github.com/${repoOwner}/${repoName}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
+      const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
 
-      // Open the GitHub issue page in a new tab
-      window.open(githubIssueUrl, '_blank');
+      // Check if URL is within reasonable length limits (most browsers support ~8000 characters)
+      // If too long, open without screenshot
+      if (githubIssueUrl.length > 8000) {
+        console.warn('Screenshot data URI too large, opening issue form without screenshot');
+        const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&labels=${labels}`;
+        window.open(fallbackUrl, '_blank');
+      } else {
+        // Open the GitHub issue page in a new tab
+        window.open(githubIssueUrl, '_blank');
+      }
     } catch (error) {
       console.error('Failed to capture screenshot or create feedback:', error);
       // Fallback: open GitHub issues page without screenshot
-      const repoOwner = 'egirard';
-      const repoName = 'Ashardalon';
-      const fallbackUrl = `https://github.com/${repoOwner}/${repoName}/issues/new?labels=UserGenerated`;
+      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?labels=UserGenerated`;
       window.open(fallbackUrl, '_blank');
     }
   }
@@ -66,7 +74,7 @@
 <button
   class="feedback-button"
   data-testid="feedback-button"
-  onclick={handleFeedbackClick}
+  on:click={handleFeedbackClick}
   aria-label="Submit feedback or report a bug"
 >
   📣 Submit Feedback

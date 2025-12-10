@@ -63,15 +63,19 @@ test.describe('041 - Submit Feedback Button', () => {
     });
 
     // STEP 3: Click the feedback button
-    await page.locator('[data-testid="feedback-button"]').click();
+    const clickPromise = page.locator('[data-testid="feedback-button"]').click();
 
-    // Wait for window.open to be called
-    await page.waitForTimeout(2000); // Give time for html2canvas to complete
+    // Wait for window.open to be called (with timeout)
+    const openedUrl = await Promise.race([
+      windowOpenPromise.then(handle => 
+        handle.evaluate((promise: Promise<string>) => promise)
+      ),
+      new Promise<string>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout waiting for window.open')), 5000)
+      )
+    ]);
 
-    // Verify that window.open was called with a GitHub issues URL
-    const openedUrl = await windowOpenPromise.then(handle => 
-      handle.evaluate((promise: Promise<string>) => promise)
-    );
+    await clickPromise;
 
     // Check that the URL is a GitHub issue creation URL
     expect(openedUrl).toContain('https://github.com/egirard/Ashardalon/issues/new');
