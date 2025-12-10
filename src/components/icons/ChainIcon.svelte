@@ -16,9 +16,12 @@
 </script>
 
 <Icon {size} {color} class={className} {ariaLabel}>
-  <svg viewBox="0 0 24 24" fill="none" stroke={color} stroke-width="2" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="2" width="6" height="8" rx="1" />
-    <rect x="14" y="14" width="6" height="8" rx="1" />
-    <path d="M7 10v4M17 10v4M7 10c0 2.21-1.79 4-4 4M17 10c0 2.21 1.79 4 4 4M7 14c0-2.21-1.79-4-4-4M17 14c0-2.21 1.79-4 4-4"/>
+  <svg viewBox="0 0 24 24" fill="none" stroke={color} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="3" width="4" height="6" rx="1" />
+    <rect x="6" y="15" width="4" height="6" rx="1" />
+    <rect x="14" y="9" width="4" height="6" rx="1" />
+    <line x1="8" y1="9" x2="8" y2="15" />
+    <line x1="16" y1="9" x2="16" y2="3" />
+    <line x1="16" y1="15" x2="16" y2="21" />
   </svg>
 </Icon>
