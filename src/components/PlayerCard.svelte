@@ -398,14 +398,20 @@
   /* Orientation for different board positions */
   .player-card.position-top {
     transform: rotate(180deg);
+    transform-origin: center;
+    will-change: transform;
   }
 
   .player-card.position-left {
     transform: rotate(90deg);
+    transform-origin: center;
+    will-change: transform;
   }
 
   .player-card.position-right {
     transform: rotate(-90deg);
+    transform-origin: center;
+    will-change: transform;
   }
 
   .player-card.active {
