@@ -84,6 +84,7 @@ ${screenshotSection}
     
     const ctx = thumbnailCanvas.getContext('2d');
     if (!ctx) {
+      // If we can't get a 2D context, return the original canvas as JPEG
       return sourceCanvas.toDataURL('image/jpeg', 0.7);
     }
     
@@ -104,13 +105,15 @@ ${screenshotSection}
       }
 
       // Convert canvas to blob
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, 'image/png');
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error('Failed to convert canvas to blob'));
+          }
+        }, 'image/png');
       });
-
-      if (!blob) {
-        return false;
-      }
 
       // Copy to clipboard
       await navigator.clipboard.write([
@@ -156,7 +159,7 @@ ${screenshotSection}
       if (copiedToClipboard) {
         screenshotMessage = '_Screenshot copied to clipboard! **Please paste it here** (Ctrl+V or Cmd+V)._';
       } else {
-        screenshotMessage = '_Screenshot was too large to include automatically. Please attach manually if needed._';
+        screenshotMessage = '_Screenshot could not be copied to clipboard automatically. Please attach manually if needed._';
       }
 
       // Create the issue body with thumbnail
