@@ -26,9 +26,11 @@
     controlledMonsters?: MonsterState[];
     /** ID of the monster currently activating during villain phase */
     activatingMonsterId?: string | null;
+    /** Board position for orientation (top, bottom, left, right) */
+    boardPosition?: 'top' | 'bottom' | 'left' | 'right';
   }
 
-  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges, onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null }: Props = $props();
+  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges, onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom' }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -180,6 +182,9 @@
   class="player-card" 
   class:active={isActive}
   class:knocked-out={isKnockedOut}
+  class:position-top={boardPosition === 'top'}
+  class:position-left={boardPosition === 'left'}
+  class:position-right={boardPosition === 'right'}
   data-testid={isActive ? "turn-indicator" : `player-dashboard-${hero.id}`}
   data-hero-id={hero.id}
 >
@@ -388,6 +393,19 @@
     max-width: 280px;
     transition: all 0.3s ease-out;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Orientation for different board positions */
+  .player-card.position-top {
+    transform: rotate(180deg);
+  }
+
+  .player-card.position-left {
+    transform: rotate(90deg);
+  }
+
+  .player-card.position-right {
+    transform: rotate(-90deg);
   }
 
   .player-card.active {
