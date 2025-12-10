@@ -81,6 +81,7 @@
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import PlayerCard from "./PlayerCard.svelte";
+  import FeedbackButton from "./FeedbackButton.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -1511,6 +1512,9 @@
         >
           ↩ Return to Character Select
         </button>
+
+        <!-- Feedback Button -->
+        <FeedbackButton />
 
         <!-- Power Card Attack Panel - only show during hero phase when adjacent to monster and can attack -->
         {#if turnState.currentPhase === "hero-phase" && (heroTurnActions.canAttack || multiAttackState)}
