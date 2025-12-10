@@ -260,8 +260,8 @@
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
     padding: 1rem;
-    max-width: 96vw;
-    max-height: 96vh;
+    max-width: 95vw;
+    max-height: 95vh;
     overflow-y: auto;
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
