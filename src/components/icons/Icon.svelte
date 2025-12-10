@@ -3,15 +3,17 @@
    * Base Icon wrapper component
    * Provides consistent sizing and styling for all SVG icons
    */
+  import type { Snippet } from 'svelte';
   
   interface Props {
     size?: number | string;
     color?: string;
     class?: string;
     ariaLabel?: string;
+    children?: Snippet;
   }
   
-  let { size = 16, color = 'currentColor', class: className = '', ariaLabel }: Props = $props();
+  let { size = 16, color = 'currentColor', class: className = '', ariaLabel, children }: Props = $props();
   
   // Convert size to string with px if it's a number
   let sizeStr = $derived(typeof size === 'number' ? `${size}px` : size);
