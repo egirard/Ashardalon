@@ -1192,6 +1192,7 @@
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           controlledMonsters={getMonstersForHero(hero.id)}
           activatingMonsterId={activatingMonsterId}
+          boardPosition="top"
         />
       {/if}
     {/each}
@@ -1221,6 +1222,7 @@
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             controlledMonsters={getMonstersForHero(hero.id)}
             activatingMonsterId={activatingMonsterId}
+            boardPosition="left"
           />
         {/if}
       {/each}
@@ -1564,6 +1566,7 @@
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             controlledMonsters={getMonstersForHero(hero.id)}
             activatingMonsterId={activatingMonsterId}
+            boardPosition="right"
           />
         {/if}
       {/each}
@@ -1592,6 +1595,7 @@
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           controlledMonsters={getMonstersForHero(hero.id)}
           activatingMonsterId={activatingMonsterId}
+          boardPosition="bottom"
         />
       {/if}
     {/each}
