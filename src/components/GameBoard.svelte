@@ -581,6 +581,23 @@
     return monsters.filter((m) => m.controllerId === currentHeroId);
   }
 
+  // Get monsters controlled by a specific hero
+  function getMonstersForHero(heroId: string): MonsterState[] {
+    return monsters.filter((m) => m.controllerId === heroId);
+  }
+
+  // Get the currently activating monster during villain phase (memoized)
+  let activatingMonsterId = $derived.by(() => {
+    if (turnState.currentPhase !== 'villain-phase') return null;
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return null;
+    
+    const controlledMonsters = getMonstersForHero(currentHeroId);
+    if (villainPhaseMonsterIndex >= controlledMonsters.length) return null;
+    
+    return controlledMonsters[villainPhaseMonsterIndex]?.instanceId ?? null;
+  });
+
   // Check if all controlled monsters have been activated
   function allMonstersActivated(): boolean {
     const controlled = getControlledMonsters();
@@ -1171,6 +1188,8 @@
           partySurges={partyResources.healingSurges}
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+          controlledMonsters={getMonstersForHero(hero.id)}
+          activatingMonsterId={activatingMonsterId}
         />
       {/if}
     {/each}
@@ -1198,6 +1217,8 @@
             partySurges={partyResources.healingSurges}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+            controlledMonsters={getMonstersForHero(hero.id)}
+            activatingMonsterId={activatingMonsterId}
           />
         {/if}
       {/each}
@@ -1534,6 +1555,8 @@
             partySurges={partyResources.healingSurges}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+            controlledMonsters={getMonstersForHero(hero.id)}
+            activatingMonsterId={activatingMonsterId}
           />
         {/if}
       {/each}
@@ -1560,6 +1583,8 @@
           partySurges={partyResources.healingSurges}
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+          controlledMonsters={getMonstersForHero(hero.id)}
+          activatingMonsterId={activatingMonsterId}
         />
       {/if}
     {/each}

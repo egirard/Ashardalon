@@ -1,10 +1,11 @@
 <script lang="ts">
-  import type { Hero, HeroHpState, HeroCondition } from '../store/types';
+  import type { Hero, HeroHpState, HeroCondition, MonsterState } from '../store/types';
   import type { HeroPowerCards, PowerCard } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
   import type { HeroInventory, TreasureCard } from '../store/treasure';
   import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
+  import MonsterCardMini from './MonsterCardMini.svelte';
 
   interface Props {
     hero: Hero;
@@ -20,9 +21,13 @@
     partySurges?: number;
     /** Callback when a treasure item is used */
     onUseTreasureItem?: (cardId: number) => void;
+    /** Monsters controlled by this hero */
+    controlledMonsters?: MonsterState[];
+    /** ID of the monster currently activating during villain phase */
+    activatingMonsterId?: string | null;
   }
 
-  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges, onUseTreasureItem }: Props = $props();
+  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges, onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -314,6 +319,18 @@
             {/if}
           </div>
         {/if}
+      {/each}
+    </div>
+  {/if}
+
+  <!-- Monster Cards Section (shown when hero controls monsters) -->
+  {#if controlledMonsters.length > 0}
+    <div class="monster-cards-section" data-testid="player-card-monsters">
+      {#each controlledMonsters as monster (monster.instanceId)}
+        <MonsterCardMini 
+          {monster}
+          isActivating={activatingMonsterId === monster.instanceId}
+        />
       {/each}
     </div>
   {/if}
@@ -655,6 +672,15 @@
   .treasure-item-mini.flipped .treasure-name {
     text-decoration: line-through;
     color: #999;
+  }
+
+  /* Monster Cards Section */
+  .monster-cards-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-top: 1px solid rgba(204, 51, 51, 0.3);
+    padding-top: 0.4rem;
   }
 
   /* KO State Styles */
