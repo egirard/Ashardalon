@@ -6,6 +6,25 @@
   const REPO_NAME = 'Ashardalon';
 
   /**
+   * Creates a human-readable timestamp string from a Date object.
+   * @param date - The date to format
+   * @returns A human-readable timestamp string like "December 10, 2025 at 2:52 PM"
+   */
+  function createHumanReadableTimestamp(date: Date): string {
+    const humanReadableDate = date.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    const humanReadableTime = date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    return `${humanReadableDate} at ${humanReadableTime}`;
+  }
+
+  /**
    * Captures a screenshot of the current game screen and opens a pre-filled GitHub issue.
    */
   async function handleFeedbackClick() {
@@ -23,21 +42,9 @@
       // Get system information
       const userAgent = navigator.userAgent;
       const gameVersion = '1.0.0'; // From package.json
-      const timestamp = new Date().toISOString();
-      
-      // Create human-readable timestamp for title
       const date = new Date();
-      const humanReadableDate = date.toLocaleDateString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
-      });
-      const humanReadableTime = date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
-      });
-      const humanReadableTimestamp = `${humanReadableDate} at ${humanReadableTime}`;
+      const timestamp = date.toISOString();
+      const humanReadableTimestamp = createHumanReadableTimestamp(date);
 
       // Prepare the issue body with diagnostic information
       const issueBody = `
@@ -101,17 +108,7 @@ _Screenshot was too large to include automatically. Please attach manually if ne
       // Fallback: open GitHub issues page with basic information but without screenshot
       const date = new Date();
       const timestamp = date.toISOString();
-      const humanReadableDate = date.toLocaleDateString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
-      });
-      const humanReadableTime = date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
-      });
-      const humanReadableTimestamp = `${humanReadableDate} at ${humanReadableTime}`;
+      const humanReadableTimestamp = createHumanReadableTimestamp(date);
       const userAgent = navigator.userAgent;
       const gameVersion = '1.0.0';
       
