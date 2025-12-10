@@ -2,6 +2,7 @@
   import { store } from '../store';
   import { resetGame } from '../store/gameSlice';
   import type { ScenarioState } from '../store/types';
+  import { SkullIcon } from './icons';
   
   let scenario: ScenarioState = $state({ 
     monstersDefeated: 0, 
@@ -33,7 +34,9 @@
 
 <div class="defeat-screen" data-testid="defeat-screen">
   <div class="defeat-content">
-    <div class="defeat-icon">💀</div>
+    <div class="defeat-icon">
+      <SkullIcon size={80} color="#dc2626" ariaLabel="Defeat" />
+    </div>
     <h1 class="defeat-title">Defeat</h1>
     <p class="defeat-message" data-testid="defeat-message">
       {#if defeatReason}
@@ -81,8 +84,9 @@
   }
   
   .defeat-icon {
-    font-size: 5rem;
     margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
   }
   
   .defeat-title {

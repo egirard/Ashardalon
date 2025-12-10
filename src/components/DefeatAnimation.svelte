@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { SkullIcon, StarIcon } from './icons';
+  
   interface Props {
     monsterName: string;
     xpGained: number;
@@ -41,7 +43,9 @@
     data-testid="defeat-notification"
   >
     <div class="defeat-header">
-      <span class="defeat-icon">💀</span>
+      <span class="defeat-icon-wrapper">
+        <SkullIcon size={32} color="#e53935" ariaLabel="Monster defeated" />
+      </span>
       <h3 class="defeat-title" id="defeat-title" data-testid="defeat-title">{monsterName} Defeated!</h3>
       <button 
         class="dismiss-button" 
@@ -54,7 +58,7 @@
     </div>
     
     <div class="xp-gain-section" data-testid="xp-gain-section">
-      <span class="xp-icon">⭐</span>
+      <StarIcon size={24} ariaLabel="Experience gained" />
       <span class="xp-amount" data-testid="xp-amount">+{xpGained} XP</span>
     </div>
     
@@ -112,8 +116,9 @@
     padding-bottom: 0.75rem;
   }
   
-  .defeat-icon {
-    font-size: 1.5rem;
+  .defeat-icon-wrapper {
+    display: flex;
+    align-items: center;
   }
   
   .defeat-title {
@@ -151,8 +156,7 @@
     margin-bottom: 1rem;
   }
   
-  .xp-icon {
-    font-size: 2rem;
+  .xp-gain-section :global(.icon-wrapper) {
     animation: pulse 1s ease-in-out infinite;
   }
   

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { AVAILABLE_HEROES } from "../store/types";
   import { assetPath } from "../utils";
+  import { HeartIcon, LightningIcon, WarningIcon } from './icons';
 
   interface Props {
     heroId: string;
@@ -41,16 +42,17 @@
     </div>
     
     <div class="hp-status hp-status-danger">
-      <span class="hp-label">⚠️ Hero is at 0 HP!</span>
+      <WarningIcon size={16} ariaLabel="Warning" />
+      <span class="hp-label">Hero is at 0 HP!</span>
     </div>
     
     <div class="surge-info">
       <div class="surge-row">
-        <span class="surge-icon">❤️</span>
+        <HeartIcon size={20} ariaLabel="Healing" />
         <span class="surge-text">Heal <strong data-testid="heal-amount">+{getActualHpRestored()} HP</strong></span>
       </div>
       <div class="surge-row">
-        <span class="surge-icon">⚡</span>
+        <LightningIcon size={20} ariaLabel="Surges" />
         <span class="surge-text">Surges remaining: <strong data-testid="surges-remaining">{surgesToRemaining}</strong></span>
       </div>
     </div>
@@ -182,10 +184,6 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.25rem 0;
-  }
-  
-  .surge-icon {
-    font-size: 1.2rem;
   }
   
   .surge-text {

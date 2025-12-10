@@ -2,6 +2,7 @@
   import type { TreasureCard } from '../store/treasure';
   import { getEffectImplementationStatus, getImplementationMessage } from '../store/treasure';
   import { assetPath } from '../utils';
+  import { WarningIcon } from './icons';
 
   interface Props {
     treasure: TreasureCard;
@@ -116,9 +117,7 @@
             data-testid="implementation-status"
           >
             {#if implementationStatus === 'partial'}
-              <span class="status-icon">⚠️</span>
-            {:else}
-              <span class="status-icon">ℹ️</span>
+              <WarningIcon size={16} ariaLabel="Partially implemented" />
             {/if}
             <span class="status-message">{implementationMessage}</span>
           </div>
@@ -329,10 +328,6 @@
     background: rgba(100, 149, 237, 0.2);
     border: 1px solid rgba(100, 149, 237, 0.5);
     color: #87ceeb;
-  }
-
-  .status-icon {
-    flex-shrink: 0;
   }
 
   .status-message {

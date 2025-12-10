@@ -5,6 +5,7 @@
   import type { Hero } from '../store/types';
   import { assetPath } from '../utils';
   import PowerCardSelection from './PowerCardSelection.svelte';
+  import { CheckIcon } from './icons';
   
   let selectedHeroes: Hero[] = $state([]);
   let availableHeroes: Hero[] = $state([]);
@@ -154,7 +155,9 @@
               <div class="selected-hero-info">
                 <span class="selected-hero-name">{hero.name}</span>
                 {#if isPowerCardSelectionComplete(hero.id)}
-                  <span class="power-status complete">✓ Powers Selected</span>
+                  <span class="power-status complete">
+                    <CheckIcon size={14} ariaLabel="Complete" /> Powers Selected
+                  </span>
                 {:else}
                   <span class="power-status incomplete">Select Powers</span>
                 {/if}

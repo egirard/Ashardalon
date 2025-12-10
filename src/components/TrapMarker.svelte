@@ -2,6 +2,7 @@
   import type { TrapState } from '../store/types';
   import { assetPath } from '../utils';
   import { getEncounterById } from '../store/encounters';
+  import { WarningIcon } from './icons';
   
   interface Props {
     trap: TrapState;
@@ -42,7 +43,7 @@
       }}
     />
   {:else}
-    <span class="trap-emoji">⚠️</span>
+    <WarningIcon size={32} ariaLabel="Trap" />
   {/if}
 </div>
 
@@ -63,8 +64,5 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   }
   
-  .trap-emoji {
-    font-size: 2rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-  }
+
 </style>

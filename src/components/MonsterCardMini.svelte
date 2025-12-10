@@ -2,6 +2,7 @@
   import type { Monster, MonsterState } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { assetPath } from '../utils';
+  import { ShieldIcon, StarIcon } from './icons';
   
   interface Props {
     monster: MonsterState;
@@ -43,8 +44,12 @@
       <div class="mini-info">
         <span class="mini-name" data-testid="monster-mini-name">{monsterDef.name}</span>
         <div class="mini-stats">
-          <span class="mini-stat" title="Armor Class" aria-label="Armor Class {monsterDef.ac}">🛡️ {monsterDef.ac}</span>
-          <span class="mini-stat" title="Experience Points" aria-label="Experience Points {monsterDef.xp}">⭐ {monsterDef.xp}</span>
+          <span class="mini-stat" title="Armor Class">
+            <ShieldIcon size={12} ariaLabel="Armor Class {monsterDef.ac}" /> {monsterDef.ac}
+          </span>
+          <span class="mini-stat" title="Experience Points">
+            <StarIcon size={12} ariaLabel="Experience Points {monsterDef.xp}" /> {monsterDef.xp}
+          </span>
         </div>
       </div>
     </div>

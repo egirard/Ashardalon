@@ -2,6 +2,7 @@
   import { store } from '../store';
   import { resetGame } from '../store/gameSlice';
   import type { ScenarioState } from '../store/types';
+  import { TrophyIcon } from './icons';
   
   let scenario: ScenarioState = $state({ 
     monstersDefeated: 0, 
@@ -30,7 +31,9 @@
 
 <div class="victory-screen" data-testid="victory-screen">
   <div class="victory-content">
-    <div class="victory-icon">🏆</div>
+    <div class="victory-icon">
+      <TrophyIcon size={80} ariaLabel="Victory" />
+    </div>
     <h1 class="victory-title">Victory!</h1>
     <p class="victory-message">You have defeated {scenario.monstersDefeated} monsters and completed the objective!</p>
     <div class="victory-objective">
@@ -68,8 +71,9 @@
   }
   
   .victory-icon {
-    font-size: 5rem;
     margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
   }
   
   .victory-title {
