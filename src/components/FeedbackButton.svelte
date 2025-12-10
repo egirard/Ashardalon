@@ -4,6 +4,7 @@
   // Repository configuration
   const REPO_OWNER = 'egirard';
   const REPO_NAME = 'Ashardalon';
+  const GAME_VERSION = '1.0.0'; // From package.json
 
   /**
    * Creates a human-readable timestamp string from a Date object.
@@ -25,6 +26,34 @@
   }
 
   /**
+   * Creates a fallback issue body when screenshot is not available.
+   * @param timestamp - ISO timestamp string
+   * @param screenshotMessage - Message explaining why screenshot is not included
+   * @param userAgent - Browser user agent string
+   * @returns Formatted issue body markdown
+   */
+  function createFallbackBody(timestamp: string, screenshotMessage: string, userAgent: string): string {
+    return `
+## Feedback / Bug Report
+
+**Timestamp:** ${timestamp}
+
+### Description
+<!-- Please describe the issue or feedback here -->
+
+
+### Screenshot
+${screenshotMessage}
+
+### System Information
+- **Browser/User Agent:** ${userAgent}
+- **Game Version:** ${GAME_VERSION}
+- **Screen Resolution:** ${window.screen.width}x${window.screen.height}
+- **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
+    `.trim();
+  }
+
+  /**
    * Captures a screenshot of the current game screen and opens a pre-filled GitHub issue.
    */
   async function handleFeedbackClick() {
@@ -41,7 +70,6 @@
 
       // Get system information
       const userAgent = navigator.userAgent;
-      const gameVersion = '1.0.0'; // From package.json
       const date = new Date();
       const timestamp = date.toISOString();
       const humanReadableTimestamp = createHumanReadableTimestamp(date);
@@ -61,7 +89,7 @@
 
 ### System Information
 - **Browser/User Agent:** ${userAgent}
-- **Game Version:** ${gameVersion}
+- **Game Version:** ${GAME_VERSION}
 - **Screen Resolution:** ${window.screen.width}x${window.screen.height}
 - **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
       `.trim();
@@ -77,25 +105,11 @@
       // If too long, open without screenshot
       if (githubIssueUrl.length > 8000) {
         console.warn('Screenshot data URI too large, opening issue form without screenshot');
-        // Create fallback body without screenshot
-        const fallbackBody = `
-## Feedback / Bug Report
-
-**Timestamp:** ${timestamp}
-
-### Description
-<!-- Please describe the issue or feedback here -->
-
-
-### Screenshot
-_Screenshot was too large to include automatically. Please attach manually if needed._
-
-### System Information
-- **Browser/User Agent:** ${userAgent}
-- **Game Version:** ${gameVersion}
-- **Screen Resolution:** ${window.screen.width}x${window.screen.height}
-- **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
-        `.trim();
+        const fallbackBody = createFallbackBody(
+          timestamp,
+          '_Screenshot was too large to include automatically. Please attach manually if needed._',
+          userAgent
+        );
         const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
         const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${fallbackBodyEncoded}&labels=${labels}`;
         window.open(fallbackUrl, '_blank');
@@ -110,26 +124,12 @@ _Screenshot was too large to include automatically. Please attach manually if ne
       const timestamp = date.toISOString();
       const humanReadableTimestamp = createHumanReadableTimestamp(date);
       const userAgent = navigator.userAgent;
-      const gameVersion = '1.0.0';
       
-      const fallbackBody = `
-## Feedback / Bug Report
-
-**Timestamp:** ${timestamp}
-
-### Description
-<!-- Please describe the issue or feedback here -->
-
-
-### Screenshot
-_Screenshot could not be captured automatically. Please attach manually if needed._
-
-### System Information
-- **Browser/User Agent:** ${userAgent}
-- **Game Version:** ${gameVersion}
-- **Screen Resolution:** ${window.screen.width}x${window.screen.height}
-- **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
-      `.trim();
+      const fallbackBody = createFallbackBody(
+        timestamp,
+        '_Screenshot could not be captured automatically. Please attach manually if needed._',
+        userAgent
+      );
       const fallbackTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
       const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
       const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${fallbackTitle}&body=${fallbackBodyEncoded}&labels=UserGenerated`;
