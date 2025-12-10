@@ -30,15 +30,25 @@ test.describe('019 - Power Card Selection', () => {
         // Verify selected heroes list appears
         await expect(page.locator('[data-testid="selected-heroes-list"]')).toBeVisible();
         
-        // Verify the "Select Powers" button is visible for Quinn
+        // Verify the "Select Powers" button is visible for Quinn and shows powers are selected
         await expect(page.locator('[data-testid="select-powers-quinn"]')).toBeVisible();
+        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
         
-        // Verify start button is still disabled (powers not selected)
-        await expect(page.locator('[data-testid="start-game-button"]')).toBeDisabled();
+        // Verify start button is now enabled (powers auto-selected)
+        await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
+        
+        // Verify Redux store has auto-selected powers
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.heroes.powerCardSelections.quinn).toBeDefined();
+        expect(storeState.heroes.powerCardSelections.quinn.utility).not.toBeNull();
+        expect(storeState.heroes.powerCardSelections.quinn.atWills).toHaveLength(2);
+        expect(storeState.heroes.powerCardSelections.quinn.daily).not.toBeNull();
       }
     });
 
-    // STEP 3: Open power card selection modal for Quinn
+    // STEP 3: Open power card selection modal for Quinn (to customize auto-selected powers)
     await page.locator('[data-testid="select-powers-quinn"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
 
@@ -59,42 +69,7 @@ test.describe('019 - Power Card Selection', () => {
         // Verify daily cards section exists
         await expect(page.locator('[data-testid="daily-cards"]')).toBeVisible();
         
-        // Verify selection status shows incomplete
-        await expect(page.locator('[data-testid="selection-status"]')).toContainText('Select:');
-      }
-    });
-
-    // STEP 4: Select a utility power card (Astral Refuge - card ID 8)
-    await page.locator('[data-testid="utility-card-8"]').click();
-
-    await screenshots.capture(page, 'utility-selected', {
-      programmaticCheck: async () => {
-        // Verify the utility card is selected
-        await expect(page.locator('[data-testid="utility-card-8"]')).toHaveClass(/selected/);
-      }
-    });
-
-    // STEP 5: Select two at-will power cards (Cleric's Shield and Righteous Advance - IDs 2 and 3)
-    await page.locator('[data-testid="atwill-card-2"]').click();
-    await page.locator('[data-testid="atwill-card-3"]').click();
-
-    await screenshots.capture(page, 'atwill-selected', {
-      programmaticCheck: async () => {
-        // Verify both at-will cards are selected
-        await expect(page.locator('[data-testid="atwill-card-2"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="atwill-card-3"]')).toHaveClass(/selected/);
-      }
-    });
-
-    // STEP 6: Select a daily power card (Blade Barrier - card ID 5)
-    await page.locator('[data-testid="daily-card-5"]').click();
-
-    await screenshots.capture(page, 'all-powers-selected', {
-      programmaticCheck: async () => {
-        // Verify the daily card is selected
-        await expect(page.locator('[data-testid="daily-card-5"]')).toHaveClass(/selected/);
-        
-        // Verify selection status shows complete
+        // Verify selection status shows complete (auto-selected)
         await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
         
         // Verify done button is enabled
@@ -102,7 +77,23 @@ test.describe('019 - Power Card Selection', () => {
       }
     });
 
-    // STEP 7: Close the modal by clicking Done
+    // STEP 4: Powers are already auto-selected, verify they are shown as complete
+    await screenshots.capture(page, 'auto-selected-powers', {
+      programmaticCheck: async () => {
+        // Verify selection status shows complete
+        await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
+        
+        // Verify done button is enabled
+        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
+        
+        // Verify at least one utility, two at-wills, and one daily are selected
+        await expect(page.locator('[data-testid^="utility-card-"].selected')).toHaveCount(1);
+        await expect(page.locator('[data-testid^="atwill-card-"].selected')).toHaveCount(2);
+        await expect(page.locator('[data-testid^="daily-card-"].selected')).toHaveCount(1);
+      }
+    });
+
+    // STEP 5: Close the modal by clicking Done
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
@@ -114,22 +105,22 @@ test.describe('019 - Power Card Selection', () => {
         // Verify the power status shows complete for Quinn
         await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
         
-        // Verify start button is now enabled (powers selected)
+        // Verify start button is enabled (powers auto-selected)
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
         
-        // Verify Redux store state
+        // Verify Redux store state has auto-selected powers
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.heroes.selectedHeroes).toHaveLength(1);
         expect(storeState.heroes.powerCardSelections.quinn).toBeDefined();
-        expect(storeState.heroes.powerCardSelections.quinn.utility).toBe(8);
-        expect(storeState.heroes.powerCardSelections.quinn.atWills).toEqual([2, 3]);
-        expect(storeState.heroes.powerCardSelections.quinn.daily).toBe(5);
+        expect(storeState.heroes.powerCardSelections.quinn.utility).not.toBeNull();
+        expect(storeState.heroes.powerCardSelections.quinn.atWills).toHaveLength(2);
+        expect(storeState.heroes.powerCardSelections.quinn.daily).not.toBeNull();
       }
     });
 
-    // STEP 8: Start the game
+    // STEP 6: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -158,15 +149,15 @@ test.describe('019 - Power Card Selection', () => {
         // Verify hero token is visible
         await expect(page.locator('[data-testid="hero-token"]')).toBeVisible();
         
-        // Verify Redux store has finalized power cards
+        // Verify Redux store has finalized power cards with auto-selected powers
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.heroes.heroPowerCards.quinn).toBeDefined();
         expect(storeState.heroes.heroPowerCards.quinn.customAbility).toBe(1); // Healing Hymn
-        expect(storeState.heroes.heroPowerCards.quinn.utility).toBe(8);
-        expect(storeState.heroes.heroPowerCards.quinn.atWills).toEqual([2, 3]);
-        expect(storeState.heroes.heroPowerCards.quinn.daily).toBe(5);
+        expect(storeState.heroes.heroPowerCards.quinn.utility).not.toBeNull();
+        expect(storeState.heroes.heroPowerCards.quinn.atWills).toHaveLength(2);
+        expect(storeState.heroes.heroPowerCards.quinn.daily).not.toBeNull();
       }
     });
   });

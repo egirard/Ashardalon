@@ -6,6 +6,9 @@ import {
   createInitialPowerCardsState,
   flipPowerCard,
   addLevel2DailyCard,
+  getShuffledAtWillCards,
+  getShuffledDailyCards,
+  getShuffledUtilityCards,
 } from './powerCards';
 
 export type EdgePosition = 'top' | 'bottom' | 'left' | 'right';
@@ -62,12 +65,16 @@ export const heroesSlice = createSlice({
           const hero = state.availableHeroes.find(h => h.id === heroId);
           if (hero) {
             state.selectedHeroes.push(hero);
-            // Initialize power card selection for this hero
+            // Initialize power card selection with random cards for this hero
+            const shuffledUtilityCards = getShuffledUtilityCards(hero.heroClass, hero.id);
+            const shuffledAtWillCards = getShuffledAtWillCards(hero.heroClass, hero.id);
+            const shuffledDailyCards = getShuffledDailyCards(hero.heroClass, hero.id);
+            
             state.powerCardSelections[heroId] = {
               heroId,
-              utility: null,
-              atWills: [],
-              daily: null,
+              utility: shuffledUtilityCards.length > 0 ? shuffledUtilityCards[0].id : null,
+              atWills: shuffledAtWillCards.length >= 2 ? [shuffledAtWillCards[0].id, shuffledAtWillCards[1].id] : [],
+              daily: shuffledDailyCards.length > 0 ? shuffledDailyCards[0].id : null,
             };
           }
         }
@@ -91,12 +98,16 @@ export const heroesSlice = createSlice({
           if (hero) {
             state.selectedHeroes.push(hero);
             state.heroEdgeMap[heroId] = edge;
-            // Initialize power card selection for this hero
+            // Initialize power card selection with random cards for this hero
+            const shuffledUtilityCards = getShuffledUtilityCards(hero.heroClass, hero.id);
+            const shuffledAtWillCards = getShuffledAtWillCards(hero.heroClass, hero.id);
+            const shuffledDailyCards = getShuffledDailyCards(hero.heroClass, hero.id);
+            
             state.powerCardSelections[heroId] = {
               heroId,
-              utility: null,
-              atWills: [],
-              daily: null,
+              utility: shuffledUtilityCards.length > 0 ? shuffledUtilityCards[0].id : null,
+              atWills: shuffledAtWillCards.length >= 2 ? [shuffledAtWillCards[0].id, shuffledAtWillCards[1].id] : [],
+              daily: shuffledDailyCards.length > 0 ? shuffledDailyCards[0].id : null,
             };
           }
         }

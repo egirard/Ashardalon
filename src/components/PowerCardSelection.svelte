@@ -259,26 +259,29 @@
     position: relative;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
-    padding: 1.5rem;
-    max-width: 90vw;
-    max-height: 90vh;
+    padding: 1rem;
+    max-width: 96vw;
+    max-height: 96vh;
     overflow-y: auto;
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
   }
 
   .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    flex-shrink: 0;
   }
 
   .modal-header h2 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
 
   .close-button {
@@ -297,10 +300,12 @@
 
   .selection-status {
     text-align: center;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.1);
+    font-size: 0.85rem;
+    flex-shrink: 0;
   }
 
   .status-complete {
@@ -315,12 +320,15 @@
   .card-sections {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 0.75rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .card-section h3 {
-    margin: 0 0 0.75rem 0;
-    font-size: 1.1rem;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.95rem;
     color: #ffd700;
   }
 
@@ -331,19 +339,20 @@
 
   .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.5rem;
   }
 
   .power-card {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 0.75rem;
+    border-radius: 6px;
+    padding: 0.5rem;
     text-align: left;
     cursor: pointer;
     transition: all 0.2s ease;
     color: #fff;
+    min-height: 0;
   }
 
   .power-card:hover:not(:disabled) {
@@ -372,54 +381,56 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
   }
 
   .card-name {
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   .card-type {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: #aaa;
     text-transform: uppercase;
   }
 
   .card-description {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #ccc;
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.35rem 0;
     font-style: italic;
+    line-height: 1.2;
   }
 
   .card-rule {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     margin: 0;
     white-space: pre-line;
-    line-height: 1.4;
+    line-height: 1.3;
   }
 
   .card-stats {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
-    gap: 1rem;
-    font-size: 0.8rem;
+    gap: 0.75rem;
+    font-size: 0.7rem;
     color: #ffd700;
   }
 
   .modal-footer {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     text-align: center;
+    flex-shrink: 0;
   }
 
   .done-button {
-    padding: 0.75rem 2rem;
-    font-size: 1rem;
+    padding: 0.6rem 1.5rem;
+    font-size: 0.95rem;
     font-weight: bold;
     background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
     color: #1a1a2e;
