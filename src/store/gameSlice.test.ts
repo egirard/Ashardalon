@@ -45,6 +45,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
       currentPhase: "hero-phase",
       turnNumber: 1,
       exploredThisTurn: false,
+      drewOnlyWhiteTilesThisTurn: false,
     },
     validMoveSquares: [],
     showingMovement: false,
@@ -73,6 +74,13 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     defeatReason: null,
     encounterDeck: { drawPile: [], discardPile: [] },
     drawnEncounter: null,
+    activeEnvironmentId: null,
+    traps: [],
+    hazards: [],
+    trapInstanceCounter: 0,
+    hazardInstanceCounter: 0,
+    boardTokens: [],
+    boardTokenInstanceCounter: 0,
     showActionSurgePrompt: false,
     multiAttackState: null,
     pendingMoveAttack: null,
@@ -81,6 +89,9 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     drawnTreasure: null,
     heroInventories: {},
     treasureDrawnThisTurn: false,
+    incrementalMovement: null,
+    undoSnapshot: null,
+    encounterEffectMessage: null,
     ...overrides,
   };
 }
@@ -290,6 +301,75 @@ describe("gameSlice", () => {
       const state = gameReducer(initialState, startGame({ heroIds, seed }));
       expect(state.randomSeed).toBe(seed);
     });
+
+    it("should clear environment cards and effects on start", () => {
+      const stateWithEffects = createGameState({
+        activeEnvironmentId: "fire-zone",
+        encounterEffectMessage: "The room is burning!",
+      });
+      const state = gameReducer(stateWithEffects, startGame({ heroIds: ["quinn"] }));
+      expect(state.activeEnvironmentId).toBeNull();
+      expect(state.encounterEffectMessage).toBeNull();
+    });
+
+    it("should clear traps and hazards on start", () => {
+      const stateWithTraps = createGameState({
+        traps: [
+          { id: "trap-1", type: "pit", position: { x: 3, y: 3 }, tileId: "tile-1" },
+        ],
+        hazards: [
+          { id: "hazard-1", type: "lava", position: { x: 5, y: 5 }, tileId: "tile-2" },
+        ],
+        trapInstanceCounter: 10,
+        hazardInstanceCounter: 5,
+      });
+      const state = gameReducer(stateWithTraps, startGame({ heroIds: ["quinn"] }));
+      expect(state.traps).toEqual([]);
+      expect(state.hazards).toEqual([]);
+      expect(state.trapInstanceCounter).toBe(0);
+      expect(state.hazardInstanceCounter).toBe(0);
+    });
+
+    it("should clear board tokens on start", () => {
+      const stateWithTokens = createGameState({
+        boardTokens: [
+          { id: "token-1", type: "whirling-blades", position: { x: 3, y: 3 }, powerCardId: 101, ownerId: "quinn" },
+          { id: "token-2", type: "blade-barrier", position: { x: 4, y: 4 }, powerCardId: 102, ownerId: "vistra" },
+        ],
+        boardTokenInstanceCounter: 15,
+      });
+      const state = gameReducer(stateWithTokens, startGame({ heroIds: ["quinn"] }));
+      expect(state.boardTokens).toEqual([]);
+      expect(state.boardTokenInstanceCounter).toBe(0);
+    });
+
+    it("should initialize hero HP with no status effects", () => {
+      const state = gameReducer(initialState, startGame({ heroIds: ["quinn", "vistra"] }));
+      expect(state.heroHp).toHaveLength(2);
+      state.heroHp.forEach(heroHp => {
+        expect(heroHp.statuses).toEqual([]);
+      });
+    });
+
+    it("should start with no monsters and their status effects", () => {
+      const stateWithMonsters = createGameState({
+        monsters: [
+          {
+            monsterId: "kobold",
+            instanceId: "kobold-1",
+            position: { x: 3, y: 3 },
+            currentHp: 1,
+            controllerId: "quinn",
+            tileId: "tile-1",
+            statuses: [
+              { type: "weakened", appliedOnTurn: 1, source: "power-card-1" },
+            ],
+          },
+        ],
+      });
+      const state = gameReducer(stateWithMonsters, startGame({ heroIds: ["quinn"] }));
+      expect(state.monsters).toEqual([]);
+    });
   });
 
   describe("setHeroPosition", () => {
@@ -401,6 +481,99 @@ describe("gameSlice", () => {
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.validMoveSquares).toEqual([]);
       expect(state.showingMovement).toBe(false);
+    });
+
+    it("should clear environment cards and effects", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        activeEnvironmentId: "fire-zone",
+        encounterEffectMessage: "The room is on fire!",
+      });
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.activeEnvironmentId).toBeNull();
+      expect(state.encounterEffectMessage).toBeNull();
+    });
+
+    it("should clear traps and hazards", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        traps: [
+          { id: "trap-1", type: "pit", position: { x: 3, y: 3 }, tileId: "tile-1" },
+          { id: "trap-2", type: "spike", position: { x: 4, y: 4 }, tileId: "tile-1" },
+        ],
+        hazards: [
+          { id: "hazard-1", type: "lava", position: { x: 5, y: 5 }, tileId: "tile-2" },
+        ],
+        trapInstanceCounter: 5,
+        hazardInstanceCounter: 3,
+      });
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.traps).toEqual([]);
+      expect(state.hazards).toEqual([]);
+      expect(state.trapInstanceCounter).toBe(0);
+      expect(state.hazardInstanceCounter).toBe(0);
+    });
+
+    it("should clear board tokens", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        boardTokens: [
+          { id: "token-1", type: "whirling-blades", position: { x: 3, y: 3 }, powerCardId: 101, ownerId: "quinn" },
+          { id: "token-2", type: "flaming-sphere", position: { x: 4, y: 4 }, powerCardId: 102, ownerId: "quinn", canMove: true },
+        ],
+        boardTokenInstanceCounter: 10,
+      });
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.boardTokens).toEqual([]);
+      expect(state.boardTokenInstanceCounter).toBe(0);
+    });
+
+    it("should clear hero status effects", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            currentHp: 5, 
+            maxHp: 10, 
+            level: 1, 
+            ac: 17, 
+            surgeValue: 4, 
+            attackBonus: 6,
+            statuses: [
+              { type: "poisoned", appliedOnTurn: 1, source: "snake-1" },
+              { type: "slowed", appliedOnTurn: 2, source: "kobold-1" },
+            ],
+          },
+        ],
+      });
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.heroHp).toEqual([]);
+    });
+
+    it("should clear monster status effects via monsters array", () => {
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        monsters: [
+          {
+            monsterId: "kobold",
+            instanceId: "kobold-1",
+            position: { x: 3, y: 3 },
+            currentHp: 1,
+            controllerId: "quinn",
+            tileId: "tile-1",
+            statuses: [
+              { type: "weakened", appliedOnTurn: 1, source: "power-card-1" },
+            ],
+          },
+        ],
+      });
+      const state = gameReducer(gameInProgress, resetGame());
+      expect(state.monsters).toEqual([]);
     });
   });
 

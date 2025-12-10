@@ -619,6 +619,17 @@ export const gameSlice = createSlice({
       // Initialize encounter deck
       state.encounterDeck = initializeEncounterDeck(randomFn);
       state.drawnEncounter = null;
+      
+      // Clear environment cards and effects
+      state.activeEnvironmentId = null;
+      
+      // Clear traps, hazards, and board tokens
+      state.traps = [];
+      state.hazards = [];
+      state.trapInstanceCounter = 0;
+      state.hazardInstanceCounter = 0;
+      state.boardTokens = [];
+      state.boardTokenInstanceCounter = 0;
 
       // Initialize treasure deck and hero inventories
       state.treasureDeck = initializeTreasureDeck(randomFn);
@@ -628,6 +639,9 @@ export const gameSlice = createSlice({
         state.heroInventories[heroId] = createHeroInventory(heroId);
       }
       state.treasureDrawnThisTurn = false;
+      
+      // Clear encounter effect messages
+      state.encounterEffectMessage = null;
 
       state.currentScreen = "game-board";
     },
@@ -848,6 +862,13 @@ export const gameSlice = createSlice({
       state.defeatReason = null;
       state.encounterDeck = { drawPile: [], discardPile: [] };
       state.drawnEncounter = null;
+      state.activeEnvironmentId = null;
+      state.traps = [];
+      state.hazards = [];
+      state.trapInstanceCounter = 0;
+      state.hazardInstanceCounter = 0;
+      state.boardTokens = [];
+      state.boardTokenInstanceCounter = 0;
       state.showActionSurgePrompt = false;
       state.multiAttackState = null;
       state.pendingMoveAttack = null;
@@ -857,6 +878,7 @@ export const gameSlice = createSlice({
       state.treasureDrawnThisTurn = false;
       state.incrementalMovement = null;
       state.undoSnapshot = null;
+      state.encounterEffectMessage = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
