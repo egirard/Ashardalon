@@ -315,10 +315,10 @@ describe("gameSlice", () => {
     it("should clear traps and hazards on start", () => {
       const stateWithTraps = createGameState({
         traps: [
-          { id: "trap-1", type: "pit", position: { x: 3, y: 3 }, tileId: "tile-1" },
+          { id: "trap-1", encounterId: "encounter-trap-1", position: { x: 3, y: 3 }, disableDC: 15 },
         ],
         hazards: [
-          { id: "hazard-1", type: "lava", position: { x: 5, y: 5 }, tileId: "tile-2" },
+          { id: "hazard-1", encounterId: "encounter-hazard-1", position: { x: 5, y: 5 } },
         ],
         trapInstanceCounter: 10,
         hazardInstanceCounter: 5,
@@ -333,8 +333,8 @@ describe("gameSlice", () => {
     it("should clear board tokens on start", () => {
       const stateWithTokens = createGameState({
         boardTokens: [
-          { id: "token-1", type: "whirling-blades", position: { x: 3, y: 3 }, powerCardId: 101, ownerId: "quinn" },
-          { id: "token-2", type: "blade-barrier", position: { x: 4, y: 4 }, powerCardId: 102, ownerId: "vistra" },
+          { id: "token-1", type: "blade-barrier", position: { x: 3, y: 3 }, powerCardId: 101, ownerId: "quinn" },
+          { id: "token-2", type: "flaming-sphere", position: { x: 4, y: 4 }, powerCardId: 102, ownerId: "vistra" },
         ],
         boardTokenInstanceCounter: 15,
       });
@@ -500,11 +500,11 @@ describe("gameSlice", () => {
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         traps: [
-          { id: "trap-1", type: "pit", position: { x: 3, y: 3 }, tileId: "tile-1" },
-          { id: "trap-2", type: "spike", position: { x: 4, y: 4 }, tileId: "tile-1" },
+          { id: "trap-1", encounterId: "encounter-trap-1", position: { x: 3, y: 3 }, disableDC: 15 },
+          { id: "trap-2", encounterId: "encounter-trap-2", position: { x: 4, y: 4 }, disableDC: 15 },
         ],
         hazards: [
-          { id: "hazard-1", type: "lava", position: { x: 5, y: 5 }, tileId: "tile-2" },
+          { id: "hazard-1", encounterId: "encounter-hazard-1", position: { x: 5, y: 5 } },
         ],
         trapInstanceCounter: 5,
         hazardInstanceCounter: 3,
@@ -521,7 +521,7 @@ describe("gameSlice", () => {
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
         boardTokens: [
-          { id: "token-1", type: "whirling-blades", position: { x: 3, y: 3 }, powerCardId: 101, ownerId: "quinn" },
+          { id: "token-1", type: "blade-barrier", position: { x: 3, y: 3 }, powerCardId: 101, ownerId: "quinn" },
           { id: "token-2", type: "flaming-sphere", position: { x: 4, y: 4 }, powerCardId: 102, ownerId: "quinn", canMove: true },
         ],
         boardTokenInstanceCounter: 10,
