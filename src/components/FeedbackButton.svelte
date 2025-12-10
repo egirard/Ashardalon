@@ -24,6 +24,20 @@
       const userAgent = navigator.userAgent;
       const gameVersion = '1.0.0'; // From package.json
       const timestamp = new Date().toISOString();
+      
+      // Create human-readable timestamp for title
+      const date = new Date();
+      const humanReadableDate = date.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      const humanReadableTime = date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      const humanReadableTimestamp = `${humanReadableDate} at ${humanReadableTime}`;
 
       // Prepare the issue body with diagnostic information
       const issueBody = `
@@ -46,7 +60,7 @@
       `.trim();
 
       // Create the GitHub issue URL with pre-filled content
-      const issueTitle = encodeURIComponent('User Feedback - ' + timestamp);
+      const issueTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
       const issueBodyEncoded = encodeURIComponent(issueBody);
       const labels = 'UserGenerated';
 
@@ -56,7 +70,27 @@
       // If too long, open without screenshot
       if (githubIssueUrl.length > 8000) {
         console.warn('Screenshot data URI too large, opening issue form without screenshot');
-        const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&labels=${labels}`;
+        // Create fallback body without screenshot
+        const fallbackBody = `
+## Feedback / Bug Report
+
+**Timestamp:** ${timestamp}
+
+### Description
+<!-- Please describe the issue or feedback here -->
+
+
+### Screenshot
+_Screenshot was too large to include automatically. Please attach manually if needed._
+
+### System Information
+- **Browser/User Agent:** ${userAgent}
+- **Game Version:** ${gameVersion}
+- **Screen Resolution:** ${window.screen.width}x${window.screen.height}
+- **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
+        `.trim();
+        const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
+        const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${fallbackBodyEncoded}&labels=${labels}`;
         window.open(fallbackUrl, '_blank');
       } else {
         // Open the GitHub issue page in a new tab
@@ -64,8 +98,44 @@
       }
     } catch (error) {
       console.error('Failed to capture screenshot or create feedback:', error);
-      // Fallback: open GitHub issues page without screenshot
-      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?labels=UserGenerated`;
+      // Fallback: open GitHub issues page with basic information but without screenshot
+      const date = new Date();
+      const timestamp = date.toISOString();
+      const humanReadableDate = date.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      const humanReadableTime = date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      const humanReadableTimestamp = `${humanReadableDate} at ${humanReadableTime}`;
+      const userAgent = navigator.userAgent;
+      const gameVersion = '1.0.0';
+      
+      const fallbackBody = `
+## Feedback / Bug Report
+
+**Timestamp:** ${timestamp}
+
+### Description
+<!-- Please describe the issue or feedback here -->
+
+
+### Screenshot
+_Screenshot could not be captured automatically. Please attach manually if needed._
+
+### System Information
+- **Browser/User Agent:** ${userAgent}
+- **Game Version:** ${gameVersion}
+- **Screen Resolution:** ${window.screen.width}x${window.screen.height}
+- **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
+      `.trim();
+      const fallbackTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
+      const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
+      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${fallbackTitle}&body=${fallbackBodyEncoded}&labels=UserGenerated`;
       window.open(fallbackUrl, '_blank');
     }
   }
