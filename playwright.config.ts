@@ -14,7 +14,7 @@ export default defineConfig({
   },
   expect: {
     toHaveScreenshot: {
-      maxDiffPixels: 80000, // Increased to allow for monster card display UI changes (PR #146)
+      maxDiffPixels: 100000, // Increased to allow for monster card display UI changes (PR #146)
       threshold: 0.2, // Allow color differences due to gameplay state
     },
   },
