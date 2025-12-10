@@ -26,13 +26,23 @@
   }
 
   /**
-   * Creates a fallback issue body when screenshot is not available.
+   * Creates an issue body with screenshot instructions or thumbnail.
    * @param timestamp - ISO timestamp string
-   * @param screenshotMessage - Message explaining why screenshot is not included
+   * @param screenshotMessage - Message explaining screenshot status
    * @param userAgent - Browser user agent string
+   * @param thumbnailDataUrl - Optional low-res thumbnail data URL
    * @returns Formatted issue body markdown
    */
-  function createFallbackBody(timestamp: string, screenshotMessage: string, userAgent: string): string {
+  function createIssueBody(
+    timestamp: string, 
+    screenshotMessage: string, 
+    userAgent: string, 
+    thumbnailDataUrl?: string
+  ): string {
+    const screenshotSection = thumbnailDataUrl
+      ? `${screenshotMessage}\n\n_Low-resolution preview:_\n![Screenshot Preview](${thumbnailDataUrl})`
+      : screenshotMessage;
+
     return `
 ## Feedback / Bug Report
 
@@ -43,7 +53,7 @@
 
 
 ### Screenshot
-${screenshotMessage}
+${screenshotSection}
 
 ### System Information
 - **Browser/User Agent:** ${userAgent}
@@ -54,7 +64,71 @@ ${screenshotMessage}
   }
 
   /**
+   * Generates a lower resolution thumbnail from a canvas.
+   * @param sourceCanvas - The original canvas
+   * @param maxWidth - Maximum width for the thumbnail
+   * @param maxHeight - Maximum height for the thumbnail
+   * @returns Data URL of the thumbnail
+   */
+  function generateThumbnail(sourceCanvas: HTMLCanvasElement, maxWidth: number = 800, maxHeight: number = 600): string {
+    const scale = Math.min(maxWidth / sourceCanvas.width, maxHeight / sourceCanvas.height, 1);
+    
+    if (scale >= 1) {
+      // No need to downscale
+      return sourceCanvas.toDataURL('image/jpeg', 0.7);
+    }
+
+    const thumbnailCanvas = document.createElement('canvas');
+    thumbnailCanvas.width = sourceCanvas.width * scale;
+    thumbnailCanvas.height = sourceCanvas.height * scale;
+    
+    const ctx = thumbnailCanvas.getContext('2d');
+    if (!ctx) {
+      return sourceCanvas.toDataURL('image/jpeg', 0.7);
+    }
+    
+    ctx.drawImage(sourceCanvas, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
+    return thumbnailCanvas.toDataURL('image/jpeg', 0.7);
+  }
+
+  /**
+   * Copies a canvas to clipboard as a PNG blob.
+   * @param canvas - The canvas to copy
+   * @returns Promise that resolves to true if successful
+   */
+  async function copyCanvasToClipboard(canvas: HTMLCanvasElement): Promise<boolean> {
+    try {
+      // Check if Clipboard API is available
+      if (!navigator.clipboard || !navigator.clipboard.write) {
+        return false;
+      }
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, 'image/png');
+      });
+
+      if (!blob) {
+        return false;
+      }
+
+      // Copy to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob
+        })
+      ]);
+
+      return true;
+    } catch (error) {
+      console.warn('Failed to copy to clipboard:', error);
+      return false;
+    }
+  }
+
+  /**
    * Captures a screenshot of the current game screen and opens a pre-filled GitHub issue.
+   * Attempts to copy full-resolution screenshot to clipboard and includes a low-res thumbnail.
    */
   async function handleFeedbackClick() {
     try {
@@ -65,34 +139,33 @@ ${screenshotMessage}
         logging: false,
       });
 
-      // Convert canvas to data URL (base64 encoded PNG)
-      const screenshotDataUrl = canvas.toDataURL('image/png');
-
       // Get system information
       const userAgent = navigator.userAgent;
       const date = new Date();
       const timestamp = date.toISOString();
       const humanReadableTimestamp = createHumanReadableTimestamp(date);
 
-      // Prepare the issue body with diagnostic information
-      const issueBody = `
-## Feedback / Bug Report
+      // Try to copy full-resolution screenshot to clipboard
+      const copiedToClipboard = await copyCanvasToClipboard(canvas);
 
-**Timestamp:** ${timestamp}
+      // Generate a low-resolution thumbnail for the issue body
+      const thumbnailDataUrl = generateThumbnail(canvas, 800, 600);
 
-### Description
-<!-- Please describe the issue or feedback here -->
+      // Determine the screenshot message based on clipboard success
+      let screenshotMessage: string;
+      if (copiedToClipboard) {
+        screenshotMessage = '_Screenshot copied to clipboard! **Please paste it here** (Ctrl+V or Cmd+V)._';
+      } else {
+        screenshotMessage = '_Screenshot was too large to include automatically. Please attach manually if needed._';
+      }
 
-
-### Screenshot
-![Game Screenshot](${screenshotDataUrl})
-
-### System Information
-- **Browser/User Agent:** ${userAgent}
-- **Game Version:** ${GAME_VERSION}
-- **Screen Resolution:** ${window.screen.width}x${window.screen.height}
-- **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
-      `.trim();
+      // Create the issue body with thumbnail
+      const issueBody = createIssueBody(
+        timestamp,
+        screenshotMessage,
+        userAgent,
+        thumbnailDataUrl
+      );
 
       // Create the GitHub issue URL with pre-filled content
       const issueTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
@@ -102,16 +175,16 @@ ${screenshotMessage}
       const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
 
       // Check if URL is within reasonable length limits (most browsers support ~8000 characters)
-      // If too long, open without screenshot
+      // If too long, try without thumbnail
       if (githubIssueUrl.length > 8000) {
-        console.warn('Screenshot data URI too large, opening issue form without screenshot');
-        const fallbackBody = createFallbackBody(
+        console.warn('Issue body with thumbnail too large, trying without thumbnail');
+        const bodyWithoutThumbnail = createIssueBody(
           timestamp,
-          '_Screenshot was too large to include automatically. Please attach manually if needed._',
+          screenshotMessage,
           userAgent
         );
-        const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
-        const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${fallbackBodyEncoded}&labels=${labels}`;
+        const bodyWithoutThumbnailEncoded = encodeURIComponent(bodyWithoutThumbnail);
+        const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${bodyWithoutThumbnailEncoded}&labels=${labels}`;
         window.open(fallbackUrl, '_blank');
       } else {
         // Open the GitHub issue page in a new tab
@@ -125,7 +198,7 @@ ${screenshotMessage}
       const humanReadableTimestamp = createHumanReadableTimestamp(date);
       const userAgent = navigator.userAgent;
       
-      const fallbackBody = createFallbackBody(
+      const fallbackBody = createIssueBody(
         timestamp,
         '_Screenshot could not be captured automatically. Please attach manually if needed._',
         userAgent
