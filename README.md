@@ -17,7 +17,7 @@ This project brings the excitement of the Wrath of Ashardalon board game to your
 
 ### Playing the Game
 
-1. Visit the GitHub Pages deployment of this project
+1. Visit the [deployed game](https://egirard.github.io/Ashardalon/)
 2. No installation required - the game runs directly in your browser
 3. Gather your party and start exploring!
 
@@ -57,6 +57,7 @@ For detailed rules and gameplay mechanics, refer to the original Wrath of Ashard
 
 - [Vision Document](VISION.md) - Project goals, roadmap, and design philosophy
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
+- [Game Asset Rules](CONTRIBUTING.md#contributing-art-and-assets) - Guidelines for contributing artwork and assets
 
 ## Technology Stack
 
