@@ -450,14 +450,13 @@
     } else {
       // South tiles: positioned after north tiles + start tile
       const northTileCount = Math.max(0, -bounds.minRow);
-      // Account for start tile's 37px south border vs normal tile's 36px border
-      // North adjustment affects base position, south adjustment affects south tiles
+      // Don't subtract START_TILE_NORTH_OFFSET_DIFF for south tiles.
+      // That adjustment is for aligning the start tile with north tiles,
+      // but south tiles should align with the start tile's south edge.
       y =
         northTileCount * NORMAL_TILE_HEIGHT +
         START_TILE_HEIGHT +
-        (tile.position.row - 1) * NORMAL_TILE_HEIGHT -
-        START_TILE_NORTH_OFFSET_DIFF -
-        START_TILE_SOUTH_OFFSET_DIFF;
+        (tile.position.row - 1) * NORMAL_TILE_HEIGHT;
     }
 
     return { x, y };
