@@ -1,7 +1,5 @@
 <script lang="ts">
   import type { Hero, HeroHpState, HeroCondition, MonsterState } from '../store/types';
-  import type { HeroPowerCards, PowerCard } from '../store/powerCards';
-  import { getPowerCardById } from '../store/powerCards';
   import type { HeroInventory, TreasureCard } from '../store/treasure';
   import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
@@ -10,7 +8,6 @@
   interface Props {
     hero: Hero;
     heroHpState: HeroHpState;
-    heroPowerCards?: HeroPowerCards;
     heroInventory?: HeroInventory;
     isActive: boolean;
     turnPhase?: string;
@@ -27,58 +24,10 @@
     boardPosition?: 'top' | 'bottom' | 'left' | 'right';
   }
 
-  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom' }: Props = $props();
+  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom' }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
-
-  // Get power cards for display
-  let powerCards = $derived.by(() => {
-    if (!heroPowerCards) return [];
-    
-    const cards: { card: PowerCard; isFlipped: boolean }[] = [];
-    
-    // Add custom ability
-    const customAbility = getPowerCardById(heroPowerCards.customAbility);
-    if (customAbility) {
-      const state = heroPowerCards.cardStates.find(s => s.cardId === customAbility.id);
-      cards.push({ card: customAbility, isFlipped: state?.isFlipped ?? false });
-    }
-    
-    // Add utility
-    const utility = getPowerCardById(heroPowerCards.utility);
-    if (utility) {
-      const state = heroPowerCards.cardStates.find(s => s.cardId === utility.id);
-      cards.push({ card: utility, isFlipped: state?.isFlipped ?? false });
-    }
-    
-    // Add at-wills
-    for (const atWillId of heroPowerCards.atWills) {
-      const atWill = getPowerCardById(atWillId);
-      if (atWill) {
-        const state = heroPowerCards.cardStates.find(s => s.cardId === atWill.id);
-        cards.push({ card: atWill, isFlipped: state?.isFlipped ?? false });
-      }
-    }
-    
-    // Add daily
-    const daily = getPowerCardById(heroPowerCards.daily);
-    if (daily) {
-      const state = heroPowerCards.cardStates.find(s => s.cardId === daily.id);
-      cards.push({ card: daily, isFlipped: state?.isFlipped ?? false });
-    }
-    
-    // Add level 2 daily if present
-    if (heroPowerCards.dailyLevel2) {
-      const dailyL2 = getPowerCardById(heroPowerCards.dailyLevel2);
-      if (dailyL2) {
-        const state = heroPowerCards.cardStates.find(s => s.cardId === dailyL2.id);
-        cards.push({ card: dailyL2, isFlipped: state?.isFlipped ?? false });
-      }
-    }
-    
-    return cards;
-  });
 
   // Calculate HP percentage for health bar
   let hpPercentage = $derived(Math.max(0, Math.min(100, (heroHpState.currentHp / heroHpState.maxHp) * 100)));
@@ -89,26 +38,6 @@
     if (hpPercentage <= 50) return '#ff9800'; // Orange
     return '#4caf50'; // Green
   });
-
-  // Power card type colors
-  function getPowerCardColor(type: string): string {
-    switch (type) {
-      case 'at-will': return '#2e7d32'; // Green
-      case 'daily': return '#7b1fa2'; // Purple
-      case 'utility': return '#1565c0'; // Blue
-      default: return '#666';
-    }
-  }
-
-  // Power card type abbreviation
-  function getPowerCardAbbrev(type: string): string {
-    switch (type) {
-      case 'at-will': return 'AW';
-      case 'daily': return 'D';
-      case 'utility': return 'U';
-      default: return '';
-    }
-  }
 
   // Get treasure items for display
   let treasureItems = $derived.by(() => {
@@ -274,30 +203,6 @@
     </div>
 
   </div>
-
-  <!-- Power Cards Section -->
-  {#if powerCards.length > 0}
-    <div class="power-cards-section" data-testid="player-card-powers">
-      {#each powerCards as { card, isFlipped } (card.id)}
-        <div 
-          class="power-card-mini"
-          class:flipped={isFlipped}
-          title="{card.name} ({card.type})"
-          style="border-color: {getPowerCardColor(card.type)};"
-        >
-          <span class="power-type" style="background-color: {getPowerCardColor(card.type)};">
-            {getPowerCardAbbrev(card.type)}
-          </span>
-          <span class="power-name">{card.name}</span>
-          {#if isFlipped}
-            <span class="flipped-indicator">
-              <XIcon size={14} ariaLabel="Used" />
-            </span>
-          {/if}
-        </div>
-      {/each}
-    </div>
-  {/if}
 
   <!-- Treasure Items Section -->
   {#if treasureItems.length > 0}
@@ -532,57 +437,6 @@
     font-size: 0.75rem;
     font-weight: bold;
     color: #fff;
-  }
-
-
-
-  /* Power Cards Section */
-  .power-cards-section {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem;
-    border-top: 1px solid rgba(100, 100, 130, 0.3);
-    padding-top: 0.3rem;
-  }
-
-  .power-card-mini {
-    display: flex;
-    align-items: center;
-    gap: 0.15rem;
-    padding: 0.1rem 0.25rem;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid;
-    border-radius: 2px;
-    font-size: 0.5rem;
-    max-width: 100%;
-    overflow: hidden;
-    transition: opacity 0.2s ease;
-  }
-
-  .power-card-mini.flipped {
-    opacity: 0.4;
-  }
-
-  .power-type {
-    font-size: 0.5rem;
-    font-weight: bold;
-    color: #fff;
-    padding: 0.1rem 0.2rem;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-
-  .power-name {
-    color: #ddd;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .flipped-indicator {
-    color: #e53935;
-    font-weight: bold;
-    flex-shrink: 0;
   }
 
   /* Treasure Items Section */
