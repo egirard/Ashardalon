@@ -1211,6 +1211,11 @@
               {/each}
             </div>
           {/if}
+          <!-- Power cards to the right of player card (before in DOM due to 180° rotation) -->
+          <PlayerPowerCards
+            heroPowerCards={heroPowerCards[hero.id]}
+            boardPosition="top"
+          />
           <PlayerCard
             {hero}
             {heroHpState}
@@ -1220,11 +1225,6 @@
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-            boardPosition="top"
-          />
-          <!-- Power cards to the right of player card -->
-          <PlayerPowerCards
-            heroPowerCards={heroPowerCards[hero.id]}
             boardPosition="top"
           />
         </div>
