@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Monster, MonsterState } from '../store/types';
-  import { MONSTERS } from '../store/types';
+  import { MONSTERS, MONSTER_TACTICS } from '../store/types';
   import { assetPath } from '../utils';
-  import { ShieldIcon, StarIcon } from './icons';
+  import { ShieldIcon, StarIcon, SwordIcon } from './icons';
   
   interface Props {
     monster: MonsterState;
@@ -13,6 +13,9 @@
   
   // Get monster definition
   const monsterDef = $derived(MONSTERS.find(m => m.id === monster.monsterId));
+  
+  // Get monster tactics
+  const tactics = $derived(monsterDef ? MONSTER_TACTICS[monsterDef.id] : undefined);
   
   // Calculate HP percentage for health bar
   let hpPercentage = $derived.by(() => {
@@ -26,6 +29,11 @@
     if (hpPercentage <= 50) return '#ff9800'; // Orange
     return '#4caf50'; // Green
   });
+  
+  // Format tactic type for display
+  function formatTacticType(type: string): string {
+    return type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  }
 </script>
 
 {#if monsterDef}
@@ -66,6 +74,22 @@
         {monster.currentHp}/{monsterDef.hp}
       </span>
     </div>
+    
+    <!-- Attack Info -->
+    {#if tactics}
+      <div class="mini-attack" data-testid="monster-mini-attack">
+        <SwordIcon size={12} ariaLabel="Attack" />
+        <span class="attack-name">{tactics.adjacentAttack.name}</span>
+        <span class="attack-bonus">+{tactics.adjacentAttack.attackBonus}</span>
+        <span class="attack-damage">{tactics.adjacentAttack.damage}d</span>
+      </div>
+      
+      <!-- Tactic Type -->
+      <div class="mini-tactic" data-testid="monster-mini-tactic" title="{formatTacticType(tactics.type)}">
+        <span class="tactic-label">Tactic:</span>
+        <span class="tactic-type">{formatTacticType(tactics.type)}</span>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -164,6 +188,60 @@
     color: #fff;
     min-width: 35px;
     text-align: right;
+  }
+  
+  /* Attack Info */
+  .mini-attack {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.3rem;
+    background: rgba(139, 69, 19, 0.3);
+    border: 1px solid rgba(139, 69, 19, 0.5);
+    border-radius: 3px;
+    font-size: 0.6rem;
+  }
+  
+  .attack-name {
+    color: #fff;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .attack-bonus {
+    color: #4ade80;
+    font-weight: bold;
+  }
+  
+  .attack-damage {
+    color: #f97316;
+    font-weight: bold;
+  }
+  
+  /* Tactic Type */
+  .mini-tactic {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.3rem;
+    background: rgba(100, 100, 150, 0.2);
+    border: 1px solid rgba(100, 100, 150, 0.4);
+    border-radius: 3px;
+    font-size: 0.55rem;
+  }
+  
+  .tactic-label {
+    color: #999;
+    font-weight: bold;
+  }
+  
+  .tactic-type {
+    color: #b3b3ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   /* Respect user's reduced motion preference */
