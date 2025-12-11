@@ -83,6 +83,7 @@
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import PlayerCard from "./PlayerCard.svelte";
+  import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import FeedbackButton from "./FeedbackButton.svelte";
   import {
     resolveAttack,
@@ -1213,13 +1214,17 @@
           <PlayerCard
             {hero}
             {heroHpState}
-            heroPowerCards={heroPowerCards[hero.id]}
             heroInventory={heroInventories[hero.id]}
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+            boardPosition="top"
+          />
+          <!-- Power cards to the right of player card -->
+          <PlayerPowerCards
+            heroPowerCards={heroPowerCards[hero.id]}
             boardPosition="top"
           />
         </div>
@@ -1254,13 +1259,17 @@
             <PlayerCard
               {hero}
               {heroHpState}
-              heroPowerCards={heroPowerCards[hero.id]}
               heroInventory={heroInventories[hero.id]}
               isActive={isActiveHero(hero.id)}
               turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
               turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+              boardPosition="left"
+            />
+            <!-- Power cards to the right of player card -->
+            <PlayerPowerCards
+              heroPowerCards={heroPowerCards[hero.id]}
               boardPosition="left"
             />
           </div>
@@ -1609,13 +1618,17 @@
             <PlayerCard
               {hero}
               {heroHpState}
-              heroPowerCards={heroPowerCards[hero.id]}
               heroInventory={heroInventories[hero.id]}
               isActive={isActiveHero(hero.id)}
               turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
               turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+              boardPosition="right"
+            />
+            <!-- Power cards to the right of player card -->
+            <PlayerPowerCards
+              heroPowerCards={heroPowerCards[hero.id]}
               boardPosition="right"
             />
           </div>
@@ -1649,13 +1662,17 @@
           <PlayerCard
             {hero}
             {heroHpState}
-            heroPowerCards={heroPowerCards[hero.id]}
             heroInventory={heroInventories[hero.id]}
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+            boardPosition="bottom"
+          />
+          <!-- Power cards to the right of player card -->
+          <PlayerPowerCards
+            heroPowerCards={heroPowerCards[hero.id]}
             boardPosition="bottom"
           />
         </div>
