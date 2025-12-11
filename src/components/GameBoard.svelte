@@ -1109,6 +1109,23 @@
 
   // Mouse/touch pan handlers
   function handlePanStart(event: MouseEvent | TouchEvent) {
+    // For touch events, check if it's a pinch gesture (2+ touches)
+    if (event instanceof TouchEvent && event.touches.length >= 2) {
+      // Auto-enable map control mode when pinch gesture is detected
+      if (!mapControlMode) {
+        mapControlMode = true;
+      }
+      
+      // Start pinch-to-zoom
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      lastPinchDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+      isPanning = true;
+      event.preventDefault();
+      return;
+    }
+    
+    // For single touch or mouse events, only proceed if in map control mode
     if (!mapControlMode) return;
     
     isPanning = true;
@@ -1117,17 +1134,30 @@
       lastPanPoint = { x: event.clientX, y: event.clientY };
     } else if (event.touches.length === 1) {
       lastPanPoint = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-    } else if (event.touches.length === 2) {
-      // Start pinch-to-zoom
-      const touch1 = event.touches[0];
-      const touch2 = event.touches[1];
-      lastPinchDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
     }
     
     event.preventDefault();
   }
 
   function handlePanMove(event: MouseEvent | TouchEvent) {
+    // For touch events with 2+ touches (pinch gesture), always handle
+    if (event instanceof TouchEvent && event.touches.length >= 2) {
+      // Handle pinch-to-zoom
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+      
+      if (lastPinchDistance > 0) {
+        const zoomDelta = (currentDistance - lastPinchDistance) * PINCH_ZOOM_SENSITIVITY;
+        manualZoom = Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, manualZoom + zoomDelta));
+      }
+      
+      lastPinchDistance = currentDistance;
+      event.preventDefault();
+      return;
+    }
+    
+    // For single touch or mouse events, only proceed if in map control mode and panning
     if (!mapControlMode || !isPanning) return;
     
     if (event instanceof MouseEvent) {
@@ -1140,18 +1170,6 @@
       const deltaY = event.touches[0].clientY - lastPanPoint.y;
       updatePanOffset(deltaX, deltaY);
       lastPanPoint = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-    } else if (event.touches.length === 2) {
-      // Handle pinch-to-zoom
-      const touch1 = event.touches[0];
-      const touch2 = event.touches[1];
-      const currentDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
-      
-      if (lastPinchDistance > 0) {
-        const zoomDelta = (currentDistance - lastPinchDistance) * PINCH_ZOOM_SENSITIVITY;
-        manualZoom = Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, manualZoom + zoomDelta));
-      }
-      
-      lastPinchDistance = currentDistance;
     }
     
     event.preventDefault();
@@ -1242,9 +1260,9 @@
         onmousemove={mapControlMode ? handlePanMove : undefined}
         onmouseup={mapControlMode ? handlePanEnd : undefined}
         onmouseleave={mapControlMode ? handlePanEnd : undefined}
-        ontouchstart={mapControlMode ? handlePanStart : undefined}
-        ontouchmove={mapControlMode ? handlePanMove : undefined}
-        ontouchend={mapControlMode ? handlePanEnd : undefined}
+        ontouchstart={handlePanStart}
+        ontouchmove={handlePanMove}
+        ontouchend={handlePanEnd}
         role="button"
         tabindex="0"
         aria-label={mapControlMode
@@ -1811,6 +1829,8 @@
     position: relative;
     transition: transform 0.3s ease-out;
     transform-origin: center center;
+    /* Prevent default browser touch zoom/pan behavior */
+    touch-action: none;
   }
 
   .placed-tile {
