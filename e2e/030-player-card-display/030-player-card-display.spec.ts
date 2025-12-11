@@ -74,9 +74,8 @@ test.describe('030 - Player Card Display', () => {
         // Verify Speed display
         await expect(page.locator('[data-testid="player-card-speed"]')).toContainText('5');
         
-        // Verify Attack info display
-        await expect(page.locator('[data-testid="player-card-attack"]')).toContainText('Warhammer');
-        await expect(page.locator('[data-testid="player-card-attack"]')).toContainText('+8');
+        // Note: Attack info (stub attack) removed from player card per UX refactor
+        // Attack power cards are shown via PowerCardAttackPanel instead
         
         // Verify power cards section is visible
         await expect(page.locator('[data-testid="player-card-powers"]')).toBeVisible();
@@ -175,14 +174,12 @@ test.describe('030 - Player Card Display', () => {
       }
     });
 
-    // STEP 7: Verify party surge counter is displayed on player card
+    // STEP 7: Verify party surge counter - now displayed in game field UI, not player card
+    // Party surges removed from player card per UX refactor
     await screenshots.capture(page, 'player-card-with-party-surges', {
       programmaticCheck: async () => {
-        // Verify party surge section is visible
-        await expect(page.locator('[data-testid="player-card-surges"]')).toBeVisible();
-        
-        // Verify initial surge count (2 surges at game start)
-        await expect(page.locator('[data-testid="player-card-surges"]')).toContainText('2');
+        // Note: Party surge section removed from player card
+        // Surges are now displayed via HealingSurgeCounter in game field UI instead
         
         // Verify store state has correct surge count
         const storeState = await page.evaluate(() => {
@@ -220,7 +217,7 @@ test.describe('030 - Player Card Display', () => {
       }
     });
 
-    // STEP 9: Set party surges to 0 to verify warning display
+    // STEP 9: Set party surges to 0 - verify state, warning now shown in game field UI
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -231,11 +228,8 @@ test.describe('030 - Player Card Display', () => {
 
     await screenshots.capture(page, 'player-card-no-surges-warning', {
       programmaticCheck: async () => {
-        // Verify party surge section shows 0 with warning
-        await expect(page.locator('[data-testid="player-card-surges"]')).toContainText('0');
-        
-        // Verify the warning indicator is visible (⚠️)
-        await expect(page.locator('[data-testid="player-card-surges"]')).toContainText('⚠️');
+        // Note: Party surge section and warning removed from player card
+        // Warning is now displayed via HealingSurgeCounter in game field UI instead
         
         // Verify store state has 0 surges
         const storeState = await page.evaluate(() => {
