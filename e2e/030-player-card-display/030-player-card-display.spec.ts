@@ -90,8 +90,8 @@ test.describe('030 - Player Card Display', () => {
         // Note: Attack info (stub attack) removed from player card per UX refactor
         // Attack power cards are shown via PowerCardAttackPanel instead
         
-        // Verify power cards section is visible
-        await expect(page.locator('[data-testid="player-card-powers"]')).toBeVisible();
+        // Verify power cards section is visible (now in separate component)
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify store state
         const storeState = await page.evaluate(() => {
@@ -174,8 +174,8 @@ test.describe('030 - Player Card Display', () => {
 
     await screenshots.capture(page, 'player-card-with-flipped-power', {
       programmaticCheck: async () => {
-        // Verify power cards section still visible
-        await expect(page.locator('[data-testid="player-card-powers"]')).toBeVisible();
+        // Verify power cards section still visible (now in separate component)
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify store state shows flipped card
         const storeState = await page.evaluate(() => {
