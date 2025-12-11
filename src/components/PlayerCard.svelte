@@ -350,13 +350,13 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    border-radius: 8px;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    border-radius: 6px;
     background: rgba(30, 30, 50, 0.95);
     border: 2px solid rgba(100, 100, 130, 0.5);
-    min-width: 180px;
-    max-width: 280px;
+    min-width: 160px;
+    max-width: 260px;
     transition: all 0.3s ease-out;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
@@ -390,12 +390,12 @@
   .card-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .hero-portrait {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
     border-radius: 50%;
     border: 2px solid #888;
@@ -417,7 +417,7 @@
   }
 
   .hero-name {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: bold;
     color: #fff;
     white-space: nowrap;
@@ -470,21 +470,21 @@
   .stats-section {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.3rem;
   }
 
   /* HP Container */
   .hp-container {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .hp-bar-background {
     flex: 1;
-    height: 8px;
+    height: 6px;
     background: rgba(100, 100, 100, 0.4);
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
   }
 
@@ -495,13 +495,13 @@
   }
 
   .hp-text {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: bold;
     color: #fff;
     display: flex;
     align-items: center;
     gap: 0.2rem;
-    min-width: 50px;
+    min-width: 45px;
     justify-content: flex-end;
   }
 
@@ -516,20 +516,20 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.25rem 0.4rem;
+    padding: 0.2rem 0.3rem;
     background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
+    border-radius: 3px;
     flex: 1;
   }
 
   .stat-label {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
     color: #888;
     text-transform: uppercase;
   }
 
   .stat-value {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: bold;
     color: #fff;
   }
@@ -540,20 +540,20 @@
   .power-cards-section {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: 0.2rem;
     border-top: 1px solid rgba(100, 100, 130, 0.3);
-    padding-top: 0.4rem;
+    padding-top: 0.3rem;
   }
 
   .power-card-mini {
     display: flex;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.15rem 0.3rem;
+    gap: 0.15rem;
+    padding: 0.1rem 0.25rem;
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid;
-    border-radius: 3px;
-    font-size: 0.55rem;
+    border-radius: 2px;
+    font-size: 0.5rem;
     max-width: 100%;
     overflow: hidden;
     transition: opacity 0.2s ease;
@@ -589,20 +589,20 @@
   .treasure-items-section {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
+    gap: 0.2rem;
     border-top: 1px solid rgba(255, 215, 0, 0.3);
-    padding-top: 0.4rem;
+    padding-top: 0.3rem;
   }
 
   .treasure-item-mini {
     display: flex;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.15rem 0.3rem;
+    gap: 0.15rem;
+    padding: 0.1rem 0.25rem;
     background: rgba(139, 115, 85, 0.3);
     border: 1px solid rgba(255, 215, 0, 0.5);
-    border-radius: 3px;
-    font-size: 0.55rem;
+    border-radius: 2px;
+    font-size: 0.5rem;
     max-width: 100%;
     overflow: hidden;
     transition: all 0.2s ease;
@@ -702,19 +702,19 @@
   .conditions-section {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem;
-    padding: 0.25rem 0;
+    gap: 0.2rem;
+    padding: 0.2rem 0;
   }
 
   .condition-badge {
     display: flex;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.15rem 0.4rem;
+    gap: 0.15rem;
+    padding: 0.1rem 0.3rem;
     background: rgba(156, 39, 176, 0.3);
     border: 1px solid rgba(156, 39, 176, 0.6);
-    border-radius: 12px;
-    font-size: 0.6rem;
+    border-radius: 10px;
+    font-size: 0.55rem;
     cursor: help;
     transition: all 0.2s ease;
   }
