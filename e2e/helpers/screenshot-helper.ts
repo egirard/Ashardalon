@@ -75,24 +75,9 @@ export async function selectDefaultPowerCards(page: Page, heroId: string): Promi
   await page.locator(`[data-testid="select-powers-${heroId}"]`).click();
   await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
 
-  // Select utility card
-  await page.locator(`[data-testid="utility-card-${selection.utility}"]`).click();
-
-  // Select first at-will card
-  await page.locator(`[data-testid="atwill-card-${selection.atWills[0]}"]`).click();
-  // Wait for progress to update: "Pick second of two"
-  await page.locator('[data-testid="atwill-progress"]').filter({ hasText: 'Pick second of two' }).waitFor({ state: 'attached' });
-
-  // Select second at-will card
-  await page.locator(`[data-testid="atwill-card-${selection.atWills[1]}"]`).click();
-  // Wait for progress to update: "Complete"
-  await page.locator('[data-testid="atwill-progress"]').filter({ hasText: 'Complete' }).waitFor({ state: 'attached' });
-
-  // Select daily card
-  await page.locator(`[data-testid="daily-card-${selection.daily}"]`).click();
-
-  // Wait for selection to be complete (status shows "Selection Complete")
-  await page.locator('[data-testid="selection-status"] .status-complete').waitFor({ state: 'visible' });
+  // Power cards are automatically initialized when hero is selected
+  // The selection should already be complete - just verify and close
+  await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
 
   // Close modal
   await page.locator('[data-testid="done-power-selection"]').click();
