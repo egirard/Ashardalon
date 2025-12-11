@@ -1204,7 +1204,6 @@
           isActive={isActiveHero(hero.id)}
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-          partySurges={partyResources.healingSurges}
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           controlledMonsters={getMonstersForHero(hero.id)}
@@ -1234,7 +1233,6 @@
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-            partySurges={partyResources.healingSurges}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             controlledMonsters={getMonstersForHero(hero.id)}
@@ -1578,7 +1576,6 @@
             isActive={isActiveHero(hero.id)}
             turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
             turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-            partySurges={partyResources.healingSurges}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             controlledMonsters={getMonstersForHero(hero.id)}
@@ -1607,7 +1604,6 @@
           isActive={isActiveHero(hero.id)}
           turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
           turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-          partySurges={partyResources.healingSurges}
           conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
           onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
           controlledMonsters={getMonstersForHero(hero.id)}

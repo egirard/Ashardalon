@@ -5,8 +5,7 @@
   import type { HeroInventory, TreasureCard } from '../store/treasure';
   import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
-  import MonsterCardMini from './MonsterCardMini.svelte';
-  import { HeartIcon, SkullIcon, SwordIcon, ShieldIcon, LightningIcon, DiceIcon, TargetIcon, StarIcon, XIcon, WarningIcon, BandageIcon } from './icons';
+  import { HeartIcon, SkullIcon, SwordIcon, ShieldIcon, LightningIcon, DiceIcon, TargetIcon, StarIcon, XIcon } from './icons';
 
   interface Props {
     hero: Hero;
@@ -18,8 +17,6 @@
     turnNumber?: number;
     /** Active conditions affecting this hero (e.g., poisoned, dazed) */
     conditions?: HeroCondition[];
-    /** Number of healing surges available to the party */
-    partySurges?: number;
     /** Callback when a treasure item is used */
     onUseTreasureItem?: (cardId: number) => void;
     /** Monsters controlled by this hero */
@@ -30,13 +27,10 @@
     boardPosition?: 'top' | 'bottom' | 'left' | 'right';
   }
 
-  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], partySurges, onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom' }: Props = $props();
+  let { hero, heroHpState, heroPowerCards, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom' }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
-  
-  // Check if no party surges remain (for warning display)
-  let noSurgesRemaining = $derived(partySurges === 0);
 
   // Get power cards for display
   let powerCards = $derived.by(() => {
@@ -279,13 +273,6 @@
       </div>
     </div>
 
-    <!-- Attack Info -->
-    <div class="attack-info" data-testid="player-card-attack">
-      <SwordIcon size={16} ariaLabel="Attack" />
-      <span class="attack-name">{hero.attack.name}</span>
-      <span class="attack-bonus">+{heroHpState.attackBonus}</span>
-      <span class="attack-damage">{hero.attack.damage} dmg</span>
-    </div>
   </div>
 
   <!-- Power Cards Section -->
@@ -354,29 +341,8 @@
     </div>
   {/if}
 
-  <!-- Monster Cards Section (shown when hero controls monsters) -->
-  {#if controlledMonsters.length > 0}
-    <div class="monster-cards-section" data-testid="player-card-monsters">
-      {#each controlledMonsters as monster (monster.instanceId)}
-        <MonsterCardMini 
-          {monster}
-          isActivating={activatingMonsterId === monster.instanceId}
-        />
-      {/each}
-    </div>
-  {/if}
 
-  <!-- Party Surge Counter (shown when surges are available) -->
-  {#if partySurges !== undefined}
-    <div class="party-surge-section" data-testid="player-card-surges">
-      <BandageIcon size={16} ariaLabel="Healing Surges" />
-      <span class="surge-label">Party Surges:</span>
-      <span class="surge-count" class:no-surges={noSurgesRemaining}>{partySurges}</span>
-      {#if noSurgesRemaining}
-        <WarningIcon size={16} ariaLabel="No surges remaining" />
-      {/if}
-    </div>
-  {/if}
+
 </div>
 
 <style>
@@ -568,35 +534,7 @@
     color: #fff;
   }
 
-  /* Attack Info */
-  .attack-info {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.25rem 0.4rem;
-    background: rgba(139, 69, 19, 0.3);
-    border: 1px solid rgba(139, 69, 19, 0.5);
-    border-radius: 4px;
-    font-size: 0.7rem;
-  }
 
-  .attack-name {
-    color: #fff;
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .attack-bonus {
-    color: #4ade80;
-    font-weight: bold;
-  }
-
-  .attack-damage {
-    color: #f97316;
-    font-weight: bold;
-  }
 
   /* Power Cards Section */
   .power-cards-section {
@@ -712,14 +650,7 @@
     color: #999;
   }
 
-  /* Monster Cards Section */
-  .monster-cards-section {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    border-top: 1px solid rgba(204, 51, 51, 0.3);
-    padding-top: 0.4rem;
-  }
+
 
   /* KO State Styles */
   .player-card.knocked-out {
@@ -803,34 +734,7 @@
     letter-spacing: 0.5px;
   }
 
-  /* Party Surge Section */
-  .party-surge-section {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.3rem 0.4rem;
-    background: rgba(231, 76, 60, 0.15);
-    border: 1px solid rgba(231, 76, 60, 0.3);
-    border-radius: 4px;
-    font-size: 0.65rem;
-  }
 
-  .party-surge-section .surge-label {
-    color: #e74c3c;
-    font-weight: bold;
-  }
-
-  .party-surge-section .surge-count {
-    color: #fff;
-    font-weight: bold;
-    font-size: 0.8rem;
-    min-width: 1rem;
-    text-align: center;
-  }
-
-  .party-surge-section .surge-count.no-surges {
-    color: #ff5252;
-  }
 
   /* Respect user's reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
