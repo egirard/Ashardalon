@@ -81,7 +81,7 @@
         <SwordIcon size={12} ariaLabel="Attack" />
         <span class="attack-name">{tactics.adjacentAttack.name}</span>
         <span class="attack-bonus">+{tactics.adjacentAttack.attackBonus}</span>
-        <span class="attack-damage">{tactics.adjacentAttack.damage}d</span>
+        <span class="attack-damage">{tactics.adjacentAttack.damage} dmg</span>
       </div>
       
       <!-- Tactic Type -->
