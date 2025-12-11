@@ -362,6 +362,31 @@ jobs:
           fi
 ```
 
+## Google Analytics Configuration
+
+The `index.html` file includes a Google Analytics gtag snippet with a placeholder `GA_MEASUREMENT_ID`. To enable analytics tracking:
+
+1. **Create a Google Analytics 4 property** at [analytics.google.com](https://analytics.google.com)
+2. **Get your Measurement ID** (format: `G-XXXXXXXXXX`)
+3. **Replace the placeholder** in `index.html`:
+   ```html
+   <!-- Before -->
+   <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+   <script>
+     gtag('config', 'GA_MEASUREMENT_ID');
+   </script>
+   
+   <!-- After -->
+   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+   <script>
+     gtag('config', 'G-XXXXXXXXXX');
+   </script>
+   ```
+
+### Alternative: Build-Time Configuration
+
+For more flexible configuration (e.g., different IDs for development/production), you can use a Vite plugin or environment variable substitution during the build process.
+
 ## Summary
 
 | Feature | Production | PR Preview |
