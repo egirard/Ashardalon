@@ -49,7 +49,10 @@
 **Timestamp:** ${timestamp}
 
 ### Description
-<!-- Please describe the issue or feedback here -->
+**👉 PLEASE DESCRIBE YOUR FEEDBACK OR ISSUE HERE:**
+
+_What happened? What did you expect? Any suggestions?_
+
 
 
 ### Screenshot
