@@ -66,6 +66,7 @@
   import UnexploredEdgeIndicator from "./UnexploredEdgeIndicator.svelte";
   import MonsterToken from "./MonsterToken.svelte";
   import MonsterCard from "./MonsterCard.svelte";
+  import MonsterCardMini from "./MonsterCardMini.svelte";
   import EncounterCard from "./EncounterCard.svelte";
   import TrapMarker from "./TrapMarker.svelte";
   import HazardMarker from "./HazardMarker.svelte";
@@ -1195,21 +1196,33 @@
   >
     {#each getHeroesForEdge('top') as hero (hero.id)}
       {@const heroHpState = getHeroHpState(hero.id)}
+      {@const controlledMonsters = getMonstersForHero(hero.id)}
       {#if heroHpState}
-        <PlayerCard
-          {hero}
-          {heroHpState}
-          heroPowerCards={heroPowerCards[hero.id]}
-          heroInventory={heroInventories[hero.id]}
-          isActive={isActiveHero(hero.id)}
-          turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-          turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-          conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
-          onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-          controlledMonsters={getMonstersForHero(hero.id)}
-          activatingMonsterId={activatingMonsterId}
-          boardPosition="top"
-        />
+        <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
+          <!-- Monster cards to the left of player card -->
+          {#if controlledMonsters.length > 0}
+            <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
+              {#each controlledMonsters as monster (monster.instanceId)}
+                <MonsterCardMini 
+                  {monster}
+                  isActivating={activatingMonsterId === monster.instanceId}
+                />
+              {/each}
+            </div>
+          {/if}
+          <PlayerCard
+            {hero}
+            {heroHpState}
+            heroPowerCards={heroPowerCards[hero.id]}
+            heroInventory={heroInventories[hero.id]}
+            isActive={isActiveHero(hero.id)}
+            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+            conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+            onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+            boardPosition="top"
+          />
+        </div>
       {/if}
     {/each}
   </div>
@@ -1224,21 +1237,33 @@
     >
       {#each getHeroesForEdge('left') as hero (hero.id)}
         {@const heroHpState = getHeroHpState(hero.id)}
+        {@const controlledMonsters = getMonstersForHero(hero.id)}
         {#if heroHpState}
-          <PlayerCard
-            {hero}
-            {heroHpState}
-            heroPowerCards={heroPowerCards[hero.id]}
-            heroInventory={heroInventories[hero.id]}
-            isActive={isActiveHero(hero.id)}
-            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-            conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
-            onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-            controlledMonsters={getMonstersForHero(hero.id)}
-            activatingMonsterId={activatingMonsterId}
-            boardPosition="left"
-          />
+          <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
+            <!-- Monster cards to the left of player card -->
+            {#if controlledMonsters.length > 0}
+              <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
+                {#each controlledMonsters as monster (monster.instanceId)}
+                  <MonsterCardMini 
+                    {monster}
+                    isActivating={activatingMonsterId === monster.instanceId}
+                  />
+                {/each}
+              </div>
+            {/if}
+            <PlayerCard
+              {hero}
+              {heroHpState}
+              heroPowerCards={heroPowerCards[hero.id]}
+              heroInventory={heroInventories[hero.id]}
+              isActive={isActiveHero(hero.id)}
+              turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+              turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+              conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+              onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+              boardPosition="left"
+            />
+          </div>
         {/if}
       {/each}
     </div>
@@ -1567,21 +1592,33 @@
     >
       {#each getHeroesForEdge('right') as hero (hero.id)}
         {@const heroHpState = getHeroHpState(hero.id)}
+        {@const controlledMonsters = getMonstersForHero(hero.id)}
         {#if heroHpState}
-          <PlayerCard
-            {hero}
-            {heroHpState}
-            heroPowerCards={heroPowerCards[hero.id]}
-            heroInventory={heroInventories[hero.id]}
-            isActive={isActiveHero(hero.id)}
-            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-            conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
-            onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-            controlledMonsters={getMonstersForHero(hero.id)}
-            activatingMonsterId={activatingMonsterId}
-            boardPosition="right"
-          />
+          <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
+            <!-- Monster cards to the left of player card -->
+            {#if controlledMonsters.length > 0}
+              <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
+                {#each controlledMonsters as monster (monster.instanceId)}
+                  <MonsterCardMini 
+                    {monster}
+                    isActivating={activatingMonsterId === monster.instanceId}
+                  />
+                {/each}
+              </div>
+            {/if}
+            <PlayerCard
+              {hero}
+              {heroHpState}
+              heroPowerCards={heroPowerCards[hero.id]}
+              heroInventory={heroInventories[hero.id]}
+              isActive={isActiveHero(hero.id)}
+              turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+              turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+              conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+              onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+              boardPosition="right"
+            />
+          </div>
         {/if}
       {/each}
     </div>
@@ -1595,21 +1632,33 @@
   >
     {#each getHeroesForEdge('bottom') as hero (hero.id)}
       {@const heroHpState = getHeroHpState(hero.id)}
+      {@const controlledMonsters = getMonstersForHero(hero.id)}
       {#if heroHpState}
-        <PlayerCard
-          {hero}
-          {heroHpState}
-          heroPowerCards={heroPowerCards[hero.id]}
-          heroInventory={heroInventories[hero.id]}
-          isActive={isActiveHero(hero.id)}
-          turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-          turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
-          conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
-          onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-          controlledMonsters={getMonstersForHero(hero.id)}
-          activatingMonsterId={activatingMonsterId}
-          boardPosition="bottom"
-        />
+        <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
+          <!-- Monster cards to the left of player card -->
+          {#if controlledMonsters.length > 0}
+            <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
+              {#each controlledMonsters as monster (monster.instanceId)}
+                <MonsterCardMini 
+                  {monster}
+                  isActivating={activatingMonsterId === monster.instanceId}
+                />
+              {/each}
+            </div>
+          {/if}
+          <PlayerCard
+            {hero}
+            {heroHpState}
+            heroPowerCards={heroPowerCards[hero.id]}
+            heroInventory={heroInventories[hero.id]}
+            isActive={isActiveHero(hero.id)}
+            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
+            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+            conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
+            onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
+            boardPosition="bottom"
+          />
+        </div>
       {/if}
     {/each}
   </div>
@@ -1773,6 +1822,20 @@
 
   .edge-zone.has-players {
     background: rgba(0, 0, 0, 0.4);
+  }
+
+  /* Container for hero with monsters to the left */
+  .hero-with-monsters-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Monster cards positioned to the left of player card */
+  .monster-cards-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   /* Rotate edge zones so content faces players at each edge */
