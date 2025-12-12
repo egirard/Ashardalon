@@ -119,9 +119,11 @@
   }
   
   function handleAttack(targetInstanceId: string) {
-    if (selectedCardId === null) return;
+    // During multi-attack, use the card from multiAttackState
+    const activeCardId = multiAttackState?.cardId ?? selectedCardId;
+    if (activeCardId === null) return;
     
-    const card = getPowerCardById(selectedCardId);
+    const card = getPowerCardById(activeCardId);
     if (!card) return;
     
     const parsed = parseActionCard(card);
@@ -129,23 +131,23 @@
     // Check if this is a move-then-attack card
     if (requiresMovementFirst(parsed) && onStartMoveAttack && !pendingMoveAttack) {
       // Start the move-attack sequence
-      onStartMoveAttack(selectedCardId);
+      onStartMoveAttack(activeCardId);
       selectedCardId = null;
       return;
     }
     
-    // Check if this is a multi-attack card
-    if (requiresMultiAttack(parsed) && parsed.attack && onStartMultiAttack) {
+    // Check if this is a multi-attack card AND we're not already in a multi-attack
+    if (requiresMultiAttack(parsed) && parsed.attack && onStartMultiAttack && !multiAttackState) {
       // Start the multi-attack sequence
       onStartMultiAttack(
-        selectedCardId,
+        activeCardId,
         parsed.attack.attackCount > 1 ? parsed.attack.attackCount : 1,
         parsed.attack.sameTarget,
         parsed.attack.maxTargets,
         parsed.attack.sameTarget ? targetInstanceId : undefined
       );
       // Execute the first attack
-      onAttackWithCard(selectedCardId, targetInstanceId);
+      onAttackWithCard(activeCardId, targetInstanceId);
       // For same-target attacks (e.g., Reaping Strike), keep the card selected
       // so the player can see which card they're using for subsequent attacks.
       // For multi-target attacks, clear the selection since they need to pick new targets.
@@ -155,9 +157,13 @@
       return;
     }
     
-    // Standard single attack
-    onAttackWithCard(selectedCardId, targetInstanceId);
-    selectedCardId = null;
+    // Standard single attack (or continuation of multi-attack)
+    onAttackWithCard(activeCardId, targetInstanceId);
+    
+    // Only clear selection if not in a multi-attack
+    if (!multiAttackState) {
+      selectedCardId = null;
+    }
   }
   
   function getCardTypeLabel(type: string): string {
