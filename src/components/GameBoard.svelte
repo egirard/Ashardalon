@@ -941,6 +941,11 @@
     store.dispatch(startMultiAttack({ cardId, totalAttacks, sameTarget, maxTargets, targetInstanceId }));
   }
 
+  // Handle canceling a multi-attack sequence
+  function handleCancelMultiAttack() {
+    store.dispatch(clearMultiAttack());
+  }
+
   // Handle starting a move-then-attack sequence
   function handleStartMoveAttack(cardId: number) {
     store.dispatch(startMoveAttack({ cardId }));
@@ -1584,6 +1589,7 @@
               onAttackWithCard={handleAttackWithCard}
               {multiAttackState}
               onStartMultiAttack={handleStartMultiAttack}
+              onCancelMultiAttack={handleCancelMultiAttack}
               {pendingMoveAttack}
               onStartMoveAttack={handleStartMoveAttack}
               canMove={heroTurnActions.canMove}
