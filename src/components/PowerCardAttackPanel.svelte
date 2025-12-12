@@ -16,6 +16,7 @@
     /** For multi-attack cards, callbacks to manage the sequence */
     multiAttackState?: MultiAttackState | null;
     onStartMultiAttack?: (cardId: number, totalAttacks: number, sameTarget: boolean, maxTargets: number, targetInstanceId?: string) => void;
+    onCancelMultiAttack?: () => void;
     /** For move-then-attack cards like Charge */
     pendingMoveAttack?: PendingMoveAttackState | null;
     onStartMoveAttack?: (cardId: number) => void;
@@ -29,6 +30,7 @@
     onAttackWithCard,
     multiAttackState = null,
     onStartMultiAttack,
+    onCancelMultiAttack,
     pendingMoveAttack = null,
     onStartMoveAttack,
     canMove = true,
@@ -306,6 +308,16 @@
               </button>
             {/if}
           {/each}
+          {#if multiAttackState && onCancelMultiAttack}
+            <button 
+              class="cancel-attack-button"
+              onclick={onCancelMultiAttack}
+              data-testid="cancel-multi-attack"
+              aria-label="Cancel remaining attacks"
+            >
+              Cancel Remaining Attacks
+            </button>
+          {/if}
         </div>
       </div>
     {:else if !multiAttackState}
@@ -478,6 +490,31 @@
   }
   
   .attack-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+  
+  .cancel-attack-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    background: linear-gradient(145deg, #5a5a5a 0%, #3a3a3a 100%);
+    color: #fff;
+    border: 2px solid #888;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    min-height: 40px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  
+  .cancel-attack-button:hover {
+    background: linear-gradient(145deg, #6a6a6a 0%, #4a4a4a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .cancel-attack-button:active {
     transform: translateY(0);
     box-shadow: none;
   }
