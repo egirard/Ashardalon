@@ -23,11 +23,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       }
     });
     
-    // Select Quinn's power cards
-    await page.locator('[data-testid="utility-card-8"]').click();
-    await page.locator('[data-testid="atwill-card-2"]').click();
-    await page.locator('[data-testid="atwill-card-3"]').click();
-    await page.locator('[data-testid="daily-card-5"]').click();
+    // Accept pre-selected power cards (cards are pre-selected by default)
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
@@ -45,11 +41,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       }
     });
     
-    // Select Vistra's power cards
-    await page.locator('[data-testid="utility-card-18"]').click();
-    await page.locator('[data-testid="atwill-card-12"]').click();
-    await page.locator('[data-testid="atwill-card-13"]').click();
-    await page.locator('[data-testid="daily-card-15"]').click();
+    // Accept pre-selected power cards (cards are pre-selected by default)
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
@@ -67,11 +59,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       }
     });
     
-    // Select Keyleth's power cards
-    await page.locator('[data-testid="utility-card-28"]').click();
-    await page.locator('[data-testid="atwill-card-22"]').click();
-    await page.locator('[data-testid="atwill-card-23"]').click();
-    await page.locator('[data-testid="daily-card-25"]').click();
+    // Accept pre-selected power cards (cards are pre-selected by default)
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
