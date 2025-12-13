@@ -6,7 +6,7 @@
 
   let { message, onDismiss }: Props = $props();
   
-  // Auto-dismiss after 3 seconds (1s visible + 2s fade)
+  // Auto-dismiss timing: visible for 1 second, then 2-second fade-out (3 seconds total)
   let fadeOut = $state(false);
   
   $effect(() => {
