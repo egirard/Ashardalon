@@ -28,3 +28,4 @@ export { default as BloodIcon } from './BloodIcon.svelte';
 export { default as HomeIcon } from './HomeIcon.svelte';
 export { default as MapIcon } from './MapIcon.svelte';
 export { default as FeedbackIcon } from './FeedbackIcon.svelte';
+export { default as BugIcon } from './BugIcon.svelte';
