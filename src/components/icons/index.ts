@@ -25,3 +25,6 @@ export { default as BoomIcon } from './BoomIcon.svelte';
 export { default as HeartBrokenIcon } from './HeartBrokenIcon.svelte';
 export { default as ChainIcon } from './ChainIcon.svelte';
 export { default as BloodIcon } from './BloodIcon.svelte';
+export { default as HomeIcon } from './HomeIcon.svelte';
+export { default as MapIcon } from './MapIcon.svelte';
+export { default as FeedbackIcon } from './FeedbackIcon.svelte';
