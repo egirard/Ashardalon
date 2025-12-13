@@ -266,24 +266,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
-  /* Orientation for different board positions */
-  .player-card.position-top {
-    transform: rotate(180deg);
-    transform-origin: center;
-    will-change: transform;
-  }
-
-  .player-card.position-left {
-    transform: rotate(90deg);
-    transform-origin: center;
-    will-change: transform;
-  }
-
-  .player-card.position-right {
-    transform: rotate(-90deg);
-    transform-origin: center;
-    will-change: transform;
-  }
+  /* Orientation is now handled by the parent container in GameBoard */
 
   .player-card.active {
     border-color: #ffd700;
