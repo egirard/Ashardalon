@@ -120,22 +120,17 @@ export const heroesSlice = createSlice({
       state.heroPowerCards = {};
     },
     /**
-     * Select a utility power card for a hero.
-     * Clicking a different card replaces the selection.
-     * Clicking the same card again keeps it selected (no toggle off).
+     * Select a utility power card for a hero
      */
     selectUtilityCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
       const { heroId, cardId } = action.payload;
       const selection = state.powerCardSelections[heroId];
       if (selection) {
-        // Always set to the clicked card (replace selection, don't toggle off)
-        selection.utility = cardId;
+        selection.utility = selection.utility === cardId ? null : cardId;
       }
     },
     /**
-     * Toggle an at-will power card for a hero (max 2).
-     * This action allows toggling off a selected card to choose a different one,
-     * which is necessary since you can select 2 cards from a larger pool.
+     * Toggle an at-will power card for a hero (max 2)
      */
     toggleAtWillCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
       const { heroId, cardId } = action.payload;
@@ -143,7 +138,7 @@ export const heroesSlice = createSlice({
       if (selection) {
         const index = selection.atWills.indexOf(cardId);
         if (index >= 0) {
-          // Deselect (allows changing selection)
+          // Deselect
           selection.atWills.splice(index, 1);
         } else if (selection.atWills.length < 2) {
           // Select (max 2)
@@ -152,16 +147,13 @@ export const heroesSlice = createSlice({
       }
     },
     /**
-     * Select a daily power card for a hero.
-     * Clicking a different card replaces the selection.
-     * Clicking the same card again keeps it selected (no toggle off).
+     * Select a daily power card for a hero
      */
     selectDailyCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
       const { heroId, cardId } = action.payload;
       const selection = state.powerCardSelections[heroId];
       if (selection) {
-        // Always set to the clicked card (replace selection, don't toggle off)
-        selection.daily = cardId;
+        selection.daily = selection.daily === cardId ? null : cardId;
       }
     },
     /**
