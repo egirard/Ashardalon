@@ -23,7 +23,9 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       }
     });
     
-    // Accept pre-selected power cards (cards are pre-selected by default)
+    // Accept pre-selected power cards
+    // Note: Power cards are pre-selected by default (utility + 2 at-wills + daily).
+    // Manual selection would trigger toggle behavior, deselecting pre-selected cards.
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
@@ -41,7 +43,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       }
     });
     
-    // Accept pre-selected power cards (cards are pre-selected by default)
+    // Accept pre-selected power cards (same approach for all heroes)
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
@@ -59,7 +61,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       }
     });
     
-    // Accept pre-selected power cards (cards are pre-selected by default)
+    // Accept pre-selected power cards (same approach for all heroes)
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
