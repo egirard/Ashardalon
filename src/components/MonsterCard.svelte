@@ -8,12 +8,36 @@
     monsterId: string;
     onDismiss?: () => void;
     edge?: EdgePosition;
+    autoDismiss?: boolean;
   }
   
-  let { monsterId, onDismiss, edge = 'bottom' }: Props = $props();
+  let { monsterId, onDismiss, edge = 'bottom', autoDismiss = true }: Props = $props();
   
   // Get monster definition
   const monster = $derived(MONSTERS.find(m => m.id === monsterId));
+  
+  // Auto-dismiss state
+  let fadeOut = $state(false);
+  
+  // Auto-dismiss after 3 seconds (1s visible + 2s fade) if enabled
+  $effect(() => {
+    if (!autoDismiss || !onDismiss) return;
+    
+    // Wait 1 second, then start fade out
+    const fadeTimer = setTimeout(() => {
+      fadeOut = true;
+    }, 1000);
+    
+    // After fade completes (2 more seconds), dismiss
+    const dismissTimer = setTimeout(() => {
+      onDismiss();
+    }, 3000);
+    
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(dismissTimer);
+    };
+  });
   
   function handleDismiss() {
     if (onDismiss) {
@@ -32,6 +56,7 @@
 {#if monster}
   <div 
     class="monster-card-overlay"
+    class:fade-out={fadeOut}
     onclick={handleDismiss}
     onkeydown={handleKeydown}
     role="dialog"
@@ -102,6 +127,12 @@
     align-items: center;
     z-index: 100;
     cursor: pointer;
+    opacity: 1;
+    transition: opacity 2s ease-out;
+  }
+  
+  .monster-card-overlay.fade-out {
+    opacity: 0;
   }
   
   .monster-card {
