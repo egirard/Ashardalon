@@ -902,6 +902,13 @@ export const gameSlice = createSlice({
         return;
       }
       
+      // Don't end hero phase if attack result is still displayed
+      // This ensures the player has time to review the attack outcome
+      // before the exploration phase begins
+      if (state.attackResult !== null) {
+        return;
+      }
+      
       // Clear movement overlay when exiting hero phase
       state.validMoveSquares = [];
       state.showingMovement = false;
