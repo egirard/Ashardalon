@@ -249,7 +249,6 @@
     justify-content: center;
     align-items: center;
     padding: 0.5rem;
-    background: rgba(0, 0, 0, 0.2);
   }
   
   .edge-top {
