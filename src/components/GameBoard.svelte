@@ -85,6 +85,7 @@
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import FeedbackButton from "./FeedbackButton.svelte";
+  import CornerControls from "./CornerControls.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -1194,6 +1195,20 @@
 </script>
 
 <div class="game-board" data-testid="game-board">
+  <!-- Corner Controls - NW and SE for accessibility from different player positions -->
+  <CornerControls 
+    position="nw" 
+    {mapControlMode}
+    onReset={handleReset}
+    onToggleMapControl={toggleMapControlMode}
+  />
+  <CornerControls 
+    position="se" 
+    {mapControlMode}
+    onReset={handleReset}
+    onToggleMapControl={toggleMapControlMode}
+  />
+  
   <!-- Top edge player zone - shows all heroes who joined from top -->
   <div
     class="edge-zone edge-top"
@@ -1465,17 +1480,6 @@
         
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
-        <!-- Map Control Toggle Button -->
-        <button
-          class="map-control-button"
-          class:active={mapControlMode}
-          data-testid="map-control-button"
-          onclick={toggleMapControlMode}
-          aria-pressed={mapControlMode}
-        >
-          🗺️ {mapControlMode ? 'Exit Map Control' : 'Control Map'}
-        </button>
-
         <!-- Zoom Controls (only shown when in map control mode) -->
         {#if mapControlMode}
           <div class="map-zoom-controls" data-testid="map-zoom-controls">
@@ -1564,16 +1568,6 @@
         >
           {getEndPhaseButtonText()}
         </button>
-        <button
-          class="reset-button"
-          data-testid="reset-button"
-          onclick={handleReset}
-        >
-          ↩ Return to Character Select
-        </button>
-
-        <!-- Feedback Button -->
-        <FeedbackButton />
 
         <!-- Power Card Attack Panel - only show during hero phase when adjacent to monster and can attack -->
         {#if turnState.currentPhase === "hero-phase" && (heroTurnActions.canAttack || multiAttackState)}
@@ -2043,25 +2037,6 @@
     background: rgba(76, 175, 80, 0.9);
   }
 
-  /* Reset button - positioned subtly */
-  .reset-button {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.75rem;
-    background: rgba(68, 68, 68, 0.8);
-    color: #ccc;
-    border: 1px solid #555;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .reset-button:hover {
-    background: rgba(85, 85, 85, 0.9);
-    color: #fff;
-  }
-
   /* Map control styles */
   .dungeon-map.map-control-active {
     cursor: grab;
@@ -2069,34 +2044,6 @@
 
   .dungeon-map.map-control-active:active {
     cursor: grabbing;
-  }
-
-  /* Map control button */
-  .map-control-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    background: rgba(100, 100, 150, 0.8);
-    color: #fff;
-    border: 1px solid #7777aa;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .map-control-button:hover {
-    background: rgba(120, 120, 180, 0.9);
-  }
-
-  .map-control-button.active {
-    background: rgba(255, 165, 0, 0.8);
-    border-color: #ffa500;
-    box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
-  }
-
-  .map-control-button.active:hover {
-    background: rgba(255, 180, 0, 0.9);
   }
 
   /* Zoom controls container */
