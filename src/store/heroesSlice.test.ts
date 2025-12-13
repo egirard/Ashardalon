@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import heroesReducer, { toggleHeroSelection, selectHeroFromEdge, clearSelection, HeroesState } from './heroesSlice';
+import heroesReducer, { 
+  toggleHeroSelection, 
+  selectHeroFromEdge, 
+  clearSelection,
+  selectUtilityCard,
+  toggleAtWillCard,
+  selectDailyCard,
+  HeroesState 
+} from './heroesSlice';
 import { AVAILABLE_HEROES } from './types';
 
 describe('heroesSlice', () => {
@@ -186,6 +194,59 @@ describe('heroesSlice', () => {
       const state = heroesReducer(initialState, clearSelection());
       expect(state.selectedHeroes).toHaveLength(0);
       expect(state.heroEdgeMap).toEqual({});
+    });
+  });
+
+  describe('power card selection', () => {
+    it('should auto-select power cards when hero is selected', () => {
+      const state = heroesReducer(initialState, toggleHeroSelection('quinn'));
+      expect(state.powerCardSelections['quinn']).toBeDefined();
+      expect(state.powerCardSelections['quinn'].utility).not.toBeNull();
+      expect(state.powerCardSelections['quinn'].atWills).toHaveLength(2);
+      expect(state.powerCardSelections['quinn'].daily).not.toBeNull();
+    });
+
+    it('should replace utility card selection instead of toggling off', () => {
+      let state = heroesReducer(initialState, toggleHeroSelection('quinn'));
+      const initialUtility = state.powerCardSelections['quinn'].utility;
+      
+      // Click the same card again - should stay selected (not toggle off)
+      state = heroesReducer(state, selectUtilityCard({ heroId: 'quinn', cardId: initialUtility }));
+      expect(state.powerCardSelections['quinn'].utility).toBe(initialUtility);
+      
+      // Click a different card - should replace selection
+      const newUtilityId = initialUtility === 8 ? 9 : 8;
+      state = heroesReducer(state, selectUtilityCard({ heroId: 'quinn', cardId: newUtilityId }));
+      expect(state.powerCardSelections['quinn'].utility).toBe(newUtilityId);
+    });
+
+    it('should replace daily card selection instead of toggling off', () => {
+      let state = heroesReducer(initialState, toggleHeroSelection('quinn'));
+      const initialDaily = state.powerCardSelections['quinn'].daily;
+      
+      // Click the same card again - should stay selected (not toggle off)
+      state = heroesReducer(state, selectDailyCard({ heroId: 'quinn', cardId: initialDaily }));
+      expect(state.powerCardSelections['quinn'].daily).toBe(initialDaily);
+      
+      // Click a different card - should replace selection
+      const newDailyId = initialDaily === 5 ? 6 : 5;
+      state = heroesReducer(state, selectDailyCard({ heroId: 'quinn', cardId: newDailyId }));
+      expect(state.powerCardSelections['quinn'].daily).toBe(newDailyId);
+    });
+
+    it('should toggle at-will cards to allow deselection', () => {
+      let state = heroesReducer(initialState, toggleHeroSelection('quinn'));
+      const initialAtWills = [...state.powerCardSelections['quinn'].atWills];
+      
+      // Click one of the selected cards - should deselect it
+      state = heroesReducer(state, toggleAtWillCard({ heroId: 'quinn', cardId: initialAtWills[0] }));
+      expect(state.powerCardSelections['quinn'].atWills).toHaveLength(1);
+      expect(state.powerCardSelections['quinn'].atWills).not.toContain(initialAtWills[0]);
+      
+      // Click it again - should re-select it
+      state = heroesReducer(state, toggleAtWillCard({ heroId: 'quinn', cardId: initialAtWills[0] }));
+      expect(state.powerCardSelections['quinn'].atWills).toHaveLength(2);
+      expect(state.powerCardSelections['quinn'].atWills).toContain(initialAtWills[0]);
     });
   });
 });
