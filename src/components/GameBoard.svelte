@@ -311,8 +311,15 @@
 
   // Auto-advance hero phase when valid action sequence is complete
   // Turn ends when: move+attack, attack+move, or move+move
+  // However, if the hero phase ends with an attack, we must wait for the
+  // attack result card to be dismissed before transitioning to exploration phase
   $effect(() => {
     if (turnState.currentPhase !== "hero-phase") return;
+    
+    // Don't auto-end if there's an attack result being displayed
+    // This prevents the exploration phase from starting while the player
+    // is still reviewing the attack result
+    if (attackResult !== null) return;
     
     if (shouldAutoEndHeroTurn(heroTurnActions)) {
       store.dispatch(endHeroPhase());
@@ -769,6 +776,11 @@
   function handleEndPhase() {
     switch (turnState.currentPhase) {
       case "hero-phase":
+        // Don't end hero phase if attack result is still displayed
+        // The player should dismiss the attack result first
+        if (attackResult !== null) {
+          return;
+        }
         store.dispatch(endHeroPhase());
         break;
       case "exploration-phase":
