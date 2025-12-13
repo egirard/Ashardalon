@@ -23,6 +23,7 @@
     dismissLevelUpNotification,
     dismissHealingSurgeNotification,
     dismissEncounterEffectMessage,
+    dismissExplorationPhaseMessage,
     useVoluntaryActionSurge,
     skipActionSurge,
     startMultiAttack,
@@ -80,6 +81,7 @@
   import LevelUpAnimation from "./LevelUpAnimation.svelte";
   import HealingSurgeAnimation from "./HealingSurgeAnimation.svelte";
   import EncounterEffectNotification from "./EncounterEffectNotification.svelte";
+  import ExplorationPhaseNotification from "./ExplorationPhaseNotification.svelte";
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import PlayerCard from "./PlayerCard.svelte";
@@ -175,6 +177,8 @@
   let healingSurgeUsedHeroId: string | null = $state(null);
   let healingSurgeHpRestored: number | null = $state(null);
   let encounterEffectMessage: string | null = $state(null);
+  let explorationPhaseMessage: string | null = $state(null);
+  let recentlyPlacedTileId: string | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
@@ -234,6 +238,8 @@
       healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
       encounterEffectMessage = state.game.encounterEffectMessage;
+      explorationPhaseMessage = state.game.explorationPhaseMessage;
+      recentlyPlacedTileId = state.game.recentlyPlacedTileId;
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
@@ -279,6 +285,8 @@
     healingSurgeUsedHeroId = state.game.healingSurgeUsedHeroId;
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     encounterEffectMessage = state.game.encounterEffectMessage;
+    explorationPhaseMessage = state.game.explorationPhaseMessage;
+    recentlyPlacedTileId = state.game.recentlyPlacedTileId;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
@@ -1022,6 +1030,10 @@
     store.dispatch(dismissEncounterEffectMessage());
   }
 
+  function handleDismissExplorationPhaseMessage() {
+    store.dispatch(dismissExplorationPhaseMessage());
+  }
+
   // Handle dismissing the encounter card and applying its effect
   function handleDismissEncounterCard() {
     store.dispatch(dismissEncounterCard());
@@ -1329,6 +1341,7 @@
           <div
             class="placed-tile"
             class:start-tile={tile.tileType === "start"}
+            class:newly-placed={tile.id === recentlyPlacedTileId}
             data-testid={tile.tileType === "start"
               ? "start-tile"
               : "dungeon-tile"}
@@ -1775,6 +1788,14 @@
     />
   {/if}
 
+  <!-- Exploration Phase Notification (shown when transitioning to exploration phase) -->
+  {#if explorationPhaseMessage}
+    <ExplorationPhaseNotification
+      message={explorationPhaseMessage}
+      onDismiss={handleDismissExplorationPhaseMessage}
+    />
+  {/if}
+
   <!-- Encounter Card Display (shown during villain phase when no exploration occurred) -->
   {#if drawnEncounter}
     <EncounterCard
@@ -1930,6 +1951,19 @@
 
   .placed-tile.start-tile {
     z-index: 1;
+  }
+
+  .placed-tile.newly-placed {
+    animation: tileAppear 2s ease-out;
+  }
+
+  @keyframes tileAppear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .tile-image {

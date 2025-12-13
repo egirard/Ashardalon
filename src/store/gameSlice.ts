@@ -252,6 +252,10 @@ export interface GameState {
   undoSnapshot: UndoSnapshot | null;
   /** Encounter effect message to display to player (null if no message) */
   encounterEffectMessage: string | null;
+  /** Exploration phase notification message (null if no notification) */
+  explorationPhaseMessage: string | null;
+  /** ID of the most recently placed tile (for animation tracking) */
+  recentlyPlacedTileId: string | null;
 }
 
 /**
@@ -421,6 +425,8 @@ const initialState: GameState = {
   incrementalMovement: null,
   undoSnapshot: null,
   encounterEffectMessage: null,
+  explorationPhaseMessage: null,
+  recentlyPlacedTileId: null,
 };
 
 /**
@@ -925,6 +931,9 @@ export const gameSlice = createSlice({
       const exploredEdge = checkExploration(currentToken, state.dungeon);
       
       if (exploredEdge && state.dungeon.tileDeck.length > 0) {
+        // Set exploration phase message for tile placement
+        state.explorationPhaseMessage = "Exploration phase: Adding a new tile";
+        
         // Draw a tile from the deck
         const { drawnTile, remainingDeck } = drawTile(state.dungeon.tileDeck);
         
@@ -933,6 +942,9 @@ export const gameSlice = createSlice({
           const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
           
           if (newTile) {
+            // Track the recently placed tile for animation
+            state.recentlyPlacedTileId = newTile.id;
+            
             // Check if this is a black or white tile BEFORE updating exploration state
             const tileDef = getTileDefinition(drawnTile);
             const isBlackTile = tileDef?.isBlackTile ?? true; // Default to black if definition not found
@@ -1014,6 +1026,9 @@ export const gameSlice = createSlice({
             }
           }
         }
+      } else {
+        // No exploration occurred - hero not on unexplored edge
+        state.explorationPhaseMessage = "Exploration phase: No tile placed because the active player is not on an unexplored edge";
       }
       
       // Apply environment effects that trigger at end of Hero Phase
@@ -2043,6 +2058,13 @@ export const gameSlice = createSlice({
       state.encounterEffectMessage = null;
     },
     /**
+     * Dismiss the exploration phase notification message
+     */
+    dismissExplorationPhaseMessage: (state) => {
+      state.explorationPhaseMessage = null;
+      state.recentlyPlacedTileId = null;
+    },
+    /**
      * Use an action surge voluntarily at the start of a hero's turn.
      * This heals the hero by their surge value (capped at maxHp).
      */
@@ -2427,6 +2449,7 @@ export const {
   dismissMonsterMoveAction,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
+  dismissExplorationPhaseMessage,
   setHeroHp,
   dismissLevelUpNotification,
   setPartyResources,

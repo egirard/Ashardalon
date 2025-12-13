@@ -270,8 +270,9 @@
 
   .player-card.active {
     border-color: #ffd700;
+    border-width: 4px;
     background: rgba(40, 40, 60, 0.95);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), 0 0 15px rgba(255, 215, 0, 0.4);
   }
 
   /* Header */
