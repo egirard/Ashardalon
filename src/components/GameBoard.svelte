@@ -1205,18 +1205,7 @@
       {@const controlledMonsters = getMonstersForHero(hero.id)}
       {#if heroHpState}
         <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
-          <!-- Monster cards to the left of player card -->
-          {#if controlledMonsters.length > 0}
-            <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
-              {#each controlledMonsters as monster (monster.instanceId)}
-                <MonsterCardMini 
-                  {monster}
-                  isActivating={activatingMonsterId === monster.instanceId}
-                />
-              {/each}
-            </div>
-          {/if}
-          <!-- Power cards to the right of player card (before in DOM due to 180° rotation) -->
+          <!-- Power cards appear to the right of player card after 180° rotation -->
           <PlayerPowerCards
             heroPowerCards={heroPowerCards[hero.id]}
             boardPosition="top"
@@ -1232,6 +1221,17 @@
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="top"
           />
+          <!-- Monster cards appear to the left of player card after 180° rotation -->
+          {#if controlledMonsters.length > 0}
+            <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
+              {#each controlledMonsters as monster (monster.instanceId)}
+                <MonsterCardMini 
+                  {monster}
+                  isActivating={activatingMonsterId === monster.instanceId}
+                />
+              {/each}
+            </div>
+          {/if}
         </div>
       {/if}
     {/each}
