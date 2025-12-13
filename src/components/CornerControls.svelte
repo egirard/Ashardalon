@@ -4,7 +4,7 @@
    * Displays icon-only controls for Return to Character Select, Control Map, and Submit Feedback
    * Positioned in corners (NW and SE) for accessibility from different player positions
    */
-  import { HomeIcon, MapIcon, FeedbackIcon } from './icons';
+  import { HomeIcon, MapIcon, BugIcon } from './icons';
   import html2canvas from 'html2canvas';
   
   interface Props {
@@ -228,7 +228,7 @@ ${screenshotSection}
     aria-label="Submit Feedback"
     title="Submit Feedback"
   >
-    <FeedbackIcon size={20} color="currentColor" ariaLabel="Submit Feedback" />
+    <BugIcon size={20} color="currentColor" ariaLabel="Submit Feedback" />
   </button>
 </div>
 
@@ -243,6 +243,7 @@ ${screenshotSection}
   .corner-nw {
     top: 0.5rem;
     left: 0.5rem;
+    transform: rotate(180deg);
   }
   
   .corner-se {
