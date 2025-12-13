@@ -2059,6 +2059,8 @@ export const gameSlice = createSlice({
     },
     /**
      * Dismiss the exploration phase notification message
+     * Note: Also clears recentlyPlacedTileId since both are part of the same exploration event.
+     * The tile fade-in (2s) completes before the notification fully fades (3s total).
      */
     dismissExplorationPhaseMessage: (state) => {
       state.explorationPhaseMessage = null;
