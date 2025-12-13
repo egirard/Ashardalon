@@ -24,6 +24,7 @@
     dismissHealingSurgeNotification,
     dismissEncounterEffectMessage,
     dismissExplorationPhaseMessage,
+    showPendingMonster,
     useVoluntaryActionSurge,
     skipActionSurge,
     startMultiAttack,
@@ -179,6 +180,7 @@
   let encounterEffectMessage: string | null = $state(null);
   let explorationPhaseMessage: string | null = $state(null);
   let recentlyPlacedTileId: string | null = $state(null);
+  let pendingMonsterDisplayId: string | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
@@ -240,6 +242,7 @@
       encounterEffectMessage = state.game.encounterEffectMessage;
       explorationPhaseMessage = state.game.explorationPhaseMessage;
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
+      pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
@@ -287,6 +290,7 @@
     encounterEffectMessage = state.game.encounterEffectMessage;
     explorationPhaseMessage = state.game.explorationPhaseMessage;
     recentlyPlacedTileId = state.game.recentlyPlacedTileId;
+    pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
@@ -331,6 +335,20 @@
     store.dispatch(
       showMovement({ heroId: currentHeroId, speed: getTotalSpeed(currentHeroId) }),
     );
+  });
+
+  // Sequence tile and monster animations: show monster card after tile fade-in completes
+  // When a tile is placed, the monster spawns immediately but the card display is delayed
+  // This creates a sequential animation: tile fades in (2s), then monster card shows (1s + 2s fade)
+  $effect(() => {
+    if (!pendingMonsterDisplayId) return;
+    
+    // Wait 2 seconds for tile fade-in animation to complete
+    const timer = setTimeout(() => {
+      store.dispatch(showPendingMonster());
+    }, 2000);
+    
+    return () => clearTimeout(timer);
   });
 
   // Auto-activate monsters during villain phase

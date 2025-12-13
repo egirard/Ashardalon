@@ -256,6 +256,8 @@ export interface GameState {
   explorationPhaseMessage: string | null;
   /** ID of the most recently placed tile (for animation tracking) */
   recentlyPlacedTileId: string | null;
+  /** ID of monster waiting to be displayed after tile animation completes */
+  pendingMonsterDisplayId: string | null;
 }
 
 /**
@@ -427,6 +429,7 @@ const initialState: GameState = {
   encounterEffectMessage: null,
   explorationPhaseMessage: null,
   recentlyPlacedTileId: null,
+  pendingMonsterDisplayId: null,
 };
 
 /**
@@ -997,7 +1000,9 @@ export const gameSlice = createSlice({
                 if (monsterInstance) {
                   state.monsters.push(monsterInstance);
                   state.monsterInstanceCounter += 1;
-                  state.recentlySpawnedMonsterId = monsterInstance.instanceId;
+                  // Set pending monster display instead of showing immediately
+                  // This allows tile animation to complete first (2 seconds)
+                  state.pendingMonsterDisplayId = monsterInstance.instanceId;
                   
                   // Check for Blade Barrier tokens at spawn position
                   const bladeBarrierCheck = checkBladeBarrierDamage(
@@ -2067,6 +2072,16 @@ export const gameSlice = createSlice({
       state.recentlyPlacedTileId = null;
     },
     /**
+     * Show the pending monster card after tile animation completes
+     * This is called after a 2-second delay to sequence the animations properly
+     */
+    showPendingMonster: (state) => {
+      if (state.pendingMonsterDisplayId) {
+        state.recentlySpawnedMonsterId = state.pendingMonsterDisplayId;
+        state.pendingMonsterDisplayId = null;
+      }
+    },
+    /**
      * Use an action surge voluntarily at the start of a hero's turn.
      * This heals the hero by their surge value (capped at maxHp).
      */
@@ -2452,6 +2467,7 @@ export const {
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
   dismissExplorationPhaseMessage,
+  showPendingMonster,
   setHeroHp,
   dismissLevelUpNotification,
   setPartyResources,
