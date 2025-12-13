@@ -16,11 +16,7 @@ test.describe('040 - Monster Card Display', () => {
     await page.locator('[data-testid="select-powers-quinn"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
     
-    // Select Quinn's power cards
-    await page.locator('[data-testid="utility-card-9"]').click();  // Command
-    await page.locator('[data-testid="atwill-card-3"]').click();   // Righteous Advance
-    await page.locator('[data-testid="atwill-card-2"]').click();   // Cleric's Shield
-    await page.locator('[data-testid="daily-card-6"]').click();    // Cause Fear
+    // Accept pre-selected power cards (cards are pre-selected by default)
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
@@ -69,7 +65,7 @@ test.describe('040 - Monster Card Display', () => {
         await expect(page.locator('[data-testid="player-card-name"]')).toContainText("Quinn");
         
         // Verify no monsters yet
-        await expect(page.locator('[data-testid="player-card-monsters"]')).not.toBeVisible();
+        await expect(page.locator('[data-testid="monster-cards-quinn"]')).not.toBeVisible();
         
         // Verify store state
         const storeState = await page.evaluate(() => {
@@ -106,7 +102,7 @@ test.describe('040 - Monster Card Display', () => {
     await screenshots.capture(page, 'monster-spawned-exploration', {
       programmaticCheck: async () => {
         // Verify monster card mini is now visible in player card
-        await expect(page.locator('[data-testid="player-card-monsters"]')).toBeVisible();
+        await expect(page.locator('[data-testid="monster-cards-quinn"]')).toBeVisible();
         await expect(page.locator('[data-testid="monster-card-mini"]')).toBeVisible();
         
         // Verify monster name is displayed
@@ -135,7 +131,7 @@ test.describe('040 - Monster Card Display', () => {
         await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
         
         // Verify monster card mini is still visible
-        await expect(page.locator('[data-testid="player-card-monsters"]')).toBeVisible();
+        await expect(page.locator('[data-testid="monster-cards-quinn"]')).toBeVisible();
         await expect(page.locator('[data-testid="monster-card-mini"]')).toBeVisible();
         
         // Verify monster name is displayed
