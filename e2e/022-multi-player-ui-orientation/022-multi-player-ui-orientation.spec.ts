@@ -20,6 +20,10 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="power-card-selection"]')).toBeVisible();
         await expect(page.locator('.modal-header h2')).toContainText('Quinn');
+        // Verify selection status shows complete (auto-selected)
+        await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
+        // Verify done button is enabled
+        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
       }
     });
     
@@ -40,6 +44,10 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="power-card-selection"]')).toBeVisible();
         await expect(page.locator('.modal-header h2')).toContainText('Vistra');
+        // Verify selection status shows complete (auto-selected)
+        await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
+        // Verify done button is enabled
+        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
       }
     });
     
@@ -58,6 +66,10 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="power-card-selection"]')).toBeVisible();
         await expect(page.locator('.modal-header h2')).toContainText('Keyleth');
+        // Verify selection status shows complete (auto-selected)
+        await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
+        // Verify done button is enabled
+        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
       }
     });
     
