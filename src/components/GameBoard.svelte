@@ -1854,6 +1854,22 @@
     gap: 0.5rem;
   }
 
+  /* Rotate hero containers based on edge position */
+  .edge-top .hero-with-monsters-container {
+    transform: rotate(180deg);
+    transform-origin: center;
+  }
+
+  .edge-left .hero-with-monsters-container {
+    transform: rotate(90deg);
+    transform-origin: center;
+  }
+
+  .edge-right .hero-with-monsters-container {
+    transform: rotate(-90deg);
+    transform-origin: center;
+  }
+
   /* Monster cards positioned to the left of player card */
   .monster-cards-left {
     display: flex;
@@ -1861,9 +1877,8 @@
     gap: 0.5rem;
   }
 
-  /* Rotate edge zones so content faces players at each edge */
+  /* Edge zones layout - rotation handled by hero-with-monsters-container */
   .edge-top {
-    transform: rotate(180deg);
     border-bottom: 2px solid #333;
   }
 

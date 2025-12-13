@@ -124,24 +124,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
-  /* Orientation for different board positions */
-  .player-power-cards.position-top {
-    transform: rotate(180deg);
-    transform-origin: center;
-    will-change: transform;
-  }
-
-  .player-power-cards.position-left {
-    transform: rotate(90deg);
-    transform-origin: center;
-    will-change: transform;
-  }
-
-  .player-power-cards.position-right {
-    transform: rotate(-90deg);
-    transform-origin: center;
-    will-change: transform;
-  }
+  /* Orientation is now handled by the parent container in GameBoard */
 
   .power-card-mini {
     display: flex;
