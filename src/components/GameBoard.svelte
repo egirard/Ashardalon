@@ -1128,11 +1128,7 @@
   // Toggle map control mode
   function toggleMapControlMode() {
     mapControlMode = !mapControlMode;
-    if (!mapControlMode) {
-      // Reset pan and zoom when exiting control mode
-      manualZoom = 1;
-      panOffset = { x: 0, y: 0 };
-    }
+    // Map modifications (zoom and pan) are now permanent and persist after exiting control mode
   }
 
   // Handle zoom in
@@ -1174,8 +1170,16 @@
       return;
     }
     
-    // For single touch or mouse events, only proceed if in map control mode
-    if (!mapControlMode) return;
+    // For touch events, auto-enable map control mode for better UX
+    // For mouse events, still require manual activation
+    if (event instanceof TouchEvent && event.touches.length === 1) {
+      if (!mapControlMode) {
+        mapControlMode = true;
+      }
+    } else if (event instanceof MouseEvent && !mapControlMode) {
+      // Mouse events still require map control mode to be manually enabled
+      return;
+    }
     
     isPanning = true;
     
@@ -1206,8 +1210,12 @@
       return;
     }
     
-    // For single touch or mouse events, only proceed if in map control mode and panning
-    if (!mapControlMode || !isPanning) return;
+    // For single touch or mouse events, proceed if panning is active
+    // Touch events auto-enabled map control mode in handlePanStart
+    if (!isPanning) return;
+    
+    // For mouse events, still require map control mode
+    if (event instanceof MouseEvent && !mapControlMode) return;
     
     if (event instanceof MouseEvent) {
       const deltaX = event.clientX - lastPanPoint.x;
