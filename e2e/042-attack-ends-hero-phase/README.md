@@ -44,21 +44,29 @@ As a player, when I complete my hero turn with an attack, I want to review the a
 ## Screenshots
 
 ### before-attack.png
+![Before Attack](042-attack-ends-hero-phase.spec.ts-snapshots/000-before-attack-chromium-linux.png)
+
 - **What it shows**: Hero phase with attack button visible, hero has moved and is adjacent to monster
 - **Why it's important**: Shows the setup before the attack that will complete the turn
 - **Human verification**: Verify hero is adjacent to monster, attack button is visible, hero phase is active
 
 ### attack-result-displayed-still-hero-phase.png
+![Attack Result Displayed Still Hero Phase](042-attack-ends-hero-phase.spec.ts-snapshots/001-attack-result-displayed-still-hero-phase-chromium-linux.png)
+
 - **What it shows**: Attack result card displayed on screen, phase indicator still shows "Hero Phase"
 - **Why it's important**: Critical verification that phase does NOT auto-advance while attack result is visible
 - **Human verification**: Verify attack result card is visible, verify phase text says "Hero Phase" (NOT "Exploration Phase")
 
 ### still-hero-phase-after-wait.png
+![Still Hero Phase After Wait](042-attack-ends-hero-phase.spec.ts-snapshots/002-still-hero-phase-after-wait-chromium-linux.png)
+
 - **What it shows**: After waiting 500ms, attack result still displayed, still in hero phase
 - **Why it's important**: Confirms the phase does not auto-advance even after a delay
 - **Human verification**: Verify attack result card is still visible, verify phase is still "Hero Phase"
 
-### exploration-phase-after-dismiss.png
+### exploration-phase-after-end.png
+![Exploration Phase After End](042-attack-ends-hero-phase.spec.ts-snapshots/003-exploration-phase-after-end-chromium-linux.png)
+
 - **What it shows**: After dismissing attack result, phase indicator now shows "Exploration Phase"
 - **Why it's important**: Confirms the phase transitions only after the attack result is dismissed
 - **Human verification**: Verify attack result card is gone, verify phase text says "Exploration Phase"
