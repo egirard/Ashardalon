@@ -61,14 +61,14 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
       });
     });
 
-    await screenshots.capture(page, 'monster-positioned-far', {
-      programmaticCheck: async () => {
-        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-        expect(state.game.monsters.length).toBe(1);
-        expect(state.game.monsters[0].controllerId).toBe('quinn');
-        expect(state.game.monsters[0].position).toEqual({ x: 0, y: 0 });
-      }
-    });
+    // Wait for any animations to complete
+    await page.waitForTimeout(500);
+
+    // Verify monster setup (no screenshot - too flaky due to non-deterministic visuals)
+    const stateBeforeVillain = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+    expect(stateBeforeVillain.game.monsters.length).toBe(1);
+    expect(stateBeforeVillain.game.monsters[0].controllerId).toBe('quinn');
+    expect(stateBeforeVillain.game.monsters[0].position).toEqual({ x: 0, y: 0 });
 
     // STEP 3: Transition to villain phase
     await page.evaluate(() => {

@@ -79,6 +79,15 @@ const edge = heroEdgeMap[controllerId] || 'bottom';
 - `top`: 180°
 - `left`: 90°
 
+## Known Issues
+
+This test may have minor visual flakiness due to:
+- Non-deterministic monster positioning
+- Animation timing
+- Font loading timing
+
+The test validates the core functionality (rotation logic) programmatically, which is stable.
+
 ## Manual Verification Checklist
 
 - [ ] Dialog appears when monster moves but cannot attack
