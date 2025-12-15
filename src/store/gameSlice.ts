@@ -1092,6 +1092,10 @@ export const gameSlice = createSlice({
       state.monsterAttackerId = null;
       state.monsterMoveActionId = null;
       
+      // Clear exploration phase message to ensure sequential display
+      state.explorationPhaseMessage = null;
+      state.recentlyPlacedTileId = null;
+      
       // Draw encounter if no exploration occurred this turn
       if (shouldDrawEncounter(state.turnState)) {
         const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);

@@ -1,10 +1,14 @@
 <script lang="ts">
+  import type { EdgePosition } from '../store/heroesSlice';
+  import { getEdgeRotation } from '../utils';
+  
   interface Props {
     message: string;
     onDismiss: () => void;
+    edge?: EdgePosition;
   }
 
-  let { message, onDismiss }: Props = $props();
+  let { message, onDismiss, edge = 'bottom' }: Props = $props();
   
   // Auto-dismiss timing: visible for 1 second, then 2-second fade-out (3 seconds total)
   let fadeOut = $state(false);
@@ -31,6 +35,7 @@
   class="exploration-notification" 
   class:fade-out={fadeOut}
   data-testid="exploration-phase-notification"
+  style="transform: translate(-50%, -50%) rotate({getEdgeRotation(edge)}deg);"
 >
   <div class="notification-content">
     <div class="notification-icon">🗺️</div>
@@ -43,7 +48,7 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    /* transform is set inline to include rotation */
     z-index: 1000;
     background: rgba(20, 30, 50, 0.95);
     border: 3px solid #4a90e2;
