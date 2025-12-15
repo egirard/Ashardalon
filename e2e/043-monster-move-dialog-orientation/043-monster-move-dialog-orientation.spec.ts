@@ -66,12 +66,24 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
       store.dispatch({ type: 'game/endExplorationPhase' });
     });
 
+    // Wait for and dismiss exploration phase notification if present
+    await page.waitForTimeout(200);
+    const explorationNotification = page.locator('[data-testid="exploration-phase-notification"]');
+    if (await explorationNotification.isVisible({ timeout: 1000 }).catch(() => false)) {
+      // Wait for it to auto-dismiss or dismiss it programmatically
+      await page.evaluate(() => {
+        const store = (window as any).__REDUX_STORE__;
+        store.dispatch({ type: 'game/dismissExplorationPhaseMessage' });
+      });
+      await explorationNotification.waitFor({ state: 'hidden', timeout: 3000 });
+    }
+    
     // Wait for encounter card and dismiss if present
     await page.waitForTimeout(200);
     const encounterDismissButton = page.locator('[data-testid="dismiss-encounter-card"]');
     if (await encounterDismissButton.isVisible({ timeout: 1000 }).catch(() => false)) {
       await encounterDismissButton.click();
-      await page.waitForTimeout(100);
+      await encounterDismissButton.waitFor({ state: 'hidden', timeout: 2000 });
     }
 
     // STEP 4: Activate the monster - it should move but not reach attack range
@@ -82,6 +94,9 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
 
     // Wait for the monster move dialog to appear
     await page.locator('[data-testid="monster-move-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Wait a bit for any animations or dynamic content to settle
+    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'monster-move-dialog-vistra-top', {
       programmaticCheck: async () => {
