@@ -1040,6 +1040,18 @@
     return getMonsterName(monster.monsterId);
   }
 
+  // Get the edge for the monster's controller (used for monster action dialogs)
+  function getMonsterControllerEdge(): EdgePosition {
+    if (!monsterMoveActionId) return "bottom";
+    const monster = monsters.find((m) => m.instanceId === monsterMoveActionId);
+    if (!monster) return "bottom";
+    const controllerId = monster.controllerId;
+    if (controllerId && heroEdgeMap[controllerId]) {
+      return heroEdgeMap[controllerId];
+    }
+    return "bottom";
+  }
+
   // Handle dismissing the defeat notification
   function handleDismissDefeatNotification() {
     store.dispatch(dismissDefeatNotification());
@@ -1781,6 +1793,7 @@
     <MonsterMoveDisplay
       monsterName={getMonsterMoveActionName()}
       onDismiss={handleDismissMonsterMoveAction}
+      edge={getMonsterControllerEdge()}
     />
   {/if}
 

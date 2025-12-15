@@ -1,10 +1,14 @@
 <script lang="ts">
+  import type { EdgePosition } from '../store/heroesSlice';
+  import { getEdgeRotation } from '../utils';
+  
   interface Props {
     monsterName: string;
     onDismiss?: () => void;
+    edge?: EdgePosition;
   }
   
-  let { monsterName, onDismiss }: Props = $props();
+  let { monsterName, onDismiss, edge = 'bottom' }: Props = $props();
   
   function handleDismiss() {
     if (onDismiss) {
@@ -37,6 +41,7 @@
     onkeydown={(e) => e.stopPropagation()}
     role="document"
     data-testid="monster-move-card"
+    style="transform: rotate({getEdgeRotation(edge)}deg);"
   >
     <div class="move-header">
       <h3 class="monster-name" data-testid="monster-name">
