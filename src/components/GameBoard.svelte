@@ -1840,6 +1840,7 @@
     <ExplorationPhaseNotification
       message={explorationPhaseMessage}
       onDismiss={handleDismissExplorationPhaseMessage}
+      edge={getActivePlayerEdge()}
     />
   {/if}
 
