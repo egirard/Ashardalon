@@ -1040,16 +1040,14 @@
     return getMonsterName(monster.monsterId);
   }
 
-  // Get the edge for the monster's controller (used for monster action dialogs)
+  // Get the edge position for the monster's controlling player.
+  // Used to orient monster action dialogs (e.g., move without attack) toward the controller.
+  // Returns 'bottom' as fallback if monster or controller not found.
   function getMonsterControllerEdge(): EdgePosition {
     if (!monsterMoveActionId) return "bottom";
     const monster = monsters.find((m) => m.instanceId === monsterMoveActionId);
     if (!monster) return "bottom";
-    const controllerId = monster.controllerId;
-    if (controllerId && heroEdgeMap[controllerId]) {
-      return heroEdgeMap[controllerId];
-    }
-    return "bottom";
+    return heroEdgeMap[monster.controllerId] || "bottom";
   }
 
   // Handle dismissing the defeat notification
