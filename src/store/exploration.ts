@@ -179,6 +179,56 @@ export function getTileDefinition(tileType: string): TileDefinition | undefined 
 }
 
 /**
+ * Rotate tile edges based on rotation amount.
+ * The default tile orientation has the arrow pointing south (0 degrees).
+ * Positive rotation is clockwise.
+ * 
+ * @param defaultEdges - The edges in the default orientation (0 degrees)
+ * @param rotation - Rotation in degrees (0, 90, 180, or 270)
+ * @returns The rotated edges
+ */
+export function rotateEdges(
+  defaultEdges: { north: EdgeType; south: EdgeType; east: EdgeType; west: EdgeType },
+  rotation: number
+): { north: EdgeType; south: EdgeType; east: EdgeType; west: EdgeType } {
+  // Normalize rotation to 0, 90, 180, or 270
+  const normalizedRotation = ((rotation % 360) + 360) % 360;
+  
+  switch (normalizedRotation) {
+    case 0:
+      // No rotation
+      return { ...defaultEdges };
+    case 90:
+      // 90° clockwise: north -> east, east -> south, south -> west, west -> north
+      return {
+        north: defaultEdges.west,
+        east: defaultEdges.north,
+        south: defaultEdges.east,
+        west: defaultEdges.south,
+      };
+    case 180:
+      // 180°: north -> south, south -> north, east -> west, west -> east
+      return {
+        north: defaultEdges.south,
+        east: defaultEdges.west,
+        south: defaultEdges.north,
+        west: defaultEdges.east,
+      };
+    case 270:
+      // 270° clockwise (or 90° counter-clockwise): north -> west, west -> south, south -> east, east -> north
+      return {
+        north: defaultEdges.east,
+        east: defaultEdges.south,
+        south: defaultEdges.west,
+        west: defaultEdges.north,
+      };
+    default:
+      // Fallback to no rotation
+      return { ...defaultEdges };
+  }
+}
+
+/**
  * Place a new tile at the specified edge
  */
 export function placeTile(
@@ -208,18 +258,22 @@ export function placeTile(
   // Generate a unique ID for the new tile
   const newTileId = `tile-${dungeon.tiles.length}`;
   
-  // Determine edges for the new tile
-  // The edge that connects to the existing tile becomes 'open'
-  // Other edges become 'unexplored' (for now, simplified to all unexplored)
+  // Rotate the tile's default edges based on the calculated rotation
+  const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+  
+  // Determine which edge connects to the existing tile
   const connectingEdge = getOppositeDirection(edge.direction);
   
+  // Build final edges:
+  // - Connecting edge must be 'open'
+  // - Other edges from rotatedEdges that are 'open' become 'unexplored'
+  // - Edges that are 'wall' stay as 'wall'
   const edges = {
-    north: 'unexplored' as const,
-    south: 'unexplored' as const,
-    east: 'unexplored' as const,
-    west: 'unexplored' as const,
-    [connectingEdge]: 'open' as const,
-  };
+    north: rotatedEdges.north === 'wall' ? 'wall' : (connectingEdge === 'north' ? 'open' : 'unexplored'),
+    south: rotatedEdges.south === 'wall' ? 'wall' : (connectingEdge === 'south' ? 'open' : 'unexplored'),
+    east: rotatedEdges.east === 'wall' ? 'wall' : (connectingEdge === 'east' ? 'open' : 'unexplored'),
+    west: rotatedEdges.west === 'wall' ? 'wall' : (connectingEdge === 'west' ? 'open' : 'unexplored'),
+  } as const;
   
   return {
     id: newTileId,
