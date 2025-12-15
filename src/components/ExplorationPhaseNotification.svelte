@@ -57,23 +57,14 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(74, 144, 226, 0.3);
     opacity: 1;
     transition: opacity 2s ease-out;
-    animation: slideIn 0.3s ease-out;
+    /* Animation removed to avoid conflict with inline rotation transform */
   }
   
   .exploration-notification.fade-out {
     opacity: 0;
   }
   
-  @keyframes slideIn {
-    from {
-      transform: translate(-50%, -60%);
-      opacity: 0;
-    }
-    to {
-      transform: translate(-50%, -50%);
-      opacity: 1;
-    }
-  }
+  /* Animation removed - transform is set inline with rotation */
   
   .notification-content {
     display: flex;
@@ -94,10 +85,5 @@
     max-width: 500px;
   }
   
-  /* Respect user's reduced motion preference */
-  @media (prefers-reduced-motion: reduce) {
-    .exploration-notification {
-      animation: none;
-    }
-  }
+
 </style>
