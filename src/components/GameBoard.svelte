@@ -1417,7 +1417,8 @@
         {/each}
 
         <!-- Movement overlay (only on start tile for now) -->
-        {#if showingMovement && validMoveSquares.length > 0}
+        <!-- Disabled during map control mode to prevent hero movement while editing -->
+        {#if showingMovement && validMoveSquares.length > 0 && !mapControlMode}
           {@const startTile = dungeon.tiles.find((t) => t.tileType === "start")}
           {#if startTile}
             {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
@@ -1586,7 +1587,8 @@
         {/if}
 
         <!-- Movement Controls (shown during hero phase with incremental movement) -->
-        {#if turnState.currentPhase === "hero-phase"}
+        <!-- Disabled during map control mode to prevent actions while editing -->
+        {#if turnState.currentPhase === "hero-phase" && !mapControlMode}
           <div class="movement-controls" data-testid="movement-controls">
             <!-- Remaining Movement Display -->
             {#if incrementalMovement?.inProgress}
@@ -1620,16 +1622,19 @@
           </div>
         {/if}
 
+        <!-- End Phase Button - disabled during map control mode -->
         <button
           class="end-phase-button"
           data-testid="end-phase-button"
           onclick={handleEndPhase}
+          disabled={mapControlMode}
         >
           {getEndPhaseButtonText()}
         </button>
 
         <!-- Power Card Attack Panel - only show during hero phase when adjacent to monster and can attack -->
-        {#if turnState.currentPhase === "hero-phase" && (heroTurnActions.canAttack || multiAttackState)}
+        <!-- Disabled during map control mode to prevent actions while editing -->
+        {#if turnState.currentPhase === "hero-phase" && (heroTurnActions.canAttack || multiAttackState) && !mapControlMode}
           {@const currentHeroId = getCurrentHeroId()}
           {@const currentHeroPowerCards = currentHeroId
             ? heroPowerCards[currentHeroId]
@@ -2115,8 +2120,13 @@
     min-height: 44px;
   }
 
-  .end-phase-button:hover {
+  .end-phase-button:hover:not(:disabled) {
     background: rgba(76, 175, 80, 0.9);
+  }
+
+  .end-phase-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Map control styles */
