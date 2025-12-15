@@ -31,6 +31,7 @@ e2e/
 | [036-encounter-effect-notifications](036-encounter-effect-notifications/README.md) | Special encounter cards display effect notifications |
 | [037-curse-and-special-events](037-curse-and-special-events/README.md) | Curse cards apply status effects |
 | [038-encounter-cards-comprehensive](038-encounter-cards-comprehensive/README.md) | **Comprehensive**: All encounter types tested (damage, attack, curse, environment, trap, hazard, special) |
+| [043-monster-move-dialog-orientation](043-monster-move-dialog-orientation/README.md) | Monster move dialog rotates to face controlling player |
 
 ## Running Tests
 
