@@ -519,7 +519,7 @@ export interface DungeonState {
  */
 export const TILE_DEFINITIONS: TileDefinition[] = [
   // Black 2-exit tiles (spawn monsters, trigger encounter)
-  // 2-exit tiles have openings on north and south (corridor), walls on east and west
+  // 2-exit tiles have openings on north and south (vertical corridor), walls on east and west
   { tileType: 'tile-black-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true },
   { tileType: 'tile-black-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true },
   { tileType: 'tile-black-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true },
@@ -533,7 +533,7 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   { tileType: 'tile-black-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },
   { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },
   // White 2-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
-  // 2-exit tiles have openings on north and south (corridor), walls on east and west
+  // 2-exit tiles have openings on north and south (vertical corridor), walls on east and west
   { tileType: 'tile-white-2exit-a', imagePath: 'assets/Tile_White_x2_01.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
   { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
   { tileType: 'tile-white-2exit-c', imagePath: 'assets/Tile_White_x2_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
