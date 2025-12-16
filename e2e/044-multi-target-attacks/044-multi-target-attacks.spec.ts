@@ -172,6 +172,15 @@ test.describe('044 - Multi-Target Attacks', () => {
       });
       
       // Programmatically simulate second attack result  
+      // First, reset canAttack flag so the attack can be processed
+      await page.evaluate(() => {
+        const store = (window as any).__REDUX_STORE__;
+        store.dispatch({
+          type: 'game/setHeroTurnActions',
+          payload: { actionsTaken: [], canMove: true, canAttack: true }
+        });
+      });
+      
       await page.evaluate(() => {
         const store = (window as any).__REDUX_STORE__;
         const state = store.getState();
@@ -190,7 +199,8 @@ test.describe('044 - Multi-Target Attacks', () => {
                 damage: 3,
                 isCritical: false
               },
-              targetInstanceId: targetMonster.instanceId
+              targetInstanceId: targetMonster.instanceId,
+              attackName: 'Daily Power'
             }
           });
         }
@@ -219,6 +229,10 @@ test.describe('044 - Multi-Target Attacks', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(state.game.attackResult).toBeNull();
+        // Verify first monster is dead (removed from board) - second may still be alive
+        expect(state.game.monsters.length).toBeLessThanOrEqual(1);
+        // Verify at least 1 monster was defeated
+        expect(state.game.scenario.monstersDefeated).toBeGreaterThanOrEqual(1);
         // Verify daily power was used (should be flipped)
         const cardStates = state.heroes.heroPowerCards.keyleth.cardStates;
         const dailyCard = cardStates.find((c: any) => c.cardId === dailyPowerCardId);
@@ -283,7 +297,7 @@ test.describe('044 - Multi-Target Attacks', () => {
           {
             monsterId: 'kobold',
             instanceId: 'kobold-1-test',
-            currentHp: 3,
+            currentHp: 1,
             maxHp: 3,
             tileId: 'start-tile',
             position: { x: 2, y: 4 }, // Adjacent to hero at (2, 3)
@@ -292,7 +306,7 @@ test.describe('044 - Multi-Target Attacks', () => {
           {
             monsterId: 'kobold',
             instanceId: 'kobold-2-test',
-            currentHp: 3,
+            currentHp: 1,
             maxHp: 3,
             tileId: 'start-tile',
             position: { x: 1, y: 3 }, // Also adjacent and on same tile
@@ -370,56 +384,23 @@ test.describe('044 - Multi-Target Attacks', () => {
     
     // Dismiss first result
     await page.locator('[data-testid="dismiss-combat-result"]').click();
-    await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
     
-    // STEP 6: Simulate second attack programmatically for area attack demonstration
-    // Check if there are still monsters on the tile
-    const remainingMonsters = await page.evaluate(() => {
-      const state = (window as any).__REDUX_STORE__.getState();
-      return state.game.monsters.filter((m: any) => m.currentHp > 0);
-    });
+    // STEP 6: Wait for second attack result (area attacks may show results sequentially)
+    // Hurled Breath attacks ALL monsters on the tile, so second result may appear automatically
+    const secondResultAppears = await page.locator('[data-testid="combat-result"]').isVisible({ timeout: 3000 }).catch(() => false);
     
-    if (remainingMonsters.length > 0) {
-      // Programmatically simulate second attack result
-      await page.evaluate(() => {
-        const store = (window as any).__REDUX_STORE__;
-        const state = store.getState();
-        const targetMonster = state.game.monsters.find((m: any) => m.currentHp > 0);
-        
-        if (targetMonster) {
-          store.dispatch({
-            type: 'game/setAttackResult',
-            payload: {
-              result: {
-                roll: 15,
-                attackBonus: 5,
-                total: 20,
-                targetAC: 13,
-                isHit: true,
-                damage: 1,
-                isCritical: false
-              },
-              targetInstanceId: targetMonster.instanceId
-            }
-          });
+    if (secondResultAppears) {
+      await screenshots.capture(page, 'second-monster-attack-result', {
+        programmaticCheck: async () => {
+          await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+          await expect(page.locator('[data-testid="result-text"]')).toContainText('HIT');
+          await expect(page.locator('[data-testid="attacker-info"]')).toContainText('Hurled Breath');
         }
       });
       
-      // Wait for combat result modal to appear
-      const resultAppeared = await page.locator('[data-testid="combat-result"]').isVisible({ timeout: 3000 }).catch(() => false);
-      
-      if (resultAppeared) {
-        await screenshots.capture(page, 'second-monster-attack-result', {
-          programmaticCheck: async () => {
-            await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-            await expect(page.locator('[data-testid="result-text"]')).toContainText('HIT');
-          }
-        });
-        
-        // Dismiss second result
-        await page.locator('[data-testid="dismiss-combat-result"]').click();
-        await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
-      }
+      // Dismiss second result
+      await page.locator('[data-testid="dismiss-combat-result"]').click();
+      await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
     }
     
     await screenshots.capture(page, 'hurled-breath-complete', {
@@ -428,6 +409,10 @@ test.describe('044 - Multi-Target Attacks', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(state.game.attackResult).toBeNull();
+        // Verify first monster is dead (removed from board) - second may still be alive  
+        expect(state.game.monsters.length).toBeLessThanOrEqual(1);
+        // Verify at least 1 monster was defeated
+        expect(state.game.scenario.monstersDefeated).toBeGreaterThanOrEqual(1);
         // Verify Hurled Breath was used (custom ability should be flipped)
         const cardStates = state.heroes.heroPowerCards.haskan?.cardStates;
         if (cardStates) {
