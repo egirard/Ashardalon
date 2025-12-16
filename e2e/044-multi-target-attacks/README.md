@@ -32,45 +32,79 @@ This test suite demonstrates multi-target attack capabilities in the game throug
 
 ## Screenshots
 
-### Test 1: Multi-Target Adjacent Attack
+---
 
-![Step 1: Game Started](044-multi-target-attacks.spec.ts-snapshots/000-game-started-keyleth-chromium-linux.png)
-*Step 1: Game starts with Keyleth (Paladin)*
+## Test 1: Multi-Target Adjacent Attack (Paladin Daily Power)
 
-![Step 2: Two Monsters Adjacent](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-adjacent-chromium-linux.png)
-*Step 2: Two kobolds positioned adjacent to Keyleth*
+This section shows the complete attack flow for a Paladin using a daily power to attack two adjacent monsters sequentially.
 
-![Step 3: Attack Panel](044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
-*Step 3: Power card attack panel shows available attack options*
+### Step 1: Game Initialization with Keyleth
+![Game Started - Keyleth](044-multi-target-attacks.spec.ts-snapshots/000-game-started-keyleth-chromium-linux.png)
 
-![Step 4: Daily Power Selected](044-multi-target-attacks.spec.ts-snapshots/003-daily-power-selected-chromium-linux.png)
-*Step 4: Daily power card selected, showing target selection UI with both monsters available*
+The game starts with Keyleth (Paladin) as the selected hero. The hero is positioned on the game board and ready to take actions during the Hero Phase.
 
-![Step 5: First Attack Result](044-multi-target-attacks.spec.ts-snapshots/004-first-target-attack-result-chromium-linux.png)
-*Step 5: Combat result shows successful hit on first target*
+### Step 2: Two Monsters Positioned Adjacent to Hero
+![Two Monsters Adjacent](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-adjacent-chromium-linux.png)
 
-![Step 6: Attack Complete](044-multi-target-attacks.spec.ts-snapshots/005-multi-target-attack-complete-chromium-linux.png)
-*Step 6: Multi-target attack complete, daily power used*
+Two kobold monsters are positioned adjacent to Keyleth, setting up the scenario for a multi-target attack. Both monsters are within melee range.
 
-### Test 2: Hurled Breath Area Attack
+### Step 3: Power Card Attack Panel Displayed
+![Attack Panel Available](044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
 
-![Step 1: Game Started](044-multi-target-attacks.spec.ts-snapshots/000-game-started-haskan-chromium-linux.png)
-*Step 1: Game starts with Haskan (Dragonborn Wizard)*
+The power card attack panel appears, showing all available attack options. The daily power card is visible among the at-will attack cards, ready to be selected.
 
-![Step 2: Two Monsters on Same Tile](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-on-same-tile-chromium-linux.png)
-*Step 2: Two kobolds positioned on the same tile*
+### Step 4: Daily Power Card Selected - Target Selection UI Shown
+![Daily Power Selected](044-multi-target-attacks.spec.ts-snapshots/003-daily-power-selected-chromium-linux.png)
 
-![Step 3: Attack Panel](044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
-*Step 3: Power card attack panel shows Hurled Breath and other attack options*
+The daily power card is clicked and selected (highlighted). The target selection UI appears, showing both adjacent monsters as available targets. The player can now choose which monster to attack first.
 
-![Step 4: Hurled Breath Selected](044-multi-target-attacks.spec.ts-snapshots/003-hurled-breath-selected-chromium-linux.png)
-*Step 4: Hurled Breath selected, showing target selection for area attack*
+### Step 5: First Target Attack Result
+![First Target Attack Result](044-multi-target-attacks.spec.ts-snapshots/004-first-target-attack-result-chromium-linux.png)
 
-![Step 5: First Monster Result](044-multi-target-attacks.spec.ts-snapshots/004-first-monster-attack-result-chromium-linux.png)
-*Step 5: Combat result shows successful hit on first monster in the area*
+After selecting the first target, the combat result modal displays showing a successful hit. The attack roll, bonus, and damage are shown. This demonstrates the first attack of the multi-target sequence.
 
-![Step 6: Attack Complete](044-multi-target-attacks.spec.ts-snapshots/005-hurled-breath-complete-chromium-linux.png)
-*Step 6: Area attack complete, Hurled Breath power used*
+### Step 6: Multi-Target Attack Complete
+![Attack Complete](044-multi-target-attacks.spec.ts-snapshots/005-multi-target-attack-complete-chromium-linux.png)
+
+The multi-target attack sequence is complete. Both monsters have been attacked, and the daily power card has been used (flipped). The game board shows the final state after the attack.
+
+---
+
+## Test 2: Hurled Breath Area Attack (Haskan's Custom Ability)
+
+This section shows the complete attack flow for Haskan using Hurled Breath to attack all monsters on a chosen tile.
+
+### Step 1: Game Initialization with Haskan
+![Game Started - Haskan](044-multi-target-attacks.spec.ts-snapshots/000-game-started-haskan-chromium-linux.png)
+
+The game starts with Haskan (Dragonborn Wizard) as the selected hero. Haskan has the Hurled Breath custom ability which allows area attacks on a tile.
+
+### Step 2: Two Monsters on Same Tile
+![Two Monsters on Same Tile](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-on-same-tile-chromium-linux.png)
+
+Two kobold monsters are positioned on the same tile, within 2 tiles of Haskan's position. This sets up the scenario for an area attack using Hurled Breath.
+
+### Step 3: Power Card Attack Panel with Hurled Breath
+![Attack Panel Available](044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
+
+The power card attack panel appears, showing Hurled Breath (ID 41) as one of the available attack options. Hurled Breath is Haskan's custom ability that attacks all monsters on a chosen tile.
+
+### Step 4: Hurled Breath Selected - Target Selection Shown
+![Hurled Breath Selected](044-multi-target-attacks.spec.ts-snapshots/003-hurled-breath-selected-chromium-linux.png)
+
+Hurled Breath is clicked and selected (highlighted). The target selection UI appears, showing the tile/monster group that can be targeted. Unlike single-target attacks, this will attack all monsters on the selected tile.
+
+### Step 5: First Monster Attack Result
+![First Monster Attack Result](044-multi-target-attacks.spec.ts-snapshots/004-first-monster-attack-result-chromium-linux.png)
+
+The combat result modal displays showing a successful hit on the first monster in the area. Since Hurled Breath attacks each monster on the tile, this is the first of the attack results.
+
+### Step 6: Area Attack Complete
+![Hurled Breath Complete](044-multi-target-attacks.spec.ts-snapshots/005-hurled-breath-complete-chromium-linux.png)
+
+The area attack is complete. All monsters on the targeted tile have been attacked, and the Hurled Breath custom ability has been used (flipped). The game board shows the final state after the area attack.
+
+---
 
 ## Implementation Notes
 
