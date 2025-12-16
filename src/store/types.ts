@@ -519,31 +519,27 @@ export interface DungeonState {
  */
 export const TILE_DEFINITIONS: TileDefinition[] = [
   // Black 2-exit tiles (spawn monsters, trigger encounter)
-  // 2-exit tiles have openings on north and south (vertical corridor), walls on east and west
-  { tileType: 'tile-black-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true },
-  { tileType: 'tile-black-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true },
-  { tileType: 'tile-black-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true },
+  // Based on image analysis of actual tile PNGs to determine which edges have doorway openings
+  { tileType: 'tile-black-2exit-a', imagePath: 'assets/Tile_Black_x2_01.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true },  // Vertical corridor: N/S open, E/W walls
+  { tileType: 'tile-black-2exit-b', imagePath: 'assets/Tile_Black_x2_02.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'open' }, isBlackTile: true },  // N/S/W open, E wall (actually 3 exits based on analysis)
+  { tileType: 'tile-black-2exit-c', imagePath: 'assets/Tile_Black_x2_03.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true },  // N/S/E open, W wall (actually 3 exits based on analysis)
   // Black 3-exit tiles (spawn monsters, trigger encounter)
-  // 3-exit tiles have openings on north, east, and south (T-junction), wall on west
-  { tileType: 'tile-black-3exit-a', imagePath: 'assets/Tile_Black_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true },
-  { tileType: 'tile-black-3exit-b', imagePath: 'assets/Tile_Black_x3_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true },
-  { tileType: 'tile-black-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true },
+  { tileType: 'tile-black-3exit-a', imagePath: 'assets/Tile_Black_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },  // All open (4 exits based on analysis)
+  { tileType: 'tile-black-3exit-b', imagePath: 'assets/Tile_Black_x3_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true },  // N/S/E open, W wall
+  { tileType: 'tile-black-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },  // S/E/W open, N wall
   // Black 4-exit tiles (spawn monsters, trigger encounter)
-  // 4-exit tiles have openings on all four sides (crossroads)
-  { tileType: 'tile-black-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },
-  { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },
+  { tileType: 'tile-black-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },  // All open
+  { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true },  // All open
   // White 2-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
-  // 2-exit tiles have openings on north and south (vertical corridor), walls on east and west
-  { tileType: 'tile-white-2exit-a', imagePath: 'assets/Tile_White_x2_01.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
-  { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
-  { tileType: 'tile-white-2exit-c', imagePath: 'assets/Tile_White_x2_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
-  { tileType: 'tile-white-2exit-d', imagePath: 'assets/Tile_White_x2_04.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
-  { tileType: 'tile-white-2exit-e', imagePath: 'assets/Tile_White_x2_05.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-2exit-a', imagePath: 'assets/Tile_White_x2_01.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false },  // S/E open, N/W walls
+  { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: false },  // All open (4 exits based on analysis)
+  { tileType: 'tile-white-2exit-c', imagePath: 'assets/Tile_White_x2_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },  // N/S open, E/W walls
+  { tileType: 'tile-white-2exit-d', imagePath: 'assets/Tile_White_x2_04.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },  // N/S open, E/W walls
+  { tileType: 'tile-white-2exit-e', imagePath: 'assets/Tile_White_x2_05.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false },  // N/S open, E/W walls
   // White 3-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
-  // 3-exit tiles have openings on north, east, and south (T-junction), wall on west
-  { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false },
-  { tileType: 'tile-white-3exit-b', imagePath: 'assets/Tile_White_x3_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false },
-  { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false },
+  { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: false },  // All open (4 exits based on analysis)
+  { tileType: 'tile-white-3exit-b', imagePath: 'assets/Tile_White_x3_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: false },  // S/E/W open, N wall
+  { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: false },  // All open (4 exits based on analysis)
 ];
 
 /**
