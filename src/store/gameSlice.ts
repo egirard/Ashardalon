@@ -63,6 +63,7 @@ import {
   useHealingSurge,
   checkPartyDefeat,
   calculateTotalAC,
+  rollD20,
 } from "./combat";
 import {
   initializeEncounterDeck,
@@ -84,7 +85,6 @@ import {
   isTileDeckManipulationCard,
   getCurseStatusType,
 } from "./encounters";
-import { applyStatusEffect, processStatusEffectsStartOfTurn } from "./statusEffects";
 import {
   createTrapInstance,
   createHazardInstance,
@@ -110,6 +110,8 @@ import {
   applyStatusEffect,
   removeStatusEffect,
   processStatusEffectsStartOfTurn,
+  hasStatusEffect,
+  attemptPoisonRecovery as attemptPoisonRecoveryUtil,
   type StatusEffect,
   type StatusEffectType,
 } from "./statusEffects";
@@ -258,6 +260,10 @@ export interface GameState {
   recentlyPlacedTileId: string | null;
   /** ID of monster waiting to be displayed after tile animation completes */
   pendingMonsterDisplayId: string | null;
+  /** Poisoned damage notification: hero ID and damage taken (null if no notification) */
+  poisonedDamageNotification: { heroId: string; damage: number } | null;
+  /** Poison recovery notification: hero ID, roll result, and whether recovered (null if no notification) */
+  poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null;
 }
 
 /**
@@ -430,6 +436,8 @@ const initialState: GameState = {
   explorationPhaseMessage: null,
   recentlyPlacedTileId: null,
   pendingMonsterDisplayId: null,
+  poisonedDamageNotification: null,
+  poisonRecoveryNotification: null,
 };
 
 /**
@@ -1160,17 +1168,26 @@ export const gameSlice = createSlice({
         const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
         if (heroHpIndex !== -1) {
           const heroHp = state.heroHp[heroHpIndex];
-          const { updatedStatuses, ongoingDamage } = processStatusEffectsStartOfTurn(
+          const { updatedStatuses, ongoingDamage, poisonedDamage } = processStatusEffectsStartOfTurn(
             heroHp.statuses ?? [],
             state.turnState.turnNumber
           );
           
-          // Apply ongoing damage and update statuses
+          // Apply ongoing damage and poisoned damage, update statuses
+          const totalDamage = ongoingDamage + poisonedDamage;
           state.heroHp[heroHpIndex] = {
             ...heroHp,
-            currentHp: Math.max(0, heroHp.currentHp - ongoingDamage),
+            currentHp: Math.max(0, heroHp.currentHp - totalDamage),
             statuses: updatedStatuses,
           };
+          
+          // Show poisoned damage notification if character took damage from poison
+          if (poisonedDamage > 0) {
+            state.poisonedDamageNotification = {
+              heroId: currentHeroId,
+              damage: poisonedDamage,
+            };
+          }
         }
       }
       
@@ -2083,6 +2100,58 @@ export const gameSlice = createSlice({
       state.recentlyPlacedTileId = null;
     },
     /**
+     * Dismiss the poisoned damage notification
+     */
+    dismissPoisonedDamageNotification: (state) => {
+      state.poisonedDamageNotification = null;
+    },
+    /**
+     * Dismiss the poison recovery notification
+     */
+    dismissPoisonRecoveryNotification: (state) => {
+      state.poisonRecoveryNotification = null;
+    },
+    /**
+     * Attempt to recover from poisoned status at end of hero phase.
+     * Rolls d20, removes poisoned on 10+.
+     */
+    attemptPoisonRecovery: (state) => {
+      if (state.turnState.currentPhase !== "hero-phase") {
+        return;
+      }
+      
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (!currentHeroId) return;
+      
+      const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+      if (heroHpIndex === -1) return;
+      
+      const heroHp = state.heroHp[heroHpIndex];
+      const statuses = heroHp.statuses ?? [];
+      
+      // Only attempt recovery if poisoned
+      if (!hasStatusEffect(statuses, 'poisoned')) {
+        return;
+      }
+      
+      // Roll d20 for recovery
+      const roll = rollD20();
+      const { updatedStatuses, recovered } = attemptPoisonRecoveryUtil(statuses, roll);
+      
+      // Update hero's status effects
+      state.heroHp[heroHpIndex] = {
+        ...heroHp,
+        statuses: updatedStatuses,
+      };
+      
+      // Show recovery notification
+      state.poisonRecoveryNotification = {
+        heroId: currentHeroId,
+        roll,
+        recovered,
+      };
+    },
+    /**
      * Show the pending monster card after tile animation completes
      * This is called after a 2-second delay to sequence the animations properly
      */
@@ -2478,6 +2547,9 @@ export const {
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
   dismissExplorationPhaseMessage,
+  dismissPoisonedDamageNotification,
+  dismissPoisonRecoveryNotification,
+  attemptPoisonRecovery,
   showPendingMonster,
   setHeroHp,
   dismissLevelUpNotification,
