@@ -318,7 +318,7 @@ test.describe('046 - Movement Before Attack', () => {
         
         // Check what daily card Vistra has (default is Comeback Strike ID: 15)
         const heroPowerCards = storeState.heroes.heroPowerCards.vistra;
-        console.log('Vistra daily card:', heroPowerCards.daily);
+        expect(heroPowerCards.daily).toBe(15); // Comeback Strike
         
         // Note: To test Taunting Advance (ID: 17), we would need to select it during power selection
         // For now, document that Vistra's default daily is Comeback Strike (ID: 15)
