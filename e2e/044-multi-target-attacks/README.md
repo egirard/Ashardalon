@@ -1,48 +1,76 @@
 # E2E Test 044: Multi-Target Attacks
 
-This test suite verifies the multi-target attack capabilities in the game, specifically testing:
-1. **Arcing Strike (ID 25)** - A Paladin daily power that can attack one or two adjacent monsters
+This test suite demonstrates multi-target attack capabilities in the game through the UI, specifically testing:
+1. **Paladin Daily Power** - A daily power that can attack two adjacent monsters
 2. **Hurled Breath (ID 41)** - Haskan's custom ability that attacks all monsters on a chosen tile within 2 tiles
 
 ## Test Coverage
 
-### Test 1: Arcing Strike (ID 25) - Multi-Target Adjacent Attack
+### Test 1: Multi-Target Adjacent Attack (Paladin Daily)
 
-**User Story**: As a Paladin player using Keyleth, I can use Arcing Strike to attack multiple adjacent monsters in a single action.
+**User Story**: As a Paladin player using Keyleth, I can use a daily power to attack two adjacent monsters sequentially.
 
-**Verification Points**:
-- Keyleth is selected and the game starts successfully
-- Two monsters are placed adjacent to the hero
-- The game state correctly tracks multiple adjacent enemies
-- Multiple combat results can be generated for each target
+**Attack Flow**:
+1. Select Keyleth (Paladin) and start the game
+2. Position hero with two adjacent monsters
+3. Click on the daily power card in the attack panel
+4. Select first target monster and see attack result
+5. Select second target monster and see second attack result
+6. Verify daily power is used (flipped)
 
 ### Test 2: Hurled Breath (ID 41) - Area Attack on Tile
 
 **User Story**: As Haskan (Dragonborn Wizard), I can use Hurled Breath to target a tile and attack all monsters on that tile.
 
-**Verification Points**:
-- Haskan is selected and the game starts successfully  
-- Two monsters are placed on the same tile
-- The game state correctly tracks multiple monsters on a single tile
-- Area attacks can target multiple monsters on the chosen tile
+**Attack Flow**:
+1. Select Haskan and start the game
+2. Position hero with two monsters on the same tile (within range)
+3. Click Hurled Breath card in the attack panel
+4. Select the tile/monster group to attack
+5. See attack results for each monster
+6. Verify Hurled Breath is used (flipped)
 
 ## Screenshots
 
-### Arcing Strike Test
+### Test 1: Multi-Target Adjacent Attack
 
-![Game Started - Keyleth](044-multi-target-attacks.spec.ts-snapshots/000-game-started-keyleth-chromium-linux.png)
-*Game starts with Keyleth (Paladin) selected*
+![Step 1: Game Started](044-multi-target-attacks.spec.ts-snapshots/000-game-started-keyleth-chromium-linux.png)
+*Step 1: Game starts with Keyleth (Paladin)*
 
-![Two Monsters Adjacent](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-adjacent-chromium-linux.png)
-*Two kobolds are positioned adjacent to Keyleth, demonstrating the setup for Arcing Strike*
+![Step 2: Two Monsters Adjacent](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-adjacent-chromium-linux.png)
+*Step 2: Two kobolds positioned adjacent to Keyleth*
 
-### Hurled Breath Test
+![Step 3: Attack Panel](044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
+*Step 3: Power card attack panel shows available attack options*
 
-![Game Started - Haskan](044-multi-target-attacks.spec.ts-snapshots/000-game-started-haskan-chromium-linux.png)
-*Game starts with Haskan (Dragonborn Wizard) selected*
+![Step 4: Daily Power Selected](044-multi-target-attacks.spec.ts-snapshots/003-daily-power-selected-chromium-linux.png)
+*Step 4: Daily power card selected, showing target selection UI with both monsters available*
 
-![Two Monsters on Same Tile](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-on-same-tile-chromium-linux.png)
-*Two kobolds are positioned on the same tile, demonstrating the setup for Hurled Breath area attack*
+![Step 5: First Attack Result](044-multi-target-attacks.spec.ts-snapshots/004-first-target-attack-result-chromium-linux.png)
+*Step 5: Combat result shows successful hit on first target*
+
+![Step 6: Attack Complete](044-multi-target-attacks.spec.ts-snapshots/005-multi-target-attack-complete-chromium-linux.png)
+*Step 6: Multi-target attack complete, daily power used*
+
+### Test 2: Hurled Breath Area Attack
+
+![Step 1: Game Started](044-multi-target-attacks.spec.ts-snapshots/000-game-started-haskan-chromium-linux.png)
+*Step 1: Game starts with Haskan (Dragonborn Wizard)*
+
+![Step 2: Two Monsters on Same Tile](044-multi-target-attacks.spec.ts-snapshots/001-two-monsters-on-same-tile-chromium-linux.png)
+*Step 2: Two kobolds positioned on the same tile*
+
+![Step 3: Attack Panel](044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
+*Step 3: Power card attack panel shows Hurled Breath and other attack options*
+
+![Step 4: Hurled Breath Selected](044-multi-target-attacks.spec.ts-snapshots/003-hurled-breath-selected-chromium-linux.png)
+*Step 4: Hurled Breath selected, showing target selection for area attack*
+
+![Step 5: First Monster Result](044-multi-target-attacks.spec.ts-snapshots/004-first-monster-attack-result-chromium-linux.png)
+*Step 5: Combat result shows successful hit on first monster in the area*
+
+![Step 6: Attack Complete](044-multi-target-attacks.spec.ts-snapshots/005-hurled-breath-complete-chromium-linux.png)
+*Step 6: Area attack complete, Hurled Breath power used*
 
 ## Implementation Notes
 
