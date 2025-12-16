@@ -15,8 +15,10 @@ import {
   drawTileFromBottom,
   moveBottomTileToTop,
   shuffleTileDeck,
+  rotateEdges,
 } from "./exploration";
 import type { DungeonState, HeroToken, PlacedTile, TileEdge } from "./types";
+import { TILE_DEFINITIONS } from "./types";
 
 describe("exploration", () => {
   describe("isOnEdge", () => {
@@ -71,28 +73,39 @@ describe("exploration", () => {
   });
 
   describe("calculateTileRotation", () => {
-    it("should return 0 when exploring north (arrow points south to hero)", () => {
+    // Use a standard 2-exit tile with north/south openings for testing
+    const testTileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-black-2exit-a')!;
+    
+    it("should align an opening with south edge when exploring north", () => {
       // Hero explores north edge, new tile connects via its south edge
-      // Arrow should point south (toward hero) = 0 degrees rotation
-      expect(calculateTileRotation("north")).toBe(0);
+      // Rotation should result in south edge being open
+      const rotation = calculateTileRotation("north", testTileDef);
+      const rotatedEdges = rotateEdges(testTileDef.defaultEdges, rotation);
+      expect(rotatedEdges.south).toBe('open');
     });
 
-    it("should return 180 when exploring south (arrow points north to hero)", () => {
+    it("should align an opening with north edge when exploring south", () => {
       // Hero explores south edge, new tile connects via its north edge
-      // Arrow should point north (toward hero) = 180 degrees rotation
-      expect(calculateTileRotation("south")).toBe(180);
+      // Rotation should result in north edge being open
+      const rotation = calculateTileRotation("south", testTileDef);
+      const rotatedEdges = rotateEdges(testTileDef.defaultEdges, rotation);
+      expect(rotatedEdges.north).toBe('open');
     });
 
-    it("should return 90 when exploring east (arrow points west to hero)", () => {
+    it("should align an opening with west edge when exploring east", () => {
       // Hero explores east edge, new tile connects via its west edge
-      // Arrow should point west (toward hero) = 90 degrees rotation
-      expect(calculateTileRotation("east")).toBe(90);
+      // Rotation should result in west edge being open
+      const rotation = calculateTileRotation("east", testTileDef);
+      const rotatedEdges = rotateEdges(testTileDef.defaultEdges, rotation);
+      expect(rotatedEdges.west).toBe('open');
     });
 
-    it("should return 270 when exploring west (arrow points east to hero)", () => {
+    it("should align an opening with east edge when exploring west", () => {
       // Hero explores west edge, new tile connects via its east edge
-      // Arrow should point east (toward hero) = 270 degrees rotation
-      expect(calculateTileRotation("west")).toBe(270);
+      // Rotation should result in east edge being open
+      const rotation = calculateTileRotation("west", testTileDef);
+      const rotatedEdges = rotateEdges(testTileDef.defaultEdges, rotation);
+      expect(rotatedEdges.east).toBe('open');
     });
   });
 
@@ -331,44 +344,48 @@ describe("exploration", () => {
       expect(result).toBeNull();
     });
 
-    it("should set correct rotation when placing north (arrow points south)", () => {
+    it("should set rotation that aligns opening with south when placing north", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "north" };
       
       const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
-      expect(result!.rotation).toBe(0);
+      expect(result!.edges.south).toBe('open');  // Connecting edge must be open
+      expect([0, 90, 180, 270]).toContain(result!.rotation);  // Must be a valid rotation
     });
 
-    it("should set correct rotation when placing south (arrow points north)", () => {
+    it("should set rotation that aligns opening with north when placing south", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "south" };
       
       const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
-      expect(result!.rotation).toBe(180);
+      expect(result!.edges.north).toBe('open');  // Connecting edge must be open
+      expect([0, 90, 180, 270]).toContain(result!.rotation);  // Must be a valid rotation
     });
 
-    it("should set correct rotation when placing east (arrow points west)", () => {
+    it("should set rotation that aligns opening with west when placing east", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "east" };
       
       const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
-      expect(result!.rotation).toBe(90);
+      expect(result!.edges.west).toBe('open');  // Connecting edge must be open
+      expect([0, 90, 180, 270]).toContain(result!.rotation);  // Must be a valid rotation
     });
 
-    it("should set correct rotation when placing west (arrow points east)", () => {
+    it("should set rotation that aligns opening with east when placing west", () => {
       const dungeon = initializeDungeon();
       const edge: TileEdge = { tileId: "start-tile", direction: "west" };
       
       const result = placeTile(edge, "tile-black-2exit-a", dungeon);
       
       expect(result).not.toBeNull();
-      expect(result!.rotation).toBe(270);
+      expect(result!.edges.east).toBe('open');  // Connecting edge must be open
+      expect([0, 90, 180, 270]).toContain(result!.rotation);  // Must be a valid rotation
     });
   });
 
