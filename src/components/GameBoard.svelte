@@ -24,6 +24,9 @@
     dismissHealingSurgeNotification,
     dismissEncounterEffectMessage,
     dismissExplorationPhaseMessage,
+    dismissPoisonedDamageNotification,
+    dismissPoisonRecoveryNotification,
+    attemptPoisonRecovery,
     showPendingMonster,
     useVoluntaryActionSurge,
     skipActionSurge,
@@ -84,6 +87,8 @@
   import EncounterEffectNotification from "./EncounterEffectNotification.svelte";
   import ExplorationPhaseNotification from "./ExplorationPhaseNotification.svelte";
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
+  import PoisonedDamageNotification from "./PoisonedDamageNotification.svelte";
+  import PoisonRecoveryNotification from "./PoisonRecoveryNotification.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
@@ -181,6 +186,8 @@
   let explorationPhaseMessage: string | null = $state(null);
   let recentlyPlacedTileId: string | null = $state(null);
   let pendingMonsterDisplayId: string | null = $state(null);
+  let poisonedDamageNotification: { heroId: string; damage: number } | null = $state(null);
+  let poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null = $state(null);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
@@ -243,6 +250,8 @@
       explorationPhaseMessage = state.game.explorationPhaseMessage;
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
       pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
+      poisonedDamageNotification = state.game.poisonedDamageNotification;
+      poisonRecoveryNotification = state.game.poisonRecoveryNotification;
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
@@ -291,6 +300,8 @@
     explorationPhaseMessage = state.game.explorationPhaseMessage;
     recentlyPlacedTileId = state.game.recentlyPlacedTileId;
     pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
+    poisonedDamageNotification = state.game.poisonedDamageNotification;
+    poisonRecoveryNotification = state.game.poisonRecoveryNotification;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
@@ -781,6 +792,20 @@
         if (attackResult !== null) {
           return;
         }
+        
+        // Check if current hero is poisoned and attempt recovery before ending phase
+        const currentHeroId = heroTokens[turnState.currentHeroIndex]?.heroId;
+        if (currentHeroId) {
+          const heroHpState = heroHp.find(h => h.heroId === currentHeroId);
+          if (heroHpState?.statuses?.some(s => s.type === 'poisoned')) {
+            // Attempt poison recovery - this will show notification
+            store.dispatch(attemptPoisonRecovery());
+            // Note: Phase will end when player dismisses the recovery notification
+            // Don't call endHeroPhase here yet
+            return;
+          }
+        }
+        
         store.dispatch(endHeroPhase());
         break;
       case "exploration-phase":
@@ -1072,6 +1097,20 @@
 
   function handleDismissExplorationPhaseMessage() {
     store.dispatch(dismissExplorationPhaseMessage());
+  }
+
+  // Handle dismissing the poisoned damage notification
+  function handleDismissPoisonedDamageNotification() {
+    store.dispatch(dismissPoisonedDamageNotification());
+  }
+
+  // Handle dismissing the poison recovery notification
+  function handleDismissPoisonRecoveryNotification() {
+    store.dispatch(dismissPoisonRecoveryNotification());
+    // After recovery notification is dismissed, end the hero phase
+    if (turnState.currentPhase === "hero-phase") {
+      store.dispatch(endHeroPhase());
+    }
   }
 
   // Handle dismissing the encounter card and applying its effect
@@ -1830,6 +1869,31 @@
       hpRestored={healingSurgeHpRestored}
       onDismiss={handleDismissHealingSurgeNotification}
     />
+  {/if}
+
+  <!-- Poisoned Damage Notification (shown at start of turn if poisoned) -->
+  {#if poisonedDamageNotification}
+    {@const hero = AVAILABLE_HEROES.find(h => h.id === poisonedDamageNotification.heroId)}
+    {#if hero}
+      <PoisonedDamageNotification
+        heroName={hero.name}
+        damage={poisonedDamageNotification.damage}
+        onDismiss={handleDismissPoisonedDamageNotification}
+      />
+    {/if}
+  {/if}
+
+  <!-- Poison Recovery Notification (shown at end of turn for poisoned heroes) -->
+  {#if poisonRecoveryNotification}
+    {@const hero = AVAILABLE_HEROES.find(h => h.id === poisonRecoveryNotification.heroId)}
+    {#if hero}
+      <PoisonRecoveryNotification
+        heroName={hero.name}
+        roll={poisonRecoveryNotification.roll}
+        recovered={poisonRecoveryNotification.recovered}
+        onDismiss={handleDismissPoisonRecoveryNotification}
+      />
+    {/if}
   {/if}
 
   <!-- Encounter Effect Notification (shown after special encounter card effects) -->

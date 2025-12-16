@@ -228,14 +228,21 @@ export function processStatusEffectsStartOfTurn(
 ): {
   updatedStatuses: StatusEffect[];
   ongoingDamage: number;
+  poisonedDamage: number;
 } {
   let ongoingDamage = 0;
+  let poisonedDamage = 0;
   const updatedStatuses: StatusEffect[] = [];
 
   for (const status of statuses) {
     // Apply ongoing damage
     if (status.type === 'ongoing-damage' && status.data?.damage) {
       ongoingDamage += status.data.damage;
+    }
+    
+    // Apply poisoned damage (1 damage per poisoned status)
+    if (status.type === 'poisoned') {
+      poisonedDamage += 1;
     }
 
     // Check if status should expire based on duration
@@ -251,7 +258,7 @@ export function processStatusEffectsStartOfTurn(
     updatedStatuses.push(status);
   }
 
-  return { updatedStatuses, ongoingDamage };
+  return { updatedStatuses, ongoingDamage, poisonedDamage };
 }
 
 /**
@@ -411,4 +418,34 @@ export function getModifiedAttackBonusWithCurses(
   }
   
   return bonus;
+}
+
+/**
+ * Attempt to recover from poisoned status at end of turn
+ * @param statuses Current status effects
+ * @param rollResult D20 roll result (1-20)
+ * @returns Object with updated statuses and success flag
+ */
+export function attemptPoisonRecovery(
+  statuses: StatusEffect[],
+  rollResult: number
+): {
+  updatedStatuses: StatusEffect[];
+  recovered: boolean;
+} {
+  const success = rollResult >= 10;
+  
+  if (success) {
+    // Remove all poisoned statuses on successful recovery
+    return {
+      updatedStatuses: statuses.filter(s => s.type !== 'poisoned'),
+      recovered: true,
+    };
+  }
+  
+  // Keep all statuses if recovery failed
+  return {
+    updatedStatuses: statuses,
+    recovered: false,
+  };
 }

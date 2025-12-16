@@ -17,6 +17,7 @@ import {
   canMove,
   canAttack,
   isDazed,
+  attemptPoisonRecovery,
 } from './statusEffects';
 
 describe('StatusEffects', () => {
@@ -131,6 +132,7 @@ describe('StatusEffects', () => {
       const result = processStatusEffectsStartOfTurn(statuses, 2);
       
       expect(result.ongoingDamage).toBe(2);
+      expect(result.poisonedDamage).toBe(0);
     });
 
     it('should sum multiple ongoing damage sources', () => {
@@ -151,6 +153,28 @@ describe('StatusEffects', () => {
       const result = processStatusEffectsStartOfTurn(statuses, 2);
       
       expect(result.ongoingDamage).toBe(3);
+      expect(result.poisonedDamage).toBe(0);
+    });
+
+    it('should calculate poisoned damage', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 }
+      ];
+      const result = processStatusEffectsStartOfTurn(statuses, 2);
+      
+      expect(result.poisonedDamage).toBe(1);
+      expect(result.ongoingDamage).toBe(0);
+    });
+
+    it('should sum multiple poisoned sources', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 },
+        { type: 'poisoned', source: 'cultist-1', appliedOnTurn: 2 }
+      ];
+      const result = processStatusEffectsStartOfTurn(statuses, 3);
+      
+      expect(result.poisonedDamage).toBe(2);
+      expect(result.ongoingDamage).toBe(0);
     });
 
     it('should remove expired statuses', () => {
@@ -383,6 +407,63 @@ describe('StatusEffects', () => {
       ];
       
       expect(isDazed(statuses)).toBe(false);
+    });
+  });
+
+  describe('attemptPoisonRecovery', () => {
+    it('should remove poisoned status on roll of 10 or higher', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 },
+        { type: 'dazed', source: 'encounter-1', appliedOnTurn: 1 }
+      ];
+      const result = attemptPoisonRecovery(statuses, 10);
+      
+      expect(result.recovered).toBe(true);
+      expect(result.updatedStatuses).toHaveLength(1);
+      expect(result.updatedStatuses[0].type).toBe('dazed');
+    });
+
+    it('should remove all poisoned statuses on successful recovery', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 },
+        { type: 'poisoned', source: 'cultist-1', appliedOnTurn: 2 }
+      ];
+      const result = attemptPoisonRecovery(statuses, 15);
+      
+      expect(result.recovered).toBe(true);
+      expect(result.updatedStatuses).toHaveLength(0);
+    });
+
+    it('should keep poisoned status on roll below 10', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 }
+      ];
+      const result = attemptPoisonRecovery(statuses, 9);
+      
+      expect(result.recovered).toBe(false);
+      expect(result.updatedStatuses).toHaveLength(1);
+      expect(result.updatedStatuses[0].type).toBe('poisoned');
+    });
+
+    it('should work with natural 20', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 }
+      ];
+      const result = attemptPoisonRecovery(statuses, 20);
+      
+      expect(result.recovered).toBe(true);
+      expect(result.updatedStatuses).toHaveLength(0);
+    });
+
+    it('should not affect other statuses on failed recovery', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 },
+        { type: 'dazed', source: 'encounter-1', appliedOnTurn: 1 }
+      ];
+      const result = attemptPoisonRecovery(statuses, 5);
+      
+      expect(result.recovered).toBe(false);
+      expect(result.updatedStatuses).toHaveLength(2);
     });
   });
 });
