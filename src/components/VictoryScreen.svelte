@@ -6,8 +6,8 @@
   
   let scenario: ScenarioState = $state({ 
     monstersDefeated: 0, 
-    monstersToDefeat: 2, 
-    objective: "Defeat 2 monsters" 
+    monstersToDefeat: 12, 
+    objective: "Defeat 12 monsters" 
   });
   
   // Subscribe to store updates
