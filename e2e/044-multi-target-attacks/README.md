@@ -63,8 +63,18 @@ The daily power card is clicked and selected (highlighted). The target selection
 
 After selecting the first target, the combat result modal displays showing a successful hit. The attack roll, bonus, and damage are shown. This demonstrates the first attack of the multi-target sequence.
 
-### Step 6: Multi-Target Attack Complete
-![Attack Complete](044-multi-target-attacks.spec.ts-snapshots/005-multi-target-attack-complete-chromium-linux.png)
+### Step 6: Second Target Selection
+![Second Target Selection](044-multi-target-attacks.spec.ts-snapshots/006-second-target-selection-chromium-linux.png)
+
+After dismissing the first attack result, the target selection UI reappears, allowing the player to select the second monster to attack. This demonstrates that the daily power supports attacking multiple adjacent targets.
+
+### Step 7: Second Target Attack Result
+![Second Target Attack Result](044-multi-target-attacks.spec.ts-snapshots/007-second-target-attack-result-chromium-linux.png)
+
+The combat result for the second target is displayed, showing another successful hit. This confirms that the multi-target attack successfully hit both monsters.
+
+### Step 8: Multi-Target Attack Complete
+![Attack Complete](044-multi-target-attacks.spec.ts-snapshots/006-multi-target-attack-complete-chromium-linux.png)
 
 The multi-target attack sequence is complete. Both monsters have been attacked, and the daily power card has been used (flipped). The game board shows the final state after the attack.
 
@@ -99,7 +109,12 @@ Hurled Breath is clicked and selected (highlighted). The target selection UI app
 
 The combat result modal displays showing a successful hit on the first monster in the area. Since Hurled Breath attacks each monster on the tile, this is the first of the attack results.
 
-### Step 6: Area Attack Complete
+### Step 6: Second Monster Attack Result
+![Second Monster Attack Result](044-multi-target-attacks.spec.ts-snapshots/006-second-monster-attack-result-chromium-linux.png)
+
+After dismissing the first result, the combat result for the second monster on the tile is automatically displayed. This demonstrates that Hurled Breath successfully attacks all monsters on the targeted tile sequentially.
+
+### Step 7: Area Attack Complete
 ![Hurled Breath Complete](044-multi-target-attacks.spec.ts-snapshots/005-hurled-breath-complete-chromium-linux.png)
 
 The area attack is complete. All monsters on the targeted tile have been attacked, and the Hurled Breath custom ability has been used (flipped). The game board shows the final state after the area attack.
