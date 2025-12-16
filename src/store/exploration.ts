@@ -141,34 +141,36 @@ export function getNewTilePosition(
 }
 
 /**
- * Calculate the rotation needed for a new tile so its arrow points
- * toward the exit that the hero approached from.
- * 
- * In the tile images, arrows point south (down) by default.
- * We rotate the tile so the arrow points to the connecting edge
- * (where the hero is standing).
+ * Calculate the rotation needed for a new tile so that one of its openings
+ * aligns with the connecting edge.
  * 
  * @param explorationDirection - The direction the hero explored from (on the existing tile)
+ * @param tileDef - The tile definition with default edge configuration
+ * @returns The rotation in degrees (0, 90, 180, or 270) needed to align an opening with the connecting edge
  */
-export function calculateTileRotation(explorationDirection: Direction): number {
+export function calculateTileRotation(explorationDirection: Direction, tileDef: TileDefinition): number {
   // The connecting edge on the new tile is opposite to the exploration direction
   const connectingEdge = getOppositeDirection(explorationDirection);
   
-  // Tile arrow points south by default. We need to rotate so arrow points
-  // toward the connecting edge (where the hero is standing).
-  // Rotation values (clockwise):
-  // - Arrow should point south (hero at south/connecting edge is south): 0°
-  // - Arrow should point west (hero at west/connecting edge is west): 90°
-  // - Arrow should point north (hero at north/connecting edge is north): 180°
-  // - Arrow should point east (hero at east/connecting edge is east): 270°
-  const rotations: Record<Direction, number> = {
-    south: 0,
-    west: 90,
-    north: 180,
-    east: 270,
-  };
+  // Find which edges have openings in the default orientation
+  const openEdges: Direction[] = [];
+  if (tileDef.defaultEdges.north === 'open') openEdges.push('north');
+  if (tileDef.defaultEdges.south === 'open') openEdges.push('south');
+  if (tileDef.defaultEdges.east === 'open') openEdges.push('east');
+  if (tileDef.defaultEdges.west === 'open') openEdges.push('west');
   
-  return rotations[connectingEdge];
+  // For each possible rotation, check if it would place an opening at the connecting edge
+  const rotations = [0, 90, 180, 270];
+  
+  for (const rotation of rotations) {
+    const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+    if (rotatedEdges[connectingEdge] === 'open') {
+      return rotation;
+    }
+  }
+  
+  // Fallback: if no opening can be aligned (shouldn't happen), return 0
+  return 0;
 }
 
 /**
@@ -246,14 +248,14 @@ export function placeTile(
   // Calculate position for the new tile
   const newPosition = getNewTilePosition(existingTile, edge.direction);
   
-  // Calculate rotation
-  const rotation = calculateTileRotation(edge.direction);
-  
   // Get the tile definition for default edges
   const tileDef = getTileDefinition(tileType);
   if (!tileDef) {
     return null;
   }
+  
+  // Calculate rotation needed to align an opening with the connecting edge
+  const rotation = calculateTileRotation(edge.direction, tileDef);
   
   // Generate a unique ID for the new tile
   const newTileId = `tile-${dungeon.tiles.length}`;
