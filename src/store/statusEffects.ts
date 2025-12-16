@@ -7,6 +7,12 @@
 import type { HeroCondition } from './types';
 
 /**
+ * Poisoned status constants
+ */
+export const POISONED_DAMAGE = 1; // Damage dealt per turn when poisoned
+export const POISON_RECOVERY_DC = 10; // Dice roll needed to recover (10+ on d20)
+
+/**
  * Status effect type - unique identifier for each status
  */
 export type StatusEffectType = 
@@ -240,9 +246,9 @@ export function processStatusEffectsStartOfTurn(
       ongoingDamage += status.data.damage;
     }
     
-    // Apply poisoned damage (1 damage per poisoned status)
+    // Apply poisoned damage
     if (status.type === 'poisoned') {
-      poisonedDamage += 1;
+      poisonedDamage += POISONED_DAMAGE;
     }
 
     // Check if status should expire based on duration
@@ -433,7 +439,7 @@ export function attemptPoisonRecovery(
   updatedStatuses: StatusEffect[];
   recovered: boolean;
 } {
-  const success = rollResult >= 10;
+  const success = rollResult >= POISON_RECOVERY_DC;
   
   if (success) {
     // Remove all poisoned statuses on successful recovery
