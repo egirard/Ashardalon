@@ -346,14 +346,14 @@
 
   // Sequence tile and monster animations: show monster card after tile fade-in completes
   // When a tile is placed, the monster spawns immediately but the card display is delayed
-  // This creates a sequential animation: tile fades in (2s), then monster card shows (1s + 2s fade)
+  // This creates a sequential animation: tile fades in (2s), exploration message completes (3s), pause (1s), then monster card shows
   $effect(() => {
     if (!pendingMonsterDisplayId) return;
     
-    // Wait 2 seconds for tile fade-in animation to complete
+    // Wait 4 seconds: 3s for exploration message (1s visible + 2s fade) + 1s pause before showing monster
     const timer = setTimeout(() => {
       store.dispatch(showPendingMonster());
-    }, 2000);
+    }, 4000);
     
     return () => clearTimeout(timer);
   });
