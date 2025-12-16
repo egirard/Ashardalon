@@ -1080,7 +1080,9 @@ describe("gameSlice", () => {
       expect(state.monsters[0].controllerId).toBe("quinn"); // Controlled by exploring hero
       expect(state.monsters[0].instanceId).toBe("kobold-0");
       expect(state.monsterInstanceCounter).toBe(1);
-      expect(state.recentlySpawnedMonsterId).toBe("kobold-0");
+      // Monster display is delayed, so it should be in pendingMonsterDisplayId
+      expect(state.pendingMonsterDisplayId).toBe("kobold-0");
+      expect(state.recentlySpawnedMonsterId).toBeNull();
     });
 
     it("should not spawn monster when no tile is placed (hero not on edge)", () => {
@@ -1165,7 +1167,9 @@ describe("gameSlice", () => {
       // White tiles DO spawn monsters
       expect(state.monsters).toHaveLength(1);
       expect(state.monsters[0].monsterId).toBe("kobold");
-      expect(state.recentlySpawnedMonsterId).toBe("kobold-0");
+      // Monster display is delayed, so it should be in pendingMonsterDisplayId
+      expect(state.pendingMonsterDisplayId).toBe("kobold-0");
+      expect(state.recentlySpawnedMonsterId).toBeNull();
       // Monster deck should be updated
       expect(state.monsterDeck.drawPile).toEqual([]);
       // Exploration should be marked as occurred
