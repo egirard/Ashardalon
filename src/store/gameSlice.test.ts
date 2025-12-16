@@ -63,7 +63,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     villainPhaseMonsterIndex: 0,
     monsterMoveActionId: null,
     heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
-    scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+    scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
     partyResources: { xp: 0, healingSurges: 2 },
     defeatedMonsterXp: null,
     defeatedMonsterName: null,
@@ -926,7 +926,7 @@ describe("gameSlice", () => {
       });
       const state = gameReducer(gameInProgress, endVillainPhase());
       expect(state.turnState.currentHeroIndex).toBe(0);
-      expect(state.turnState.turnNumber).toBe(2);
+      expect(state.turnState.turnNumber).toBe(12);
     });
 
     it("should not transition if not in villain phase", () => {
@@ -1350,7 +1350,7 @@ describe("gameSlice", () => {
 
       const state = gameReducer(gameInProgress, endHeroPhase());
 
-      // Should have 2 monsters now
+      // Should have 12 monsters now
       expect(state.monsters).toHaveLength(2);
       
       // The new monster should NOT be at the black spot (2, 1) since it's occupied
@@ -2217,8 +2217,8 @@ describe("gameSlice", () => {
       }));
 
       expect(state.scenario.monstersDefeated).toBe(0);
-      expect(state.scenario.monstersToDefeat).toBe(2);
-      expect(state.scenario.objective).toBe("Defeat 2 monsters");
+      expect(state.scenario.monstersToDefeat).toBe(12);
+      expect(state.scenario.objective).toBe("Defeat 12 monsters");
     });
 
     it("should increment monstersDefeated when monster is killed", () => {
@@ -2237,7 +2237,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2264,7 +2264,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2275,7 +2275,7 @@ describe("gameSlice", () => {
       expect(state.scenario.monstersDefeated).toBe(0);
     });
 
-    it("should transition to victory screen when 2 monsters are defeated", () => {
+    it("should transition to victory screen when 12 monsters are defeated", () => {
       const attackResult: AttackResult = {
         roll: 15,
         attackBonus: 6,
@@ -2291,7 +2291,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-1", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 1, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+        scenario: { monstersDefeated: 11, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2299,11 +2299,11 @@ describe("gameSlice", () => {
         targetInstanceId: "kobold-1",
       }));
 
-      expect(state.scenario.monstersDefeated).toBe(2);
+      expect(state.scenario.monstersDefeated).toBe(12);
       expect(state.currentScreen).toBe("victory");
     });
 
-    it("should not transition to victory screen when less than 2 monsters defeated", () => {
+    it("should not transition to victory screen when less than 12 monsters defeated", () => {
       const attackResult: AttackResult = {
         roll: 15,
         attackBonus: 6,
@@ -2319,7 +2319,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2358,7 +2358,7 @@ describe("gameSlice", () => {
         ],
         heroHp: [{ heroId: "quinn", currentHp: 1, maxHp: 8 }],
         villainPhaseMonsterIndex: 0,
-        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
       });
 
       // Use a deterministic random function that will result in a hit and damage
@@ -2404,7 +2404,7 @@ describe("gameSlice", () => {
           { heroId: "vistra", currentHp: 10, maxHp: 10 },
         ],
         villainPhaseMonsterIndex: 0,
-        scenario: { monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
       });
 
       // Use a deterministic random function that will result in a hit and damage
@@ -2422,14 +2422,14 @@ describe("gameSlice", () => {
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
-        scenario: { monstersDefeated: 5, monstersToDefeat: 2, objective: "Defeat 2 monsters" },
+        scenario: { monstersDefeated: 5, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
       });
 
       const state = gameReducer(gameInProgress, resetGame());
 
       expect(state.scenario.monstersDefeated).toBe(0);
-      expect(state.scenario.monstersToDefeat).toBe(2);
-      expect(state.scenario.objective).toBe("Defeat 2 monsters");
+      expect(state.scenario.monstersToDefeat).toBe(12);
+      expect(state.scenario.objective).toBe("Defeat 12 monsters");
     });
   });
 
@@ -2441,7 +2441,7 @@ describe("gameSlice", () => {
       }));
 
       expect(state.partyResources.xp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.partyResources.healingSurges).toBe(12);
     });
 
     it("should award XP when monster is defeated", () => {
@@ -2613,7 +2613,7 @@ describe("gameSlice", () => {
       const state = gameReducer(gameInProgress, resetGame());
 
       expect(state.partyResources.xp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.partyResources.healingSurges).toBe(12);
       expect(state.defeatedMonsterXp).toBeNull();
       expect(state.defeatedMonsterName).toBeNull();
     });
@@ -2626,7 +2626,7 @@ describe("gameSlice", () => {
         seed: 12345,
       }));
 
-      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.partyResources.healingSurges).toBe(12);
     });
 
     it("should show action surge prompt when hero at 0 HP starts turn", () => {
@@ -2708,7 +2708,7 @@ describe("gameSlice", () => {
       // No prompt shown since HP > 0
       expect(state.showActionSurgePrompt).toBe(false);
       expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(1);
-      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.partyResources.healingSurges).toBe(12);
     });
 
     it("should trigger defeat if no surges available at 0 HP", () => {
@@ -2784,7 +2784,7 @@ describe("gameSlice", () => {
       const state = gameReducer(initialState, endVillainPhase());
 
       // Surges should still be 2 until player chooses to use
-      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.partyResources.healingSurges).toBe(12);
       expect(state.showActionSurgePrompt).toBe(true);
     });
 
@@ -3632,7 +3632,7 @@ describe("gameSlice", () => {
 
       // HP and surges should remain unchanged
       expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.partyResources.healingSurges).toBe(12);
     });
 
     it("should not allow using action surge during non-hero phase", () => {
@@ -3657,7 +3657,7 @@ describe("gameSlice", () => {
 
       // HP and surges should remain unchanged
       expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(2);
+      expect(state.partyResources.healingSurges).toBe(12);
     });
 
     it("should clear action surge prompt on reset", () => {

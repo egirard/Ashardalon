@@ -169,7 +169,7 @@
   let villainPhaseMonsterIndex: number = $state(0);
   let monsterMoveActionId: string | null = $state(null);
   let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
-  let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 2, objective: "Defeat 2 monsters" });
+  let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" });
   let partyResources: PartyResources = $state({ xp: 0, healingSurges: 2 });
   let defeatedMonsterXp: number | null = $state(null);
   let defeatedMonsterName: string | null = $state(null);

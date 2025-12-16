@@ -135,12 +135,12 @@ const DEFAULT_HERO_TURN_ACTIONS: HeroTurnActions = {
 };
 
 /**
- * Default scenario state for MVP: Defeat 2 monsters
+ * Default scenario state for MVP: Defeat 12 monsters
  */
 const DEFAULT_SCENARIO_STATE: ScenarioState = {
   monstersDefeated: 0,
-  monstersToDefeat: 2,
-  objective: "Defeat 2 monsters",
+  monstersToDefeat: 12,
+  objective: "Defeat 12 monsters",
 };
 
 /**
