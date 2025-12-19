@@ -996,6 +996,7 @@
       if (!hasNonMovementAttackCard) {
         return [];
       }
+      // If we have non-movement attack cards, fall through to check for adjacent/ranged monsters
     }
 
     // If maxRange is 0, only return adjacent monsters (melee only)
