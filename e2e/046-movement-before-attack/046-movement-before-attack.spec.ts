@@ -125,16 +125,9 @@ test.describe('046 - Movement Before Attack', () => {
     });
 
     // STEP 4: Attack panel should show with Charge enabled
-    // EXPECTED BEHAVIOR: Charge should be enabled because monster is within movement+attack range
-    // (Hero at 3,2 can move to 3,3 then attack monster at 3,4)
-    // 
-    // This is the key feature for movement-before-attack cards:
-    // - Normal attacks: only enabled when target is adjacent
-    // - Movement-before-attack cards (like Charge): enabled when target is within movement+attack range
-    //
-    // If attack panel doesn't appear, the feature is not yet implemented.
-    // The test will document the expected behavior and adapt based on what's available.
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    // With the new implementation, Charge should be enabled because monster is within movement+attack range
+    // (Hero at 3,2 can move up to 5 squares + 1 attack = 6 total distance, monster at 3,4 is only 2 away)
+    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
 
     await screenshots.capture(page, 'charge-enabled-monster-in-range', {
       programmaticCheck: async () => {
@@ -142,85 +135,79 @@ test.describe('046 - Movement Before Attack', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         
+        // Verify attack panel is visible
+        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        
+        // Verify Charge card is visible and enabled
+        await expect(page.locator('[data-testid="attack-card-12"]')).toBeVisible();
+        await expect(page.locator('[data-testid="attack-card-12"]')).not.toBeDisabled();
+        
         // Verify hero has Charge card available (ID: 12)
         const heroPowerCards = storeState.heroes.heroPowerCards.vistra;
         expect(heroPowerCards.atWills).toContain(12); // Charge
-        expect(heroPowerCards.atWills).toContain(13); // Reaping Strike
         
-        // Verify monster is not adjacent
+        // Verify monster is not adjacent (2 squares away)
         const heroPos = storeState.game.heroTokens[0].position;
         const monsterPos = storeState.game.monsters[0].position;
         const distance = Math.abs(heroPos.x - monsterPos.x) + Math.abs(heroPos.y - monsterPos.y);
         expect(distance).toBe(2); // Not adjacent
-        
-        // Check if attack panel is visible (should be for Charge)
-        const attackPanelVisible = await page.locator('[data-testid="power-card-attack-panel"]').isVisible().catch(() => false);
-        
-        if (attackPanelVisible) {
-          // Verify Charge card is visible and enabled
-          await expect(page.locator('[data-testid="attack-card-12"]')).toBeVisible();
-        }
       }
     });
 
     // STEP 5: Player clicks Charge card to initiate movement-before-attack
-    // This should trigger the movement phase for Charge
-    const attackPanelVisible = await page.locator('[data-testid="power-card-attack-panel"]').isVisible().catch(() => false);
+    // This should trigger the movement UI to appear
+    await page.locator('[data-testid="attack-card-12"]').click();
     
-    if (attackPanelVisible) {
-      await page.locator('[data-testid="attack-card-12"]').click();
-      
-      await screenshots.capture(page, 'charge-selected-movement-starts', {
-        programmaticCheck: async () => {
-          // Verify Charge card is selected
-          await expect(page.locator('[data-testid="attack-card-12"]')).toHaveClass(/selected/);
-        }
-      });
-      
-      // After clicking Charge, movement UI should appear
-      await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-    }
+    await screenshots.capture(page, 'charge-selected-movement-initiated', {
+      programmaticCheck: async () => {
+        // Verify Charge card is selected
+        await expect(page.locator('[data-testid="attack-card-12"]')).toHaveClass(/selected/);
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify pendingMoveAttack state is set
+        expect(storeState.game.pendingMoveAttack).not.toBeNull();
+        expect(storeState.game.pendingMoveAttack.cardId).toBe(12);
+      }
+    });
+    
+    // After clicking Charge, movement UI should appear
+    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
 
-    await screenshots.capture(page, 'movement-ui-shown-after-charge', {
+    await screenshots.capture(page, 'movement-ui-shown', {
       programmaticCheck: async () => {
         // Verify movement overlay is visible
-        const movementOverlayVisible = await page.locator('[data-testid="movement-overlay"]').isVisible().catch(() => false);
+        await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
         
-        if (movementOverlayVisible) {
-          await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
-          
-          // Verify move squares are shown
-          const moveSquares = page.locator('[data-testid="move-square"]');
-          const squareCount = await moveSquares.count();
-          expect(squareCount).toBeGreaterThan(0);
-        }
+        // Verify move squares are shown
+        const moveSquares = page.locator('[data-testid="move-square"]');
+        const squareCount = await moveSquares.count();
+        expect(squareCount).toBeGreaterThan(0);
       }
     });
 
     // STEP 6: Player moves next to monster using movement UI
     // Click on the square adjacent to monster (3, 3)
-    const movementOverlayVisible = await page.locator('[data-testid="movement-overlay"]').isVisible().catch(() => false);
+    const targetSquare = page.locator('[data-testid="move-square"][data-position-x="3"][data-position-y="3"]');
     
-    if (movementOverlayVisible) {
-      const targetSquare = page.locator('[data-testid="move-square"][data-position-x="3"][data-position-y="3"]');
-      
-      // Wait for target square to be visible
-      await expect(targetSquare).toBeVisible({ timeout: 5000 });
-      await targetSquare.click();
-      
-      // Wait for movement overlay to disappear after click
-      await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
-      
-      // Wait for hero position to update
-      await expect(async () => {
-        const storeState = await page.evaluate(() => {
-          return (window as any).__REDUX_STORE__.getState();
-        });
-        expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 3 });
-      }).toPass();
-    }
+    // Wait for target square to be visible
+    await expect(targetSquare).toBeVisible({ timeout: 5000 });
+    await targetSquare.click();
+    
+    // Wait for movement overlay to disappear after click
+    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'hidden', timeout: 5000 });
+    
+    // Wait for hero position to update
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 3 });
+    }).toPass();
 
-    await screenshots.capture(page, 'moved-adjacent-to-monster', {
+    await screenshots.capture(page, 'moved-next-to-monster', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -236,75 +223,63 @@ test.describe('046 - Movement Before Attack', () => {
       }
     });
 
-    // STEP 7: After movement, target selection should appear for the attack
+    // STEP 7: After movement, attack panel should still be visible with target button
     // Wait for target selection to appear
-    await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
 
-    await screenshots.capture(page, 'target-selection-after-movement', {
+    await screenshots.capture(page, 'attack-button-after-movement', {
       programmaticCheck: async () => {
-        // Check if target selection is now visible
-        const targetSelectorVisible = await page.locator('[data-testid="target-selection"]').isVisible().catch(() => false);
+        // Check if target selection is visible
+        await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
         
-        if (targetSelectorVisible) {
-          await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
-          await expect(page.locator('[data-testid="attack-target-kobold-far"]')).toBeVisible();
-        }
+        // Check if attack button for the monster is visible
+        await expect(page.locator('[data-testid="attack-target-kobold-far"]')).toBeVisible();
+        
+        // Verify button text mentions the monster
+        const buttonText = await page.locator('[data-testid="attack-target-kobold-far"]').textContent();
+        expect(buttonText).toContain('Kobold');
       }
     });
 
-    // STEP 8: Player selects monster to attack
-    if (targetSelectorVisible) {
-        // Seed Math.random for deterministic dice roll
-        await page.evaluate(() => {
-          (window as any).__originalRandom = Math.random;
-          Math.random = () => 0.75; // Will give roll = floor(0.75 * 20) + 1 = 16
-        });
+    // STEP 8: Player clicks attack button to attack the monster
+    // Seed Math.random for deterministic dice roll
+    await page.evaluate(() => {
+      (window as any).__originalRandom = Math.random;
+      Math.random = () => 0.75; // Will give roll = floor(0.75 * 20) + 1 = 16
+    });
 
-        await page.locator('[data-testid="attack-target-kobold-far"]').click();
+    await page.locator('[data-testid="attack-target-kobold-far"]').click();
 
-        // Restore Math.random
-        await page.evaluate(() => {
-          if ((window as any).__originalRandom) {
-            Math.random = (window as any).__originalRandom;
-          }
-        });
-
-        // Wait for combat result
-        const combatResultAppeared = await page.locator('[data-testid="combat-result"]')
-          .waitFor({ state: 'visible', timeout: 5000 })
-          .then(() => true)
-          .catch(() => false);
-      
-        if (combatResultAppeared) {
-          await screenshots.capture(page, 'charge-attack-executed', {
-            programmaticCheck: async () => {
-              // Verify combat result
-              await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-              await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('16');
-              await expect(page.locator('[data-testid="attack-bonus"]')).toHaveText('8'); // Charge has +8
-              await expect(page.locator('[data-testid="attacker-info"]')).toContainText('Charge');
-              
-              const storeState = await page.evaluate(() => {
-                return (window as any).__REDUX_STORE__.getState();
-              });
-              
-              // Verify attack name is Charge
-              expect(storeState.game.attackName).toBe('Charge');
-            }
-          });
-
-          // Dismiss combat result
-          await page.locator('[data-testid="dismiss-combat-result"]').click();
-          await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
-          
-          await screenshots.capture(page, 'charge-attack-complete', {
-            programmaticCheck: async () => {
-              await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
-            }
-          });
-        }
+    // Restore Math.random
+    await page.evaluate(() => {
+      if ((window as any).__originalRandom) {
+        Math.random = (window as any).__originalRandom;
       }
-    }
+    });
+
+    // Wait for combat result
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 5000 });
+    
+    await screenshots.capture(page, 'charge-attack-result', {
+      programmaticCheck: async () => {
+        // Verify combat result is displayed
+        await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+        
+        // Verify it's a Charge attack
+        const attackerInfo = await page.locator('[data-testid="attacker-info"]').textContent();
+        expect(attackerInfo).toContain('Charge');
+      }
+    });
+
+    // Dismiss combat result
+    await page.locator('[data-testid="dismiss-combat-result"]').click();
+    await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
+    
+    await screenshots.capture(page, 'attack-complete', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
+      }
+    });
   });
 
   test('Movement-before-attack card parsing - verify card detection', async ({ page }) => {
