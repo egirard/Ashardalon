@@ -55,6 +55,21 @@
       // Only include cards that have attack capabilities (attackBonus defined)
       if (card.attackBonus !== undefined) {
         const parsed = parseActionCard(card);
+        
+        // Filter cards based on whether they can target any of the adjacentMonsters
+        // Movement-before-attack cards: Can be shown even if no adjacent targets (they'll move first)
+        // Regular attack cards: Only show if they can actually target something in adjacentMonsters
+        const isMovementFirst = requiresMovementFirst(parsed);
+        
+        if (!isMovementFirst) {
+          // Regular attack card - check if it can target any monster in the list
+          const hasValidTarget = adjacentMonsters.some(monster => canTargetMonster(card.id, monster));
+          if (!hasValidTarget) {
+            // Skip this card - it can't target any of the provided monsters
+            continue;
+          }
+        }
+        
         cards.push({ card, state: cardState, parsed });
       }
     }

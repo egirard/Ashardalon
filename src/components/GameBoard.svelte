@@ -891,6 +891,7 @@
     let maxRange = 0;
     let hasOnTileAttack = false;
     let hasMovementBeforeAttackCard = false;
+    let hasNonMovementAttackCard = false;
     let heroSpeed = getTotalSpeed(currentHeroId);
     
     for (const cardState of currentHeroPowerCards.cardStates) {
@@ -905,6 +906,9 @@
       if (requiresMovementFirst(parsed)) {
         hasMovementBeforeAttackCard = true;
         console.log('[DEBUG] Found movement-before-attack card:', card.name, 'id:', card.id);
+      } else if (parsed.attack) {
+        // This is a regular attack card (not movement-before-attack)
+        hasNonMovementAttackCard = true;
       }
       
       if (parsed.attack) {
@@ -921,6 +925,7 @@
     
     console.log('[DEBUG] getTargetableMonstersForCurrentHero:', {
       hasMovementBeforeAttackCard,
+      hasNonMovementAttackCard,
       canMove: heroTurnActions.canMove,
       heroSpeed,
       monstersCount: monsters.length
@@ -931,8 +936,8 @@
       return getMonstersOnSameTile(currentToken.position, monsters, dungeon);
     }
 
-    // For movement-before-attack cards, show monsters within movement+attack range
-    // This allows the attack panel to appear even when not adjacent
+    // For movement-before-attack cards ONLY (when no adjacent monsters for regular attacks)
+    // show monsters within movement+attack range
     if (hasMovementBeforeAttackCard && heroTurnActions.canMove) {
       // Calculate monsters within movement range (hero can move, then attack adjacent)
       // For simplicity, use Manhattan distance: movement squares + 1 for adjacent attack
@@ -967,10 +972,29 @@
       
       console.log('[DEBUG] Reachable monsters:', reachableMonsters.length);
       
-      // If we found reachable monsters, return them
-      // Otherwise fall through to normal logic
+      // If we found reachable monsters via movement, return them
+      // But ONLY if there are no adjacent monsters for regular attacks
       if (reachableMonsters.length > 0) {
+        // Check if any monsters are actually adjacent (for regular attack cards)
+        const tileId = getCurrentHeroTileId();
+        const adjacentMonsters = getAdjacentMonsters(currentToken.position, monsters, tileId, dungeon);
+        
+        // If there are adjacent monsters AND we have regular attack cards, show only adjacent
+        // Otherwise show the reachable monsters for movement-before-attack cards
+        if (adjacentMonsters.length > 0 && hasNonMovementAttackCard) {
+          console.log('[DEBUG] Adjacent monsters found, using normal attack logic');
+          return adjacentMonsters;
+        }
+        
+        // No adjacent monsters, show reachable monsters for Charge
+        console.log('[DEBUG] No adjacent monsters, showing reachable for movement-before-attack');
         return reachableMonsters;
+      }
+      
+      // No monsters within movement range, check if there are any adjacent for regular attacks
+      // If no adjacent either, return empty (no attack panel)
+      if (!hasNonMovementAttackCard) {
+        return [];
       }
     }
 
