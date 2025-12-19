@@ -106,7 +106,7 @@
   import { findTileAtPosition } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
   import { usePowerCard } from "../store/heroesSlice";
-  import { parseActionCard, requiresMultiAttack } from "../store/actionCardParser";
+  import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
   import { getStatusDisplayData } from "../store/statusEffects";
 
@@ -874,6 +874,7 @@
 
   // Get all monsters that can be targeted by available power cards
   // This includes adjacent monsters and monsters within range of ranged power cards
+  // For movement-before-attack cards (like Charge), includes monsters within movement+attack range
   function getTargetableMonstersForCurrentHero(): MonsterState[] {
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return [];
@@ -887,6 +888,8 @@
     // Get the maximum range from all available (unflipped) power cards
     let maxRange = 0;
     let hasOnTileAttack = false;
+    let hasMovementBeforeAttackCard = false;
+    let heroSpeed = getTotalSpeed(currentHeroId);
     
     for (const cardState of currentHeroPowerCards.cardStates) {
       if (cardState.isFlipped) continue; // Skip used cards
@@ -895,6 +898,12 @@
       if (!card || card.attackBonus === undefined) continue;
       
       const parsed = parseActionCard(card);
+      
+      // Check if this is a movement-before-attack card
+      if (requiresMovementFirst(parsed)) {
+        hasMovementBeforeAttackCard = true;
+      }
+      
       if (parsed.attack) {
         if (parsed.attack.targetType === 'tile') {
           hasOnTileAttack = true;
@@ -910,6 +919,34 @@
     // If there's an "on your tile" attack available, include all monsters on the same tile
     if (hasOnTileAttack) {
       return getMonstersOnSameTile(currentToken.position, monsters, dungeon);
+    }
+
+    // For movement-before-attack cards, show monsters within movement+attack range
+    // This allows the attack panel to appear even when not adjacent
+    if (hasMovementBeforeAttackCard && heroTurnActions.canMove) {
+      // Calculate monsters within movement range (hero can move, then attack adjacent)
+      // For simplicity, use Manhattan distance: movement squares + 1 for adjacent attack
+      const movementPlusAttackRange = heroSpeed + 1;
+      const reachableMonsters: MonsterState[] = [];
+      
+      for (const monster of monsters) {
+        const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
+        if (!monsterGlobalPos) continue;
+        
+        // Calculate Manhattan distance
+        const distance = Math.abs(currentToken.position.x - monsterGlobalPos.x) + 
+                        Math.abs(currentToken.position.y - monsterGlobalPos.y);
+        
+        if (distance <= movementPlusAttackRange) {
+          reachableMonsters.push(monster);
+        }
+      }
+      
+      // If we found reachable monsters, return them
+      // Otherwise fall through to normal logic
+      if (reachableMonsters.length > 0) {
+        return reachableMonsters;
+      }
     }
 
     // If maxRange is 0, only return adjacent monsters (melee only)
@@ -1012,7 +1049,16 @@
 
   // Handle starting a move-then-attack sequence
   function handleStartMoveAttack(cardId: number) {
+    // Start the move-attack sequence
     store.dispatch(startMoveAttack({ cardId }));
+    
+    // Show movement UI so player can move
+    const currentHeroId = getCurrentHeroId();
+    if (currentHeroId) {
+      store.dispatch(
+        showMovement({ heroId: currentHeroId, speed: getTotalSpeed(currentHeroId) })
+      );
+    }
   }
 
   // Get monster name from instance
