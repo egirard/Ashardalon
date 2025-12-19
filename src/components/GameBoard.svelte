@@ -903,6 +903,7 @@
       // Check if this is a movement-before-attack card
       if (requiresMovementFirst(parsed)) {
         hasMovementBeforeAttackCard = true;
+        console.log('[DEBUG] Found movement-before-attack card:', card.name, 'id:', card.id);
       }
       
       if (parsed.attack) {
@@ -916,6 +917,13 @@
         }
       }
     }
+    
+    console.log('[DEBUG] getTargetableMonstersForCurrentHero:', {
+      hasMovementBeforeAttackCard,
+      canMove: heroTurnActions.canMove,
+      heroSpeed,
+      monstersCount: monsters.length
+    });
 
     // If there's an "on your tile" attack available, include all monsters on the same tile
     if (hasOnTileAttack) {
@@ -930,6 +938,12 @@
       const movementPlusAttackRange = heroSpeed + 1;
       const reachableMonsters: MonsterState[] = [];
       
+      console.log('[DEBUG] Checking movement-before-attack range:', {
+        heroPos: currentToken.position,
+        movementPlusAttackRange,
+        totalMonsters: monsters.length
+      });
+      
       for (const monster of monsters) {
         const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
         if (!monsterGlobalPos) continue;
@@ -938,10 +952,19 @@
         const distance = Math.abs(currentToken.position.x - monsterGlobalPos.x) + 
                         Math.abs(currentToken.position.y - monsterGlobalPos.y);
         
+        console.log('[DEBUG] Monster distance check:', {
+          monsterId: monster.monsterId,
+          monsterPos: monsterGlobalPos,
+          distance,
+          withinRange: distance <= movementPlusAttackRange
+        });
+        
         if (distance <= movementPlusAttackRange) {
           reachableMonsters.push(monster);
         }
       }
+      
+      console.log('[DEBUG] Reachable monsters:', reachableMonsters.length);
       
       // If we found reachable monsters, return them
       // Otherwise fall through to normal logic
