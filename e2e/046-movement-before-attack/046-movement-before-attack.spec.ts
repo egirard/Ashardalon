@@ -110,6 +110,16 @@ test.describe('046 - Movement Before Attack', () => {
       expect(storeState.game.monsters.length).toBe(1);
     }).toPass();
 
+    // IMPORTANT: Reset hero turn actions to ensure canMove and canAttack are true
+    // This ensures the movement-before-attack logic can activate
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroTurnActions',
+        payload: { actionsTaken: [], canMove: true, canAttack: true }
+      });
+    });
+
     await screenshots.capture(page, 'monster-not-adjacent', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {

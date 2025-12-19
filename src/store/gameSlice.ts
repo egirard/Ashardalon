@@ -673,6 +673,12 @@ export const gameSlice = createSlice({
         token.position = action.payload.position;
       }
     },
+    setHeroTurnActions: (
+      state,
+      action: PayloadAction<HeroTurnActions>,
+    ) => {
+      state.heroTurnActions = action.payload;
+    },
     /**
      * Show valid movement squares for the specified hero
      * Supports incremental movement: if movement is in progress, uses remaining movement
@@ -2548,7 +2554,8 @@ export const gameSlice = createSlice({
 
 export const { 
   startGame, 
-  setHeroPosition, 
+  setHeroPosition,
+  setHeroTurnActions,
   showMovement, 
   hideMovement, 
   moveHero,
