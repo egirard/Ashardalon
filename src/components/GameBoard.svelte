@@ -36,6 +36,7 @@
     startMoveAttack,
     completeMoveAttackMovement,
     clearMoveAttack,
+    cancelMoveAttack,
     assignTreasureToHero,
     dismissTreasureCard,
     useTreasureItem,
@@ -1061,6 +1062,11 @@
     }
   }
 
+  // Handle canceling a move-then-attack sequence
+  function handleCancelMoveAttack() {
+    store.dispatch(cancelMoveAttack());
+  }
+
   // Get monster name from instance
   function getMonsterName(monsterId: string): string {
     const monster = MONSTERS.find((m) => m.id === monsterId);
@@ -1735,6 +1741,7 @@
               onCancelMultiAttack={handleCancelMultiAttack}
               {pendingMoveAttack}
               onStartMoveAttack={handleStartMoveAttack}
+              onCancelMoveAttack={handleCancelMoveAttack}
               canMove={heroTurnActions.canMove}
             />
           {/if}

@@ -315,4 +315,146 @@ test.describe('046 - Movement Before Attack', () => {
       }
     });
   });
+
+  test('Cancel Charge - undo movement and return to normal state', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // SETUP: Same as first test - get to the point where Charge is initiated
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="hero-vistra"]').click();
+    await selectDefaultPowerCards(page, 'vistra');
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Set hero position
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'vistra', position: { x: 3, y: 2 } }
+      });
+    });
+
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+    }).toPass();
+
+    // Spawn monster not adjacent
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setMonsters',
+        payload: [{
+          monsterId: 'kobold',
+          instanceId: 'kobold-cancel-test',
+          position: { x: 3, y: 4 },
+          currentHp: 2,
+          controllerId: 'vistra',
+          tileId: 'start-tile'
+        }]
+      });
+    });
+
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.monsters.length).toBe(1);
+    }).toPass();
+
+    await screenshots.capture(page, 'cancel-test-setup', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+        expect(storeState.game.monsters[0].position).toEqual({ x: 3, y: 4 });
+      }
+    });
+
+    // Click Charge to initiate movement
+    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="attack-card-12"]').click();
+    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
+
+    await screenshots.capture(page, 'cancel-test-charge-initiated', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.pendingMoveAttack).not.toBeNull();
+      }
+    });
+
+    // Move one square
+    const moveSquare = page.locator('[data-testid="move-square"][data-position-x="3"][data-position-y="3"]');
+    await expect(moveSquare).toBeVisible({ timeout: 5000 });
+    await moveSquare.click();
+
+    // Wait for hero to move
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 3 });
+    }).toPass();
+
+    await screenshots.capture(page, 'cancel-test-after-move', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        // Hero should have moved
+        expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 3 });
+        // pendingMoveAttack should still be set
+        expect(storeState.game.pendingMoveAttack).not.toBeNull();
+      }
+    });
+
+    // Now cancel the move-attack
+    const cancelButton = page.locator('[data-testid="cancel-move-attack"]');
+    await expect(cancelButton).toBeVisible({ timeout: 5000 });
+    
+    await screenshots.capture(page, 'cancel-button-visible', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="cancel-move-attack"]')).toBeVisible();
+      }
+    });
+
+    await cancelButton.click();
+
+    // Wait for cancel to take effect
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      // Hero should be back at starting position
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+      // pendingMoveAttack should be cleared
+      expect(storeState.game.pendingMoveAttack).toBeNull();
+    }).toPass();
+
+    await screenshots.capture(page, 'cancel-complete-hero-restored', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify hero position restored
+        expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+        
+        // Verify pendingMoveAttack cleared
+        expect(storeState.game.pendingMoveAttack).toBeNull();
+        
+        // Verify movement overlay hidden
+        expect(storeState.game.showingMovement).toBe(false);
+      }
+    });
+  });
 });

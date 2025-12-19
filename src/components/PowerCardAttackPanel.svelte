@@ -20,6 +20,7 @@
     /** For move-then-attack cards like Charge */
     pendingMoveAttack?: PendingMoveAttackState | null;
     onStartMoveAttack?: (cardId: number) => void;
+    onCancelMoveAttack?: () => void;
     /** Whether hero can currently move (for move-then-attack cards) */
     canMove?: boolean;
   }
@@ -33,6 +34,7 @@
     onCancelMultiAttack,
     pendingMoveAttack = null,
     onStartMoveAttack,
+    onCancelMoveAttack,
     canMove = true,
   }: Props = $props();
   
@@ -215,7 +217,19 @@
       {#if multiAttackState}
         <span class="panel-title">Multi-Attack: {multiAttackState.attacksCompleted + 1}/{multiAttackState.totalAttacks}</span>
       {:else if pendingMoveAttack && !pendingMoveAttack.movementCompleted}
-        <span class="panel-title">Move First, Then Attack</span>
+        <div class="panel-header-with-cancel">
+          <span class="panel-title">Move First, Then Attack</span>
+          {#if onCancelMoveAttack}
+            <button 
+              class="cancel-move-attack-button"
+              onclick={onCancelMoveAttack}
+              data-testid="cancel-move-attack"
+              aria-label="Cancel movement-before-attack"
+            >
+              Cancel
+            </button>
+          {/if}
+        </div>
       {:else}
         <span class="panel-title">Select Attack Power</span>
       {/if}
@@ -351,10 +365,41 @@
     padding-bottom: 0.5rem;
   }
   
+  .panel-header-with-cancel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
   .panel-title {
     font-weight: bold;
     color: #ffd700;
     font-size: 0.9rem;
+  }
+  
+  .cancel-move-attack-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background: linear-gradient(145deg, #8b0000 0%, #5a0000 100%);
+    color: #fff;
+    border: 1px solid #ff6b6b;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  
+  .cancel-move-attack-button:hover {
+    background: linear-gradient(145deg, #a00000 0%, #6a0000 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .cancel-move-attack-button:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
   
   .card-list {

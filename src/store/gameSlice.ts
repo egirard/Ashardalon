@@ -1840,6 +1840,33 @@ export const gameSlice = createSlice({
       state.pendingMoveAttack = null;
     },
     /**
+     * Cancel the move-attack sequence and undo any movement
+     */
+    cancelMoveAttack: (state) => {
+      if (!state.pendingMoveAttack) return;
+      
+      // Find the current hero
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+      
+      if (currentToken) {
+        // Restore hero to starting position
+        currentToken.position = { ...state.pendingMoveAttack.startPosition };
+      }
+      
+      // Clear movement overlay
+      state.validMoveSquares = [];
+      state.showingMovement = false;
+      
+      // Clear incremental movement state
+      if (state.incrementalMovement?.inProgress) {
+        state.incrementalMovement.inProgress = false;
+      }
+      
+      // Clear the move-attack state
+      state.pendingMoveAttack = null;
+    },
+    /**
      * Set monsters directly (for testing purposes)
      */
     setMonsters: (state, action: PayloadAction<MonsterState[]>) => {
@@ -2562,6 +2589,7 @@ export const {
   startMoveAttack,
   completeMoveAttackMovement,
   clearMoveAttack,
+  cancelMoveAttack,
   assignTreasureToHero,
   dismissTreasureCard,
   useTreasureItem,
