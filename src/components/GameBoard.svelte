@@ -103,6 +103,7 @@
     calculateTotalSpeed,
     getMonstersWithinRange,
     getMonstersOnSameTile,
+    getMonsterGlobalPosition,
   } from "../store/combat";
   import { findTileAtPosition } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
