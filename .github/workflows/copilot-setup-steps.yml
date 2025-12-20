@@ -78,7 +78,7 @@ jobs:
         run: |
           # Install direnv using nix
           nix profile install nixpkgs#direnv
-          
+
           # Verify installation
           echo "direnv version: $(direnv --version)"
 
@@ -90,12 +90,41 @@ jobs:
         run: |
           # Allow direnv for this repository
           direnv allow . || echo "No .envrc file found (this is OK if the project doesn't use one yet)"
-          
+
           # If .envrc exists, load it to set up the environment
           if [ -f .envrc ]; then
             echo "Found .envrc, loading environment..."
             eval "$(direnv export bash)" || echo "Note: direnv export had non-zero exit (may be normal if .envrc has no exports)"
           fi
+
+      # -----------------------------------------------------------------------
+      # STEP 5: Setup Bun runtime
+      # Install Bun so dependencies can be installed and E2E tests can run
+      # -----------------------------------------------------------------------
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # -----------------------------------------------------------------------
+      # STEP 6: Install project dependencies
+      # This installs all dependencies from package.json including Playwright
+      # -----------------------------------------------------------------------
+      - name: Install project dependencies
+        run: |
+          echo "Installing dependencies with bun..."
+          bun install
+          echo "✅ Dependencies installed successfully"
+
+      # -----------------------------------------------------------------------
+      # STEP 7: Install Playwright browsers
+      # Playwright needs browsers to be explicitly installed for E2E testing
+      # -----------------------------------------------------------------------
+      - name: Install Playwright browsers
+        run: |
+          echo "Installing Playwright browsers..."
+          bunx playwright install --with-deps chromium
+          echo "✅ Playwright browsers installed successfully"
 
       # -----------------------------------------------------------------------
       # Display runner environment info
@@ -133,6 +162,10 @@ jobs:
           echo "Python: $(python3 --version 2>/dev/null || echo 'not installed')"
           echo "Go: $(go version 2>/dev/null || echo 'not installed')"
           echo ""
+          echo "=== PROJECT-SPECIFIC TOOLS ==="
+          echo "Bun: $(bun --version 2>/dev/null || echo 'not installed')"
+          echo "Playwright: $(bunx playwright --version 2>/dev/null || echo 'not installed')"
+          echo ""
           echo "=== NIX & DIRENV ==="
           echo "Nix: $(nix --version 2>/dev/null || echo 'not installed')"
           echo "direnv: $(direnv --version 2>/dev/null || echo 'not installed')"
@@ -164,5 +197,9 @@ jobs:
           echo "  - All checked out repository files"
           echo "  - Nix package manager with flakes enabled"
           echo "  - direnv for automatic environment activation"
-          echo "  - Bun runtime (via nix flake)"
+          echo "  - Bun runtime ($(bun --version))"
+          echo "  - Project dependencies (installed with bun install)"
+          echo "  - Playwright with Chromium browser"
           echo "  - All pre-installed tools listed above"
+          echo ""
+          echo "E2E tests can now be run with: bun run test:e2e"

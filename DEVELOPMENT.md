@@ -97,15 +97,31 @@ This project includes `.github/workflows/copilot-setup-steps.yml` which automati
 2. Installs Nix with flakes enabled
 3. Installs and configures direnv
 4. Pre-authorizes the `.envrc` file
-5. Makes all development tools available to Copilot's coding agent
+5. **Installs Bun runtime** via the oven-sh/setup-bun action
+6. **Installs project dependencies** (including Playwright) with `bun install`
+7. **Installs Playwright browsers** with `bunx playwright install --with-deps chromium`
+8. Makes all development tools available to Copilot's coding agent
 
 ### For Copilot
 
 When working on this repository, you have:
 
-- **Bun runtime** available via the Nix flake for JavaScript/TypeScript tasks
+- **Bun runtime** available directly via the setup-bun action
+- **All project dependencies** installed (from package.json)
+- **Playwright with Chromium browser** ready for E2E testing
 - **direnv** for automatic environment activation
 - **All GitHub runner pre-installed tools** (Node.js, Python, Go, etc.)
+
+You can run E2E tests with:
+```bash
+bun run test:e2e
+```
+
+### Why Both Nix and setup-bun?
+
+The repository uses **Nix flakes** for local development (reproducible environments), but GitHub Copilot's environment uses **setup-bun** action for faster setup times. Both approaches provide Bun, but:
+- **Local development**: Use Nix flake (via `nix develop` or `direnv`)
+- **GitHub Copilot environment**: Uses setup-bun action automatically
 
 ## Adding More Tools
 
