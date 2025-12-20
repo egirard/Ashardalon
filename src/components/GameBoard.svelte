@@ -2248,11 +2248,12 @@
   .board-controls {
     position: absolute;
     bottom: 0.5rem;
-    right: 0.5rem;
+    right: 10rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-end;
+    z-index: 10;
   }
 
   /* Objective display */
