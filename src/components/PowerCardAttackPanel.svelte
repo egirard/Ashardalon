@@ -239,7 +239,7 @@
   }
 </script>
 
-{#if adjacentMonsters.length > 0 && availableAttackCards().length > 0 || pendingMoveAttack}
+{#if (adjacentMonsters.length > 0 && availableAttackCards().length > 0) || pendingMoveAttack}
   <div class="power-card-attack-panel" data-testid="power-card-attack-panel">
     <div class="panel-header">
       {#if multiAttackState}

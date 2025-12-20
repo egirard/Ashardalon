@@ -1867,7 +1867,7 @@ export const gameSlice = createSlice({
       state.showingMovement = false;
       
       // Clear incremental movement state completely
-      state.incrementalMovement = null;
+      state.incrementalMovement = undefined;
       
       // Clear the move-attack state
       state.pendingMoveAttack = null;
