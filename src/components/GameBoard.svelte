@@ -39,6 +39,7 @@
     cancelMoveAttack,
     completeMoveAfterAttack,
     cancelMoveAfterAttack,
+    selectHeroForMoveAfterAttack,
     assignTreasureToHero,
     dismissTreasureCard,
     useTreasureItem,
@@ -1144,6 +1145,11 @@
     store.dispatch(cancelMoveAfterAttack());
   }
 
+  // Handle selecting a hero for move-after-attack
+  function handleSelectHeroForMoveAfterAttack(heroId: string) {
+    store.dispatch(selectHeroForMoveAfterAttack(heroId));
+  }
+
   // Get monster name from instance
   function getMonsterName(monsterId: string): string {
     const monster = MONSTERS.find((m) => m.id === monsterId);
@@ -1790,8 +1796,41 @@
           </div>
         {/if}
 
-        <!-- Move-After-Attack Controls (shown when pendingMoveAfterAttack is set) -->
-        {#if pendingMoveAfterAttack && !mapControlMode}
+        <!-- Move-After-Attack Hero Selection (shown when multiple heroes on tile) -->
+        {#if pendingMoveAfterAttack && !pendingMoveAfterAttack.selectedHeroId && pendingMoveAfterAttack.availableHeroes.length > 1 && !mapControlMode}
+          <div class="hero-selection-overlay" data-testid="hero-selection-overlay">
+            <div class="hero-selection-dialog">
+              <div class="hero-selection-message">
+                ⚔️ Choose which hero moves {pendingMoveAfterAttack.moveDistance} squares
+              </div>
+              <div class="hero-selection-buttons">
+                {#each pendingMoveAfterAttack.availableHeroes as heroId (heroId)}
+                  {@const hero = getHeroInfo(heroId)}
+                  {#if hero}
+                    <button
+                      class="hero-selection-button"
+                      data-testid="select-hero-{heroId}"
+                      onclick={() => handleSelectHeroForMoveAfterAttack(heroId)}
+                    >
+                      <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-portrait" />
+                      <span>{hero.name}</span>
+                    </button>
+                  {/if}
+                {/each}
+              </div>
+              <button
+                class="cancel-button"
+                data-testid="cancel-hero-selection"
+                onclick={handleCancelMoveAfterAttack}
+              >
+                Skip Movement
+              </button>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Move-After-Attack Controls (shown when hero selected or only one hero) -->
+        {#if pendingMoveAfterAttack && pendingMoveAfterAttack.selectedHeroId && !mapControlMode}
           <div class="move-after-attack-controls" data-testid="move-after-attack-controls">
             <div class="move-after-attack-message" data-testid="move-after-attack-message">
               ⚔️ After attack: Move ally up to {pendingMoveAfterAttack.moveDistance} squares
@@ -2558,6 +2597,80 @@
   .cancel-button:hover {
     background: rgba(255, 69, 0, 0.95);
     box-shadow: 0 0 10px rgba(255, 69, 0, 0.4);
+  }
+
+  /* Hero selection overlay for move-after-attack */
+  .hero-selection-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .hero-selection-dialog {
+    background: rgba(20, 20, 30, 0.95);
+    border: 2px solid #ffa500;
+    border-radius: 12px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  }
+
+  .hero-selection-message {
+    font-size: 1.1rem;
+    color: #ffa500;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .hero-selection-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .hero-selection-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(30, 144, 255, 0.2);
+    border: 2px solid #1e90ff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 120px;
+  }
+
+  .hero-selection-button:hover {
+    background: rgba(30, 144, 255, 0.4);
+    border-color: #4fa3ff;
+    box-shadow: 0 4px 16px rgba(30, 144, 255, 0.5);
+    transform: translateY(-2px);
+  }
+
+  .hero-selection-button .hero-portrait {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid #1e90ff;
+  }
+
+  .hero-selection-button span {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: bold;
   }
 
   /* Environment indicator */

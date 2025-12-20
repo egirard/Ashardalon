@@ -26,7 +26,7 @@ import {
   BoardTokenState,
   MONSTER_TACTICS,
 } from "./types";
-import { getValidMoveSquares, isValidMoveDestination, getTileBounds } from "./movement";
+import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId } from "./movement";
 import {
   initializeDungeon,
   initializeTileDeck,
@@ -311,6 +311,10 @@ export interface PendingMoveAfterAttackState {
   moveDistance: number;
   /** Whether this was the first or second action (affects what happens after cancel/complete) */
   wasFirstAction: boolean;
+  /** Which hero was selected to move (null if selection hasn't happened yet) */
+  selectedHeroId: string | null;
+  /** Available heroes that can be moved (on the same tile as the attacker) */
+  availableHeroes: string[];
 }
 
 /**
@@ -1760,11 +1764,30 @@ export const gameSlice = createSlice({
             // Determine if this was the first or second action
             const wasFirstAction = state.heroTurnActions.actionsTaken.length === 0;
             
+            // Find all heroes on the same tile as the attacker
+            const attackerToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+            const availableHeroes: string[] = [];
+            
+            if (attackerToken) {
+              // Find the tile the attacker is on
+              const attackerTileId = getTileOrSubTileId(attackerToken.position, state.dungeon);
+              
+              // Find all heroes on the same tile/sub-tile
+              for (const token of state.heroTokens) {
+                const heroTileId = getTileOrSubTileId(token.position, state.dungeon);
+                if (heroTileId && heroTileId === attackerTileId) {
+                  availableHeroes.push(token.heroId);
+                }
+              }
+            }
+            
             // Set pending move-after-attack state
             state.pendingMoveAfterAttack = {
               cardId,
               moveDistance: allyMoveEffect.amount,
               wasFirstAction,
+              selectedHeroId: availableHeroes.length === 1 ? availableHeroes[0] : null,
+              availableHeroes,
             };
           }
         }
@@ -1775,31 +1798,34 @@ export const gameSlice = createSlice({
     },
     /**
      * Dismiss the attack result display
-     * If pendingMoveAfterAttack is set, this will trigger the movement UI
+     * If pendingMoveAfterAttack is set, this will trigger hero selection (if needed) or movement UI
      */
     dismissAttackResult: (state) => {
       state.attackResult = null;
       state.attackTargetId = null;
       state.attackName = null;
       
-      // If there's a pending move-after-attack, show movement UI
-      if (state.pendingMoveAfterAttack) {
-        const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
-        const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+      // If there's a pending move-after-attack and a hero has been selected, show movement UI
+      if (state.pendingMoveAfterAttack && state.pendingMoveAfterAttack.selectedHeroId) {
+        const selectedHeroToken = state.heroTokens.find(
+          t => t.heroId === state.pendingMoveAfterAttack!.selectedHeroId
+        );
         
-        if (currentToken) {
+        if (selectedHeroToken) {
           // Calculate valid move squares based on the effect's move distance
           const moveDistance = state.pendingMoveAfterAttack.moveDistance;
           state.validMoveSquares = getValidMoveSquares(
-            currentToken.position,
+            selectedHeroToken.position,
             moveDistance,
             state.heroTokens,
-            currentHeroId,
+            state.pendingMoveAfterAttack.selectedHeroId,
             state.dungeon
           );
           state.showingMovement = true;
         }
       }
+      // If pendingMoveAfterAttack is set but no hero selected yet, hero selection UI will show
+      // (handled in the UI layer)
     },
     /**
      * Dismiss the monster defeat/XP notification
@@ -1995,6 +2021,37 @@ export const gameSlice = createSlice({
         // Otherwise hide movement UI
         state.showingMovement = false;
         state.validMoveSquares = [];
+      }
+    },
+    /**
+     * Select which hero to move for the move-after-attack effect
+     * This is used when multiple heroes are on the same tile
+     */
+    selectHeroForMoveAfterAttack: (state, action: PayloadAction<string>) => {
+      if (!state.pendingMoveAfterAttack) return;
+      
+      const heroId = action.payload;
+      
+      // Verify the hero is in the available list
+      if (!state.pendingMoveAfterAttack.availableHeroes.includes(heroId)) {
+        return;
+      }
+      
+      // Set the selected hero
+      state.pendingMoveAfterAttack.selectedHeroId = heroId;
+      
+      // Show movement UI for the selected hero
+      const selectedHeroToken = state.heroTokens.find(t => t.heroId === heroId);
+      if (selectedHeroToken) {
+        const moveDistance = state.pendingMoveAfterAttack.moveDistance;
+        state.validMoveSquares = getValidMoveSquares(
+          selectedHeroToken.position,
+          moveDistance,
+          state.heroTokens,
+          heroId,
+          state.dungeon
+        );
+        state.showingMovement = true;
       }
     },
     /**
@@ -2724,6 +2781,7 @@ export const {
   cancelMoveAttack,
   completeMoveAfterAttack,
   cancelMoveAfterAttack,
+  selectHeroForMoveAfterAttack,
   assignTreasureToHero,
   dismissTreasureCard,
   useTreasureItem,
