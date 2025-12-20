@@ -149,8 +149,8 @@
   }
   
   function handleAttack(targetInstanceId: string) {
-    // During multi-attack, use the card from multiAttackState
-    const activeCardId = multiAttackState?.cardId ?? selectedCardId;
+    // During multi-attack or move-attack, use the card from the respective state
+    const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack ? pendingMoveAttack.cardId : selectedCardId);
     if (activeCardId === null) return;
     
     const card = getPowerCardById(activeCardId);
@@ -158,7 +158,7 @@
     
     const parsed = parseActionCard(card);
     
-    // Check if this is a move-then-attack card
+    // Check if this is a move-then-attack card and NOT already in a move-attack sequence
     if (requiresMovementFirst(parsed) && onStartMoveAttack && !pendingMoveAttack) {
       // Start the move-attack sequence
       onStartMoveAttack(activeCardId);
@@ -239,20 +239,20 @@
   }
 </script>
 
-{#if adjacentMonsters.length > 0 && availableAttackCards().length > 0}
+{#if adjacentMonsters.length > 0 && availableAttackCards().length > 0 || pendingMoveAttack}
   <div class="power-card-attack-panel" data-testid="power-card-attack-panel">
     <div class="panel-header">
       {#if multiAttackState}
         <span class="panel-title">Multi-Attack: {multiAttackState.attacksCompleted + 1}/{multiAttackState.totalAttacks}</span>
-      {:else if pendingMoveAttack && !pendingMoveAttack.movementCompleted}
+      {:else if pendingMoveAttack}
         <div class="panel-header-with-cancel">
-          <span class="panel-title">Move First, Then Attack</span>
+          <span class="panel-title">{adjacentMonsters.length > 0 ? 'Charging - Attack Available' : 'Charging - Move to Attack'}</span>
           {#if onCancelMoveAttack}
             <button 
               class="cancel-move-attack-button"
               onclick={onCancelMoveAttack}
               data-testid="cancel-move-attack"
-              aria-label="Cancel movement-before-attack"
+              aria-label="Cancel charge attack"
             >
               Cancel
             </button>
@@ -274,8 +274,8 @@
       </div>
     {/if}
     
-    <!-- Power Card Selection (hidden during multi-attack) -->
-    {#if !multiAttackState}
+    <!-- Power Card Selection (hidden during multi-attack and pending move-attack) -->
+    {#if !multiAttackState && !pendingMoveAttack}
       <div class="card-list" data-testid="attack-card-list">
         {#each availableAttackCards() as { card, state, parsed } (card.id)}
           {@const specialBadge = getSpecialBadge(parsed)}
@@ -324,8 +324,8 @@
     {/if}
     
     <!-- Target Selection -->
-    {#if selectedCardId !== null || multiAttackState || (pendingMoveAttack?.movementCompleted && !multiAttackState)}
-      {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack?.movementCompleted ? pendingMoveAttack.cardId : selectedCardId)}
+    {#if selectedCardId !== null || multiAttackState || (pendingMoveAttack && adjacentMonsters.length > 0)}
+      {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack ? pendingMoveAttack.cardId : selectedCardId)}
       {@const selectedCard = activeCardId ? getPowerCardById(activeCardId) : null}
       {@const parsed = selectedCard ? parseActionCard(selectedCard) : null}
       {@const validTargets = activeCardId ? getValidTargetsForCard(activeCardId) : adjacentMonsters}

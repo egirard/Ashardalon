@@ -1833,12 +1833,12 @@ export const gameSlice = createSlice({
     },
     /**
      * Mark the movement portion of move-attack as complete
+     * Note: This doesn't hide the movement overlay - the player can continue moving
+     * during a charge attack until they attack or cancel
      */
     completeMoveAttackMovement: (state) => {
       if (state.pendingMoveAttack) {
         state.pendingMoveAttack.movementCompleted = true;
-        // Hide the movement overlay when movement is complete
-        state.showingMovement = false;
       }
     },
     /**
