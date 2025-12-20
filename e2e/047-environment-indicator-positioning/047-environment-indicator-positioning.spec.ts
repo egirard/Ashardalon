@@ -92,9 +92,8 @@ test.describe('047 - Environment Indicator Positioning', () => {
       });
     });
     
-    await expect(async () => {
-      await expect(page.locator('[data-testid="environment-indicator"]')).toContainText('Surrounded');
-    }).toPass();
+    await page.locator('[data-testid="environment-indicator"]').waitFor({ state: 'visible' });
+    await expect(page.locator('[data-testid="environment-indicator"]')).toContainText('Surrounded');
     
     await screenshots.capture(page, 'surrounded-environment-replaces-previous', {
       programmaticCheck: async () => {

@@ -81,6 +81,6 @@ This test demonstrates the corrected positioning of environment card indicators:
 
 ## Related Issues
 
-- User Feedback - December 19, 2025 - Encounter cards obscure game
+- User Feedback - December 19, 2025 - Environment cards obscure game
 - Original issue: "Kobold Trappers" overlaying game state controls
 - Fix: Moved environment indicator from absolute positioning to top of board-controls section
