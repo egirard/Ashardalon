@@ -648,6 +648,9 @@
     return controlledMonsters[villainPhaseMonsterIndex]?.instanceId ?? null;
   });
 
+  // Get all controlled monsters (memoized for display in board controls)
+  let allControlledMonsters = $derived(monsters.filter(m => m.controllerId));
+
   // Check if all controlled monsters have been activated
   function allMonstersActivated(): boolean {
     const controlled = getControlledMonsters();
@@ -1663,9 +1666,9 @@
       <!-- Board controls -->
       <div class="board-controls">
         <!-- Active Monsters Display (all controlled monsters) -->
-        {#if monsters.filter(m => m.controllerId).length > 0}
+        {#if allControlledMonsters.length > 0}
           <div class="active-monsters-panel" data-testid="active-monsters-panel">
-            {#each monsters.filter(m => m.controllerId) as monster (monster.instanceId)}
+            {#each allControlledMonsters as monster (monster.instanceId)}
               <MonsterCardMini 
                 {monster}
                 isActivating={activatingMonsterId === monster.instanceId}
