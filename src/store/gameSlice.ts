@@ -1964,6 +1964,7 @@ export const gameSlice = createSlice({
     /**
      * Cancel the move-after-attack sequence (skip the movement portion)
      * This does NOT undo the attack, it simply skips the movement effect
+     * The player may still be able to move normally after canceling
      */
     cancelMoveAfterAttack: (state) => {
       if (!state.pendingMoveAfterAttack) return;
@@ -1973,13 +1974,28 @@ export const gameSlice = createSlice({
       // Clear the move-after-attack state
       state.pendingMoveAfterAttack = null;
       
-      // Hide movement UI
-      state.showingMovement = false;
-      state.validMoveSquares = [];
-      
-      // If this was the first action, allow the hero to continue their turn
-      // (they can still move or take another action)
-      // If this was the second action, the hero phase should end (handled by UI)
+      // If this was the first action and the player can still move, show normal movement
+      if (wasFirstAction && state.heroTurnActions.canMove) {
+        const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+        
+        if (currentToken) {
+          // Show normal movement with hero's speed
+          const speed = DEFAULT_HERO_SPEED;
+          state.validMoveSquares = getValidMoveSquares(
+            currentToken.position,
+            speed,
+            state.heroTokens,
+            currentHeroId,
+            state.dungeon
+          );
+          state.showingMovement = true;
+        }
+      } else {
+        // Otherwise hide movement UI
+        state.showingMovement = false;
+        state.validMoveSquares = [];
+      }
     },
     /**
      * Set monsters directly (for testing purposes)
