@@ -37,11 +37,14 @@
     completeMoveAttackMovement,
     clearMoveAttack,
     cancelMoveAttack,
+    completeMoveAfterAttack,
+    cancelMoveAfterAttack,
     assignTreasureToHero,
     dismissTreasureCard,
     useTreasureItem,
     type MultiAttackState,
     type PendingMoveAttackState,
+    type PendingMoveAfterAttackState,
     type IncrementalMovementState,
     type UndoSnapshot,
   } from "../store/gameSlice";
@@ -201,6 +204,7 @@
   let showActionSurgePrompt: boolean = $state(false);
   let multiAttackState: MultiAttackState | null = $state(null);
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
+  let pendingMoveAfterAttack: PendingMoveAfterAttackState | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
   let incrementalMovement: IncrementalMovementState | null = $state(null);
@@ -264,6 +268,7 @@
       showActionSurgePrompt = state.game.showActionSurgePrompt;
       multiAttackState = state.game.multiAttackState;
       pendingMoveAttack = state.game.pendingMoveAttack;
+      pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
       drawnTreasure = state.game.drawnTreasure;
       heroInventories = state.game.heroInventories;
       incrementalMovement = state.game.incrementalMovement;
@@ -314,6 +319,7 @@
     showActionSurgePrompt = state.game.showActionSurgePrompt;
     multiAttackState = state.game.multiAttackState;
     pendingMoveAttack = state.game.pendingMoveAttack;
+    pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
     drawnTreasure = state.game.drawnTreasure;
     heroInventories = state.game.heroInventories;
     incrementalMovement = state.game.incrementalMovement;
@@ -1058,7 +1064,7 @@
     const attackWithBonuses = applyItemBonusesToAttack(baseAttack, heroInventories[currentHeroId]);
 
     const result = resolveAttack(attackWithBonuses, monsterAC);
-    store.dispatch(setAttackResult({ result, targetInstanceId, attackName: powerCard.name }));
+    store.dispatch(setAttackResult({ result, targetInstanceId, attackName: powerCard.name, cardId }));
     
     // If this was a charge attack, clear the move-attack state and hide movement
     if (pendingMoveAttack && pendingMoveAttack.cardId === cardId) {
@@ -1126,6 +1132,16 @@
   // Handle canceling a move-then-attack sequence
   function handleCancelMoveAttack() {
     store.dispatch(cancelMoveAttack());
+  }
+
+  // Handle completing a move-after-attack sequence
+  function handleCompleteMoveAfterAttack() {
+    store.dispatch(completeMoveAfterAttack());
+  }
+
+  // Handle canceling a move-after-attack sequence (skip movement portion)
+  function handleCancelMoveAfterAttack() {
+    store.dispatch(cancelMoveAfterAttack());
   }
 
   // Get monster name from instance
@@ -1771,6 +1787,29 @@
                 ↩ Undo
               </button>
             {/if}
+          </div>
+        {/if}
+
+        <!-- Move-After-Attack Controls (shown when pendingMoveAfterAttack is set) -->
+        {#if pendingMoveAfterAttack && !mapControlMode}
+          <div class="move-after-attack-controls" data-testid="move-after-attack-controls">
+            <div class="move-after-attack-message" data-testid="move-after-attack-message">
+              ⚔️ After attack: Move ally up to {pendingMoveAfterAttack.moveDistance} squares
+            </div>
+            <button
+              class="complete-move-button"
+              data-testid="complete-move-after-attack"
+              onclick={handleCompleteMoveAfterAttack}
+            >
+              <CheckIcon size={14} ariaLabel="Complete" /> Complete Move
+            </button>
+            <button
+              class="cancel-button"
+              data-testid="cancel-move-after-attack"
+              onclick={handleCancelMoveAfterAttack}
+            >
+              Skip Movement
+            </button>
           </div>
         {/if}
 
@@ -2482,6 +2521,43 @@
   .undo-button:hover {
     background: rgba(255, 165, 0, 0.95);
     box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
+  }
+
+  /* Move-after-attack controls */
+  .move-after-attack-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+    margin-bottom: 0.5rem;
+  }
+
+  .move-after-attack-message {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid #ffa500;
+    font-size: 0.85rem;
+    color: #ffa500;
+    text-align: center;
+  }
+
+  .cancel-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    background: rgba(255, 69, 0, 0.8);
+    color: #fff;
+    border: 1px solid #ff4500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .cancel-button:hover {
+    background: rgba(255, 69, 0, 0.95);
+    box-shadow: 0 0 10px rgba(255, 69, 0, 0.4);
   }
 
   /* Environment indicator */
