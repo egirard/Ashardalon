@@ -487,14 +487,15 @@ describe('monsters', () => {
         discardPile: [],
       };
 
-      // Filter for reptiles (kobold and snake are reptiles, cultist is humanoid)
+      // Filter for reptiles (snake is reptile, kobold is sentry, cultist is humanoid)
       const result = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.5);
 
-      // Should have 4 reptiles (2 kobolds + 2 snakes) on top of deck
-      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(4);
+      // Should have 2 reptiles (2 snakes) on top of deck
+      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(2);
       
-      // Cultist should be discarded
+      // Kobold and Cultist should be discarded
       expect(result.discardedMonsters).toContain('cultist');
+      expect(result.discardedMonsters).toContain('kobold');
     });
 
     it('should shuffle matching cards before placing on top', () => {
@@ -506,8 +507,28 @@ describe('monsters', () => {
       const result1 = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.1);
       const result2 = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.9);
 
-      // Different random seeds should produce different orders
-      expect(result1.deck.drawPile.join(',')).not.toBe(result2.deck.drawPile.join(','));
+      // Both should have same cards since all snakes are identical
+      // (kobolds are sentries, not reptiles)
+      expect(result1.deck.drawPile.join(',')).toBe('snake,snake');
+      expect(result2.deck.drawPile.join(',')).toBe('snake,snake');
+    });
+
+    it('should filter sentry monsters correctly', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'cultist', 'kobold', 'snake'],
+        discardPile: [],
+      };
+
+      // Filter for sentries (kobold is sentry, snake is reptile, cultist is humanoid)
+      const result = filterMonsterDeckByCategory(deck, 'sentry', 5, () => 0.5);
+
+      // Should have 2 sentries (2 kobolds) on top of deck
+      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(2);
+      expect(result.deck.drawPile).toContain('kobold');
+      
+      // Snake and Cultist should be discarded
+      expect(result.discardedMonsters).toContain('cultist');
+      expect(result.discardedMonsters).toContain('snake');
     });
 
     it('should discard all cards if none match category', () => {
