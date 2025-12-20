@@ -93,6 +93,8 @@ import {
 } from "./trapsHazards";
 import { activateVillainPhaseTraps } from "./villainPhaseTraps";
 import { checkBladeBarrierDamage } from "./powerCardEffects";
+import { POWER_CARDS } from "./powerCards";
+import { parseActionCard } from "./actionCardParser";
 import {
   initializeTreasureDeck,
   drawTreasure,
@@ -240,6 +242,8 @@ export interface GameState {
   multiAttackState: MultiAttackState | null;
   /** Movement-before-attack state: set when using cards like Charge that require movement first */
   pendingMoveAttack: PendingMoveAttackState | null;
+  /** Attack-then-move state: set when using cards like Righteous Advance that allow movement after attack */
+  pendingMoveAfterAttack: PendingMoveAfterAttackState | null;
   /** Treasure deck for drawing treasure on monster defeat */
   treasureDeck: TreasureDeck;
   /** Currently drawn treasure card awaiting assignment to a hero */
@@ -294,6 +298,19 @@ export interface PendingMoveAttackState {
   movementCompleted: boolean;
   /** The hero's starting position before the move */
   startPosition: Position;
+}
+
+/**
+ * State for tracking attack-then-move sequences (e.g., Righteous Advance)
+ * This is triggered AFTER an attack completes (hit or miss)
+ */
+export interface PendingMoveAfterAttackState {
+  /** Power card ID that was used for the attack */
+  cardId: number;
+  /** Number of squares the ally can move (from the card effect) */
+  moveDistance: number;
+  /** Whether this was the first or second action (affects what happens after cancel/complete) */
+  wasFirstAction: boolean;
 }
 
 /**
@@ -426,6 +443,7 @@ const initialState: GameState = {
   showActionSurgePrompt: false,
   multiAttackState: null,
   pendingMoveAttack: null,
+  pendingMoveAfterAttack: null,
   treasureDeck: { drawPile: [], discardPile: [] },
   drawnTreasure: null,
   heroInventories: {},
@@ -895,6 +913,7 @@ export const gameSlice = createSlice({
       state.showActionSurgePrompt = false;
       state.multiAttackState = null;
       state.pendingMoveAttack = null;
+      state.pendingMoveAfterAttack = null;
       state.treasureDeck = { drawPile: [], discardPile: [] };
       state.drawnTreasure = null;
       state.heroInventories = {};
@@ -1614,14 +1633,14 @@ export const gameSlice = createSlice({
      */
     setAttackResult: (
       state,
-      action: PayloadAction<{ result: AttackResult; targetInstanceId: string; attackName: string }>
+      action: PayloadAction<{ result: AttackResult; targetInstanceId: string; attackName: string; cardId?: number }>
     ) => {
       // Only allow attack during hero phase and if hero can attack
       if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canAttack) {
         return;
       }
       
-      const { result, targetInstanceId, attackName } = action.payload;
+      const { result, targetInstanceId, attackName, cardId } = action.payload;
       state.attackTargetId = targetInstanceId;
       state.attackName = attackName;
       
@@ -1729,16 +1748,58 @@ export const gameSlice = createSlice({
         state.leveledUpHeroId = currentHeroId;
       }
       
+      // Check if this card has an "ally-move" effect (Hit or Miss)
+      // If so, set up pendingMoveAfterAttack state
+      if (cardId) {
+        const powerCard = POWER_CARDS.find(c => c.id === cardId);
+        if (powerCard) {
+          const parsedAction = parseActionCard(powerCard);
+          const allyMoveEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'ally-move');
+          
+          if (allyMoveEffect && allyMoveEffect.amount) {
+            // Determine if this was the first or second action
+            const wasFirstAction = state.heroTurnActions.actionsTaken.length === 0;
+            
+            // Set pending move-after-attack state
+            state.pendingMoveAfterAttack = {
+              cardId,
+              moveDistance: allyMoveEffect.amount,
+              wasFirstAction,
+            };
+          }
+        }
+      }
+      
       // Track the attack action
       state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
     },
     /**
      * Dismiss the attack result display
+     * If pendingMoveAfterAttack is set, this will trigger the movement UI
      */
     dismissAttackResult: (state) => {
       state.attackResult = null;
       state.attackTargetId = null;
       state.attackName = null;
+      
+      // If there's a pending move-after-attack, show movement UI
+      if (state.pendingMoveAfterAttack) {
+        const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+        
+        if (currentToken) {
+          // Calculate valid move squares based on the effect's move distance
+          const moveDistance = state.pendingMoveAfterAttack.moveDistance;
+          state.validMoveSquares = getValidMoveSquares(
+            currentToken.position,
+            moveDistance,
+            state.heroTokens,
+            currentHeroId,
+            state.dungeon
+          );
+          state.showingMovement = true;
+        }
+      }
     },
     /**
      * Dismiss the monster defeat/XP notification
@@ -1881,6 +1942,44 @@ export const gameSlice = createSlice({
       
       // Clear the move-attack state
       state.pendingMoveAttack = null;
+    },
+    /**
+     * Complete the move-after-attack sequence (when ally finishes moving)
+     * This clears the pendingMoveAfterAttack state and continues the game
+     */
+    completeMoveAfterAttack: (state) => {
+      if (!state.pendingMoveAfterAttack) return;
+      
+      // Clear the move-after-attack state
+      state.pendingMoveAfterAttack = null;
+      
+      // Hide movement UI
+      state.showingMovement = false;
+      state.validMoveSquares = [];
+      
+      // If this was the first action, player can still do a second action
+      // The game should continue in hero phase
+      // If this was the second action, hero phase should end (handled by UI)
+    },
+    /**
+     * Cancel the move-after-attack sequence (skip the movement portion)
+     * This does NOT undo the attack, it simply skips the movement effect
+     */
+    cancelMoveAfterAttack: (state) => {
+      if (!state.pendingMoveAfterAttack) return;
+      
+      const wasFirstAction = state.pendingMoveAfterAttack.wasFirstAction;
+      
+      // Clear the move-after-attack state
+      state.pendingMoveAfterAttack = null;
+      
+      // Hide movement UI
+      state.showingMovement = false;
+      state.validMoveSquares = [];
+      
+      // If this was the first action, allow the hero to continue their turn
+      // (they can still move or take another action)
+      // If this was the second action, the hero phase should end (handled by UI)
     },
     /**
      * Set monsters directly (for testing purposes)
@@ -2607,6 +2706,8 @@ export const {
   completeMoveAttackMovement,
   clearMoveAttack,
   cancelMoveAttack,
+  completeMoveAfterAttack,
+  cancelMoveAfterAttack,
   assignTreasureToHero,
   dismissTreasureCard,
   useTreasureItem,
