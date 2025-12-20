@@ -23,6 +23,15 @@
     onCancel 
   }: Props = $props();
   
+  let overlayElement: HTMLDivElement | undefined = $state();
+  
+  // Auto-focus the overlay when it's mounted
+  $effect(() => {
+    if (overlayElement) {
+      overlayElement.focus();
+    }
+  });
+  
   function handleConfirm() {
     onConfirm();
   }
@@ -43,6 +52,7 @@
 </script>
 
 <div 
+  bind:this={overlayElement}
   class="confirmation-overlay"
   onclick={handleCancel}
   onkeydown={handleKeydown}
