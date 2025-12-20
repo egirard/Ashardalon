@@ -774,6 +774,15 @@ The game state should be organized into the following slices:
 
 ## UI Components
 
+**For detailed user experience and interface design documentation:**
+- [**lobby-ux.md**](lobby-ux.md) - Character selection screen design and interactions
+- [**gameplay-ux.md**](gameplay-ux.md) - Game board screen design and interactions
+- [**UX_GUIDELINES.md**](UX_GUIDELINES.md) - General UX principles for tabletop displays
+
+### Technical Component Overview
+
+This section provides a technical overview of UI components. For user-facing design details, see the documents linked above.
+
 ### Main Game Board
 
 - **Dungeon Display**: Rendered tiles with proper connections

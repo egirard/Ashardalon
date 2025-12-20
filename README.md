@@ -55,9 +55,17 @@ For detailed rules and gameplay mechanics, refer to the original Wrath of Ashard
 
 ## Project Documentation
 
+### User Experience & Design
+- [**lobby-ux.md**](lobby-ux.md) - Character selection screen layout and interactions
+- [**gameplay-ux.md**](gameplay-ux.md) - Game board screen layout and interactions
+- [UX Guidelines](UX_GUIDELINES.md) - General UX principles for tabletop displays
+- [Initial Screens](INITIAL_SCREENS.md) - Technical specification for screen flow
+
+### Project Overview
 - [Vision Document](VISION.md) - Project goals, roadmap, and design philosophy
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
 - [Game Asset Rules](CONTRIBUTING.md#contributing-art-and-assets) - Guidelines for contributing artwork and assets
+- [Development Environment](DEVELOPMENT.md) - Setup and development tools
 
 ## Technology Stack
 
