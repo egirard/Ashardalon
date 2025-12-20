@@ -196,8 +196,7 @@
     background: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    padding-top: 2rem;
+    align-items: center;
     z-index: 100;
     cursor: pointer;
   }
