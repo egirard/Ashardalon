@@ -1849,6 +1849,7 @@ export const gameSlice = createSlice({
     },
     /**
      * Cancel the move-attack sequence and undo any movement
+     * After canceling, the player can still move normally, so we show movement
      */
     cancelMoveAttack: (state) => {
       if (!state.pendingMoveAttack) return;
@@ -1860,11 +1861,20 @@ export const gameSlice = createSlice({
       if (currentToken) {
         // Restore hero to starting position
         currentToken.position = { ...state.pendingMoveAttack.startPosition };
+        
+        // Recalculate valid move squares from the restored position
+        // Player can still move after canceling the charge
+        const speed = state.incrementalMovement?.totalSpeed ?? DEFAULT_HERO_SPEED;
+        state.validMoveSquares = getValidMoveSquares(
+          state.pendingMoveAttack.startPosition,
+          speed,
+          state.heroTokens,
+          currentHeroId,
+          state.dungeon,
+        );
+        // Keep movement overlay visible since player can still move
+        state.showingMovement = true;
       }
-      
-      // Clear movement overlay
-      state.validMoveSquares = [];
-      state.showingMovement = false;
       
       // Clear incremental movement state completely
       state.incrementalMovement = undefined;
