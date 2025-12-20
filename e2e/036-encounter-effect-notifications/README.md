@@ -18,6 +18,10 @@ This test verifies that special encounter cards display user-visible notificatio
    - Spawn a damaged monster (Cultist at 1/2 HP)
    - Accept encounter to trigger healing
    - Verify notification shows: "Cultist healed: 1 → 2 HP"
+5. **Spotted!**: Draw and accept "Spotted!" encounter (Bug Fix Verification)
+   - Setup monster deck with Kobolds (Sentry creatures)
+   - Accept encounter to trigger Sentry filtering
+   - Verify notification shows: "Drew 5 monster cards. 3 Sentrys placed on top, 2 discarded."
 
 ## Special Encounter Cards Tested
 
@@ -28,6 +32,11 @@ This test verifies that special encounter cards display user-visible notificatio
 2. **Revel in Destruction** (Monster Healing)
    - Heals first damaged monster by 1 HP
    - Shows monster name and HP change (before → after)
+
+3. **Spotted!** (Sentry Filtering - Bug Fix) ✅
+   - Filters monster deck for Sentry creature type (Kobold Dragonshields)
+   - Previously showed "0 Sentrys" due to incorrect categorization
+   - Now correctly identifies Kobolds as Sentries and places them on top
 
 ## Visual Elements Verified
 
@@ -88,6 +97,21 @@ Revel in Destruction encounter card displayed, about to heal a damaged monster.
 
 Game state after monster healing, verifying the effect was applied correctly.
 
+### 9. Spotted! Encounter Card
+![008-spotted-encounter-card](036-encounter-effect-notifications.spec.ts-snapshots/008-spotted-encounter-card-chromium-linux.png)
+
+Spotted! encounter card displayed, about to filter the monster deck for Sentry creatures.
+
+### 10. Sentry Filtering Notification ⭐
+![009-spotted-effect-notification-with-sentries](036-encounter-effect-notifications.spec.ts-snapshots/009-spotted-effect-notification-with-sentries-chromium-linux.png)
+
+**Key Screenshot**: Encounter effect notification showing "Drew 5 monster cards. 3 Sentrys placed on top, 2 discarded." This demonstrates the bug fix where Kobold Dragonshields are now correctly categorized as 'sentry' creatures, allowing the Spotted! encounter card to function properly.
+
+### 11. Spotted! Notification Dismissed
+![010-spotted-notification-dismissed](036-encounter-effect-notifications.spec.ts-snapshots/010-spotted-notification-dismissed-chromium-linux.png)
+
+Game state after Spotted! encounter, with 3 Sentry monsters now on top of the deck.
+
 ## Related Encounter Cards
 
 This notification system also works for:
@@ -95,4 +119,5 @@ This notification system also works for:
 - **Duergar Outpost**: "Drew 5 monster cards. X Devils placed on top, Y discarded."
 - **Kobold Warren**: "Drew 5 monster cards. X Reptiles placed on top, Y discarded."
 - **Unnatural Corruption**: "Drew 5 monster cards. X Aberrants placed on top, Y discarded."
+- **Spotted!**: "Drew 5 monster cards. X Sentrys placed on top, Y discarded." ✅ **Fixed in this PR**
 - **Deadly Poison**: "X poisoned heroes took 1 damage" (when heroes are poisoned)
