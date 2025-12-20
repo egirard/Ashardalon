@@ -320,7 +320,7 @@ All visual changes are **smoothly animated** to avoid jarring transitions:
 
 ### Touch Targets
 
-For tabletop touch displays:
+For tabletop touch displays (all measurements in pixels):
 - **Hero cards**: Minimum 200×280px touch area
 - **Power card checkboxes**: Minimum 44×44px
 - **Start button**: Minimum 200×60px
