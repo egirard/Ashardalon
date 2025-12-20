@@ -6,6 +6,7 @@
    */
   import { HomeIcon, MapIcon, BugIcon } from './icons';
   import html2canvas from 'html2canvas';
+  import ConfirmationDialog from './ConfirmationDialog.svelte';
   
   interface Props {
     position: 'nw' | 'se';
@@ -16,10 +17,35 @@
   
   let { position, mapControlMode, onReset, onToggleMapControl }: Props = $props();
   
+  // State for confirmation dialog
+  let showConfirmation = $state(false);
+  
   // Repository configuration for feedback
   const REPO_OWNER = 'egirard';
   const REPO_NAME = 'Ashardalon';
   const GAME_VERSION = '1.0.0';
+  
+  /**
+   * Handles the Home button click - shows confirmation dialog
+   */
+  function handleHomeClick() {
+    showConfirmation = true;
+  }
+  
+  /**
+   * Handles confirmation - resets the game
+   */
+  function handleConfirmReset() {
+    showConfirmation = false;
+    onReset();
+  }
+  
+  /**
+   * Handles cancellation - closes the dialog
+   */
+  function handleCancelReset() {
+    showConfirmation = false;
+  }
   
   /**
    * Creates a human-readable timestamp string from a Date object.
@@ -202,7 +228,7 @@ ${screenshotSection}
   <button
     class="icon-button home-button"
     data-testid="corner-home-button"
-    onclick={onReset}
+    onclick={handleHomeClick}
     aria-label="Return to Character Select"
     title="Return to Character Select"
   >
@@ -231,6 +257,17 @@ ${screenshotSection}
     <BugIcon size={20} color="currentColor" ariaLabel="Submit Feedback" />
   </button>
 </div>
+
+{#if showConfirmation}
+  <ConfirmationDialog
+    title="Return to Character Select?"
+    message="Are you sure you want to return to character select? You will lose all progress in your current game."
+    confirmText="Return Home"
+    cancelText="Stay in Game"
+    onConfirm={handleConfirmReset}
+    onCancel={handleCancelReset}
+  />
+{/if}
 
 <style>
   .corner-controls {
