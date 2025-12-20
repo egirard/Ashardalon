@@ -220,5 +220,91 @@ test.describe('036 - Encounter Effect Notifications', () => {
         expect(storeState.game.monsters[0].currentHp).toBe(2);
       }
     });
+    
+    // STEP 7: Test "Spotted!" encounter card (filters for Sentries)
+    // This tests the bug fix where Kobolds are now categorized as 'sentry'
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      
+      // Set up monster deck with Kobolds (sentries) and other monsters
+      // First 5 cards: 3 kobolds, 1 snake, 1 cultist
+      store.dispatch({
+        type: 'game/setMonsterDeck',
+        payload: {
+          drawPile: ['kobold', 'kobold', 'snake', 'kobold', 'cultist', 'snake', 'cultist'],
+          discardPile: []
+        }
+      });
+      
+      // Draw "Spotted!" encounter card
+      store.dispatch({
+        type: 'game/setDrawnEncounter',
+        payload: 'spotted'
+      });
+    });
+    
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'visible' });
+    
+    await screenshots.capture(page, 'spotted-encounter-card', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="encounter-name"]')).toContainText('Spotted!');
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.monsterDeck.drawPile).toHaveLength(7);
+      }
+    });
+    
+    // Accept the encounter (filters for Sentries)
+    await page.locator('[data-testid="encounter-continue"]').click();
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
+    
+    await screenshots.capture(page, 'spotted-effect-notification-with-sentries', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toBeVisible();
+        
+        const messageElement = page.locator('[data-testid="effect-message"]');
+        await expect(messageElement).toBeVisible();
+        const messageText = await messageElement.textContent();
+        
+        // Message should show 3 Sentries placed on top (we have 3 Kobolds in first 5 cards)
+        expect(messageText).toContain('Drew 5 monster cards');
+        expect(messageText).toMatch(/3 (Sentrys) placed on top/);
+        expect(messageText).toMatch(/2 discarded/);
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        // Verify the effect message contains the expected text
+        expect(storeState.game.encounterEffectMessage).toContain('Drew 5 monster cards');
+        expect(storeState.game.encounterEffectMessage).toMatch(/3 (Sentrys) placed on top/);
+        
+        // Verify monster deck was manipulated
+        // We drew 5 cards from 7, leaving 2
+        // 3 were Kobolds (sentries) which are placed back on top
+        // So: 3 sentries + 2 remaining = 5 total
+        expect(storeState.game.monsterDeck.drawPile.length).toBe(5);
+        
+        // Verify discarded cards (1 snake + 1 cultist = 2)
+        expect(storeState.game.monsterDeck.discardPile.length).toBe(2);
+      }
+    });
+    
+    // Dismiss the notification
+    await page.locator('[data-testid="dismiss-effect-notification"]').click();
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'hidden' });
+    
+    await screenshots.capture(page, 'spotted-notification-dismissed', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="encounter-effect-notification"]')).not.toBeVisible();
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.encounterEffectMessage).toBeNull();
+      }
+    });
   });
 });
