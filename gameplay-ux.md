@@ -77,6 +77,12 @@ The gameplay screen consists of three main regions:
 └────────────────────────────────────────────────┘
 ```
 
+**Screenshot References**:
+- Single player game board: [E2E Test 001](e2e/001-character-selection/001-character-selection.spec.ts-snapshots/002-game-board-chromium-linux.png)
+- Multi-player layout (Quinn's turn): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/004-game-board-quinn-turn-bottom-chromium-linux.png)
+- Multi-player layout (Vistra's turn, top): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/005-game-board-vistra-turn-top-rotated-chromium-linux.png)
+- Multi-player layout (Keyleth's turn, left): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/006-game-board-keyleth-turn-left-rotated-chromium-linux.png)
+
 ### Three Main Regions
 
 1. **Game Board (Center)**: Dungeon map with tiles, heroes, monsters, and markers
@@ -162,6 +168,8 @@ Located on the **right side** of the screen, this panel displays shared game inf
 
 ### Panel Components (Top to Bottom)
 
+**Screenshot Reference**: See complete game state panel in [E2E Test 047](e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/002-kobold-trappers-environment-active-chromium-linux.png)
+
 #### 1. Environment Indicator
 
 **Appears when**: Environment encounter card is active (e.g., "Kobold Trappers", "Surrounded")
@@ -177,6 +185,10 @@ Located on the **right side** of the screen, this panel displays shared game inf
 - Disappears when environment effect ends
 
 **Historical Context**: PR #217 fixed positioning issue where this indicator overlapped other controls. It now properly flows at the top of the panel.
+
+**Screenshot References**:
+- Environment indicator active: [E2E Test 047](e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/002-kobold-trappers-environment-active-chromium-linux.png)
+- Without environment indicator: [E2E Test 047](e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/001-game-started-no-environment-chromium-linux.png)
 
 #### 2. Objective Display
 
@@ -274,6 +286,11 @@ When it's a player's turn, their dashboard displays:
 │  [Item 1] [Item 2]          │
 └─────────────────────────────┘
 ```
+
+**Screenshot References**: 
+- Active player dashboard (bottom edge): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/004-game-board-quinn-turn-bottom-chromium-linux.png)
+- Active player dashboard (top edge, rotated): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/005-game-board-vistra-turn-top-rotated-chromium-linux.png)
+- Active player dashboard (left edge, rotated): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/006-game-board-keyleth-turn-left-rotated-chromium-linux.png)
 
 ### Dashboard Layout (Inactive Player)
 
