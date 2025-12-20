@@ -742,7 +742,7 @@ Small utility buttons in screen corners:
 ## Implementation Notes
 
 This document describes the **user-facing design** of the Game Board Screen. For implementation details, see:
-- `src/components/GameBoard.svelte` - Main gameplay component (2500+ lines)
+- `src/components/GameBoard.svelte` - Main gameplay component
 - `src/components/PlayerCard.svelte` - Player dashboard component
 - `src/components/PlayerPowerCards.svelte` - Power card display
 - `src/store/gameSlice.ts` - Game state management
