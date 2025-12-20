@@ -236,8 +236,12 @@ export interface Monster {
   maxHp: number;
   xp: number;     // Experience Points value
   imagePath: string;
-  /** Monster category for encounter card filtering */
-  category: MonsterCategory;
+  /** 
+   * Monster categories for encounter card filtering.
+   * Space-separated string of category words. A monster can have multiple categories.
+   * Example: "reptile sentry" means the monster is both a reptile AND a sentry.
+   */
+  category: string;
 }
 
 /**
@@ -279,7 +283,7 @@ export interface MonsterDeck {
  * Available monsters in the game
  */
 export const MONSTERS: Monster[] = [
-  { id: 'kobold', name: 'Kobold Dragonshield', ac: 14, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_KoboldDragonshield.png', category: 'sentry' },
+  { id: 'kobold', name: 'Kobold Dragonshield', ac: 14, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_KoboldDragonshield.png', category: 'reptile sentry' },
   { id: 'snake', name: 'Snake', ac: 12, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_Snake.png', category: 'reptile' },
   { id: 'cultist', name: 'Cultist', ac: 13, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_Cultist.png', category: 'humanoid' },
 ];

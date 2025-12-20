@@ -328,7 +328,9 @@ export function filterMonsterDeckByCategory(
   
   for (const monsterId of drawnCards) {
     const monster = getMonsterById(monsterId);
-    if (monster && monster.category === category) {
+    // Check if the monster's category string contains the searched category word
+    // Categories are space-separated words, so we split and check for exact match
+    if (monster && monster.category.split(' ').includes(category)) {
       matchingCards.push(monsterId);
     } else {
       discardedCards.push(monsterId);
