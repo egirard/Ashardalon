@@ -648,9 +648,6 @@
     return controlledMonsters[villainPhaseMonsterIndex]?.instanceId ?? null;
   });
 
-  // Get all controlled monsters (memoized for display in board controls)
-  let allControlledMonsters = $derived(monsters.filter(m => m.controllerId));
-
   // Check if all controlled monsters have been activated
   function allMonstersActivated(): boolean {
     const controlled = getControlledMonsters();
@@ -1665,15 +1662,14 @@
 
       <!-- Board controls -->
       <div class="board-controls">
-        <!-- Active Monsters Display (all controlled monsters) -->
-        {#if allControlledMonsters.length > 0}
-          <div class="active-monsters-panel" data-testid="active-monsters-panel">
-            {#each allControlledMonsters as monster (monster.instanceId)}
-              <MonsterCardMini 
-                {monster}
-                isActivating={activatingMonsterId === monster.instanceId}
-              />
-            {/each}
+        <!-- Active Environment Indicator -->
+        {#if activeEnvironmentId}
+          {@const environmentCard = ENCOUNTER_CARDS.find(c => c.id === activeEnvironmentId)}
+          <div class="environment-indicator" data-testid="environment-indicator">
+            <div class="environment-icon">🌫️</div>
+            <div class="environment-name">
+              {environmentCard?.name ?? 'Environment'}
+            </div>
           </div>
         {/if}
         
@@ -1693,17 +1689,6 @@
         
         <!-- Healing Surge Counter -->
         <HealingSurgeCounter surges={partyResources.healingSurges} />
-        
-        <!-- Active Environment Indicator -->
-        {#if activeEnvironmentId}
-          {@const environmentCard = ENCOUNTER_CARDS.find(c => c.id === activeEnvironmentId)}
-          <div class="environment-indicator" data-testid="environment-indicator">
-            <div class="environment-icon">🌫️</div>
-            <div class="environment-name">
-              {environmentCard?.name ?? 'Environment'}
-            </div>
-          </div>
-        {/if}
         
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
@@ -2270,14 +2255,6 @@
     align-items: flex-end;
   }
 
-  /* Active monsters panel at top of board controls */
-  .active-monsters-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-width: 200px;
-  }
-
   /* Objective display */
   .objective-display {
     background: rgba(0, 0, 0, 0.7);
@@ -2509,9 +2486,6 @@
 
   /* Environment indicator */
   .environment-indicator {
-    position: absolute;
-    top: 10rem;
-    right: 1rem;
     background: rgba(139, 92, 246, 0.9);
     border: 2px solid #8b5cf6;
     border-radius: 8px;
@@ -2520,7 +2494,6 @@
     gap: 0.75rem;
     align-items: center;
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-    z-index: 15;
     min-width: 150px;
   }
 
