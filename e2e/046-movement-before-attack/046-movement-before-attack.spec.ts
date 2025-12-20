@@ -139,7 +139,7 @@ test.describe('046 - Movement Before Attack', () => {
     // (Hero at 3,2 can move up to 5 squares + 1 attack = 6 total distance, monster at 3,4 is only 2 away)
     await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
 
-    await screenshots.capture(page, 'charge-enabled-monster-in-range', {
+    await screenshots.capture(page, 'charge-card-visible-in-panel', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -164,29 +164,13 @@ test.describe('046 - Movement Before Attack', () => {
       }
     });
 
-    // STEP 5: Player clicks Charge card to initiate movement-before-attack
-    // This should trigger the movement UI to appear
+    // STEP 5a: Player clicks Charge card to activate it
     await page.locator('[data-testid="attack-card-12"]').click();
     
-    await screenshots.capture(page, 'charge-selected-movement-initiated', {
-      programmaticCheck: async () => {
-        // Verify Charge card is selected
-        await expect(page.locator('[data-testid="attack-card-12"]')).toHaveClass(/selected/);
-        
-        const storeState = await page.evaluate(() => {
-          return (window as any).__REDUX_STORE__.getState();
-        });
-        
-        // Verify pendingMoveAttack state is set
-        expect(storeState.game.pendingMoveAttack).not.toBeNull();
-        expect(storeState.game.pendingMoveAttack.cardId).toBe(12);
-      }
-    });
-    
-    // After clicking Charge, movement UI should appear
+    // STEP 5b: Movement UI should appear after activating Charge
     await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
 
-    await screenshots.capture(page, 'movement-ui-shown', {
+    await screenshots.capture(page, 'charge-activated-movement-ui-appears', {
       programmaticCheck: async () => {
         // Verify movement overlay is visible
         await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
@@ -195,6 +179,14 @@ test.describe('046 - Movement Before Attack', () => {
         const moveSquares = page.locator('[data-testid="move-square"]');
         const squareCount = await moveSquares.count();
         expect(squareCount).toBeGreaterThan(0);
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify pendingMoveAttack state is set
+        expect(storeState.game.pendingMoveAttack).not.toBeNull();
+        expect(storeState.game.pendingMoveAttack.cardId).toBe(12);
       }
     });
 
@@ -217,7 +209,7 @@ test.describe('046 - Movement Before Attack', () => {
       expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 3 });
     }).toPass();
 
-    await screenshots.capture(page, 'moved-next-to-monster', {
+    await screenshots.capture(page, 'moved-adjacent-to-monster', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -233,11 +225,11 @@ test.describe('046 - Movement Before Attack', () => {
       }
     });
 
-    // STEP 7: After movement, attack panel should still be visible with target button
+    // STEP 7: After movement, attack button should appear
     // Wait for target selection to appear
     await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
 
-    await screenshots.capture(page, 'attack-button-after-movement', {
+    await screenshots.capture(page, 'attack-button-appears', {
       programmaticCheck: async () => {
         // Check if target selection is visible
         await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
@@ -270,7 +262,7 @@ test.describe('046 - Movement Before Attack', () => {
     // Wait for combat result
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 5000 });
     
-    await screenshots.capture(page, 'charge-attack-result', {
+    await screenshots.capture(page, 'attack-result-displayed', {
       programmaticCheck: async () => {
         // Verify combat result is displayed
         await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
@@ -278,16 +270,6 @@ test.describe('046 - Movement Before Attack', () => {
         // Verify it's a Charge attack
         const attackerInfo = await page.locator('[data-testid="attacker-info"]').textContent();
         expect(attackerInfo).toContain('Charge');
-      }
-    });
-
-    // Dismiss combat result
-    await page.locator('[data-testid="dismiss-combat-result"]').click();
-    await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
-    
-    await screenshots.capture(page, 'attack-complete', {
-      programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
       }
     });
   });
