@@ -198,8 +198,8 @@ test.describe('046 - Movement Before Attack', () => {
     await expect(targetSquare).toBeVisible({ timeout: 5000 });
     await targetSquare.click();
     
-    // Wait for movement overlay to disappear after click
-    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'hidden', timeout: 5000 });
+    // NOTE: Movement overlay should STAY VISIBLE during charging mode
+    // (player can continue moving until they attack or cancel)
     
     // Wait for hero position to update
     await expect(async () => {
@@ -222,10 +222,13 @@ test.describe('046 - Movement Before Attack', () => {
         // Hero should now be adjacent to monster
         expect(distance).toBe(1);
         expect(heroPos).toEqual({ x: 3, y: 3 });
+        
+        // Movement overlay should still be visible (charging mode)
+        await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
       }
     });
 
-    // STEP 7: After movement, attack button should appear
+    // STEP 7: After movement, attack button should appear (while still in charging mode)
     // Wait for target selection to appear
     await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
 
@@ -262,6 +265,9 @@ test.describe('046 - Movement Before Attack', () => {
     // Wait for combat result
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 5000 });
     
+    // After attack, movement overlay should now be hidden
+    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'hidden', timeout: 5000 });
+    
     await screenshots.capture(page, 'attack-result-displayed', {
       programmaticCheck: async () => {
         // Verify combat result is displayed
@@ -270,6 +276,9 @@ test.describe('046 - Movement Before Attack', () => {
         // Verify it's a Charge attack
         const attackerInfo = await page.locator('[data-testid="attacker-info"]').textContent();
         expect(attackerInfo).toContain('Charge');
+        
+        // Verify movement overlay is now hidden
+        await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
       }
     });
   });
@@ -358,6 +367,16 @@ test.describe('046 - Movement Before Attack', () => {
       expect(storeState.game.monsters.length).toBe(1);
     }).toPass();
 
+    // IMPORTANT: Reset hero turn actions to ensure canMove and canAttack are true
+    // This ensures the movement-before-attack logic can activate
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroTurnActions',
+        payload: { actionsTaken: [], canMove: true, canAttack: true }
+      });
+    });
+
     await screenshots.capture(page, 'cancel-test-setup', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -422,6 +441,8 @@ test.describe('046 - Movement Before Attack', () => {
     await cancelButton.click();
 
     // Wait for cancel to take effect
+    await page.waitForTimeout(500); // Give time for state to settle
+    
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
@@ -430,6 +451,8 @@ test.describe('046 - Movement Before Attack', () => {
       expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
       // pendingMoveAttack should be cleared
       expect(storeState.game.pendingMoveAttack).toBeNull();
+      // showingMovement should be false
+      expect(storeState.game.showingMovement).toBe(false);
     }).toPass();
 
     await screenshots.capture(page, 'cancel-complete-hero-restored', {
