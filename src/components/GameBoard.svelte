@@ -759,14 +759,20 @@
 
   // Handle click on a valid movement square
   function handleMoveSquareClick(position: Position) {
-    const currentHeroId = getCurrentHeroId();
-    if (!currentHeroId) return;
+    // When in move-after-attack mode, move the selected hero instead of current hero
+    let heroId: string;
+    if (pendingMoveAfterAttack?.selectedHeroId) {
+      heroId = pendingMoveAfterAttack.selectedHeroId;
+    } else {
+      heroId = getCurrentHeroId();
+      if (!heroId) return;
+    }
 
-    const currentHero = getHeroInfo(currentHeroId);
-    if (!currentHero) return;
+    const hero = getHeroInfo(heroId);
+    if (!hero) return;
 
     // Use total speed including item bonuses
-    store.dispatch(moveHero({ heroId: currentHeroId, position, speed: getTotalSpeed(currentHeroId) }));
+    store.dispatch(moveHero({ heroId, position, speed: getTotalSpeed(heroId) }));
     
     // Note: For charging movement, we keep the movement overlay visible
     // so the player can continue moving. The overlay will remain until:
@@ -1797,7 +1803,7 @@
         {/if}
 
         <!-- Move-After-Attack Hero Selection (shown when multiple heroes on tile) -->
-        {#if pendingMoveAfterAttack && !pendingMoveAfterAttack.selectedHeroId && pendingMoveAfterAttack.availableHeroes.length > 1 && !mapControlMode}
+        {#if pendingMoveAfterAttack && !pendingMoveAfterAttack.selectedHeroId && pendingMoveAfterAttack.availableHeroes.length > 1 && !attackResult && !mapControlMode}
           <div class="hero-selection-overlay" data-testid="hero-selection-overlay">
             <div class="hero-selection-dialog">
               <div class="hero-selection-message">
