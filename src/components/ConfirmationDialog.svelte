@@ -43,10 +43,19 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       handleCancel();
     } else if (event.key === 'Enter') {
       event.preventDefault();
+      event.stopPropagation();
       handleConfirm();
+    }
+  }
+  
+  function handleDialogKeydown(event: KeyboardEvent) {
+    // Only stop propagation of handled keys to prevent interference with unhandled keys
+    if (event.key === 'Escape' || event.key === 'Enter') {
+      event.stopPropagation();
     }
   }
 </script>
@@ -54,7 +63,6 @@
 <div 
   bind:this={overlayElement}
   class="confirmation-overlay"
-  onclick={handleCancel}
   onkeydown={handleKeydown}
   role="dialog"
   aria-modal="true"
@@ -67,8 +75,8 @@
   <div 
     class="confirmation-dialog" 
     onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => e.stopPropagation()}
-    role="article"
+    onkeydown={handleDialogKeydown}
+    role="document"
     data-testid="confirmation-dialog"
   >
     <h2 id="dialog-title" class="dialog-title" data-testid="dialog-title">{title}</h2>
