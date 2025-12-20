@@ -1866,10 +1866,8 @@ export const gameSlice = createSlice({
       state.validMoveSquares = [];
       state.showingMovement = false;
       
-      // Clear incremental movement state
-      if (state.incrementalMovement?.inProgress) {
-        state.incrementalMovement.inProgress = false;
-      }
+      // Clear incremental movement state completely
+      state.incrementalMovement = null;
       
       // Clear the move-attack state
       state.pendingMoveAttack = null;
