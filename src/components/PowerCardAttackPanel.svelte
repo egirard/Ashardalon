@@ -132,6 +132,19 @@
   }
   
   function handleCardSelect(cardId: number) {
+    // Check if this is a movement-before-attack card
+    const card = getPowerCardById(cardId);
+    if (card) {
+      const parsed = parseActionCard(card);
+      if (requiresMovementFirst(parsed) && onStartMoveAttack && !pendingMoveAttack) {
+        // Start the move-attack sequence immediately when card is clicked
+        onStartMoveAttack(cardId);
+        selectedCardId = null;
+        return;
+      }
+    }
+    
+    // Standard card selection behavior
     selectedCardId = selectedCardId === cardId ? null : cardId;
   }
   
@@ -311,8 +324,8 @@
     {/if}
     
     <!-- Target Selection -->
-    {#if selectedCardId !== null || multiAttackState}
-      {@const activeCardId = multiAttackState?.cardId ?? selectedCardId}
+    {#if selectedCardId !== null || multiAttackState || (pendingMoveAttack?.movementCompleted && !multiAttackState)}
+      {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack?.movementCompleted ? pendingMoveAttack.cardId : selectedCardId)}
       {@const selectedCard = activeCardId ? getPowerCardById(activeCardId) : null}
       {@const parsed = selectedCard ? parseActionCard(selectedCard) : null}
       {@const validTargets = activeCardId ? getValidTargetsForCard(activeCardId) : adjacentMonsters}

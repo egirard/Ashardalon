@@ -760,6 +760,21 @@
 
     // Use total speed including item bonuses
     store.dispatch(moveHero({ heroId: currentHeroId, position, speed: getTotalSpeed(currentHeroId) }));
+    
+    // If this is part of a move-attack sequence, complete the movement phase
+    // Read from store directly to get the latest value
+    const state = store.getState();
+    console.log('[DEBUG] handleMoveSquareClick - pendingMoveAttack:', state.game.pendingMoveAttack);
+    console.log('[DEBUG] handleMoveSquareClick - showingMovement before:', state.game.showingMovement);
+    if (state.game.pendingMoveAttack && !state.game.pendingMoveAttack.movementCompleted) {
+      console.log('[DEBUG] Calling completeMoveAttackMovement and hideMovement');
+      store.dispatch(completeMoveAttackMovement());
+      store.dispatch(hideMovement());
+      const stateAfter = store.getState();
+      console.log('[DEBUG] showingMovement after:', stateAfter.game.showingMovement);
+    } else {
+      console.log('[DEBUG] NOT completing move-attack - condition not met');
+    }
   }
 
   // Handle completing the current move action early

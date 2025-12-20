@@ -1837,6 +1837,8 @@ export const gameSlice = createSlice({
     completeMoveAttackMovement: (state) => {
       if (state.pendingMoveAttack) {
         state.pendingMoveAttack.movementCompleted = true;
+        // Hide the movement overlay when movement is complete
+        state.showingMovement = false;
       }
     },
     /**
