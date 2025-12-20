@@ -66,6 +66,8 @@ The Character Selection Screen is divided into **four edge zones** plus a **cent
 └─────────────────────────────────────────┘
 ```
 
+**Screenshot Reference**: See the initial character selection screen in [E2E Test 001](e2e/001-character-selection/001-character-selection.spec.ts-snapshots/000-initial-screen-chromium-linux.png)
+
 ### Edge Zones
 
 Each edge zone displays:
@@ -198,6 +200,11 @@ When a hero is selected, a modal dialog appears showing:
 └────────────────────────────────┘
 ```
 
+**Screenshot References**: 
+- Power card selection from bottom edge: [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/000-power-selection-quinn-bottom-chromium-linux.png)
+- Power card selection from top edge: [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/001-power-selection-vistra-top-chromium-linux.png)
+- Power card selection from left edge: [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/002-power-selection-keyleth-left-chromium-linux.png)
+
 #### Modal Orientation
 
 - **Modal is rotated** to face the selecting player's edge
@@ -277,6 +284,8 @@ When Start Adventure is clicked:
 Common configurations:
 - Bottom, top, left (right edge empty)
 - Bottom, left, right (top edge empty)
+
+**Screenshot Reference**: See 3-player character selection complete in [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/003-character-selection-complete-chromium-linux.png)
 
 ### 4-Player Game
 
