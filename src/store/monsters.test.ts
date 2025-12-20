@@ -487,15 +487,14 @@ describe('monsters', () => {
         discardPile: [],
       };
 
-      // Filter for reptiles (snake is reptile, kobold is sentry, cultist is humanoid)
+      // Filter for reptiles (kobold and snake are reptiles, cultist is humanoid)
       const result = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.5);
 
-      // Should have 2 reptiles (2 snakes) on top of deck
-      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(2);
+      // Should have 4 reptiles (2 kobolds + 2 snakes) on top of deck
+      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(4);
       
-      // Kobold and Cultist should be discarded
+      // Cultist should be discarded
       expect(result.discardedMonsters).toContain('cultist');
-      expect(result.discardedMonsters).toContain('kobold');
     });
 
     it('should shuffle matching cards before placing on top', () => {
@@ -507,28 +506,8 @@ describe('monsters', () => {
       const result1 = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.1);
       const result2 = filterMonsterDeckByCategory(deck, 'reptile', 5, () => 0.9);
 
-      // Both should have same cards since all snakes are identical
-      // (kobolds are sentries, not reptiles)
-      expect(result1.deck.drawPile.join(',')).toBe('snake,snake');
-      expect(result2.deck.drawPile.join(',')).toBe('snake,snake');
-    });
-
-    it('should filter sentry monsters correctly', () => {
-      const deck: MonsterDeck = {
-        drawPile: ['kobold', 'snake', 'cultist', 'kobold', 'snake'],
-        discardPile: [],
-      };
-
-      // Filter for sentries (kobold is sentry, snake is reptile, cultist is humanoid)
-      const result = filterMonsterDeckByCategory(deck, 'sentry', 5, () => 0.5);
-
-      // Should have 2 sentries (2 kobolds) on top of deck
-      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(2);
-      expect(result.deck.drawPile).toContain('kobold');
-      
-      // Snake and Cultist should be discarded
-      expect(result.discardedMonsters).toContain('cultist');
-      expect(result.discardedMonsters).toContain('snake');
+      // Different random seeds should produce different orders
+      expect(result1.deck.drawPile.join(',')).not.toBe(result2.deck.drawPile.join(','));
     });
 
     it('should discard all cards if none match category', () => {
@@ -543,6 +522,24 @@ describe('monsters', () => {
       // All cards should be discarded
       expect(result.discardedMonsters).toHaveLength(3);
       expect(result.deck.discardPile).toHaveLength(3);
+    });
+
+    it('should filter monsters with multiple categories correctly', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'cultist', 'kobold', 'snake'],
+        discardPile: [],
+      };
+
+      // Filter for sentries (kobold is "reptile sentry", so it matches)
+      const result = filterMonsterDeckByCategory(deck, 'sentry', 5, () => 0.5);
+
+      // Should have 2 sentries (2 kobolds) on top of deck
+      expect(result.deck.drawPile.length).toBeGreaterThanOrEqual(2);
+      
+      // Snake and Cultist should be discarded (they are not sentries)
+      expect(result.discardedMonsters).toContain('snake');
+      expect(result.discardedMonsters).toContain('cultist');
+      expect(result.discardedMonsters.length).toBe(3); // 2 snakes + 1 cultist
     });
   });
 
