@@ -78,10 +78,18 @@ The gameplay screen consists of three main regions:
 ```
 
 **Screenshot References**:
-- Single player game board: [E2E Test 001](e2e/001-character-selection/001-character-selection.spec.ts-snapshots/002-game-board-chromium-linux.png)
-- Multi-player layout (Quinn's turn): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/004-game-board-quinn-turn-bottom-chromium-linux.png)
-- Multi-player layout (Vistra's turn, top): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/005-game-board-vistra-turn-top-rotated-chromium-linux.png)
-- Multi-player layout (Keyleth's turn, left): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/006-game-board-keyleth-turn-left-rotated-chromium-linux.png)
+
+Single player game board ([E2E Test 001](e2e/001-character-selection/README.md)):
+<img src="e2e/001-character-selection/001-character-selection.spec.ts-snapshots/002-game-board-chromium-linux.png" alt="Single Player Game Board" width="700"/>
+
+Multi-player layout - Quinn's turn at bottom edge ([E2E Test 022](e2e/022-multi-player-ui-orientation/README.md)):
+<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/004-game-board-quinn-turn-bottom-chromium-linux.png" alt="Multi-Player Layout - Quinn's Turn" width="700"/>
+
+Multi-player layout - Vistra's turn at top edge (rotated 180°):
+<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/005-game-board-vistra-turn-top-rotated-chromium-linux.png" alt="Multi-Player Layout - Vistra's Turn" width="700"/>
+
+Multi-player layout - Keyleth's turn at left edge (rotated 90°):
+<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/006-game-board-keyleth-turn-left-rotated-chromium-linux.png" alt="Multi-Player Layout - Keyleth's Turn" width="700"/>
 
 ### Three Main Regions
 
@@ -168,7 +176,9 @@ Located on the **right side** of the screen, this panel displays shared game inf
 
 ### Panel Components (Top to Bottom)
 
-**Screenshot Reference**: See complete game state panel in [E2E Test 047](e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/002-kobold-trappers-environment-active-chromium-linux.png)
+**Screenshot Reference** ([E2E Test 047](e2e/047-environment-indicator-positioning/README.md)):
+
+<img src="e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/002-kobold-trappers-environment-active-chromium-linux.png" alt="Game State Panel with Environment Indicator" width="700"/>
 
 #### 1. Environment Indicator
 
@@ -186,9 +196,13 @@ Located on the **right side** of the screen, this panel displays shared game inf
 
 **Historical Context**: PR #217 fixed positioning issue where this indicator overlapped other controls. It now properly flows at the top of the panel.
 
-**Screenshot References**:
-- Environment indicator active: [E2E Test 047](e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/002-kobold-trappers-environment-active-chromium-linux.png)
-- Without environment indicator: [E2E Test 047](e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/001-game-started-no-environment-chromium-linux.png)
+**Screenshot References** ([E2E Test 047](e2e/047-environment-indicator-positioning/README.md)):
+
+Environment indicator active (Kobold Trappers):
+<img src="e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/002-kobold-trappers-environment-active-chromium-linux.png" alt="Environment Indicator Active" width="700"/>
+
+Without environment indicator:
+<img src="e2e/047-environment-indicator-positioning/047-environment-indicator-positioning.spec.ts-snapshots/001-game-started-no-environment-chromium-linux.png" alt="No Environment Indicator" width="700"/>
 
 #### 2. Objective Display
 
@@ -287,10 +301,16 @@ When it's a player's turn, their dashboard displays:
 └─────────────────────────────┘
 ```
 
-**Screenshot References**: 
-- Active player dashboard (bottom edge): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/004-game-board-quinn-turn-bottom-chromium-linux.png)
-- Active player dashboard (top edge, rotated): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/005-game-board-vistra-turn-top-rotated-chromium-linux.png)
-- Active player dashboard (left edge, rotated): [E2E Test 022](e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/006-game-board-keyleth-turn-left-rotated-chromium-linux.png)
+**Screenshot References** ([E2E Test 022](e2e/022-multi-player-ui-orientation/README.md)):
+
+Active player dashboard (bottom edge):
+<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/004-game-board-quinn-turn-bottom-chromium-linux.png" alt="Active Player Dashboard - Bottom Edge" width="700"/>
+
+Active player dashboard (top edge, rotated 180°):
+<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/005-game-board-vistra-turn-top-rotated-chromium-linux.png" alt="Active Player Dashboard - Top Edge" width="700"/>
+
+Active player dashboard (left edge, rotated 90°):
+<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/006-game-board-keyleth-turn-left-rotated-chromium-linux.png" alt="Active Player Dashboard - Left Edge" width="700"/>
 
 ### Dashboard Layout (Inactive Player)
 
