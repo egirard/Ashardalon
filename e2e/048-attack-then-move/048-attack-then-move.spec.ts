@@ -406,4 +406,216 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
       }
     });
   });
+
+  test('Multiple heroes on tile - select which hero to move', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // SETUP: Start with two heroes - Quinn and Vistra
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    
+    // Select Quinn
+    await page.locator('[data-testid="hero-quinn"]').click();
+    await selectDefaultPowerCards(page, 'quinn');
+    
+    // Select Vistra as well
+    await page.locator('[data-testid="hero-vistra"]').click();
+    await selectDefaultPowerCards(page, 'vistra');
+    
+    await screenshots.capture(page, 'two-heroes-selected', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
+      }
+    });
+
+    // Start game
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Place both heroes on the same tile at the same position
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 3, y: 2 } }
+      });
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'vistra', position: { x: 3, y: 3 } }
+      });
+    });
+
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      const quinnToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'quinn');
+      const vistraToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'vistra');
+      expect(quinnToken.position).toEqual({ x: 3, y: 2 });
+      expect(vistraToken.position).toEqual({ x: 3, y: 3 });
+    }).toPass();
+
+    await screenshots.capture(page, 'both-heroes-on-tile', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify both heroes are placed
+        expect(storeState.game.heroTokens.length).toBe(2);
+        
+        // It's Quinn's turn
+        expect(storeState.game.turnState.currentHeroIndex).toBe(0);
+      }
+    });
+
+    // Spawn monster adjacent to Quinn
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setMonsters',
+        payload: [{
+          monsterId: 'kobold',
+          instanceId: 'kobold-multi-hero',
+          position: { x: 3, y: 1 }, // Adjacent to Quinn at (3, 2)
+          currentHp: 2,
+          controllerId: 'quinn',
+          tileId: 'start-tile'
+        }]
+      });
+    });
+
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.monsters.length).toBe(1);
+    }).toPass();
+
+    // Reset hero turn actions
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroTurnActions',
+        payload: { actionsTaken: [], canMove: true, canAttack: true }
+      });
+    });
+
+    await screenshots.capture(page, 'monster-adjacent-multi-hero', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        expect(storeState.game.monsters[0].position).toEqual({ x: 3, y: 1 });
+      }
+    });
+
+    // Attack with Righteous Advance
+    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="attack-card-3"]').click();
+    await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Seed random for attack
+    await page.evaluate(() => {
+      (window as any).__originalRandom = Math.random;
+      Math.random = () => 0.75;
+    });
+    
+    await page.locator('[data-testid="attack-target-kobold-multi-hero"]').click();
+    
+    await page.evaluate(() => {
+      if ((window as any).__originalRandom) {
+        Math.random = (window as any).__originalRandom;
+      }
+    });
+
+    // Wait for attack result and dismiss it
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 5000 });
+    
+    await screenshots.capture(page, 'attack-result-multi-hero', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+      }
+    });
+    
+    await page.locator('[data-testid="dismiss-combat-result"]').click();
+    
+    // Hero selection dialog should appear since there are 2 heroes on the tile
+    await page.locator('[data-testid="hero-selection-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
+
+    await screenshots.capture(page, 'hero-selection-dialog', {
+      programmaticCheck: async () => {
+        // Verify hero selection overlay is visible
+        await expect(page.locator('[data-testid="hero-selection-overlay"]')).toBeVisible();
+        
+        // Verify both hero buttons are present
+        await expect(page.locator('[data-testid="select-hero-quinn"]')).toBeVisible();
+        await expect(page.locator('[data-testid="select-hero-vistra"]')).toBeVisible();
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify pendingMoveAfterAttack has both heroes available
+        expect(storeState.game.pendingMoveAfterAttack).not.toBeNull();
+        expect(storeState.game.pendingMoveAfterAttack.availableHeroes).toContain('quinn');
+        expect(storeState.game.pendingMoveAfterAttack.availableHeroes).toContain('vistra');
+        expect(storeState.game.pendingMoveAfterAttack.selectedHeroId).toBeNull();
+      }
+    });
+
+    // Select Vistra to move
+    await page.locator('[data-testid="select-hero-vistra"]').click();
+    
+    // Movement UI should appear for Vistra
+    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
+
+    await screenshots.capture(page, 'vistra-selected-movement-ui', {
+      programmaticCheck: async () => {
+        // Verify movement overlay is visible
+        await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
+        
+        // Verify hero selection dialog is gone
+        await expect(page.locator('[data-testid="hero-selection-overlay"]')).not.toBeVisible();
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify Vistra was selected
+        expect(storeState.game.pendingMoveAfterAttack.selectedHeroId).toBe('vistra');
+      }
+    });
+
+    // Move Vistra - try a closer square first
+    const targetSquare = page.locator('[data-testid="move-square"][data-position-x="3"][data-position-y="4"]');
+    await expect(targetSquare).toBeVisible({ timeout: 5000 });
+    await targetSquare.click();
+    
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      const vistraToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'vistra');
+      expect(vistraToken.position).toEqual({ x: 3, y: 4 });
+    }).toPass();
+
+    await screenshots.capture(page, 'vistra-moved-after-attack', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify Vistra moved
+        const vistraToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'vistra');
+        expect(vistraToken.position).toEqual({ x: 3, y: 4 });
+        
+        // Verify Quinn didn't move
+        const quinnToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'quinn');
+        expect(quinnToken.position).toEqual({ x: 3, y: 2 });
+      }
+    });
+  });
 });
