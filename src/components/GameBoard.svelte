@@ -1662,6 +1662,18 @@
 
       <!-- Board controls -->
       <div class="board-controls">
+        <!-- Active Monsters Display (all controlled monsters) -->
+        {#if monsters.filter(m => m.controllerId).length > 0}
+          <div class="active-monsters-panel" data-testid="active-monsters-panel">
+            {#each monsters.filter(m => m.controllerId) as monster (monster.instanceId)}
+              <MonsterCardMini 
+                {monster}
+                isActivating={activatingMonsterId === monster.instanceId}
+              />
+            {/each}
+          </div>
+        {/if}
+        
         <!-- Objective Display -->
         <div class="objective-display" data-testid="objective-display">
           <span class="objective-label">
@@ -2248,12 +2260,19 @@
   .board-controls {
     position: absolute;
     bottom: 0.5rem;
-    right: 10rem;
+    right: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-end;
-    z-index: 10;
+  }
+
+  /* Active monsters panel at top of board controls */
+  .active-monsters-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 200px;
   }
 
   /* Objective display */
