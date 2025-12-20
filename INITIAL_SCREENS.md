@@ -2,6 +2,12 @@
 
 This document specifies the barebones startup flow for the Wrath of Ashardalon web implementation.
 
+**For detailed UX design documentation:**
+- [**lobby-ux.md**](lobby-ux.md) - Complete character selection screen design and interactions
+- [**gameplay-ux.md**](gameplay-ux.md) - Complete game board screen design and interactions
+
+---
+
 ## Implementation Status
 
 ✅ **IMPLEMENTED** - See the implementation in:
@@ -36,6 +42,8 @@ This document specifies the barebones startup flow for the Wrath of Ashardalon w
 
 ## Screen 1: Character Selection
 
+**For complete UX design details, see [lobby-ux.md](lobby-ux.md).**
+
 ### Purpose
 
 Allow players to choose which hero characters will participate in the adventure.
@@ -65,6 +73,8 @@ When "Start Game" is clicked:
 ---
 
 ## Screen 2: Game Board (Start Tile View)
+
+**For complete UX design details, see [gameplay-ux.md](gameplay-ux.md).**
 
 ### Purpose
 

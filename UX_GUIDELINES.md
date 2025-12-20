@@ -192,123 +192,86 @@ When cards, panels, or dialogs appear:
 
 ## Character Selection Screen
 
-### Current Behavior
+**For detailed information about the character selection (lobby) screen, see [lobby-ux.md](lobby-ux.md).**
 
-The current implementation displays hero cards in a centered grid with a title, selection count, and start button.
+### Summary
 
-### Tabletop Adaptation
+The character selection screen is designed for tabletop displays where players select heroes from their physical position at the table. Key features:
 
-#### Hero Selection Zones
+- Hero cards displayed at all four edges (bottom, top, left, right)
+- Each edge rotated to face the player sitting there
+- Player selects hero from their edge, establishing their edge assignment
+- Power card selection required before starting game
+- Start button enabled when all selected heroes have power cards chosen
 
-Instead of a single centered grid:
+### Tabletop Adaptation Principles
 
 - Display hero selection options along each edge of the screen
-- Each edge should have its own set of hero selection icons
-- Heroes are shown facing inward toward the center (upright for each edge's player)
-
-#### Player Join Flow
-
-1. The screen shows available hero icons along all four edges
-2. A player taps a hero from their edge of the table
-3. That hero becomes selected AND the player is assigned to that edge
-4. The hero icon visually indicates selection and player ownership
-5. Selected heroes for each edge are displayed in that edge's UI zone
-
-#### Start Game Trigger
-
-- The "Start Game" button should be centrally positioned or replicated at each edge
-- Alternatively, all players must confirm ready before the game starts
-- The button/confirmation UI must be accessible from all orientations
-
-### Layout Behavior
-
-- No scrolling should be required
-- All 5 hero options should be visible at each edge
-- If space is limited, heroes may be shown in a compact row along each edge
-- The center of the screen may display adventure information or remain empty
+- Heroes shown facing inward toward the center (upright for each edge's player)
+- Player taps hero from their edge → assigned to that edge
+- All 5 hero options visible at each edge
+- No scrolling required
+- Center displays game title and instructions
 
 ---
 
 ## Game Board Screen
 
-### Current Behavior
+**For detailed information about the gameplay screen, see [gameplay-ux.md](gameplay-ux.md).**
 
-The current implementation shows a header bar (top), the game board (center), and turn indicator (bottom).
+### Summary
 
-### Tabletop Adaptation
+The game board screen is the main gameplay interface with three primary regions:
 
-#### Header Removal
+1. **Center**: Dungeon map with tiles, heroes, monsters, and markers
+2. **Edges**: Player dashboards showing hero status, power cards, and turn information
+3. **Right Side**: Game state panel with objective, XP, healing surges, and controls
 
-- The traditional top-aligned header is not suitable for tabletop
-- Game title and global controls should be positioned in corners or centrally
-- The "Return to Character Select" button should be accessible but not prominent
+### Tabletop Adaptation Principles
 
 #### Map Display
 
-- The dungeon map occupies the center of the screen
-- The map scales automatically to fit within the available central area
-- Reserved edge zones are not overlapped by the map
-- As tiles are added, the map smoothly scales down and repositions
+- Dungeon map occupies center of screen
+- Auto-scales to fit as tiles are added
+- Reserved edge zones not overlapped by map
+- Smooth scaling animations (300-400ms)
 
 #### Hero Tokens on Map
 
-- Hero tokens are positioned on the map in map-relative coordinates
-- Token images may remain in map orientation (not rotated per player)
-- Token name labels below each token should use a consistent approach for multi-directional readability:
-  - **Option A**: Labels always face the bottom edge with no rotation (simple but favors the bottom-edge player)
-  - **Option B**: Labels are duplicated on multiple sides of the token, each facing outward
-  - **Option C**: Labels use significantly larger font sizes with no rotation, prioritizing distance readability over orientation; text remains horizontal but is sized large enough to read from any edge
-  - The chosen approach should be consistent throughout the application
+- Positioned on map in map-relative coordinates
+- Token name labels use horizontal orientation (Option C: large fonts for distance readability)
+- Hero tokens glow when active
 
 #### Player UI Zones
 
-Each player's edge zone displays:
-
-- Their hero portrait (rotated to face them)
-- Their hero name (rotated to face them)
-- Current HP and stats (rotated to face them)
-- Active turn indicator when it's their turn
-- Power cards and action options during their turn
+Each player's edge zone displays (rotated to face them):
+- Hero portrait and name
+- Current HP and status effects
+- Active turn phase indicator
+- Power cards and treasure items
 
 ---
 
 ## Turn Indicator and Phase Display
 
-### Current Behavior
+**For detailed information about turn phases, see [gameplay-ux.md](gameplay-ux.md#turn-phases-and-indicators).**
 
-The current implementation shows turn number, active hero name, and current phase in a bottom bar.
+### Summary
 
-### Tabletop Adaptation
+Turn indicator positioned in active player's edge zone showing:
+- Current phase (Hero Phase, Exploration Phase, Villain Phase)
+- Hero name and turn number
+- Phase-specific actions available
 
-#### Active Player Indication
-
-The turn indicator should:
-
-- Be positioned in the active player's edge zone
-- Be clearly visible to all players
-- Use visual effects (glow, highlight, animation) to draw attention
-- Display the current phase (Hero Phase, Exploration Phase, Villain Phase)
-
-#### Phase Display
-
-The current phase should be shown:
-
-- Primarily in the active player's zone (oriented toward them)
-- Optionally mirrored in a central position visible to all
-
-#### Turn Transitions
-
-When the turn passes to the next player:
-
-- The indicator animates from the previous player's edge to the new player's edge
-- The new active player's zone may expand or highlight
-- The previous player's zone returns to inactive styling
+Turn transitions animate smoothly from one player's edge to the next with visual effects (glow, highlight).
 
 ---
 
 ## Future UI Components
 
-This section defines tabletop guidelines for UI components not yet implemented.
+**Note**: Many previously "future" components are now implemented. See [gameplay-ux.md](gameplay-ux.md) for detailed documentation of implemented features.
+
+This section defines tabletop guidelines for UI components not yet implemented or under development.
 
 ### Hero Dashboard / Stats Panel
 
