@@ -31,6 +31,20 @@ This test validates that the movement portion can be skipped:
 6. Movement effect is simply skipped
 7. Game continues normally (player can still move if this was their first action)
 
+### Test 3: Multiple Heroes on Tile - Select Which Hero to Move
+
+This test validates hero selection when multiple heroes are on the same tile:
+1. Two heroes (Quinn and Vistra) selected and both placed on the same tile
+2. Quinn attacks with Righteous Advance
+3. Attack completes successfully
+4. **Hero selection dialog appears** showing both heroes
+5. Player selects Vistra to move
+6. Movement UI appears for Vistra
+7. Vistra moves 2 squares
+8. Quinn stays in original position (not moved)
+
+**Key Feature**: When only one hero is on the tile, this dialog is skipped and that hero is auto-selected.
+
 ## User Story
 
 > **As a player using Righteous Advance,**  
@@ -212,6 +226,110 @@ This test validates that the movement portion can be skipped:
 
 ---
 
+### Test 3: Multiple Heroes on Tile
+
+#### Step 1: Two Heroes Selected
+![Screenshot 000](048-attack-then-move.spec.ts-snapshots/000-two-heroes-selected-chromium-linux.png)
+
+**What's verified:**
+- Quinn (Cleric) is selected
+- Vistra (Fighter) is also selected
+- Both heroes have power cards selected
+- Start Game button is enabled
+
+**Programmatic checks:**
+- Both Quinn and Vistra have `selected` class
+- Start game button is enabled
+
+---
+
+#### Step 2: Both Heroes on Same Tile
+![Screenshot 001](048-attack-then-move.spec.ts-snapshots/001-both-heroes-on-tile-chromium-linux.png)
+
+**What's verified:**
+- Quinn is at position (3, 2)
+- Vistra is at position (3, 3)
+- Both heroes are on the start tile
+- It's Quinn's turn
+
+**Programmatic checks:**
+- Both heroes positioned on start tile
+- Current hero index is 0 (Quinn's turn)
+
+---
+
+#### Step 3: Monster Adjacent to Quinn
+![Screenshot 002](048-attack-then-move.spec.ts-snapshots/002-monster-adjacent-multi-hero-chromium-linux.png)
+
+**What's verified:**
+- Monster spawned at (3, 1) - adjacent to Quinn
+- Monster is ready for combat
+
+**Programmatic checks:**
+- Monster position verified at (3, 1)
+
+---
+
+#### Step 4: Attack Result
+![Screenshot 003](048-attack-then-move.spec.ts-snapshots/003-attack-result-multi-hero-chromium-linux.png)
+
+**What's verified:**
+- Quinn attacks with Righteous Advance
+- Attack result is displayed
+- Combat result shows hit/miss status
+
+**Programmatic checks:**
+- Combat result visible
+- Attack name is "Righteous Advance"
+
+---
+
+#### Step 5: Hero Selection Dialog
+![Screenshot 004](048-attack-then-move.spec.ts-snapshots/004-hero-selection-dialog-chromium-linux.png)
+
+**What's verified:**
+- After dismissing attack result, hero selection dialog appears
+- Both Quinn and Vistra are shown as options
+- Each hero has portrait and name
+- "Skip Movement" button is available
+
+**Programmatic checks:**
+- Hero selection overlay visible
+- Both select-hero buttons present (quinn and vistra)
+- pendingMoveAfterAttack has both heroes in availableHeroes array
+- selectedHeroId is null (no selection yet)
+
+---
+
+#### Step 6: Vistra Selected - Movement UI Appears
+![Screenshot 005](048-attack-then-move.spec.ts-snapshots/005-vistra-selected-movement-ui-chromium-linux.png)
+
+**What's verified:**
+- After selecting Vistra, hero selection dialog disappears
+- Movement overlay appears for Vistra
+- Valid move squares are shown
+
+**Programmatic checks:**
+- Movement overlay visible
+- Hero selection dialog not visible
+- pendingMoveAfterAttack.selectedHeroId is 'vistra'
+
+---
+
+#### Step 7: Vistra Moved After Attack
+![Screenshot 006](048-attack-then-move.spec.ts-snapshots/006-vistra-moved-after-attack-chromium-linux.png)
+
+**What's verified:**
+- Vistra moved from (3, 3) to (3, 4)
+- Quinn stayed at original position (3, 2)
+- Movement was applied to the selected hero only
+
+**Programmatic checks:**
+- Vistra position is (3, 4)
+- Quinn position still (3, 2)
+
+---
+
 ## Acceptance Criteria
 
 - [x] Righteous Advance card (ID: 3) identified as attack-then-move
@@ -224,12 +342,17 @@ This test validates that the movement portion can be skipped:
 - [x] Movement can be cancelled without undoing attack
 - [x] After cancel, pendingMoveAfterAttack state is cleared
 - [x] Player can still move normally after canceling if it was their first action
-- [x] All edge cases handled (hit vs miss, first vs second action)
+- [x] **When multiple heroes on tile: Hero selection dialog appears**
+- [x] **Hero selection shows all heroes on the same tile with portraits**
+- [x] **Selected hero is the one that moves (not current hero)**
+- [x] **When only one hero on tile: Auto-selected (no dialog shown)**
+- [x] All edge cases handled (hit vs miss, first vs second action, single vs multi hero)
 
 ## Manual Verification Checklist
 
 When reviewing these screenshots, verify:
 
+**Test 1: Basic Flow**
 - [x] Hero positioned correctly at (3, 2) (screenshot 001)
 - [x] Monster spawned adjacent at (3, 3) (screenshot 002)
 - [x] Righteous Advance available in attack panel (screenshot 003)
@@ -237,8 +360,18 @@ When reviewing these screenshots, verify:
 - [x] Attack result displayed (screenshot 005)
 - [x] Movement UI appears AFTER attack (screenshot 006)
 - [x] Hero can move up to 2 squares (screenshot 007)
+
+**Test 2: Cancel Flow**
 - [x] Cancel button visible (screenshot 002 of cancel test)
 - [x] After cancel, no movement occurred (screenshot 003 of cancel test)
+
+**Test 3: Multi-Hero Flow**
+- [x] Two heroes selected (screenshot 000 of multi-hero test)
+- [x] Both heroes on same tile (screenshot 001 of multi-hero test)
+- [x] Hero selection dialog appears (screenshot 004 of multi-hero test)
+- [x] Both heroes shown with portraits (screenshot 004 of multi-hero test)
+- [x] Selected hero (Vistra) moved (screenshot 006 of multi-hero test)
+- [x] Other hero (Quinn) didn't move (screenshot 006 of multi-hero test)
 
 ## Implementation Notes
 
@@ -276,10 +409,10 @@ When reviewing these screenshots, verify:
 
 ## Test Statistics
 
-- **Total Screenshots**: 11 (8 for main flow, 3 for cancel flow)
-- **Test Duration**: ~11 seconds
-- **Tests Passing**: 2/2
-- **Coverage**: Complete attack-then-move flow with Righteous Advance
+- **Total Screenshots**: 18 (8 for main flow, 4 for cancel flow, 7 for multi-hero flow)
+- **Test Duration**: ~13 seconds
+- **Tests Passing**: 3/3
+- **Coverage**: Complete attack-then-move flow with Righteous Advance including multi-hero selection
 
 ## Key Difference: Attack-Then-Move vs Move-Then-Attack
 
@@ -287,9 +420,10 @@ When reviewing these screenshots, verify:
 |---------|------------------------|--------------|
 | **When Movement Happens** | AFTER attack | BEFORE attack |
 | **Trigger** | Hit or Miss effect | Movement-before-attack card |
-| **Who Moves** | Ally on same tile | The attacking hero |
+| **Who Moves** | Ally on same tile (player selects if multiple) | The attacking hero |
 | **Distance** | 2 squares (fixed) | Up to hero's speed |
 | **Cancel Effect** | Skips movement, keeps attack | Undoes movement, cancels attack |
 | **State Tracker** | `pendingMoveAfterAttack` | `pendingMoveAttack` |
+| **Hero Selection** | Shows dialog when 2+ heroes on tile | N/A |
 
-The Righteous Advance test validates that "Hit or Miss" effects properly trigger AFTER the attack completes, which is fundamentally different from movement-before-attack cards like Charge.
+The Righteous Advance test validates that "Hit or Miss" effects properly trigger AFTER the attack completes, which is fundamentally different from movement-before-attack cards like Charge. Additionally, it validates the hero selection mechanism when multiple heroes are present on the same tile.
