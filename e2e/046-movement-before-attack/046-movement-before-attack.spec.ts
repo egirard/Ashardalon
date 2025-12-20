@@ -317,17 +317,8 @@ test.describe('046 - Movement Before Attack', () => {
     });
   });
 
-  test.skip('Cancel Charge - undo movement and return to normal state', async ({ page }) => {
+  test('Cancel Charge - undo movement and return to normal state', async ({ page }) => {
     const screenshots = createScreenshotHelper();
-    
-    // Capture console logs
-    const consoleLogs: string[] = [];
-    page.on('console', msg => {
-      const text = msg.text();
-      if (text.includes('DEBUG') || text.includes('cancelMoveAttack')) {
-        consoleLogs.push(text);
-      }
-    });
 
     // SETUP: Same as first test - get to the point where Charge is initiated
     await page.goto('/');
@@ -449,13 +440,10 @@ test.describe('046 - Movement Before Attack', () => {
 
     await cancelButton.click();
 
-    // Wait for movement overlay to disappear
-    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'hidden', timeout: 5000 });
-
-    console.log('=== Console logs from browser ===');
-    consoleLogs.forEach(log => console.log(log));
-    console.log('=== End console logs ===');
-
+    // After cancel, hero should be back at starting position
+    // but movement overlay should REMAIN visible because player can still move
+    // (canMove is still true, so they can move normally after canceling the charge)
+    
     // Wait for cancel to take effect
     await expect(async () => {
       const storeState = await page.evaluate(() => {
@@ -465,8 +453,6 @@ test.describe('046 - Movement Before Attack', () => {
       expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
       // pendingMoveAttack should be cleared
       expect(storeState.game.pendingMoveAttack).toBeNull();
-      // showingMovement should be false
-      expect(storeState.game.showingMovement).toBe(false);
     }).toPass();
 
     await screenshots.capture(page, 'cancel-complete-hero-restored', {
@@ -481,8 +467,9 @@ test.describe('046 - Movement Before Attack', () => {
         // Verify pendingMoveAttack cleared
         expect(storeState.game.pendingMoveAttack).toBeNull();
         
-        // Verify movement overlay hidden
-        expect(storeState.game.showingMovement).toBe(false);
+        // Movement overlay should REMAIN visible because player can still move
+        expect(storeState.game.showingMovement).toBe(true);
+        await expect(page.locator('[data-testid="movement-overlay"]')).toBeVisible();
       }
     });
   });
