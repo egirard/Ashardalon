@@ -1420,7 +1420,7 @@ export const gameSlice = createSlice({
             const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
             if (activeHeroToken) {
               // Draw a monster
-              const { monsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+              const { monster: monsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
               state.monsterDeck = updatedMonsterDeck;
               
               if (monsterId) {
