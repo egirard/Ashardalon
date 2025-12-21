@@ -1768,12 +1768,39 @@ export const gameSlice = createSlice({
         state.leveledUpHeroId = currentHeroId;
       }
       
-      // Check if this card has an "ally-move" effect (Hit or Miss)
-      // If so, set up pendingMoveAfterAttack state
+      // Check if this card has hit-or-miss effects
       if (cardId) {
         const powerCard = POWER_CARDS.find(c => c.id === cardId);
         if (powerCard) {
           const parsedAction = parseActionCard(powerCard);
+          
+          // Apply hit-or-miss healing effect (e.g., Righteous Smite)
+          const healEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'heal');
+          if (healEffect && healEffect.amount) {
+            // Find all heroes on the same tile as the attacker
+            const attackerToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+            
+            if (attackerToken) {
+              // Find the tile the attacker is on
+              const attackerTileId = getTileOrSubTileId(attackerToken.position, state.dungeon);
+              
+              // Heal all heroes on the same tile/sub-tile
+              for (const token of state.heroTokens) {
+                const heroTileId = getTileOrSubTileId(token.position, state.dungeon);
+                if (heroTileId && heroTileId === attackerTileId) {
+                  const heroHpIndex = state.heroHp.findIndex(h => h.heroId === token.heroId);
+                  if (heroHpIndex !== -1) {
+                    const heroHp = state.heroHp[heroHpIndex];
+                    // Heal the hero, capped at max HP
+                    heroHp.currentHp = Math.min(heroHp.maxHp, heroHp.currentHp + healEffect.amount);
+                  }
+                }
+              }
+            }
+          }
+          
+          // Check if this card has an "ally-move" effect (Hit or Miss)
+          // If so, set up pendingMoveAfterAttack state
           const allyMoveEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'ally-move');
           
           if (allyMoveEffect && allyMoveEffect.amount) {
