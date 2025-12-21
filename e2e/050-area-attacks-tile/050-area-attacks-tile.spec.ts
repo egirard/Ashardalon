@@ -148,12 +148,13 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       }
     });
     
-    // STEP 5: Seed random for deterministic combat and attack first monster
-    // Note: This seeding pattern is consistent with other tests in the repository
-    // and ensures reproducible test results
+    // STEP 5: Seed random for deterministic combat
+    // Note: This seeding pattern is consistent with other tests in the repository (e.g., 044-multi-target-attacks)
+    // A roll of 0.75 on d20 produces: Math.floor(0.75 * 20) + 1 = 15 + 1 = 16
+    // With typical attack bonus of +5, this gives 21 total, ensuring a hit against AC 13 kobolds
     await page.evaluate(() => {
       (window as any).__originalRandom = Math.random;
-      Math.random = () => 0.75; // Will roll ~16
+      Math.random = () => 0.75; // Produces roll of 16 on d20
     });
     
     // Click the first available target (this should trigger attack on all monsters on that tile)
@@ -182,16 +183,23 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     await verifyCombatResult('first-monster-result', 'Hurled Breath');
     
     // STEP 6: Check for additional combat results (area attacks show results sequentially)
-    // Area attacks can target multiple monsters, so we check for additional results
+    // We spawned 3 monsters, so we expect up to 2 more results after the first
+    let additionalResultCount = 0;
+    const maxExpectedResults = 2; // Expecting 2 more results (total 3 for 3 monsters)
     const additionalResults = ['second-monster-result', 'third-monster-result'];
+    
     for (const resultName of additionalResults) {
       const resultAppears = await page.locator('[data-testid="combat-result"]').isVisible({ timeout: 3000 }).catch(() => false);
       if (resultAppears) {
         await verifyCombatResult(resultName, 'Hurled Breath');
+        additionalResultCount++;
       } else {
         break; // No more results
       }
     }
+    
+    // Verify we got results for multiple monsters (at least 1 additional result after the first)
+    expect(additionalResultCount).toBeGreaterThanOrEqual(1);
     
     // Final check: ensure all results are dismissed
     await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
@@ -334,29 +342,30 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       }
     });
     
-    // STEP 3: Programmatically verify Shock Sphere card definition
-    // Note: This E2E test verifies the card exists and the scenario is set up correctly.
-    // Detailed parsing logic (maxTargets: -1) is verified in unit tests:
-    // src/store/actionCardParser.test.ts - line 162-172 "Shock Sphere (attack all on tile)"
-    const shockSphereInfo = await page.evaluate(() => {
-      return {
-        id: 46,
-        name: 'Shock Sphere',
-        verified: true,
-        note: 'Shock Sphere is defined in src/store/powerCards.ts as a Wizard daily power that attacks each Monster on a tile'
-      };
-    });
+    // STEP 3: Verify Shock Sphere scenario is properly set up
+    // Note: This test validates that the game state supports area attacks.
+    // The actual Shock Sphere card definition exists in src/store/powerCards.ts (line 117)
+    // and its parsing is verified in unit tests at src/store/actionCardParser.test.ts (lines 162-172)
+    // This E2E test focuses on verifying the user-facing scenario is correct.
     
     await screenshots.capture(page, 'shock-sphere-card-verification', {
       programmaticCheck: async () => {
-        // Verify Shock Sphere card exists and is properly configured
-        expect(shockSphereInfo.id).toBe(46);
-        expect(shockSphereInfo.name).toBe('Shock Sphere');
-        expect(shockSphereInfo.verified).toBe(true);
+        const state = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
         
-        // The important verification is that the test scenario is set up correctly
-        // The actual card parsing is tested in unit tests (actionCardParser.test.ts)
-        // This E2E test focuses on the user-facing behavior
+        // Verify scenario: 3 monsters on same tile within range
+        expect(state.game.monsters.length).toBe(3);
+        expect(state.game.monsters[0].tileId).toBe('start-tile');
+        expect(state.game.monsters[1].tileId).toBe('start-tile');
+        expect(state.game.monsters[2].tileId).toBe('start-tile');
+        
+        // Verify hero position supports 2-tile range attack
+        const heroPos = state.game.heroTokens[0].position;
+        expect(heroPos).toBeDefined();
+        
+        // This validates the scenario is correctly set up for testing area attacks
+        // like Shock Sphere, which targets all monsters on a tile within 2 tiles
       }
     });
     
