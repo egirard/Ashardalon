@@ -323,7 +323,8 @@ function parseHitOrMissEffects(rule: string): HitOrMissEffect[] {
   const effects: HitOrMissEffect[] = [];
 
   // Check for "hit or miss" patterns
-  const hitOrMissMatch = rule.match(/hit\s+or\s+miss[:\s]*([^.]+)/);
+  // Capture everything from "Hit or Miss:" until the end of the rule or a newline
+  const hitOrMissMatch = rule.match(/hit\s+or\s+miss[:\s]*(.+?)(?:\n|$)/s);
   if (hitOrMissMatch) {
     const effectText = hitOrMissMatch[1];
     

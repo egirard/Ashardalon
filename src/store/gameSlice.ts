@@ -268,6 +268,8 @@ export interface GameState {
   poisonedDamageNotification: { heroId: string; damage: number } | null;
   /** Poison recovery notification: hero ID, roll result, and whether recovered (null if no notification) */
   poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null;
+  /** Cleric's Shield target: hero ID receiving +2 AC bonus (null if no bonus active) */
+  clericsShieldTarget: string | null;
 }
 
 /**
@@ -460,6 +462,7 @@ const initialState: GameState = {
   pendingMonsterDisplayId: null,
   poisonedDamageNotification: null,
   poisonRecoveryNotification: null,
+  clericsShieldTarget: null,
 };
 
 /**
@@ -1833,6 +1836,39 @@ export const gameSlice = createSlice({
               availableHeroes,
             };
           }
+          
+          // Check if this card has an "ac-bonus" effect (Hit or Miss)
+          // Currently only Cleric's Shield (ID 2) has this effect
+          const acBonusEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'ac-bonus');
+          
+          if (acBonusEffect && acBonusEffect.amount && cardId === 2) {
+            // Cleric's Shield: +2 AC to one hero on the same tile
+            // Effect persists until this power is used again
+            
+            // For now, automatically apply to the first hero on the tile (usually the caster)
+            // In full implementation, this would show a hero selection UI
+            const attackerToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+            
+            if (attackerToken) {
+              // Find the tile the attacker is on
+              const attackerTileId = getTileOrSubTileId(attackerToken.position, state.dungeon);
+              
+              // Find all heroes on the same tile/sub-tile
+              const heroesOnTile: string[] = [];
+              for (const token of state.heroTokens) {
+                const heroTileId = getTileOrSubTileId(token.position, state.dungeon);
+                if (heroTileId && heroTileId === attackerTileId) {
+                  heroesOnTile.push(token.heroId);
+                }
+              }
+              
+              // Apply bonus to first hero on tile (in practice, usually the caster themselves)
+              // The bonus persists until Cleric's Shield is used again
+              if (heroesOnTile.length > 0) {
+                state.clericsShieldTarget = heroesOnTile[0];
+              }
+            }
+          }
         }
       }
       
@@ -2159,7 +2195,14 @@ export const gameSlice = createSlice({
       for (const token of state.heroTokens) {
         const hero = AVAILABLE_HEROES.find(h => h.id === token.heroId);
         if (hero) {
-          heroAcMap[token.heroId] = calculateTotalAC(hero.ac, state.heroInventories[token.heroId]);
+          let totalAC = calculateTotalAC(hero.ac, state.heroInventories[token.heroId]);
+          
+          // Apply Cleric's Shield bonus (+2 AC) if this hero is the target
+          if (state.clericsShieldTarget === token.heroId) {
+            totalAC += 2;
+          }
+          
+          heroAcMap[token.heroId] = totalAC;
         }
       }
 
