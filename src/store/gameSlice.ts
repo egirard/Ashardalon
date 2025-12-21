@@ -1776,7 +1776,7 @@ export const gameSlice = createSlice({
           
           // Apply hit-or-miss healing effect (e.g., Righteous Smite)
           const healEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'heal');
-          if (healEffect && healEffect.amount) {
+          if (healEffect && healEffect.amount !== undefined && healEffect.amount !== null) {
             // Find all heroes on the same tile as the attacker
             const attackerToken = state.heroTokens.find(t => t.heroId === currentHeroId);
             
