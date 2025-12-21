@@ -175,6 +175,9 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
           await expect(page.locator('[data-testid="attacker-info"]')).toContainText(attackName);
         }
       });
+      
+      // Wait for dismiss button to be clickable
+      await page.locator('[data-testid="dismiss-combat-result"]').waitFor({ state: 'visible' });
       await page.locator('[data-testid="dismiss-combat-result"]').click();
     };
     
@@ -184,12 +187,15 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     
     // STEP 6: Check for additional combat results (area attacks show results sequentially)
     // We spawned 3 monsters, so we expect up to 2 more results after the first
+    const COMBAT_RESULT_TIMEOUT_MS = 3000; // Time to wait for additional combat results
     let additionalResultCount = 0;
     const maxExpectedResults = 2; // Expecting 2 more results (total 3 for 3 monsters)
     const additionalResults = ['second-monster-result', 'third-monster-result'];
     
     for (const resultName of additionalResults) {
-      const resultAppears = await page.locator('[data-testid="combat-result"]').isVisible({ timeout: 3000 }).catch(() => false);
+      const resultAppears = await page.locator('[data-testid="combat-result"]')
+        .isVisible({ timeout: COMBAT_RESULT_TIMEOUT_MS })
+        .catch(() => false);
       if (resultAppears) {
         await verifyCombatResult(resultName, 'Hurled Breath');
         additionalResultCount++;
