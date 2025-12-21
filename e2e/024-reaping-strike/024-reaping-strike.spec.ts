@@ -168,6 +168,8 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
         if (monster) {
           // Monster still alive - verify multi-attack panel shows progress
           expect(storeState.game.multiAttackState?.attacksCompleted).toBe(1);
+          expect(storeState.game.multiAttackState?.targetInstanceId).toBe('cultist-test-1');
+          expect(storeState.game.multiAttackState?.sameTarget).toBe(true);
           await expect(page.locator('[data-testid="multi-attack-info"]')).toBeVisible();
           // Verify cancel button is visible
           await expect(page.locator('[data-testid="cancel-multi-attack"]')).toBeVisible();
@@ -178,9 +180,136 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
       }
     });
 
-    // NOTE: The test demonstrates up to the first attack and the cancel button.
-    // The second attack functionality has been manually verified and works correctly.
-    // See README.md for screenshots of the complete multi-attack flow including the second attack.
+    // STEP 6: Execute the second attack
+    // First, verify the monster is still alive and multi-attack is active
+    const storeBeforeSecondAttack = await page.evaluate(() => {
+      return (window as any).__REDUX_STORE__.getState();
+    });
+    const monsterBeforeSecondAttack = storeBeforeSecondAttack.game.monsters.find((m: any) => m.instanceId === 'cultist-test-1');
+    
+    if (!monsterBeforeSecondAttack) {
+      throw new Error('Test setup error: Monster should still be alive after first attack');
+    }
+
+    // Verify monster has 1 HP remaining (started with 2, took 1 damage)
+    expect(monsterBeforeSecondAttack.currentHp).toBe(1);
+
+    // Log the game state for debugging
+    console.log('Before second attack:');
+    console.log('  - multiAttackState:', JSON.stringify(storeBeforeSecondAttack.game.multiAttackState));
+    console.log('  - currentPhase:', storeBeforeSecondAttack.game.turnState.currentPhase);
+    console.log('  - canAttack:', storeBeforeSecondAttack.game.heroTurnActions.canAttack);
+
+    // Take a debug screenshot to see the state
+    await page.screenshot({ path: '/home/runner/work/_temp/debug-before-second-attack.png', fullPage: true });
+
+    // Log what's visible on the page
+    const isAttackButtonVisible = await page.locator('[data-testid="attack-target-cultist-test-1"]').isVisible();
+    console.log('Attack button visible before second attack:', isAttackButtonVisible);
+
+    const multiAttackInfoVisible = await page.locator('[data-testid="multi-attack-info"]').isVisible();
+    console.log('Multi-attack info visible:', multiAttackInfoVisible);
+
+    // Seed Math.random again for the second attack
+    await page.evaluate(() => {
+      (window as any).__originalRandom = Math.random;
+      Math.random = () => 0.8; // Will give roll = floor(0.8 * 20) + 1 = 17
+    });
+
+    // Wait for the attack button to be available
+    await page.locator('[data-testid="attack-target-cultist-test-1"]').waitFor({ state: 'visible' });
+
+    console.log('About to click second attack button');
+
+    // Click the attack button again to execute the second attack
+    await page.locator('[data-testid="attack-target-cultist-test-1"]').click();
+
+    console.log('Clicked second attack button, waiting for combat result');
+
+    // Take another debug screenshot after clicking
+    await page.screenshot({ path: '/home/runner/work/_temp/debug-after-second-attack-click.png', fullPage: true });
+
+    // Restore Math.random
+    await page.evaluate(() => {
+      if ((window as any).__originalRandom) {
+        Math.random = (window as any).__originalRandom;
+      }
+    });
+
+    // Wait for the second combat result
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'reaping-strike-second-attack-result', {
+      programmaticCheck: async () => {
+        // Verify combat result shows correct stats for second attack
+        await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+        await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('17');
+        await expect(page.locator('[data-testid="attack-bonus"]')).toHaveText('4');
+        
+        // Verify the combat result still shows Reaping Strike name
+        await expect(page.locator('[data-testid="attacker-info"]')).toContainText('Reaping Strike');
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Before dismissing the second attack result, attacksCompleted should still be 1
+        // It will be incremented to 2 when we dismiss the result
+        expect(storeState.game.multiAttackState?.attacksCompleted).toBe(1);
+        expect(storeState.game.multiAttackState?.totalAttacks).toBe(2);
+      }
+    });
+
+    // STEP 7: Dismiss second attack result and verify cleanup
+    // Listen for console errors
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        console.log('BROWSER ERROR:', msg.text());
+      }
+    });
+    
+    page.on('pageerror', error => {
+      console.log('PAGE ERROR:', error.message);
+    });
+    
+    // Click the overlay to dismiss the combat result (more reliable than button click)
+    console.log('About to dismiss combat result...');
+    await page.locator('[data-testid="combat-result-overlay"]').click();
+    console.log('Clicked combat result overlay');
+    
+    // Wait a moment for any errors to surface
+    await page.waitForTimeout(500);
+    console.log('Waited 500ms after click');
+
+    // Wait for combat result to be dismissed
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'hidden' });
+
+    // The defeat notification should now be visible (monster was defeated)
+    // Wait for it and dismiss it
+    await page.locator('[data-testid="defeat-notification"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="dismiss-defeat"]').click();
+    await page.locator('[data-testid="defeat-notification"]').waitFor({ state: 'hidden' });
+
+    await screenshots.capture(page, 'after-second-attack-complete', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify multi-attack state is cleared after both attacks
+        expect(storeState.game.multiAttackState).toBeNull();
+        
+        // Verify the monster was defeated (2 HP - 1 - 1 = 0)
+        const monster = storeState.game.monsters.find((m: any) => m.instanceId === 'cultist-test-1');
+        expect(monster).toBeUndefined();
+        
+        // Verify the power card attack panel is back to normal state
+        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        
+        // Verify multi-attack info is no longer displayed
+        await expect(page.locator('[data-testid="multi-attack-info"]')).not.toBeVisible();
+      }
+    });
   });
 
   test('Reaping Strike shows parsed action description', async ({ page }) => {

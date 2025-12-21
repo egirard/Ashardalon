@@ -1809,8 +1809,11 @@ export const gameSlice = createSlice({
         }
       }
       
-      // Track the attack action
-      state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
+      // Track the attack action (unless we're in a multi-attack sequence)
+      // For multi-attacks, the action is tracked only once when the sequence completes
+      if (!state.multiAttackState) {
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
+      }
     },
     /**
      * Dismiss the attack result display
