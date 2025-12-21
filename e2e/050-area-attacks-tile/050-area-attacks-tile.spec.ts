@@ -149,6 +149,8 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     });
     
     // STEP 5: Seed random for deterministic combat and attack first monster
+    // Note: This seeding pattern is consistent with other tests in the repository
+    // and ensures reproducible test results
     await page.evaluate(() => {
       (window as any).__originalRandom = Math.random;
       Math.random = () => 0.75; // Will roll ~16
@@ -163,52 +165,36 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       }
     });
     
+    // Helper function to verify and dismiss combat result
+    const verifyCombatResult = async (stepName: string, attackName: string) => {
+      await screenshots.capture(page, stepName, {
+        programmaticCheck: async () => {
+          await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+          await expect(page.locator('[data-testid="result-text"]')).toContainText('HIT');
+          await expect(page.locator('[data-testid="attacker-info"]')).toContainText(attackName);
+        }
+      });
+      await page.locator('[data-testid="dismiss-combat-result"]').click();
+    };
+    
     // Wait for first combat result
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
+    await verifyCombatResult('first-monster-result', 'Hurled Breath');
     
-    await screenshots.capture(page, 'first-monster-result', {
-      programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-        await expect(page.locator('[data-testid="result-text"]')).toContainText('HIT');
-        await expect(page.locator('[data-testid="attacker-info"]')).toContainText('Hurled Breath');
+    // STEP 6: Check for additional combat results (area attacks show results sequentially)
+    // Area attacks can target multiple monsters, so we check for additional results
+    const additionalResults = ['second-monster-result', 'third-monster-result'];
+    for (const resultName of additionalResults) {
+      const resultAppears = await page.locator('[data-testid="combat-result"]').isVisible({ timeout: 3000 }).catch(() => false);
+      if (resultAppears) {
+        await verifyCombatResult(resultName, 'Hurled Breath');
+      } else {
+        break; // No more results
       }
-    });
-    
-    // Dismiss first result
-    await page.locator('[data-testid="dismiss-combat-result"]').click();
-    
-    // STEP 6: Wait for second attack result (area attacks show results sequentially)
-    const secondResultAppears = await page.locator('[data-testid="combat-result"]').isVisible({ timeout: 3000 }).catch(() => false);
-    
-    if (secondResultAppears) {
-      await screenshots.capture(page, 'second-monster-result', {
-        programmaticCheck: async () => {
-          await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-          await expect(page.locator('[data-testid="result-text"]')).toContainText('HIT');
-          await expect(page.locator('[data-testid="attacker-info"]')).toContainText('Hurled Breath');
-        }
-      });
-      
-      // Dismiss second result
-      await page.locator('[data-testid="dismiss-combat-result"]').click();
     }
     
-    // STEP 7: Wait for third attack result
-    const thirdResultAppears = await page.locator('[data-testid="combat-result"]').isVisible({ timeout: 3000 }).catch(() => false);
-    
-    if (thirdResultAppears) {
-      await screenshots.capture(page, 'third-monster-result', {
-        programmaticCheck: async () => {
-          await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-          await expect(page.locator('[data-testid="result-text"]')).toContainText('HIT');
-          await expect(page.locator('[data-testid="attacker-info"]')).toContainText('Hurled Breath');
-        }
-      });
-      
-      // Dismiss third result
-      await page.locator('[data-testid="dismiss-combat-result"]').click();
-      await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
-    }
+    // Final check: ensure all results are dismissed
+    await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
     
     await screenshots.capture(page, 'hurled-breath-attack-complete', {
       programmaticCheck: async () => {
@@ -348,13 +334,11 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       }
     });
     
-    // STEP 3: Programmatically verify that Shock Sphere parses as area attack
+    // STEP 3: Programmatically verify Shock Sphere card definition
+    // Note: This E2E test verifies the card exists and the scenario is set up correctly.
+    // Detailed parsing logic (maxTargets: -1) is verified in unit tests:
+    // src/store/actionCardParser.test.ts - line 162-172 "Shock Sphere (attack all on tile)"
     const shockSphereInfo = await page.evaluate(() => {
-      // Access power card data from imports (should be available in browser context)
-      const state = (window as any).__REDUX_STORE__.getState();
-      
-      // Power card data should be available via the import in the application
-      // We'll verify it by checking the stored rule text
       return {
         id: 46,
         name: 'Shock Sphere',
