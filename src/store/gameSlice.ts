@@ -1838,15 +1838,16 @@ export const gameSlice = createSlice({
           }
           
           // Check if this card has an "ac-bonus" effect (Hit or Miss)
-          // Currently only Cleric's Shield (ID 2) has this effect
           const acBonusEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'ac-bonus');
           
-          if (acBonusEffect && acBonusEffect.amount && cardId === 2) {
-            // Cleric's Shield: +2 AC to one hero on the same tile
+          // Only apply if this card has AC bonus effect (currently only Cleric's Shield, ID 2)
+          // Future cards with AC bonus effects will also work with this logic
+          if (acBonusEffect && acBonusEffect.amount && powerCard) {
+            // Cleric's Shield and other AC bonus powers: +X AC to one hero on the same tile
             // Effect persists until this power is used again
             
-            // For now, automatically apply to the first hero on the tile (usually the caster)
-            // In full implementation, this would show a hero selection UI
+            // For now, automatically apply to the first hero on the tile
+            // TODO: In full implementation, show a hero selection UI if multiple heroes available
             const attackerToken = state.heroTokens.find(t => t.heroId === currentHeroId);
             
             if (attackerToken) {
