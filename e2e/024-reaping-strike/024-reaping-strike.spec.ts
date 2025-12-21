@@ -1,6 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
+// Helper function to seed dice roll for deterministic tests
+async function seedDiceRoll(page: any, value: number) {
+  await page.evaluate((val: number) => {
+    (window as any).__originalRandom = Math.random;
+    Math.random = () => val;
+  }, value);
+}
+
+// Helper function to restore Math.random
+async function restoreDiceRoll(page: any) {
+  await page.evaluate(() => {
+    if ((window as any).__originalRandom) {
+      Math.random = (window as any).__originalRandom;
+    }
+  });
+}
+
 test.describe('024 - Reaping Strike Multi-Attack', () => {
   test('Vistra can use Reaping Strike to attack a monster twice', async ({ page }) => {
     const screenshots = createScreenshotHelper();
@@ -44,14 +61,17 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     }).toPass();
 
     // STEP 3: Spawn a monster with 2 HP adjacent to the hero
-    await page.evaluate(() => {
+    // Set up a deterministic treasure deck for consistent test results
+    const WAND_OF_POLYMORPH_ID = 166; // Treasure ID from treasure system
+    
+    await page.evaluate((treasureId: number) => {
       const store = (window as any).__REDUX_STORE__;
       
-      // Set up a deterministic treasure deck (put a specific treasure at the top)
+      // Set up deterministic treasure deck (put specific treasure at the top)
       store.dispatch({
         type: 'game/setTreasureDeck',
         payload: {
-          drawPile: [166], // Wand of Polymorph
+          drawPile: [treasureId],
           discardPile: []
         }
       });
@@ -67,7 +87,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
           tileId: 'start-tile'
         }]
       });
-    });
+    }, WAND_OF_POLYMORPH_ID);
 
     // Wait for monster to appear
     await expect(async () => {
@@ -107,20 +127,13 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     });
 
     // STEP 5: Seed Math.random for deterministic dice roll and attack
-    await page.evaluate(() => {
-      (window as any).__originalRandom = Math.random;
-      Math.random = () => 0.7; // Will give roll = floor(0.7 * 20) + 1 = 15
-    });
+    await seedDiceRoll(page, 0.7); // Will give roll = floor(0.7 * 20) + 1 = 15
 
     // Attack with Reaping Strike
     await page.locator('[data-testid="attack-target-cultist-test-1"]').click();
 
     // Restore Math.random
-    await page.evaluate(() => {
-      if ((window as any).__originalRandom) {
-        Math.random = (window as any).__originalRandom;
-      }
-    });
+    await restoreDiceRoll(page);
 
     // Wait for combat result (first attack)
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
@@ -205,10 +218,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     expect(monsterBeforeSecondAttack.currentHp).toBe(1);
 
     // Seed Math.random again for the second attack
-    await page.evaluate(() => {
-      (window as any).__originalRandom = Math.random;
-      Math.random = () => 0.8; // Will give roll = floor(0.8 * 20) + 1 = 17
-    });
+    await seedDiceRoll(page, 0.8); // Will give roll = floor(0.8 * 20) + 1 = 17
 
     // Wait for the attack button to be available
     await page.locator('[data-testid="attack-target-cultist-test-1"]').waitFor({ state: 'visible' });
@@ -217,11 +227,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     await page.locator('[data-testid="attack-target-cultist-test-1"]').click();
 
     // Restore Math.random
-    await page.evaluate(() => {
-      if ((window as any).__originalRandom) {
-        Math.random = (window as any).__originalRandom;
-      }
-    });
+    await restoreDiceRoll(page);
 
     // Wait for the second combat result
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
@@ -248,19 +254,27 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     });
 
     // STEP 7: Dismiss second attack result and verify cleanup
-    // Force dismiss via direct dispatch (workaround for Playwright event handling with Svelte)
+    // NOTE: We dispatch actions directly instead of clicking the dismiss button because
+    // Playwright has event handling limitations with Svelte's reactive components.
+    // This is a test automation workaround - the actual UI dismiss button works correctly.
+    // The logic below mirrors handleDismissAttackResult() in GameBoard.svelte.
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      // Manually call the actions that handleDismissAttackResult would call
       const state = store.getState();
+      
+      // Record multi-attack hit and clear state if sequence is complete
       if (state.game.multiAttackState) {
         store.dispatch({ type: 'game/recordMultiAttackHit' });
-        // Check if target is defeated
+        
+        // Check if target was defeated and clear multi-attack if needed
         const targetStillAlive = state.game.monsters.some((m: any) => m.instanceId === state.game.attackTargetId);
-        if (!targetStillAlive && state.game.multiAttackState.sameTarget) {
+        const wasSameTarget = state.game.multiAttackState.sameTarget;
+        if (!targetStillAlive && wasSameTarget) {
           store.dispatch({ type: 'game/clearMultiAttack' });
         }
       }
+      
+      // Dismiss the combat result display
       store.dispatch({ type: 'game/dismissAttackResult' });
     });
     
