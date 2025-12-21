@@ -190,6 +190,10 @@ Both Hurled Breath and Shock Sphere use the same area attack mechanic:
 - [x] Shock Sphere card definition verified
 - [x] Shock Sphere parses as area attack (maxTargets: -1)
 
+## Known Issues
+
+**Screenshot Stability**: The E2E tests experience occasional screenshot non-determinism (pixel differences between runs) even though all programmatic checks pass consistently. This appears to be related to rendering timing/animations and is a known issue in the test suite (existing tests like 001 also exhibit this behavior). The test behavior and validation logic are correct - only the screenshot comparison is flaky.
+
 ## Acceptance Criteria Status
 
 All acceptance criteria from the issue are met:
