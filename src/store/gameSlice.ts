@@ -1426,28 +1426,44 @@ export const gameSlice = createSlice({
               if (monsterId) {
                 const monsterDef = getMonsterById(monsterId);
                 if (monsterDef) {
-                  // Find closest unexplored edge to active hero
-                  const spawnPosition = getMonsterSpawnPosition(
-                    activeHeroToken.position,
-                    state.dungeon
-                  );
+                  // Find a tile with an unexplored edge (prefer closer to active hero)
+                  const tilesWithUnexploredEdges = state.dungeon.unexploredEdges.map(edge => 
+                    state.dungeon.tiles.find(t => t.id === edge.tileId)
+                  ).filter((t, i, arr) => t && arr.findIndex(tile => tile?.id === t.id) === i); // Deduplicate
                   
-                  if (spawnPosition) {
-                    // Create monster instance
-                    const monster = createMonsterInstance(
-                      monsterId,
-                      activeHeroToken.heroId,
-                      spawnPosition.position,
-                      spawnPosition.tileId,
-                      state.monsterInstanceCounter
-                    );
-                    
-                    state.monsters.push(monster);
-                    state.monsterInstanceCounter++;
-                    state.recentlySpawnedMonsterId = monster.instanceId;
-                    state.encounterEffectMessage = `${monsterDef.name} spawned`;
+                  if (tilesWithUnexploredEdges.length > 0) {
+                    // Get the first tile with unexplored edge (could be improved to find closest)
+                    const spawnTile = tilesWithUnexploredEdges[0];
+                    if (spawnTile) {
+                      // Get spawn position on the tile (black square or adjacent)
+                      const spawnPosition = getMonsterSpawnPosition(spawnTile, state.monsters);
+                      
+                      if (spawnPosition) {
+                        // Create monster instance
+                        const monster = createMonsterInstance(
+                          monsterId,
+                          spawnPosition,
+                          activeHeroToken.heroId,
+                          spawnTile.id,
+                          state.monsterInstanceCounter
+                        );
+                        
+                        if (monster) {
+                          state.monsters.push(monster);
+                          state.monsterInstanceCounter++;
+                          state.recentlySpawnedMonsterId = monster.instanceId;
+                          state.encounterEffectMessage = `${monsterDef.name} spawned`;
+                        } else {
+                          state.encounterEffectMessage = 'Failed to create monster';
+                        }
+                      } else {
+                        state.encounterEffectMessage = 'No valid spawn position on tile';
+                      }
+                    } else {
+                      state.encounterEffectMessage = 'No tile found with unexplored edge';
+                    }
                   } else {
-                    state.encounterEffectMessage = 'No unexplored edge to spawn monster';
+                    state.encounterEffectMessage = 'No tiles with unexplored edges';
                   }
                 } else {
                   state.encounterEffectMessage = 'Monster not found in database';
