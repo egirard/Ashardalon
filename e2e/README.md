@@ -32,6 +32,7 @@ e2e/
 | [037-curse-and-special-events](037-curse-and-special-events/README.md) | Curse cards apply status effects |
 | [038-encounter-cards-comprehensive](038-encounter-cards-comprehensive/README.md) | **Comprehensive**: All encounter types tested (damage, attack, curse, environment, trap, hazard, special) |
 | [043-monster-move-dialog-orientation](043-monster-move-dialog-orientation/README.md) | Monster move dialog rotates to face controlling player |
+| [051-righteous-smite](051-righteous-smite/README.md) | Righteous Smite power card: area healing on hit or miss |
 
 ## Running Tests
 
