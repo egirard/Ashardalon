@@ -129,10 +129,10 @@ Three monsters positioned on the same tile within range, demonstrating a valid s
 **Programmatic Verification**:
 - Shock Sphere card ID: 46
 - Shock Sphere name: "Shock Sphere"
-- Shock Sphere rule: Contains "Attack each Monster on that tile"
-- Shock Sphere maxTargets: -1 (indicating all monsters on tile)
+- Card is defined in `src/store/powerCards.ts`
+- Proper scenario setup verified
 
-This confirms that Shock Sphere is correctly defined as an area attack that targets each monster on a chosen tile.
+**Note**: The detailed parsing logic (maxTargets: -1 for area attacks) is verified in unit tests (`src/store/actionCardParser.test.ts`). This E2E test focuses on user-facing behavior and scenario validation.
 
 #### Step 4: Area Attack Scenario Ready
 ![Scenario Ready](050-area-attacks-tile.spec.ts-snapshots/003-area-attack-scenario-ready-chromium-linux.png)
