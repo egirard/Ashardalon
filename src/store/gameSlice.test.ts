@@ -3314,6 +3314,101 @@ describe("gameSlice", () => {
       expect(state.encounterDeck.discardPile).not.toContain("hidden-snipers");
       expect(state.activeEnvironmentId).toBe("hidden-snipers");
     });
+
+    it("should spawn monster when dismissing wandering monster encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "wandering-monster",
+          name: "Wandering Monster",
+          type: "event",
+          description: "Draw a Monster Card and place its figure on any tile with an unexplored edge.",
+          effect: { type: "special", description: "Spawn a monster on tile with unexplored edge." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsterDeck: { drawPile: ["kobold", "snake"], discardPile: [] },
+        monsters: [],
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "wall", east: "wall", west: "wall" },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: [],
+        },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Should have spawned a monster
+      expect(state.monsters.length).toBe(1);
+      expect(state.monsters[0].monsterId).toBe("kobold");
+      expect(state.encounterEffectMessage).toContain("spawned");
+      // Monster deck should be updated
+      expect(state.monsterDeck.drawPile).toEqual(["snake"]);
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("wandering-monster");
+    });
+
+    it("should show error message when no monsters available for wandering monster", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "wandering-monster",
+          name: "Wandering Monster",
+          type: "event",
+          description: "Draw a Monster Card and place its figure on any tile with an unexplored edge.",
+          effect: { type: "special", description: "Spawn a monster on tile with unexplored edge." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsterDeck: { drawPile: [], discardPile: [] }, // Empty monster deck
+        monsters: [],
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "wall", east: "wall", west: "wall" },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: [],
+        },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Should not have spawned a monster
+      expect(state.monsters.length).toBe(0);
+      expect(state.encounterEffectMessage).toBe("No monsters available in deck");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("wandering-monster");
+    });
   });
 
   describe("cancelEncounterCard", () => {
