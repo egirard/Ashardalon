@@ -1091,14 +1091,15 @@
   function handleDismissAttackResult() {
     // Check if we're in a multi-attack sequence
     if (multiAttackState) {
-      // Check if the target was defeated
+      // Save values we need before dispatching (dispatching may clear multiAttackState)
       const targetStillAlive = monsters.some(m => m.instanceId === attackTargetId);
+      const wasSameTarget = multiAttackState.sameTarget;
       
       // Record the attack hit
       store.dispatch(recordMultiAttackHit());
       
       // If target died and this was a same-target attack, clear the multi-attack
-      if (!targetStillAlive && multiAttackState.sameTarget) {
+      if (!targetStillAlive && wasSameTarget) {
         store.dispatch(clearMultiAttack());
       }
     }
