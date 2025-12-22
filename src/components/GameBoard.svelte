@@ -1087,6 +1087,8 @@
       // Check if this card has special miss behavior (don't flip on miss)
       const parsedAction = parseActionCard(powerCard);
       const hasMissNoFlip = parsedAction.missEffects?.some(effect => effect.type === 'no-flip');
+      
+      // Flip the card if attack hit, or if it missed but card doesn't have no-flip behavior
       const shouldFlip = result.isHit || !hasMissNoFlip;
       
       if (shouldFlip) {
