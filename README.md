@@ -73,7 +73,7 @@ For detailed rules and gameplay mechanics, refer to the original Wrath of Ashard
 - [Monster Card Implementation](MONSTER_CARD_IMPLEMENTATION.md) - Monster behaviors and abilities
 - [Player Cards Implementation](PLAYER_CARDS_IMPLEMENTATION.md) - Hero cards and abilities
 - [Power Cards Implementation](POWER_CARDS_IMPLEMENTATION.md) - Hero power effects
-- [Treasure Implementation](docs/TREASURE_IMPLEMENTATION.md) - Treasure card effects
+- [Treasure Implementation](docs/TREASURE_IMPLEMENTATION.md) - Treasure card effects (in docs folder)
 
 ## Technology Stack
 
