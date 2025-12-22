@@ -1081,9 +1081,17 @@
     
     // Flip the power card if it's a daily (at-wills can be used repeatedly)
     // But only flip on the first attack of a multi-attack sequence
+    // Also check for special miss effects that prevent flipping
     const isMultiAttackInProgress = multiAttackState && multiAttackState.attacksCompleted > 0;
     if (powerCard.type === 'daily' && !isMultiAttackInProgress) {
-      store.dispatch(usePowerCard({ heroId: currentHeroId, cardId }));
+      // Check if this card has special miss behavior (don't flip on miss)
+      const parsedAction = parseActionCard(powerCard);
+      const hasMissNoFlip = parsedAction.missEffects?.some(effect => effect.type === 'no-flip');
+      const shouldFlip = result.isHit || !hasMissNoFlip;
+      
+      if (shouldFlip) {
+        store.dispatch(usePowerCard({ heroId: currentHeroId, cardId }));
+      }
     }
   }
 

@@ -170,7 +170,7 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     });
   });
 
-  test.skip('Comeback Strike does NOT flip when attack misses (special behavior)', async ({ page }) => {
+  test('Comeback Strike does NOT flip when attack misses (special behavior)', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
     // STEP 1: Navigate to character selection and select Vistra (Fighter)
