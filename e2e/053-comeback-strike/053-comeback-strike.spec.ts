@@ -85,6 +85,7 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
 
     await screenshots.capture(page, 'game-ready-with-monster', {
       programmaticCheck: async () => {
+        // Verify the power card attack panel is visible
         await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
         
         // Verify Comeback Strike (card 15) is available
