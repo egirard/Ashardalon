@@ -67,6 +67,14 @@ For detailed rules and gameplay mechanics, refer to the original Wrath of Ashard
 - [Game Asset Rules](CONTRIBUTING.md#contributing-art-and-assets) - Guidelines for contributing artwork and assets
 - [Development Environment](DEVELOPMENT.md) - Setup and development tools
 
+### Game Mechanics Implementation
+- [Dazed Condition Implementation](DAZED_CONDITION_IMPLEMENTATION.md) - Complete specification for implementing the Dazed status condition
+- [Encounter Cards Implementation](ENCOUNTER_CARDS_IMPLEMENTATION.md) - Status of encounter card effects
+- [Monster Card Implementation](MONSTER_CARD_IMPLEMENTATION.md) - Monster behaviors and abilities
+- [Player Cards Implementation](PLAYER_CARDS_IMPLEMENTATION.md) - Hero cards and abilities
+- [Power Cards Implementation](POWER_CARDS_IMPLEMENTATION.md) - Hero power effects
+- [Treasure Implementation](docs/TREASURE_IMPLEMENTATION.md) - Treasure card effects
+
 ## Technology Stack
 
 - HTML5
