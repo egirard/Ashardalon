@@ -695,7 +695,7 @@ The game state should be organized into the following slices:
 - Status (active, downed)
 - Equipped items
 - Power cards (available, used)
-- Conditions (dazed, poisoned, etc.)
+- Conditions (dazed, poisoned, etc.) - See [Dazed Condition Implementation](DAZED_CONDITION_IMPLEMENTATION.md) for detailed specification
 
 #### Dungeon Slice
 - Placed tiles (positions and connections)
