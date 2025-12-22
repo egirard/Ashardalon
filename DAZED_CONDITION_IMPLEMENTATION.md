@@ -49,9 +49,9 @@ This document provides a comprehensive specification for implementing the **Daze
 The codebase currently has:
 
 1. **Basic Infrastructure**
-   - `StatusEffectType` includes `'dazed'` (src/store/statusEffects.ts:20)
-   - `STATUS_EFFECT_DEFINITIONS` includes Dazed with icon and description (line 66-71)
-   - `isDazed()` helper function exists (line 368-370)
+   - `StatusEffectType` includes `'dazed'` (src/store/statusEffects.ts)
+   - `STATUS_EFFECT_DEFINITIONS` includes Dazed with icon and description
+   - `isDazed()` helper function exists
    - Status tracking in Redux state (heroHp[].statuses)
 
 2. **UI Display**
@@ -151,15 +151,15 @@ According to D&D 4E rules (which Wrath of Ashardalon is based on):
 
 #### 1. Monster Attacks
 
-Several monsters in the game can apply Dazed status on hit. From the monster cards (src/store/types.ts):
+Several monsters in the game can apply Dazed status on hit. From the monster cards (src/store/types.ts, `ENCOUNTER_CARDS` constant):
 
 | Monster | Attack | Status Effect | Notes |
 |---------|--------|---------------|-------|
-| **Rage Drake** | Fire Breath | Dazed | Line 1042: `statusEffect: 'dazed'` |
-| **Kraash** | Spectral Ram | Dazed | Line 1074: `statusEffect: 'dazed'` |
-| **Ashardalon** | Tail Slap | Dazed + Poisoned | Line 1082: `statusEffect: 'dazed,poisoned'` |
-| **Bellax** | Eye Rays | Dazed | Line 1098: `statusEffect: 'dazed'` |
-| **Meerak** | Spear | Dazed | Line 1146: `statusEffect: 'dazed'` |
+| **Rage Drake** | Fire Breath | Dazed | `statusEffect: 'dazed'` in encounter card definition |
+| **Kraash** | Spectral Ram | Dazed | `statusEffect: 'dazed'` in encounter card definition |
+| **Ashardalon** | Tail Slap | Dazed + Poisoned | `statusEffect: 'dazed,poisoned'` in encounter card definition |
+| **Bellax** | Eye Rays | Dazed | `statusEffect: 'dazed'` in encounter card definition |
+| **Meerak** | Spear | Dazed | `statusEffect: 'dazed'` in encounter card definition |
 
 **Implementation Note**: The combat system (src/store/combat.ts) must check for `statusEffect` on monster attacks and apply the Dazed condition when an attack hits.
 
@@ -170,7 +170,7 @@ Encounter cards (Events, Curses) may apply Dazed:
 - **Curse cards** that inflict Dazed until removed
 - **Hazard attacks** that apply Dazed
 
-**Current Status**: Encounter card system exists (src/store/encounters.ts) but status effect application is marked as "NOT YET IMPLEMENTED" (line 236).
+**Current Status**: Encounter card system exists (src/store/encounters.ts) but status effect application is marked as "NOT YET IMPLEMENTED" (see comment in `resolveEncounter` function).
 
 #### 3. Power Cards (Future)
 
@@ -219,14 +219,14 @@ Dazed can be applied with or without duration:
 Dazed with a duration expires automatically:
 
 ```typescript
-// In processStatusEffectsStartOfTurn()
+// In processStatusEffectsStartOfTurn() function
 const turnsElapsed = currentTurn - status.appliedOnTurn;
 if (status.duration !== undefined && turnsElapsed >= status.duration) {
   // Remove status automatically
 }
 ```
 
-**Current Status**: This logic is already implemented in `processStatusEffectsStartOfTurn()` (src/store/statusEffects.ts:255-260).
+**Current Status**: This logic is already implemented in the `processStatusEffectsStartOfTurn()` function in src/store/statusEffects.ts.
 
 ### Manual Removal
 
