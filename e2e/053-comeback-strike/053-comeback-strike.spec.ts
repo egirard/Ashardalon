@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 // Helper function to seed dice roll for deterministic tests
-async function seedDiceRoll(page: any, value: number) {
+async function seedDiceRoll(page: Page, value: number) {
   await page.evaluate((val: number) => {
     (window as any).__originalRandom = Math.random;
     Math.random = () => val;
@@ -10,7 +10,7 @@ async function seedDiceRoll(page: any, value: number) {
 }
 
 // Helper function to restore Math.random
-async function restoreDiceRoll(page: any) {
+async function restoreDiceRoll(page: Page) {
   await page.evaluate(() => {
     if ((window as any).__originalRandom) {
       Math.random = (window as any).__originalRandom;
@@ -112,8 +112,11 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
       }
     });
 
-    // Seed Math.random for a successful hit (AC of kobold is 15)
-    await seedDiceRoll(page, 0.8); // Will give roll = floor(0.8 * 20) + 1 = 17, +7 = 24 total
+    // Seed Math.random for a successful hit
+    // Dice roll calculation: floor(value * 20) + 1
+    // 0.8 * 20 = 16, floor(16) = 16, 16 + 1 = 17
+    // Attack: 17 (roll) + 7 (bonus) = 24 vs AC 15 = HIT
+    await seedDiceRoll(page, 0.8);
 
     await page.locator('[data-testid="attack-target-kobold-test-1"]').click();
     await restoreDiceRoll(page);
@@ -259,8 +262,11 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
       }
     });
 
-    // Seed Math.random for a miss (Cultist AC is 13, we need roll + 7 < 13, so roll <= 5)
-    await seedDiceRoll(page, 0.2); // Will give roll = floor(0.2 * 20) + 1 = 5, +7 = 12 total (miss)
+    // Seed Math.random for a miss
+    // Dice roll calculation: floor(value * 20) + 1
+    // 0.2 * 20 = 4, floor(4) = 4, 4 + 1 = 5
+    // Attack: 5 (roll) + 7 (bonus) = 12 vs AC 13 = MISS
+    await seedDiceRoll(page, 0.2);
 
     await page.locator('[data-testid="attack-target-cultist-test-1"]').click();
     await restoreDiceRoll(page);
