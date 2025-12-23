@@ -5,6 +5,9 @@
   import { assetPath } from '../utils';
   import { HeartIcon, SkullIcon, SwordIcon, ShieldIcon, LightningIcon, DiceIcon, TargetIcon, StarIcon, XIcon } from './icons';
 
+  // Condition type constant for consistency
+  const DAZED_CONDITION = 'dazed';
+
   interface Props {
     hero: Hero;
     heroHpState: HeroHpState;
@@ -153,14 +156,14 @@
       {#each conditions as condition (condition.id)}
         <div 
           class="condition-badge"
-          class:condition-dazed={condition.id === 'dazed'}
+          class:condition-dazed={condition.id === DAZED_CONDITION}
           title="{condition.name}: {condition.description}"
           data-testid={`condition-${condition.id}`}
         >
           <span class="condition-icon">{condition.icon}</span>
           <span class="condition-name">{condition.name}</span>
-          {#if condition.id === 'dazed' && isActive}
-            <span class="condition-detail">1 action only</span>
+          {#if condition.id === DAZED_CONDITION && isActive}
+            <span class="condition-detail-dazed">1 action only</span>
           {/if}
         </div>
       {/each}
@@ -599,7 +602,7 @@
     color: #ff6b6b;
   }
 
-  .condition-detail {
+  .condition-detail-dazed {
     color: #ffb3ba;
     font-size: 0.5rem;
     font-weight: normal;

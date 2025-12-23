@@ -114,7 +114,7 @@
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
-  import { getStatusDisplayData, isDazed } from "../store/statusEffects";
+  import { getStatusDisplayData, isDazed, STATUS_EFFECT_DEFINITIONS } from "../store/statusEffects";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -1825,7 +1825,7 @@
         {#if turnState.currentPhase === "hero-phase" && isCurrentHeroDazed() && !mapControlMode}
           <div class="dazed-warning" data-testid="dazed-warning">
             <div class="dazed-warning-header">
-              <span class="dazed-icon">😵</span>
+              <span class="dazed-icon">{STATUS_EFFECT_DEFINITIONS.dazed.icon}</span>
               <span class="dazed-title">DAZED</span>
             </div>
             <div class="dazed-message">
