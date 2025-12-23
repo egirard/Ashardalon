@@ -114,7 +114,7 @@
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
-  import { getStatusDisplayData } from "../store/statusEffects";
+  import { getStatusDisplayData, isDazed } from "../store/statusEffects";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -629,6 +629,14 @@
   // Get full HeroHpState for a hero
   function getHeroHpState(heroId: string): HeroHpState | undefined {
     return heroHp.find((h) => h.heroId === heroId);
+  }
+
+  // Check if current hero is dazed
+  function isCurrentHeroDazed(): boolean {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return false;
+    const heroHpState = getHeroHpState(currentHeroId);
+    return heroHpState?.statuses ? isDazed(heroHpState.statuses) : false;
   }
 
   // Get monsters controlled by the current hero
@@ -1813,6 +1821,23 @@
           </div>
         {/if}
 
+        <!-- Dazed Status Warning (shown during hero phase when hero is Dazed) -->
+        {#if turnState.currentPhase === "hero-phase" && isCurrentHeroDazed() && !mapControlMode}
+          <div class="dazed-warning" data-testid="dazed-warning">
+            <div class="dazed-warning-header">
+              <span class="dazed-icon">😵</span>
+              <span class="dazed-title">DAZED</span>
+            </div>
+            <div class="dazed-message">
+              {#if heroTurnActions.actionsTaken.length === 0}
+                Choose ONE action: Move OR Attack
+              {:else}
+                Action limit reached (Dazed)
+              {/if}
+            </div>
+          </div>
+        {/if}
+
         <!-- Move-After-Attack Hero Selection (shown when multiple heroes on tile) -->
         {#if pendingMoveAfterAttack && !pendingMoveAfterAttack.selectedHeroId && pendingMoveAfterAttack.availableHeroes.length > 1 && !attackResult && !mapControlMode}
           <div class="hero-selection-overlay" data-testid="hero-selection-overlay">
@@ -2578,6 +2603,56 @@
     background: rgba(255, 165, 0, 0.95);
     box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
   }
+
+  /* Dazed warning display */
+  .dazed-warning {
+    background: rgba(220, 53, 69, 0.15);
+    border: 2px solid rgba(220, 53, 69, 0.6);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    animation: dazed-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes dazed-pulse {
+    0%, 100% {
+      border-color: rgba(220, 53, 69, 0.6);
+      box-shadow: 0 0 0 rgba(220, 53, 69, 0.3);
+    }
+    50% {
+      border-color: rgba(220, 53, 69, 0.9);
+      box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    }
+  }
+
+  .dazed-warning-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .dazed-icon {
+    font-size: 1.5rem;
+  }
+
+  .dazed-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #dc3545;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .dazed-message {
+    font-size: 0.85rem;
+    color: #fff;
+    text-align: center;
+    line-height: 1.3;
+  }
+
 
   /* Move-after-attack controls */
   .move-after-attack-controls {

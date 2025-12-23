@@ -153,11 +153,15 @@
       {#each conditions as condition (condition.id)}
         <div 
           class="condition-badge"
+          class:condition-dazed={condition.id === 'dazed'}
           title="{condition.name}: {condition.description}"
           data-testid={`condition-${condition.id}`}
         >
           <span class="condition-icon">{condition.icon}</span>
           <span class="condition-name">{condition.name}</span>
+          {#if condition.id === 'dazed' && isActive}
+            <span class="condition-detail">1 action only</span>
+          {/if}
         </div>
       {/each}
     </div>
@@ -561,6 +565,25 @@
     background: rgba(156, 39, 176, 0.5);
   }
 
+  .condition-badge.condition-dazed {
+    background: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.6);
+    animation: dazed-badge-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes dazed-badge-pulse {
+    0%, 100% {
+      border-color: rgba(220, 53, 69, 0.6);
+    }
+    50% {
+      border-color: rgba(220, 53, 69, 0.9);
+    }
+  }
+
+  .condition-badge.condition-dazed:hover {
+    background: rgba(220, 53, 69, 0.4);
+  }
+
   .condition-icon {
     font-size: 0.7rem;
   }
@@ -570,6 +593,17 @@
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+  }
+
+  .condition-badge.condition-dazed .condition-name {
+    color: #ff6b6b;
+  }
+
+  .condition-detail {
+    color: #ffb3ba;
+    font-size: 0.5rem;
+    font-weight: normal;
+    margin-left: 0.1rem;
   }
 
 
