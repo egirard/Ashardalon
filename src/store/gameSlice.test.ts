@@ -28,6 +28,7 @@ import gameReducer, {
   assignTreasureToHero,
   dismissTreasureCard,
   useTreasureItem,
+  setMonsters,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -4396,6 +4397,168 @@ describe("gameSlice", () => {
       // Should show movement options again
       expect(stateAfterUndo.showingMovement).toBe(true);
       expect(stateAfterUndo.validMoveSquares.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Dazed Action Restrictions", () => {
+    it("should restrict hero to single action when dazed", () => {
+      const state = gameReducer(undefined, startGame({ heroIds: ["quinn"], selectedPowerCards: {} }));
+      
+      // Apply dazed status to Quinn
+      const stateWithDazed = gameReducer(state, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'dazed',
+          source: 'test-monster',
+          duration: 1
+        }
+      });
+      
+      // Start turn
+      const stateAfterTurnStart = gameReducer(stateWithDazed, endVillainPhase());
+      
+      // Move the hero (this starts incremental movement)
+      let stateAfterMove = gameReducer(
+        stateAfterTurnStart, 
+        moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 })
+      );
+      
+      // Complete the move
+      stateAfterMove = gameReducer(stateAfterMove, completeMove());
+      
+      // After moving, dazed hero should not be able to attack
+      expect(stateAfterMove.heroTurnActions.canAttack).toBe(false);
+      expect(stateAfterMove.heroTurnActions.canMove).toBe(false);
+      expect(stateAfterMove.heroTurnActions.actionsTaken).toEqual(['move']);
+    });
+
+    it("should end turn after attack when dazed", () => {
+      const state = gameReducer(undefined, startGame({ heroIds: ["quinn"], selectedPowerCards: {} }));
+      
+      // Apply dazed status
+      const stateWithDazed = gameReducer(state, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'dazed',
+          source: 'test-monster'
+        }
+      });
+      
+      // Add a monster to attack
+      const stateWithMonster = gameReducer(stateWithDazed, setMonsters([
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-1',
+          position: { x: 3, y: 2 },
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'start-tile',
+          statuses: []
+        }
+      ]));
+      
+      // Start turn
+      const stateAfterTurnStart = gameReducer(stateWithMonster, endVillainPhase());
+      
+      // Attack the monster
+      const stateAfterAttack = gameReducer(
+        stateAfterTurnStart,
+        setAttackResult({
+          result: { isHit: true, roll: 15, damage: 2, targetAC: 10 },
+          targetInstanceId: 'kobold-1',
+          attackName: 'Longsword'
+        })
+      );
+      
+      // After attacking, dazed hero should not be able to move or attack again
+      expect(stateAfterAttack.heroTurnActions.canMove).toBe(false);
+      expect(stateAfterAttack.heroTurnActions.canAttack).toBe(false);
+      expect(stateAfterAttack.heroTurnActions.actionsTaken).toEqual(['attack']);
+    });
+
+    it("should allow normal two-action turn when not dazed", () => {
+      const state = gameReducer(undefined, startGame({ heroIds: ["quinn"], selectedPowerCards: {} }));
+      
+      // Start turn
+      const stateAfterTurnStart = gameReducer(state, endVillainPhase());
+      
+      // Move the hero
+      let stateAfterMove = gameReducer(
+        stateAfterTurnStart, 
+        moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 })
+      );
+      
+      // Complete the move
+      stateAfterMove = gameReducer(stateAfterMove, completeMove());
+      
+      // After moving, non-dazed hero should still be able to attack
+      expect(stateAfterMove.heroTurnActions.canAttack).toBe(true);
+      expect(stateAfterMove.heroTurnActions.actionsTaken).toEqual(['move']);
+    });
+
+    it("should end turn immediately after move when dazed", () => {
+      const state = gameReducer(undefined, startGame({ heroIds: ["quinn"], selectedPowerCards: {} }));
+      
+      // Apply dazed status
+      const stateWithDazed = gameReducer(state, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'dazed',
+          source: 'test-encounter',
+          duration: 2
+        }
+      });
+      
+      // Start turn
+      const stateAfterTurnStart = gameReducer(stateWithDazed, endVillainPhase());
+      
+      // Move and complete movement
+      let stateAfterMove = gameReducer(
+        stateAfterTurnStart,
+        moveHero({ heroId: "quinn", position: { x: 3, y: 2 }, speed: 5 })
+      );
+      stateAfterMove = gameReducer(stateAfterMove, completeMove());
+      
+      // Both canMove and canAttack should be false after one action when dazed
+      expect(stateAfterMove.heroTurnActions.canMove).toBe(false);
+      expect(stateAfterMove.heroTurnActions.canAttack).toBe(false);
+    });
+
+    it("should respect Dazed even with stunned (stunned takes precedence)", () => {
+      const state = gameReducer(undefined, startGame({ heroIds: ["quinn"], selectedPowerCards: {} }));
+      
+      // Apply both dazed and stunned
+      let stateWithStatuses = gameReducer(state, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'dazed',
+          source: 'test-encounter'
+        }
+      });
+      
+      stateWithStatuses = gameReducer(stateWithStatuses, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'stunned',
+          source: 'test-attack'
+        }
+      });
+      
+      // Start turn - stunned prevents all actions anyway
+      const stateAfterTurnStart = gameReducer(stateWithStatuses, endVillainPhase());
+      
+      // Verify stunned status exists
+      const quinnHp = stateAfterTurnStart.heroHp.find(h => h.heroId === 'quinn');
+      expect(quinnHp?.statuses.some(s => s.type === 'stunned')).toBe(true);
+      expect(quinnHp?.statuses.some(s => s.type === 'dazed')).toBe(true);
+      
+      // Note: Stunned prevents actions at a different level (canMove/canAttack checks)
+      // This test mainly verifies both statuses can coexist
     });
   });
 });

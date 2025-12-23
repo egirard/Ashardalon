@@ -113,6 +113,7 @@ import {
   removeStatusEffect,
   processStatusEffectsStartOfTurn,
   hasStatusEffect,
+  isDazed,
   attemptPoisonRecovery as attemptPoisonRecoveryUtil,
   type StatusEffect,
   type StatusEffectType,
@@ -478,12 +479,26 @@ const initialState: GameState = {
  * - No double attacks allowed
  * - After any attack, only move is allowed (turn ends after that move)
  * - After two moves, turn ends
+ * - When Dazed: Only ONE action allowed (move OR attack), turn ends after that action
  */
 function computeHeroTurnActions(
   currentActions: HeroTurnActions,
-  newAction: HeroSubAction
+  newAction: HeroSubAction,
+  heroStatuses?: StatusEffect[]
 ): HeroTurnActions {
   const newActionsTaken = [...currentActions.actionsTaken, newAction];
+  
+  // Check if hero is Dazed
+  const isHeroDazed = heroStatuses ? isDazed(heroStatuses) : false;
+  
+  // If Dazed and just took an action, cannot take any more actions
+  if (isHeroDazed && newActionsTaken.length > 0) {
+    return {
+      actionsTaken: newActionsTaken,
+      canMove: false,
+      canAttack: false,
+    };
+  }
   
   // Count actions
   const moveCount = newActionsTaken.filter(a => a === 'move').length;
@@ -522,6 +537,14 @@ export function shouldAutoEndHeroTurn(heroTurnActions: HeroTurnActions): boolean
     (moveCount >= 1 && attackCount >= 1) || // move+attack or attack+move
     (moveCount >= 2) // double move
   );
+}
+
+/**
+ * Get the statuses for a specific hero from the game state
+ */
+function getHeroStatuses(state: GameState, heroId: string): StatusEffect[] {
+  const heroHp = state.heroHp.find(h => h.heroId === heroId);
+  return heroHp?.statuses ?? [];
 }
 
 /**
@@ -803,7 +826,8 @@ export const gameSlice = createSlice({
       if (state.incrementalMovement.remainingMovement <= 0) {
         // Movement complete - mark move action as taken
         state.incrementalMovement.inProgress = false;
-        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+        const heroStatuses = getHeroStatuses(state, heroId);
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move', heroStatuses);
         // Clear movement overlay
         state.validMoveSquares = [];
         state.showingMovement = false;
@@ -831,7 +855,9 @@ export const gameSlice = createSlice({
       state.incrementalMovement.remainingMovement = 0;
       
       // Track the move action
-      state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+      const heroId = state.incrementalMovement.heroId;
+      const heroStatuses = getHeroStatuses(state, heroId);
+      state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move', heroStatuses);
       
       // Clear movement overlay
       state.validMoveSquares = [];
@@ -961,7 +987,9 @@ export const gameSlice = createSlice({
         state.incrementalMovement.inProgress = false;
         state.incrementalMovement.remainingMovement = 0;
         // Track the move action since we're committing to it
-        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+        const heroId = state.incrementalMovement.heroId;
+        const heroStatuses = getHeroStatuses(state, heroId);
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move', heroStatuses);
       }
       
       // Clear any previously spawned monster display
@@ -1675,7 +1703,9 @@ export const gameSlice = createSlice({
         state.incrementalMovement.inProgress = false;
         state.incrementalMovement.remainingMovement = 0;
         // Track the move action since we're committing to it before attacking
-        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move');
+        const heroId = state.incrementalMovement.heroId;
+        const heroStatuses = getHeroStatuses(state, heroId);
+        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move', heroStatuses);
       }
       
       // Clear any previous notifications
@@ -1876,7 +1906,11 @@ export const gameSlice = createSlice({
       // Track the attack action (unless we're in a multi-attack sequence)
       // For multi-attacks, the action is tracked only once when the sequence completes
       if (!state.multiAttackState) {
-        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
+        const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        if (currentHeroId) {
+          const heroStatuses = getHeroStatuses(state, currentHeroId);
+          state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack', heroStatuses);
+        }
       }
     },
     /**
@@ -1965,7 +1999,11 @@ export const gameSlice = createSlice({
         // Clear multi-attack state when done
         state.multiAttackState = null;
         // Track the attack action (only once per multi-attack sequence)
-        state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
+        const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        if (currentHeroId) {
+          const heroStatuses = getHeroStatuses(state, currentHeroId);
+          state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack', heroStatuses);
+        }
       }
     },
     /**
@@ -1975,7 +2013,11 @@ export const gameSlice = createSlice({
       if (state.multiAttackState) {
         // If at least one attack was made, count the action
         if (state.multiAttackState.attacksCompleted > 0) {
-          state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack');
+          const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+          if (currentHeroId) {
+            const heroStatuses = getHeroStatuses(state, currentHeroId);
+            state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack', heroStatuses);
+          }
         }
         state.multiAttackState = null;
       }
