@@ -491,8 +491,9 @@ function computeHeroTurnActions(
   // Check if hero is Dazed
   const isHeroDazed = heroStatuses ? isDazed(heroStatuses) : false;
   
-  // If Dazed and just took an action, cannot take any more actions
-  if (isHeroDazed && newActionsTaken.length > 0) {
+  // If Dazed and just completed the first action, cannot take any more actions
+  // Note: newActionsTaken includes the action we just took, so length === 1 means this was the first action
+  if (isHeroDazed && newActionsTaken.length === 1) {
     return {
       actionsTaken: newActionsTaken,
       canMove: false,
