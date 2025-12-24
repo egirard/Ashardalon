@@ -191,6 +191,13 @@ export function getActiveEnvironment(environmentId: string | null): EncounterCar
 }
 
 /**
+ * Format hero name for display (capitalize first letter)
+ */
+function formatHeroName(heroId: string): string {
+  return heroId.charAt(0).toUpperCase() + heroId.slice(1);
+}
+
+/**
  * Resolve an encounter effect
  * Returns updated hero HP states and detailed results for UI display
  * 
@@ -212,9 +219,9 @@ export function resolveEncounterEffect(
   heroHpList: HeroHpState[],
   activeHeroId: string,
   randomFn: () => number = Math.random
-): { heroHpList: HeroHpState[]; results: import('./types').EncounterResultTarget[] } {
+): { heroHpList: HeroHpState[]; results: EncounterResultTarget[] } {
   const effect = encounter.effect;
-  const results: import('./types').EncounterResultTarget[] = [];
+  const results: EncounterResultTarget[] = [];
   
   switch (effect.type) {
     case 'damage': {
@@ -224,7 +231,7 @@ export function resolveEncounterEffect(
           if (hp.heroId === activeHeroId) {
             results.push({
               heroId: hp.heroId,
-              heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+              heroName: formatHeroName(hp.heroId),
               damageTaken: effect.amount,
             });
             return applyDamageToHero(hp, effect.amount);
@@ -237,7 +244,7 @@ export function resolveEncounterEffect(
         heroHpList.forEach(hp => {
           results.push({
             heroId: hp.heroId,
-            heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+            heroName: formatHeroName(hp.heroId),
             damageTaken: effect.amount,
           });
         });
@@ -300,7 +307,7 @@ export function resolveEncounterEffect(
         
         results.push({
           heroId: hp.heroId,
-          heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+          heroName: formatHeroName(hp.heroId),
           wasHit: isHit,
           damageTaken,
           statusesApplied: statusesApplied.length > 0 ? statusesApplied : undefined,
@@ -361,7 +368,7 @@ export function resolveEncounterEffect(
           
           results.push({
             heroId: hp.heroId,
-            heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+            heroName: formatHeroName(hp.heroId),
             wasHit: isHit,
             damageTaken,
             attackRoll: roll,
