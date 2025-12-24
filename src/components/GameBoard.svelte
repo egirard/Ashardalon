@@ -13,6 +13,7 @@
     dismissMonsterCard,
     dismissEncounterCard,
     cancelEncounterCard,
+    dismissEncounterResult,
     setAttackResult,
     dismissAttackResult,
     dismissDefeatNotification,
@@ -78,6 +79,7 @@
   import MonsterCard from "./MonsterCard.svelte";
   import MonsterCardMini from "./MonsterCardMini.svelte";
   import EncounterCard from "./EncounterCard.svelte";
+  import EncounterResultPopup from "./EncounterResultPopup.svelte";
   import TrapMarker from "./TrapMarker.svelte";
   import HazardMarker from "./HazardMarker.svelte";
   import BoardTokenMarker from "./BoardTokenMarker.svelte";
@@ -198,6 +200,7 @@
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
   let drawnEncounter: EncounterCardType | null = $state(null);
+  let encounterResult: import('../store/types').EncounterResult | null = $state(null);
   let activeEnvironmentId: string | null = $state(null);
   let traps: import("../store/types").TrapState[] = $state([]);
   let hazards: import("../store/types").HazardState[] = $state([]);
@@ -262,6 +265,7 @@
       heroPowerCards = state.heroes.heroPowerCards;
       attackName = state.game.attackName;
       drawnEncounter = state.game.drawnEncounter;
+      encounterResult = state.game.encounterResult;
       activeEnvironmentId = state.game.activeEnvironmentId;
       traps = state.game.traps;
       hazards = state.game.hazards;
@@ -313,6 +317,7 @@
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
+    encounterResult = state.game.encounterResult;
     activeEnvironmentId = state.game.activeEnvironmentId;
     traps = state.game.traps;
     hazards = state.game.hazards;
@@ -1278,6 +1283,11 @@
     store.dispatch(dismissEncounterCard());
   }
 
+  // Handle dismissing the encounter result popup
+  function handleDismissEncounterResult() {
+    store.dispatch(dismissEncounterResult());
+  }
+
   // Handle canceling the encounter card (spend 5 XP to skip the effect)
   function handleCancelEncounterCard() {
     store.dispatch(cancelEncounterCard());
@@ -2156,6 +2166,18 @@
       onCancel={handleCancelEncounterCard}
       edge={getActivePlayerEdge()}
     />
+  {/if}
+
+  <!-- Encounter Result Popup (shown after encounter card is dismissed to show effect results) -->
+  {#if encounterResult && !drawnEncounter}
+    {@const encounterCard = ENCOUNTER_CARDS.find(e => e.id === encounterResult.encounterId)}
+    {#if encounterCard}
+      <EncounterResultPopup
+        encounter={encounterCard}
+        targets={encounterResult.targets}
+        onDismiss={handleDismissEncounterResult}
+      />
+    {/if}
   {/if}
 
   <!-- Action Surge Prompt (shown at start of hero's turn when HP = 0 with surges available) -->

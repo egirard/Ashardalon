@@ -330,7 +330,7 @@ describe("encounters", () => {
         { heroId: 'vistra', currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
       ];
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn');
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn');
       
       expect(result[0].currentHp).toBe(6); // Quinn takes 2 damage
       expect(result[1].currentHp).toBe(10); // Vistra unaffected
@@ -351,7 +351,7 @@ describe("encounters", () => {
         { heroId: 'vistra', currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
       ];
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn');
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn');
       
       expect(result[0].currentHp).toBe(7); // Quinn takes damage
       expect(result[1].currentHp).toBe(9); // Vistra takes damage
@@ -371,7 +371,7 @@ describe("encounters", () => {
         { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
       ];
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn');
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn');
       
       // Environment effects don't apply damage during encounter resolution
       // They are tracked in game state and applied at appropriate phases
@@ -392,7 +392,7 @@ describe("encounters", () => {
         { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
       ];
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn');
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn');
       
       // Traps don't apply immediate damage - they are placed and activate during villain phase
       expect(result[0].currentHp).toBe(8); // HP unchanged
@@ -416,7 +416,7 @@ describe("encounters", () => {
       // Roll 15 + 10 = 25, which beats AC 17
       const highRollRandom = () => 0.7; // Will produce roll of 15
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn', highRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', highRollRandom);
       
       expect(result[0].currentHp).toBe(7); // Took 1 damage from attack
     });
@@ -439,7 +439,7 @@ describe("encounters", () => {
       // Roll 1 + 10 = 11, which does not beat AC 17
       const lowRollRandom = () => 0; // Will produce roll of 1
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn', lowRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', lowRollRandom);
       
       expect(result[0].currentHp).toBe(8); // No damage taken
     });
@@ -462,7 +462,7 @@ describe("encounters", () => {
       // Roll 1 + 8 = 9, which does not beat AC 17
       const lowRollRandom = () => 0; // Will produce roll of 1
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn', lowRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', lowRollRandom);
       
       expect(result[0].currentHp).toBe(7); // Took 1 miss damage
     });
@@ -485,7 +485,7 @@ describe("encounters", () => {
       // Use a random function that always returns high roll (hit guaranteed for both)
       const highRollRandom = () => 0.8; // Will produce roll of 17
       
-      const result = resolveEncounterEffect(encounter, heroHpList, 'quinn', highRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', highRollRandom);
       
       // Both heroes should take damage (roll 17 + 8 = 25 beats both AC 17 and AC 18)
       expect(result[0].currentHp).toBe(7);

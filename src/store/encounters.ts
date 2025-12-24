@@ -192,7 +192,7 @@ export function getActiveEnvironment(environmentId: string | null): EncounterCar
 
 /**
  * Resolve an encounter effect
- * Returns updated hero HP states
+ * Returns updated hero HP states and detailed results for UI display
  * 
  * Currently implemented effects:
  * - damage (active-hero): Deals damage to the current hero
@@ -212,22 +212,36 @@ export function resolveEncounterEffect(
   heroHpList: HeroHpState[],
   activeHeroId: string,
   randomFn: () => number = Math.random
-): HeroHpState[] {
+): { heroHpList: HeroHpState[]; results: import('./types').EncounterResultTarget[] } {
   const effect = encounter.effect;
+  const results: import('./types').EncounterResultTarget[] = [];
   
   switch (effect.type) {
     case 'damage': {
       if (effect.target === 'active-hero') {
         // Apply damage to active hero only
-        return heroHpList.map(hp => {
+        const updatedHpList = heroHpList.map(hp => {
           if (hp.heroId === activeHeroId) {
+            results.push({
+              heroId: hp.heroId,
+              heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+              damageTaken: effect.amount,
+            });
             return applyDamageToHero(hp, effect.amount);
           }
           return hp;
         });
+        return { heroHpList: updatedHpList, results };
       } else {
         // Apply damage to all heroes (covers 'all-heroes' and 'heroes-on-tile')
-        return applyDamageToAllHeroes(heroHpList, effect.amount);
+        heroHpList.forEach(hp => {
+          results.push({
+            heroId: hp.heroId,
+            heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+            damageTaken: effect.amount,
+          });
+        });
+        return { heroHpList: applyDamageToAllHeroes(heroHpList, effect.amount), results };
       }
     }
     
@@ -257,7 +271,7 @@ export function resolveEncounterEffect(
       
       const targetHeroIds = getTargetHeroes();
       
-      return heroHpList.map(hp => {
+      const updatedHpList = heroHpList.map(hp => {
         if (!targetHeroIds.includes(hp.heroId)) {
           return hp;
         }
@@ -268,30 +282,54 @@ export function resolveEncounterEffect(
         const total = roll + effect.attackBonus;
         const isHit = total >= hp.ac;
         
-        if (isHit) {
-          return applyDamageToHero(hp, effect.damage);
-        } else if (effect.missDamage !== undefined && effect.missDamage > 0) {
-          return applyDamageToHero(hp, effect.missDamage);
+        const statusesApplied: string[] = [];
+        if (isHit && effect.statusEffect) {
+          statusesApplied.push(effect.statusEffect);
         }
-        return hp;
+        
+        let damageTaken = 0;
+        let updatedHp = hp;
+        
+        if (isHit) {
+          damageTaken = effect.damage;
+          updatedHp = applyDamageToHero(hp, effect.damage);
+        } else if (effect.missDamage !== undefined && effect.missDamage > 0) {
+          damageTaken = effect.missDamage;
+          updatedHp = applyDamageToHero(hp, effect.missDamage);
+        }
+        
+        results.push({
+          heroId: hp.heroId,
+          heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+          wasHit: isHit,
+          damageTaken,
+          statusesApplied: statusesApplied.length > 0 ? statusesApplied : undefined,
+          attackRoll: roll,
+          attackTotal: total,
+          targetAC: hp.ac,
+        });
+        
+        return updatedHp;
       });
+      
+      return { heroHpList: updatedHpList, results };
     }
     
     case 'environment':
       // Environment effects are tracked in game state and applied at appropriate phases
       // No immediate effect on hero HP during encounter resolution
-      return heroHpList;
+      return { heroHpList, results };
       
     case 'curse':
       // Apply curse as a status effect to the active hero
       // Import will be added at the top of the file
       // For now, we return the heroHpList unchanged and let gameSlice handle the curse application
-      return heroHpList;
+      return { heroHpList, results };
       
     case 'trap':
       // Trap placement is handled separately in game slice
       // No immediate damage during encounter resolution
-      return heroHpList;
+      return { heroHpList, results };
       
     case 'hazard':
       // Hazard placement is handled separately in game slice
@@ -300,7 +338,7 @@ export function resolveEncounterEffect(
         // Make attack rolls against heroes on the tile (treated as all heroes for now)
         const targetHeroIds = heroHpList.map(h => h.heroId);
         
-        return heroHpList.map(hp => {
+        const updatedHpList = heroHpList.map(hp => {
           if (!targetHeroIds.includes(hp.heroId)) {
             return hp;
           }
@@ -310,24 +348,42 @@ export function resolveEncounterEffect(
           const total = roll + effect.attackBonus;
           const isHit = total >= hp.ac;
           
+          let damageTaken = 0;
+          let updatedHp = hp;
+          
           if (isHit) {
-            return applyDamageToHero(hp, effect.damage);
+            damageTaken = effect.damage;
+            updatedHp = applyDamageToHero(hp, effect.damage);
           } else if (effect.missDamage !== undefined && effect.missDamage > 0) {
-            return applyDamageToHero(hp, effect.missDamage);
+            damageTaken = effect.missDamage;
+            updatedHp = applyDamageToHero(hp, effect.missDamage);
           }
-          return hp;
+          
+          results.push({
+            heroId: hp.heroId,
+            heroName: hp.heroId.charAt(0).toUpperCase() + hp.heroId.slice(1),
+            wasHit: isHit,
+            damageTaken,
+            attackRoll: roll,
+            attackTotal: total,
+            targetAC: hp.ac,
+          });
+          
+          return updatedHp;
         });
+        
+        return { heroHpList: updatedHpList, results };
       }
-      return heroHpList;
+      return { heroHpList, results };
       
     case 'special':
       // Special effects are NOT YET IMPLEMENTED
       // Would need complex UI interactions (tile placement, monster spawning, etc.)
       console.warn(`Special effect '${encounter.name}' is not yet implemented`);
-      return heroHpList;
+      return { heroHpList, results };
       
     default:
-      return heroHpList;
+      return { heroHpList, results };
   }
 }
 

@@ -675,6 +675,29 @@ export interface EncounterCard {
 }
 
 /**
+ * Result of an encounter effect on a single target
+ */
+export interface EncounterResultTarget {
+  heroId: string;
+  heroName: string;
+  wasHit?: boolean;
+  damageTaken: number;
+  statusesApplied?: string[];
+  attackRoll?: number;
+  attackTotal?: number;
+  targetAC?: number;
+}
+
+/**
+ * Complete result of an encounter card's effects
+ */
+export interface EncounterResult {
+  encounterId: string;
+  encounterName: string;
+  targets: EncounterResultTarget[];
+}
+
+/**
  * Encounter deck for drawing encounters when no tile is placed
  */
 export interface EncounterDeck {
