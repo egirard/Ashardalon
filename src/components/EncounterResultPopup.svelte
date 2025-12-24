@@ -5,20 +5,9 @@
    * Shows card name/image, affected players, and results (damage, status, misses)
    */
   
-  import type { EncounterCard } from '../store/types';
+  import type { EncounterCard, EncounterResultTarget } from '../store/types';
   import { assetPath } from '../utils';
   import { LightningIcon, WarningIcon, CrystalIcon } from './icons';
-  
-  export interface EncounterResultTarget {
-    heroId: string;
-    heroName: string;
-    wasHit?: boolean;
-    damageTaken: number;
-    statusesApplied?: string[];
-    attackRoll?: number;
-    attackTotal?: number;
-    targetAC?: number;
-  }
   
   interface Props {
     encounter: EncounterCard;
@@ -29,6 +18,7 @@
   let { encounter, targets, onDismiss }: Props = $props();
   
   let overlayElement: HTMLDivElement | undefined = $state();
+  let imageError = $state(false);
   
   // Auto-focus the overlay when it's mounted
   $effect(() => {
@@ -118,17 +108,15 @@
     </h2>
     
     <div class="card-image">
-      <img 
-        src={assetPath(encounter.imagePath)} 
-        alt={encounter.name}
-        class="encounter-image"
-        onerror={(e) => { 
-          const img = e.target as HTMLImageElement;
-          if (img) {
-            img.style.display = 'none';
-          }
-        }}
-      />
+      {#if encounter.imagePath}
+        <img 
+          src={assetPath(encounter.imagePath)} 
+          alt={encounter.name}
+          class="encounter-image"
+          class:hidden={imageError}
+          onerror={() => { imageError = true; }}
+        />
+      {/if}
     </div>
     
     <div id="result-content" class="result-content" data-testid="encounter-result-content">
@@ -336,6 +324,10 @@
     border: 2px solid #8b5cf6;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .encounter-image.hidden {
+    display: none;
   }
   
   .result-content {
