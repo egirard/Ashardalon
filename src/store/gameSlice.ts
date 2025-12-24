@@ -223,6 +223,8 @@ export interface GameState {
   encounterDeck: EncounterDeck;
   /** Currently drawn encounter card (displayed during villain phase) */
   drawnEncounter: EncounterCard | null;
+  /** Result of encounter card effects on heroes (for result popup display) */
+  encounterResult: import('./types').EncounterResult | null;
   /** Active environment state - tracks persistent environment effects */
   activeEnvironmentId: string | null;
   /** Active traps on the board */
@@ -440,6 +442,7 @@ const initialState: GameState = {
   defeatReason: null,
   encounterDeck: { drawPile: [], discardPile: [] },
   drawnEncounter: null,
+  encounterResult: null,
   activeEnvironmentId: null,
   traps: [],
   hazards: [],
@@ -1333,11 +1336,21 @@ export const gameSlice = createSlice({
           
           if (activeHeroId) {
             // Apply immediate hazard effects (Cave In, Pit)
-            state.heroHp = resolveEncounterEffect(
+            const { heroHpList, results } = resolveEncounterEffect(
               state.drawnEncounter,
               state.heroHp,
               activeHeroId
             );
+            state.heroHp = heroHpList;
+            
+            // Store results for popup display if there were any effects
+            if (results.length > 0) {
+              state.encounterResult = {
+                encounterId: state.drawnEncounter.id,
+                encounterName: state.drawnEncounter.name,
+                targets: results,
+              };
+            }
             
             // Check for party defeat (all heroes at 0 HP)
             const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
@@ -1636,11 +1649,21 @@ export const gameSlice = createSlice({
           
           if (activeHeroId) {
             // Apply the encounter effect
-            state.heroHp = resolveEncounterEffect(
+            const { heroHpList, results } = resolveEncounterEffect(
               state.drawnEncounter,
               state.heroHp,
               activeHeroId
             );
+            state.heroHp = heroHpList;
+            
+            // Store results for popup display if there were any effects
+            if (results.length > 0) {
+              state.encounterResult = {
+                encounterId: state.drawnEncounter.id,
+                encounterName: state.drawnEncounter.name,
+                targets: results,
+              };
+            }
             
             // Check for party defeat (all heroes at 0 HP)
             const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
@@ -2439,6 +2462,12 @@ export const gameSlice = createSlice({
       state.encounterEffectMessage = null;
     },
     /**
+     * Dismiss the encounter result popup
+     */
+    dismissEncounterResult: (state) => {
+      state.encounterResult = null;
+    },
+    /**
      * Dismiss the exploration phase notification message
      * Note: Also clears recentlyPlacedTileId since both are part of the same exploration event.
      * The tile fade-in (2s) completes before the notification fully fades (3s total).
@@ -2895,6 +2924,7 @@ export const {
   dismissMonsterMoveAction,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
+  dismissEncounterResult,
   dismissExplorationPhaseMessage,
   dismissPoisonedDamageNotification,
   dismissPoisonRecoveryNotification,
