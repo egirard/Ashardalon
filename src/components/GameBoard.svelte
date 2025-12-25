@@ -334,6 +334,26 @@
     return unsubscribe;
   });
 
+  // Create a derived game state object for power card eligibility checking
+  // This consolidates the necessary state properties for determining if power cards can be activated
+  let gameState = $derived.by(() => {
+    return {
+      heroTokens,
+      turnState,
+      heroHp,
+      heroTurnActions,
+      dungeon,
+      monsters,
+    } as {
+      heroTokens: typeof heroTokens;
+      turnState: typeof turnState;
+      heroHp: typeof heroHp;
+      heroTurnActions: typeof heroTurnActions;
+      dungeon: typeof dungeon;
+      monsters: typeof monsters;
+    };
+  });
+
   // Auto-advance hero phase when valid action sequence is complete
   // Turn ends when: move+attack, attack+move, or move+move
   // However, if the hero phase ends with an attack, we must wait for the
@@ -1332,6 +1352,23 @@
     store.dispatch(useTreasureItem({ heroId, cardId }));
   }
 
+  // Handle activating a power card from the player dashboard
+  function handleActivatePowerCard(heroId: string, cardId: number) {
+    // TODO: Implement specific power card effects
+    // For now, just flip the card to mark it as used
+    store.dispatch(usePowerCard({ heroId, cardId }));
+    
+    // TODO: In future, this should dispatch specific actions based on the card:
+    // - Healing Hymn (1): Heal hero and ally on tile
+    // - Dwarven Resilience (11): Heal self 4 HP
+    // - Lay On Hands (21): Heal adjacent ally 2 HP
+    // - Command (9): Move monster on tile
+    // - Distant Diversion (38): Move monster to adjacent tile
+    // - Invisibility (48): Set invisibility status
+    // - Mirror Image (49): Add mirror image tokens
+    // - Wizard Eye (50): Place wizard eye token
+  }
+
   // Get hero inventory item count for display
   function getHeroInventoryCount(heroId: string): number {
     const inventory = heroInventories[heroId];
@@ -1497,6 +1534,8 @@
           <PlayerPowerCards
             heroPowerCards={heroPowerCards[hero.id]}
             boardPosition="top"
+            {gameState}
+            onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
           />
           <PlayerCard
             {hero}
@@ -1564,6 +1603,8 @@
             <PlayerPowerCards
               heroPowerCards={heroPowerCards[hero.id]}
               boardPosition="left"
+              {gameState}
+              onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
             />
           </div>
         {/if}
@@ -1983,6 +2024,8 @@
             <PlayerPowerCards
               heroPowerCards={heroPowerCards[hero.id]}
               boardPosition="right"
+              {gameState}
+              onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
             />
           </div>
         {/if}
@@ -2027,6 +2070,9 @@
           <PlayerPowerCards
             heroPowerCards={heroPowerCards[hero.id]}
             boardPosition="bottom"
+            {gameState}
+            onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
+          />
           />
         </div>
       {/if}
