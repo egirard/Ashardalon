@@ -2073,7 +2073,6 @@
             {gameState}
             onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
           />
-          />
         </div>
       {/if}
     {/each}

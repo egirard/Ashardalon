@@ -6,6 +6,37 @@ import type { PowerCard } from './powerCards';
 import type { GameState } from './gameSlice';
 
 /**
+ * Power card IDs for reference in eligibility checks
+ */
+const POWER_CARD_IDS = {
+  // Custom abilities
+  HEALING_HYMN: 1,
+  DWARVEN_RESILIENCE: 11,
+  LAY_ON_HANDS: 21,
+  FURIOUS_ASSAULT: 31,
+  HURLED_BREATH: 41,
+  
+  // Utility cards - proactive (can be activated during hero phase)
+  COMMAND: 9,
+  DISTANT_DIVERSION: 38,
+  INVISIBILITY: 48,
+  MIRROR_IMAGE: 49,
+  WIZARD_EYE: 50,
+  
+  // Utility cards - reactive (triggered by events)
+  ASTRAL_REFUGE: 8,
+  PERSEVERANCE: 10,
+  INSPIRING_ADVICE: 18,
+  ONE_FOR_THE_TEAM: 19,
+  TO_ARMS: 20,
+  BRAVERY: 28,
+  NOBLE_SHIELD: 29,
+  VIRTUES_TOUCH: 30,
+  PRACTICED_EVASION: 39,
+  TUMBLING_ESCAPE: 40,
+} as const;
+
+/**
  * Determines if a power card can be activated during the hero phase
  * based on game state and card rules.
  */
@@ -61,38 +92,38 @@ function isCardEligibleByRule(
   
   // Custom ability cards that can be used during hero phase
   if (card.isCustomAbility) {
-    // Healing Hymn (1) - during hero phase
-    if (card.id === 1) return true;
-    // Dwarven Resilience (11) - during hero phase instead of moving
-    if (card.id === 11) return gameState.heroTurnActions.canMove;
-    // Lay On Hands (21) - utility (assume can be used during hero phase)
-    if (card.id === 21) return true;
-    // Furious Assault (31) - when you hit (reactive, not proactive)
-    if (card.id === 31) return false;
-    // Hurled Breath (41) - this is actually a daily attack power
-    if (card.id === 41) return false; // Handled by attack panel
+    // Healing Hymn - during hero phase
+    if (card.id === POWER_CARD_IDS.HEALING_HYMN) return true;
+    // Dwarven Resilience - during hero phase instead of moving
+    if (card.id === POWER_CARD_IDS.DWARVEN_RESILIENCE) return gameState.heroTurnActions.canMove;
+    // Lay On Hands - utility (assume can be used during hero phase)
+    if (card.id === POWER_CARD_IDS.LAY_ON_HANDS) return true;
+    // Furious Assault - when you hit (reactive, not proactive)
+    if (card.id === POWER_CARD_IDS.FURIOUS_ASSAULT) return false;
+    // Hurled Breath - this is actually a daily attack power
+    if (card.id === POWER_CARD_IDS.HURLED_BREATH) return false; // Handled by attack panel
   }
   
   // Specific utility cards that can be activated during hero phase
   switch (card.id) {
-    case 9:  // Command - during hero phase
-    case 38: // Distant Diversion - during hero phase (implied)
-    case 48: // Invisibility - during hero phase
-    case 49: // Mirror Image - during hero phase
-    case 50: // Wizard Eye - during hero phase
+    case POWER_CARD_IDS.COMMAND:
+    case POWER_CARD_IDS.DISTANT_DIVERSION:
+    case POWER_CARD_IDS.INVISIBILITY:
+    case POWER_CARD_IDS.MIRROR_IMAGE:
+    case POWER_CARD_IDS.WIZARD_EYE:
       return true;
     
     // Reactive cards (not activatable from dashboard)
-    case 8:  // Astral Refuge - at start of villain phase
-    case 10: // Perseverance - when encounter drawn
-    case 18: // Inspiring Advice - when hero misses
-    case 19: // One for the Team - when encounter drawn
-    case 20: // To Arms! - when monster placed
-    case 28: // Bravery - when monster activates
-    case 29: // Noble Shield - when attacked
-    case 30: // Virtue's Touch - during hero phase (but needs adjacent hero)
-    case 39: // Practiced Evasion - when hit by trap
-    case 40: // Tumbling Escape - when monster hits
+    case POWER_CARD_IDS.ASTRAL_REFUGE:
+    case POWER_CARD_IDS.PERSEVERANCE:
+    case POWER_CARD_IDS.INSPIRING_ADVICE:
+    case POWER_CARD_IDS.ONE_FOR_THE_TEAM:
+    case POWER_CARD_IDS.TO_ARMS:
+    case POWER_CARD_IDS.BRAVERY:
+    case POWER_CARD_IDS.NOBLE_SHIELD:
+    case POWER_CARD_IDS.VIRTUES_TOUCH:
+    case POWER_CARD_IDS.PRACTICED_EVASION:
+    case POWER_CARD_IDS.TUMBLING_ESCAPE:
       return false;
   }
   
@@ -135,7 +166,7 @@ export function getPowerCardIneligibilityReason(
     return 'Can only be used at start of villain phase';
   }
   
-  if (card.id === 11 && !gameState.heroTurnActions.canMove) {
+  if (card.id === POWER_CARD_IDS.DWARVEN_RESILIENCE && !gameState.heroTurnActions.canMove) {
     return 'You have already moved this turn';
   }
   
