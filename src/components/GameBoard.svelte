@@ -1411,13 +1411,12 @@
           if (adjacentHeroes.length === 0) {
             // No adjacent heroes to heal - don't activate the card
             return;
-          } else if (adjacentHeroes.length === 1) {
-            // Only one adjacent hero - heal them automatically
-            store.dispatch(applyHealing({ heroId: adjacentHeroes[0].heroId, amount: 2 }));
-            store.dispatch(usePowerCard({ heroId, cardId }));
           } else {
-            // Multiple adjacent heroes - need UI to select target
-            // For MVP, heal the first adjacent hero (TODO: add target selection UI)
+            // Sort heroes by ID for deterministic behavior
+            adjacentHeroes.sort((a, b) => a.heroId.localeCompare(b.heroId));
+            
+            // Heal the first adjacent hero (sorted by heroId)
+            // TODO: Add UI for target selection when multiple targets available
             store.dispatch(applyHealing({ heroId: adjacentHeroes[0].heroId, amount: 2 }));
             store.dispatch(usePowerCard({ heroId, cardId }));
           }
