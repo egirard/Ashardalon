@@ -52,17 +52,32 @@ The game now includes a comprehensive event hook system that allows power cards 
 - Hooks are tested with 23 unit tests
 - Ready for integration into gameSlice for full functionality
 
-### 🔨 Simple Utility Cards (No Hooks Needed)
+### ✅ Simple Utility Cards Implemented (Healing Powers)
+
+These healing utility cards are now implemented and can be activated during hero phase:
+
+| ID | Name | Class | Type | Implementation Status |
+|----|------|-------|------|----------------------|
+| 1 | Healing Hymn | Cleric | utility | ✅ Implemented - Heal self and ally on tile 2 HP |
+| 11 | Dwarven Resilience | Dwarf | utility | ✅ Implemented - Self-heal 4 HP |
+| 21 | Lay On Hands | Paladin | utility | ✅ Implemented - Heal adjacent ally 2 HP |
+
+**Implementation Details:**
+- Added `applyHealing({ heroId, amount })` action to gameSlice
+- Healing respects HP caps (cannot exceed max HP)
+- Cards can be activated from player power card dashboard during hero phase
+- Healing Hymn heals all heroes on the same tile/sub-tile
+- Dwarven Resilience heals only the hero using it
+- Lay On Hands heals one adjacent ally (not self)
+
+### 🔨 Simple Utility Cards (No Hooks Needed) - Remaining
 
 These cards can be implemented as simple hero-phase actions without event hooks:
 
 | ID | Name | Class | Type | Notes |
 |----|------|-------|------|-------|
-| 1 | Healing Hymn | Cleric | utility | Heal self and ally on tile (custom ability) |
 | 8 | Astral Refuge | Cleric | utility | Remove ally from board temporarily |
 | 9 | Command | Cleric | utility | Move monster to tile within 2 tiles |
-| 11 | Dwarven Resilience | Dwarf | utility | Self-heal 4 HP (custom ability) |
-| 21 | Lay On Hands | Paladin | utility | Heal adjacent ally 2 HP (custom ability) |
 | 29 | Noble Shield | Paladin | utility | Complex - redirect multi-target attack |
 | 30 | Virtue's Touch | Paladin | utility | Remove condition from adjacent ally |
 | 38 | Distant Diversion | Rogue | utility | Move monster to adjacent tile |
@@ -70,9 +85,8 @@ These cards can be implemented as simple hero-phase actions without event hooks:
 | 50 | Wizard Eye | Wizard | utility | Place token, remote exploration |
 
 **Implementation Priority:**
-1. Healing utilities (1, 11, 21) - straightforward HP restoration
-2. Monster relocation (9, 38) - move monsters during hero phase
-3. Complex utilities (29, 30, 48, 50) - require additional game state
+1. Monster relocation (9, 38) - move monsters during hero phase
+2. Complex utilities (29, 30, 48, 50) - require additional game state
 
 ### ✅ At-Will Attack Cards with Special Effects
 
