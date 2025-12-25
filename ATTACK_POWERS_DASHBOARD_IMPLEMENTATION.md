@@ -57,7 +57,7 @@ This document provides evidence that the requested feature "Enable Attack Powers
 
 ## Code References
 
-### PowerCardAttackPanel.svelte (Lines 1-681)
+### PowerCardAttackPanel.svelte
 The main component implementing enlarged attack cards and monster selection.
 
 **Key Features:**
@@ -68,7 +68,7 @@ The main component implementing enlarged attack cards and monster selection.
 - Multi-attack sequence handling
 - Move-then-attack (charge) support
 
-### PlayerPowerCards.svelte (Lines 1-296)
+### PlayerPowerCards.svelte
 Dashboard component showing mini power cards.
 
 **Key Features:**
@@ -77,7 +77,7 @@ Dashboard component showing mini power cards.
 - Visual indicators for used cards (X icon, reduced opacity)
 - Click handler for utility card activation
 
-### GameBoard.svelte (Lines 2043-2065)
+### GameBoard.svelte
 Integration point for PowerCardAttackPanel.
 
 **Conditions for Display:**
