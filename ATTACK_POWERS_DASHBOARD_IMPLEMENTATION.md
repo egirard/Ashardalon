@@ -93,6 +93,15 @@ Integration point for PowerCardAttackPanel.
 
 ## Visual Evidence
 
+### Screenshot: Attack Powers Dashboard
+![Attack Powers Dashboard](docs/attack-powers-dashboard-screenshot.png)
+
+This screenshot from E2E test 044 shows the PowerCardAttackPanel in action:
+- Multiple attack power cards displayed in expanded format
+- Cards show type badges (At-Will, Daily)
+- Attack stats and details visible
+- Panel positioned in dashboard area
+
 ### Existing E2E Test Documentation
 **Test:** `e2e/044-multi-target-attacks/`
 **Screenshot:** `002-attack-panel-available-chromium-linux.png`
