@@ -33,43 +33,20 @@ This test validates the implementation of three healing utility power cards:
 
 ### 1. Initial Setup
 
-![000 - Three Heroes Selected](screenshots/000-three-heroes-selected-chromium-linux.png)
+![000 - Three Heroes Selected](058-healing-power-cards.spec.ts-snapshots/000-three-heroes-selected-chromium-linux.png)
 *Quinn (Cleric), Vistra (Dwarf), and Keyleth (Paladin) selected for the adventure*
 
 ### 2. Heroes Damaged and Ready
 
-![001 - Setup Heroes Damaged](screenshots/001-setup-heroes-damaged-chromium-linux.png)
+![001 - Setup Heroes Damaged](058-healing-power-cards.spec.ts-snapshots/001-setup-heroes-damaged-chromium-linux.png)
 *Heroes positioned and damaged: Quinn (4 HP), Vistra (5 HP), Keyleth (6 HP). Healing Hymn card is eligible and highlighted.*
 
 ### 3. Healing Hymn Used
 
-![002 - Healing Hymn Used](screenshots/002-healing-hymn-used-chromium-linux.png)
+![002 - Healing Hymn Used](058-healing-power-cards.spec.ts-snapshots/002-healing-hymn-used-chromium-linux.png)
 *Quinn activates Healing Hymn, healing both Quinn (4→6 HP) and Vistra (5→7 HP) for 2 HP each. The card is now disabled.*
 
-### 4. Vistra's Turn
-
-![003 - Vistra Turn](screenshots/003-vistra-turn-chromium-linux.png)
-*Vistra's turn begins with 7 HP. Dwarven Resilience card is eligible and can be activated.*
-
-### 5. Dwarven Resilience Used
-
-![004 - Dwarven Resilience Used](screenshots/004-dwarven-resilience-used-chromium-linux.png)
-*Vistra activates Dwarven Resilience, healing herself for 4 HP (7→10 HP, reaching max HP). The card is now disabled.*
-
-### 6. Keyleth's Turn
-
-![005 - Keyleth Turn](screenshots/005-keyleth-turn-chromium-linux.png)
-*Keyleth's turn begins with 6 HP. Lay On Hands card is eligible and can be activated to heal an adjacent ally.*
-
-### 7. Lay On Hands Used
-
-![006 - Lay On Hands Used](screenshots/006-lay-on-hands-used-chromium-linux.png)
-*Keyleth activates Lay On Hands, healing adjacent ally Quinn for 2 HP (6→8 HP, reaching max HP). The card is now disabled.*
-
-### 8. All Healing Complete
-
-![007 - All Healing Complete](screenshots/007-all-healing-complete-chromium-linux.png)
-*Final state: All three healing power cards have been used and are disabled. Quinn and Vistra are at max HP, Keyleth remains at 6 HP.*
+**Note:** The E2E test currently captures the first 3 steps demonstrating Healing Hymn. Additional screenshots for Dwarven Resilience and Lay On Hands will be added when the test phase transition handling is completed.
 
 ## Verification Points
 
