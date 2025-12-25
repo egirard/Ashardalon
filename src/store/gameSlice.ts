@@ -1594,6 +1594,105 @@ export const gameSlice = createSlice({
             }
           }
           
+          // Scream of the Sentry: Place tile from bottom near existing monster, spawn new monster
+          else if (encounterId === 'scream-of-sentry') {
+            // Check if there are any monsters in play
+            if (state.monsters.length === 0) {
+              state.encounterEffectMessage = 'No monsters in play - card discarded';
+            } else {
+              // Choose a monster (use first monster for simplicity)
+              const chosenMonster = state.monsters[0];
+              const monsterDef = getMonsterById(chosenMonster.monsterId);
+              
+              // Find the closest unexplored edge to the monster
+              // Calculate distances from monster's position to all unexplored edges
+              const monsterTile = state.dungeon.tiles.find(t => t.id === chosenMonster.tileId);
+              
+              if (monsterTile && state.dungeon.unexploredEdges.length > 0) {
+                // Find closest unexplored edge based on tile distance
+                let closestEdge = state.dungeon.unexploredEdges[0];
+                let closestDistance = Infinity;
+                
+                for (const edge of state.dungeon.unexploredEdges) {
+                  const edgeTile = state.dungeon.tiles.find(t => t.id === edge.tileId);
+                  if (edgeTile) {
+                    // Calculate Manhattan distance between tiles
+                    const dx = Math.abs(edgeTile.position.x - monsterTile.position.x);
+                    const dy = Math.abs(edgeTile.position.y - monsterTile.position.y);
+                    const distance = dx + dy;
+                    
+                    if (distance < closestDistance) {
+                      closestDistance = distance;
+                      closestEdge = edge;
+                    }
+                  }
+                }
+                
+                // Draw a tile from the bottom of the deck
+                const { drawnTile, remainingDeck } = drawTileFromBottom(state.dungeon.tileDeck);
+                
+                if (drawnTile) {
+                  state.dungeon.tileDeck = remainingDeck;
+                  
+                  // Place the tile at the closest unexplored edge
+                  const newTile = placeTile(closestEdge, drawnTile, state.dungeon);
+                  
+                  if (newTile) {
+                    // Add the new tile to the dungeon
+                    state.dungeon.tiles.push(newTile);
+                    
+                    // Update unexplored edges
+                    state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
+                    
+                    // Draw a monster from the deck
+                    const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+                    state.monsterDeck = updatedMonsterDeck;
+                    
+                    if (newMonsterId) {
+                      const newMonsterDef = getMonsterById(newMonsterId);
+                      
+                      // Get spawn position on the new tile
+                      const spawnPosition = getMonsterSpawnPosition(newTile, state.monsters);
+                      
+                      if (spawnPosition) {
+                        const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+                        
+                        // Create the new monster instance
+                        const newMonster = createMonsterInstance(
+                          newMonsterId,
+                          spawnPosition,
+                          activeHeroToken?.heroId || state.heroTokens[0].heroId,
+                          newTile.id,
+                          state.monsterInstanceCounter
+                        );
+                        
+                        if (newMonster) {
+                          state.monsters.push(newMonster);
+                          state.monsterInstanceCounter++;
+                          state.recentlySpawnedMonsterId = newMonster.instanceId;
+                          
+                          state.encounterEffectMessage = `Tile placed near ${monsterDef?.name || 'monster'}, ${newMonsterDef?.name || 'monster'} spawned`;
+                        } else {
+                          state.encounterEffectMessage = 'Failed to create monster';
+                        }
+                      } else {
+                        state.encounterEffectMessage = 'No valid spawn position on new tile';
+                      }
+                    } else {
+                      state.encounterEffectMessage = 'No monsters in deck to spawn';
+                    }
+                  } else {
+                    state.encounterEffectMessage = 'Failed to place tile';
+                  }
+                } else {
+                  state.encounterEffectMessage = 'No tiles in deck to place';
+                }
+              } else {
+                state.encounterEffectMessage = 'No unexplored edges available';
+              }
+            }
+          }
+          
           // For other special cards, just log a warning for now
           else {
             console.warn(`Special encounter '${state.drawnEncounter.name}' (${encounterId}) effect not yet implemented`);
