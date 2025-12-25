@@ -612,6 +612,58 @@ describe("exploration", () => {
       const startTile = result.tiles.find((t) => t.id === "start-tile");
       expect(startTile?.edges.north).toBe("open");
     });
+
+    it("should only remove the explored sub-tile edge, not all edges with same direction", () => {
+      const dungeon = initializeDungeon();
+      
+      // Exploring the north sub-tile's east edge
+      const exploredEdge: TileEdge = { 
+        tileId: "start-tile", 
+        direction: "east",
+        subTileId: "start-tile-north"
+      };
+      
+      const newTile: PlacedTile = {
+        id: "tile-1",
+        tileType: "tile-black-x2-01",
+        position: { col: 1, row: 0 },
+        rotation: 0,
+        edges: {
+          north: "unexplored",
+          south: "open",
+          east: "unexplored",
+          west: "open",
+        },
+      };
+      
+      const result = updateDungeonAfterExploration(dungeon, exploredEdge, newTile);
+      
+      // The north sub-tile's east edge should be removed
+      expect(
+        result.unexploredEdges.some(
+          (e) => e.tileId === "start-tile" && e.direction === "east" && e.subTileId === "start-tile-north"
+        )
+      ).toBe(false);
+      
+      // But the south sub-tile's east edge should still be present
+      expect(
+        result.unexploredEdges.some(
+          (e) => e.tileId === "start-tile" && e.direction === "east" && e.subTileId === "start-tile-south"
+        )
+      ).toBe(true);
+      
+      // And both west edges should still be present
+      expect(
+        result.unexploredEdges.some(
+          (e) => e.tileId === "start-tile" && e.direction === "west" && e.subTileId === "start-tile-north"
+        )
+      ).toBe(true);
+      expect(
+        result.unexploredEdges.some(
+          (e) => e.tileId === "start-tile" && e.direction === "west" && e.subTileId === "start-tile-south"
+        )
+      ).toBe(true);
+    });
   });
 
   describe("shuffleArray", () => {
