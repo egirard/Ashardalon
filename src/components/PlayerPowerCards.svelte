@@ -145,7 +145,6 @@
     {#each powerCards as { card, isFlipped, highlightState, ineligibilityReason } (card.id)}
       <button 
         class="power-card-mini"
-        class:flipped={isFlipped}
         class:eligible={highlightState === 'eligible'}
         class:ineligible={highlightState === 'ineligible'}
         class:disabled={highlightState === 'disabled'}
@@ -233,7 +232,6 @@
   }
 
   /* Disabled state - already used/flipped */
-  .power-card-mini.flipped,
   .power-card-mini.disabled {
     opacity: 0.4;
     cursor: not-allowed;
