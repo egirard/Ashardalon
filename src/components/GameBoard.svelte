@@ -112,8 +112,8 @@
     getMonstersOnSameTile,
     getMonsterGlobalPosition,
   } from "../store/combat";
-  import { findTileAtPosition } from "../store/movement";
-  import { getPowerCardById, type HeroPowerCards } from "../store/powerCards";
+  import { findTileAtPosition, getTileOrSubTileId } from "../store/movement";
+  import { getPowerCardById, type HeroPowerCards, POWER_CARDS } from "../store/powerCards";
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
@@ -1356,9 +1356,7 @@
   // Handle activating a power card from the player dashboard
   function handleActivatePowerCard(heroId: string, cardId: number) {
     // Get the power card details
-    const { POWER_CARDS } = require("../store/powerCards");
-    const { getTileOrSubTileId } = require("../store/movement");
-    const card = POWER_CARDS.find((c: any) => c.id === cardId);
+    const card = POWER_CARDS.find((c) => c.id === cardId);
     
     if (!card) return;
     
