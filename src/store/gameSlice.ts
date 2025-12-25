@@ -2893,6 +2893,19 @@ export const gameSlice = createSlice({
         };
       }
     },
+    /**
+     * Apply healing to a hero, respecting HP cap
+     */
+    applyHealing: (state, action: PayloadAction<{ heroId: string; amount: number }>) => {
+      const { heroId, amount } = action.payload;
+      const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroId);
+      
+      if (heroHpIndex !== -1 && amount > 0) {
+        const heroHp = state.heroHp[heroHpIndex];
+        // Heal the hero, capped at max HP
+        heroHp.currentHp = Math.min(heroHp.maxHp, heroHp.currentHp + amount);
+      }
+    },
   },
 });
 
@@ -2962,5 +2975,6 @@ export const {
   applyMonsterStatus,
   removeMonsterStatus,
   processHeroStatusEffects,
+  applyHealing,
 } = gameSlice.actions;
 export default gameSlice.reducer;
