@@ -45,9 +45,12 @@
     dismissTreasureCard,
     useTreasureItem,
     applyHealing,
+    selectMonsterForEncounter,
+    cancelMonsterChoice,
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
+    type PendingMonsterChoiceState,
     type IncrementalMovementState,
     type UndoSnapshot,
   } from "../store/gameSlice";
@@ -98,6 +101,7 @@
   import PoisonedDamageNotification from "./PoisonedDamageNotification.svelte";
   import PoisonRecoveryNotification from "./PoisonRecoveryNotification.svelte";
   import TreasureCard from "./TreasureCard.svelte";
+  import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import FeedbackButton from "./FeedbackButton.svelte";
@@ -214,6 +218,7 @@
   let heroInventories: Record<string, HeroInventory> = $state({});
   let incrementalMovement: IncrementalMovementState | null = $state(null);
   let undoSnapshot: UndoSnapshot | null = $state(null);
+  let pendingMonsterChoice: PendingMonsterChoiceState | null = $state(null);
 
   // Map control state
   let mapControlMode: boolean = $state(false);
@@ -279,6 +284,7 @@
       heroInventories = state.game.heroInventories;
       incrementalMovement = state.game.incrementalMovement;
       undoSnapshot = state.game.undoSnapshot;
+      pendingMonsterChoice = state.game.pendingMonsterChoice;
     });
 
     // Initialize state
@@ -331,6 +337,7 @@
     heroInventories = state.game.heroInventories;
     incrementalMovement = state.game.incrementalMovement;
     undoSnapshot = state.game.undoSnapshot;
+    pendingMonsterChoice = state.game.pendingMonsterChoice;
 
     return unsubscribe;
   });
@@ -1348,6 +1355,16 @@
     store.dispatch(dismissTreasureCard());
   }
 
+  // Handle selecting a monster for an encounter effect
+  function handleSelectMonster(monsterInstanceId: string) {
+    store.dispatch(selectMonsterForEncounter({ monsterInstanceId }));
+  }
+
+  // Handle cancelling monster selection
+  function handleCancelMonsterChoice() {
+    store.dispatch(cancelMonsterChoice());
+  }
+
   // Handle using a treasure item (consumable or action)
   function handleUseTreasureItem(heroId: string, cardId: number) {
     store.dispatch(useTreasureItem({ heroId, cardId }));
@@ -2317,6 +2334,18 @@
       heroes={selectedHeroes.map(h => ({ id: h.id, name: h.name }))}
       onAssign={handleAssignTreasure}
       onDismiss={handleDismissTreasure}
+      edge={getActivePlayerEdge()}
+    />
+  {/if}
+
+  <!-- Monster Choice Modal (shown when encounter effect requires player to choose a monster) -->
+  {#if pendingMonsterChoice && monsters.length > 0}
+    <MonsterChoiceModal
+      monsters={monsters}
+      encounterName={pendingMonsterChoice.encounterName}
+      context={pendingMonsterChoice.context}
+      onSelect={handleSelectMonster}
+      onCancel={handleCancelMonsterChoice}
       edge={getActivePlayerEdge()}
     />
   {/if}

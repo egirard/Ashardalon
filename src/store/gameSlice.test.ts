@@ -30,6 +30,8 @@ import gameReducer, {
   dismissTreasureCard,
   useTreasureItem,
   setMonsters,
+  selectMonsterForEncounter,
+  cancelMonsterChoice,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -3465,7 +3467,7 @@ describe("gameSlice", () => {
         },
         encounterDeck: { drawPile: [], discardPile: [] },
         monsters: [{
-          instanceId: 1,
+          instanceId: "1",
           monsterId: "kobold",
           position: { x: 2, y: 2 },
           tileId: "start-tile",
@@ -3507,6 +3509,164 @@ describe("gameSlice", () => {
       expect(state.dungeon.tileDeck).toEqual([]);
       // Monster deck should be empty now
       expect(state.monsterDeck.drawPile).toEqual([]);
+    });
+
+    it("should prompt for monster choice when multiple monsters exist", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 }, tileId: "start-tile" }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "scream-of-sentry",
+          name: "Scream of the Sentry",
+          type: "event",
+          description: "Choose a monster...",
+          effect: { type: "special", description: "Place tile and monster near existing monster." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsters: [
+          {
+            instanceId: "1",
+            monsterId: "kobold",
+            position: { x: 2, y: 2 },
+            tileId: "start-tile",
+            currentHp: 5,
+            targetHeroId: "quinn",
+            turnNumber: 1,
+          },
+          {
+            instanceId: "2",
+            monsterId: "snake",
+            position: { x: 3, y: 3 },
+            tileId: "start-tile",
+            currentHp: 3,
+            targetHeroId: "quinn",
+            turnNumber: 1,
+          },
+        ],
+        monsterDeck: { drawPile: ["kobold"], discardPile: [] },
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { x: 0, y: 0 },
+            rotation: 0,
+            edges: {
+              north: "unexplored",
+              south: "unexplored",
+              east: "unexplored",
+              west: "unexplored",
+            },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: ["tile-black-2exit-a"],
+        },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Should show monster choice prompt
+      expect(state.pendingMonsterChoice).not.toBeNull();
+      expect(state.pendingMonsterChoice?.encounterId).toBe("scream-of-sentry");
+      expect(state.pendingMonsterChoice?.encounterName).toBe("Scream of the Sentry");
+      expect(state.pendingMonsterChoice?.context).toContain("Choose a monster");
+      // Encounter card should still be drawn (not discarded yet)
+      expect(state.drawnEncounter).not.toBeNull();
+      // No changes to tiles or monsters yet
+      expect(state.dungeon.tiles.length).toBe(1);
+      expect(state.monsters.length).toBe(2);
+    });
+
+    it("should apply effect after player selects a monster", () => {
+      // First, set up state with pending monster choice
+      const stateWithChoice = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 }, tileId: "start-tile" }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "scream-of-sentry",
+          name: "Scream of the Sentry",
+          type: "event",
+          description: "Choose a monster...",
+          effect: { type: "special", description: "Place tile and monster near existing monster." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        pendingMonsterChoice: {
+          encounterId: "scream-of-sentry",
+          encounterName: "Scream of the Sentry",
+          context: "Choose a monster to place a tile near",
+        },
+        monsters: [
+          {
+            instanceId: "1",
+            monsterId: "kobold",
+            position: { x: 2, y: 2 },
+            tileId: "start-tile",
+            currentHp: 5,
+            targetHeroId: "quinn",
+            turnNumber: 1,
+          },
+          {
+            instanceId: "2",
+            monsterId: "snake",
+            position: { x: 3, y: 3 },
+            tileId: "start-tile",
+            currentHp: 3,
+            targetHeroId: "quinn",
+            turnNumber: 1,
+          },
+        ],
+        monsterDeck: { drawPile: ["kobold"], discardPile: [] },
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { x: 0, y: 0 },
+            rotation: 0,
+            edges: {
+              north: "unexplored",
+              south: "unexplored",
+              east: "unexplored",
+              west: "unexplored",
+            },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: ["tile-black-2exit-a"],
+        },
+      });
+
+      // Select the first monster
+      const state = gameReducer(stateWithChoice, selectMonsterForEncounter({ monsterInstanceId: "1" }));
+
+      // Monster choice should be cleared
+      expect(state.pendingMonsterChoice).toBeNull();
+      // Should have placed a tile
+      expect(state.dungeon.tiles.length).toBeGreaterThan(1);
+      // Should have spawned a new monster
+      expect(state.monsters.length).toBe(3);
+      // Should show success message
+      expect(state.encounterEffectMessage).toContain("spawned");
+      // Encounter card should be discarded
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("scream-of-sentry");
     });
   });
 
