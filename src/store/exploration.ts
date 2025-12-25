@@ -397,8 +397,13 @@ export function updateDungeonAfterExploration(
   newTile: PlacedTile
 ): DungeonState {
   // Remove the explored edge from unexplored edges
+  // For edges with subTileId, must match all three: tileId, direction, AND subTileId
   const updatedUnexploredEdges = dungeon.unexploredEdges.filter(
-    e => !(e.tileId === exploredEdge.tileId && e.direction === exploredEdge.direction)
+    e => !(
+      e.tileId === exploredEdge.tileId && 
+      e.direction === exploredEdge.direction &&
+      e.subTileId === exploredEdge.subTileId
+    )
   );
   
   // Add new unexplored edges from the new tile (excluding the connected edge)
