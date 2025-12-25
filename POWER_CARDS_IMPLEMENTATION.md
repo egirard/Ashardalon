@@ -88,13 +88,34 @@ These cards can be implemented as simple hero-phase actions without event hooks:
 1. Monster relocation (9, 38) - move monsters during hero phase
 2. Complex utilities (29, 30, 48, 50) - require additional game state
 
+### ✅ Attack Powers on Player Dashboard
+
+**Implementation Status: FULLY IMPLEMENTED**
+
+Attack power cards are enabled on the player dashboard with:
+- ✅ PowerCardAttackPanel component provides enlarged card display (2+ rows)
+- ✅ Cards show attack bonus, damage, and key rules in expanded view
+- ✅ Monster selection interface integrated with targeting system
+- ✅ Touch and mouse-friendly UI interactions
+- ✅ Visual states for eligible/ineligible cards
+- ✅ Support for multi-attack and move-then-attack powers
+
+**Component:** `src/components/PowerCardAttackPanel.svelte`
+**Integration:** Appears automatically during hero phase when adjacent to monsters
+**UI Features:**
+- Card list with type badges (At-Will, Daily, Utility)
+- Selectable cards expand to show full details
+- Monster target selection with "Attack [Monster]" buttons
+- Cancel options for multi-attack sequences
+- Special badges for multi-attack and move+attack powers
+
 ### ✅ At-Will Attack Cards with Special Effects
 
 These cards have additional effects beyond basic attacks:
 
 | ID | Name | Class | Effect | Implementation |
 |----|------|-------|--------|----------------|
-| 2 | Cleric's Shield | Cleric | Grant +2 AC to ally | Needs AC modifier tracking |
+| 2 | Cleric's Shield | Cleric | Grant +2 AC to ally | ✅ Implemented |
 | 3 | Righteous Advance | Cleric | Ally moves 2 squares | Needs ally movement system |
 | 4 | Sacred Flame | Cleric | Grant 1 HP on hit | Can use existing HP system |
 | 22 | Divine Challenge | Paladin | Move monster adjacent | Can use existing movement |
