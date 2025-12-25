@@ -2,33 +2,58 @@
   import type { HeroPowerCards, PowerCard } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
   import { XIcon } from './icons';
+  import type { GameState } from '../store/gameSlice';
+  import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
 
   interface Props {
     heroPowerCards?: HeroPowerCards;
     /** Board position for orientation (top, bottom, left, right) */
     boardPosition?: 'top' | 'bottom' | 'left' | 'right';
+    /** Game state for checking card eligibility */
+    gameState?: GameState;
+    /** Callback when a power card is clicked */
+    onActivatePowerCard?: (cardId: number) => void;
   }
 
-  let { heroPowerCards, boardPosition = 'bottom' }: Props = $props();
+  let { heroPowerCards, boardPosition = 'bottom', gameState, onActivatePowerCard }: Props = $props();
 
-  // Get power cards for display
+  // Get power cards for display with highlight state
   let powerCards = $derived.by(() => {
     if (!heroPowerCards) return [];
     
-    const cards: { card: PowerCard; isFlipped: boolean }[] = [];
+    const cards: { 
+      card: PowerCard; 
+      isFlipped: boolean;
+      highlightState: 'eligible' | 'ineligible' | 'disabled';
+      ineligibilityReason: string;
+    }[] = [];
     
     // Add custom ability
     const customAbility = getPowerCardById(heroPowerCards.customAbility);
     if (customAbility) {
       const state = heroPowerCards.cardStates.find(s => s.cardId === customAbility.id);
-      cards.push({ card: customAbility, isFlipped: state?.isFlipped ?? false });
+      const isFlipped = state?.isFlipped ?? false;
+      const highlightState = gameState 
+        ? getPowerCardHighlightState(customAbility, isFlipped, gameState, heroPowerCards.heroId)
+        : 'ineligible';
+      const ineligibilityReason = gameState && highlightState !== 'eligible'
+        ? getPowerCardIneligibilityReason(customAbility, isFlipped, gameState, heroPowerCards.heroId)
+        : '';
+      cards.push({ card: customAbility, isFlipped, highlightState, ineligibilityReason });
     }
     
     // Add utility
     const utility = getPowerCardById(heroPowerCards.utility);
     if (utility) {
       const state = heroPowerCards.cardStates.find(s => s.cardId === utility.id);
-      cards.push({ card: utility, isFlipped: state?.isFlipped ?? false });
+      const isFlipped = state?.isFlipped ?? false;
+      const highlightState = gameState 
+        ? getPowerCardHighlightState(utility, isFlipped, gameState, heroPowerCards.heroId)
+        : 'ineligible';
+      const ineligibilityReason = gameState && highlightState !== 'eligible'
+        ? getPowerCardIneligibilityReason(utility, isFlipped, gameState, heroPowerCards.heroId)
+        : '';
+      cards.push({ card: utility, isFlipped, highlightState, ineligibilityReason });
     }
     
     // Add at-wills
@@ -36,7 +61,14 @@
       const atWill = getPowerCardById(atWillId);
       if (atWill) {
         const state = heroPowerCards.cardStates.find(s => s.cardId === atWill.id);
-        cards.push({ card: atWill, isFlipped: state?.isFlipped ?? false });
+        const isFlipped = state?.isFlipped ?? false;
+        const highlightState = gameState 
+          ? getPowerCardHighlightState(atWill, isFlipped, gameState, heroPowerCards.heroId)
+          : 'ineligible';
+        const ineligibilityReason = gameState && highlightState !== 'eligible'
+          ? getPowerCardIneligibilityReason(atWill, isFlipped, gameState, heroPowerCards.heroId)
+          : '';
+        cards.push({ card: atWill, isFlipped, highlightState, ineligibilityReason });
       }
     }
     
@@ -44,7 +76,14 @@
     const daily = getPowerCardById(heroPowerCards.daily);
     if (daily) {
       const state = heroPowerCards.cardStates.find(s => s.cardId === daily.id);
-      cards.push({ card: daily, isFlipped: state?.isFlipped ?? false });
+      const isFlipped = state?.isFlipped ?? false;
+      const highlightState = gameState 
+        ? getPowerCardHighlightState(daily, isFlipped, gameState, heroPowerCards.heroId)
+        : 'ineligible';
+      const ineligibilityReason = gameState && highlightState !== 'eligible'
+        ? getPowerCardIneligibilityReason(daily, isFlipped, gameState, heroPowerCards.heroId)
+        : '';
+      cards.push({ card: daily, isFlipped, highlightState, ineligibilityReason });
     }
     
     // Add level 2 daily if present
@@ -52,7 +91,14 @@
       const dailyL2 = getPowerCardById(heroPowerCards.dailyLevel2);
       if (dailyL2) {
         const state = heroPowerCards.cardStates.find(s => s.cardId === dailyL2.id);
-        cards.push({ card: dailyL2, isFlipped: state?.isFlipped ?? false });
+        const isFlipped = state?.isFlipped ?? false;
+        const highlightState = gameState 
+          ? getPowerCardHighlightState(dailyL2, isFlipped, gameState, heroPowerCards.heroId)
+          : 'ineligible';
+        const ineligibilityReason = gameState && highlightState !== 'eligible'
+          ? getPowerCardIneligibilityReason(dailyL2, isFlipped, gameState, heroPowerCards.heroId)
+          : '';
+        cards.push({ card: dailyL2, isFlipped, highlightState, ineligibilityReason });
       }
     }
     
@@ -78,6 +124,14 @@
       default: return '';
     }
   }
+
+  // Handle power card click
+  function handlePowerCardClick(cardId: number, highlightState: string) {
+    if (highlightState === 'eligible' && onActivatePowerCard) {
+      onActivatePowerCard(cardId);
+    }
+  }
+
 </script>
 
 {#if powerCards.length > 0}
@@ -88,12 +142,19 @@
     class:position-right={boardPosition === 'right'}
     data-testid="player-power-cards"
   >
-    {#each powerCards as { card, isFlipped } (card.id)}
-      <div 
+    {#each powerCards as { card, isFlipped, highlightState, ineligibilityReason } (card.id)}
+      <button 
         class="power-card-mini"
         class:flipped={isFlipped}
-        title="{card.name} ({card.type})"
+        class:eligible={highlightState === 'eligible'}
+        class:ineligible={highlightState === 'ineligible'}
+        class:disabled={highlightState === 'disabled'}
+        title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
         style="border-color: {getPowerCardColor(card.type)};"
+        onclick={() => handlePowerCardClick(card.id, highlightState)}
+        disabled={highlightState !== 'eligible'}
+        data-testid="power-card-{card.id}"
+        aria-label="{card.name} - {highlightState === 'eligible' ? 'Click to activate' : ineligibilityReason || 'Not available'}"
       >
         <span class="power-type" style="background-color: {getPowerCardColor(card.type)};">
           {getPowerCardAbbrev(card.type)}
@@ -104,7 +165,7 @@
             <XIcon size={14} ariaLabel="Used" />
           </span>
         {/if}
-      </div>
+      </button>
     {/each}
   </div>
 {/if}
@@ -137,11 +198,45 @@
     font-size: 0.55rem;
     width: 100%;
     overflow: hidden;
-    transition: opacity 0.2s ease;
+    transition: all 0.2s ease;
+    cursor: default;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
   }
 
-  .power-card-mini.flipped {
+  /* Eligible state - can be activated */
+  .power-card-mini.eligible {
+    cursor: pointer;
+    background: rgba(46, 125, 50, 0.3);
+    border-color: #4caf50;
+    border-width: 2px;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .power-card-mini.eligible:hover {
+    background: rgba(46, 125, 50, 0.5);
+    border-color: #66bb6a;
+    transform: translateY(-2px);
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.7);
+  }
+
+  .power-card-mini.eligible:active {
+    transform: translateY(0);
+  }
+
+  /* Ineligible state - cannot be activated right now */
+  .power-card-mini.ineligible {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Disabled state - already used/flipped */
+  .power-card-mini.flipped,
+  .power-card-mini.disabled {
     opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .power-type {
@@ -161,9 +256,42 @@
     flex: 1;
   }
 
+  .power-card-mini.eligible .power-name {
+    color: #fff;
+    font-weight: 600;
+  }
+
   .flipped-indicator {
     color: #e53935;
     font-weight: bold;
     flex-shrink: 0;
+  }
+
+  /* Pulse animation for eligible cards */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+      border-color: #4caf50;
+    }
+    50% {
+      box-shadow: 0 0 16px rgba(76, 175, 80, 0.8);
+      border-color: #66bb6a;
+    }
+  }
+
+  /* Respect user's reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .power-card-mini.eligible {
+      animation: none;
+    }
+    .power-card-mini {
+      transition: none;
+    }
+  }
+
+  /* Focus visible for keyboard navigation */
+  .power-card-mini:focus-visible {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
   }
 </style>
