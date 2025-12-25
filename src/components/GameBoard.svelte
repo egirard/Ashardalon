@@ -44,6 +44,7 @@
     assignTreasureToHero,
     dismissTreasureCard,
     useTreasureItem,
+    applyHealing,
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
@@ -1354,19 +1355,83 @@
 
   // Handle activating a power card from the player dashboard
   function handleActivatePowerCard(heroId: string, cardId: number) {
-    // TODO: Implement specific power card effects
-    // For now, just flip the card to mark it as used
-    store.dispatch(usePowerCard({ heroId, cardId }));
+    // Get the power card details
+    const { POWER_CARDS } = require("../store/powerCards");
+    const { getTileOrSubTileId } = require("../store/movement");
+    const card = POWER_CARDS.find((c: any) => c.id === cardId);
     
-    // TODO: In future, this should dispatch specific actions based on the card:
-    // - Healing Hymn (1): Heal hero and ally on tile
-    // - Dwarven Resilience (11): Heal self 4 HP
-    // - Lay On Hands (21): Heal adjacent ally 2 HP
-    // - Command (9): Move monster on tile
-    // - Distant Diversion (38): Move monster to adjacent tile
-    // - Invisibility (48): Set invisibility status
-    // - Mirror Image (49): Add mirror image tokens
-    // - Wizard Eye (50): Place wizard eye token
+    if (!card) return;
+    
+    // Get game state for context
+    const state = store.getState();
+    const heroToken = state.game.heroTokens.find(t => t.heroId === heroId);
+    if (!heroToken) return;
+    
+    // Implement healing power cards
+    switch (cardId) {
+      case 1: // Healing Hymn - Heal self and one ally on tile 2 HP
+        {
+          // Find the tile/sub-tile the hero is on
+          const heroTileId = getTileOrSubTileId(heroToken.position, state.game.dungeon);
+          
+          // Find all heroes on the same tile
+          const heroesOnTile = state.game.heroTokens.filter(t => {
+            const tileId = getTileOrSubTileId(t.position, state.game.dungeon);
+            return tileId === heroTileId;
+          });
+          
+          // Heal all heroes on the tile (including self)
+          heroesOnTile.forEach(token => {
+            store.dispatch(applyHealing({ heroId: token.heroId, amount: 2 }));
+          });
+          
+          // Flip the card to mark it as used
+          store.dispatch(usePowerCard({ heroId, cardId }));
+        }
+        break;
+        
+      case 11: // Dwarven Resilience - Heal self 4 HP
+        {
+          // Heal the hero
+          store.dispatch(applyHealing({ heroId, amount: 4 }));
+          
+          // Flip the card to mark it as used
+          store.dispatch(usePowerCard({ heroId, cardId }));
+        }
+        break;
+        
+      case 21: // Lay On Hands - Heal adjacent ally 2 HP
+        {
+          // Find adjacent heroes
+          const adjacentHeroes = state.game.heroTokens.filter(t => {
+            if (t.heroId === heroId) return false; // Don't include self
+            const dx = Math.abs(t.position.x - heroToken.position.x);
+            const dy = Math.abs(t.position.y - heroToken.position.y);
+            return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+          });
+          
+          if (adjacentHeroes.length === 0) {
+            // No adjacent heroes to heal - don't activate the card
+            return;
+          } else if (adjacentHeroes.length === 1) {
+            // Only one adjacent hero - heal them automatically
+            store.dispatch(applyHealing({ heroId: adjacentHeroes[0].heroId, amount: 2 }));
+            store.dispatch(usePowerCard({ heroId, cardId }));
+          } else {
+            // Multiple adjacent heroes - need UI to select target
+            // For MVP, heal the first adjacent hero (TODO: add target selection UI)
+            store.dispatch(applyHealing({ heroId: adjacentHeroes[0].heroId, amount: 2 }));
+            store.dispatch(usePowerCard({ heroId, cardId }));
+          }
+        }
+        break;
+        
+      default:
+        // For other cards, just flip them for now
+        // TODO: Implement other utility cards
+        store.dispatch(usePowerCard({ heroId, cardId }));
+        break;
+    }
   }
 
   // Get hero inventory item count for display
