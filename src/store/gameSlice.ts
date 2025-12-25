@@ -1600,7 +1600,8 @@ export const gameSlice = createSlice({
             if (state.monsters.length === 0) {
               state.encounterEffectMessage = 'No monsters in play - card discarded';
             } else {
-              // Choose a monster (use first monster for simplicity)
+              // Choose a monster - in the board game, players choose which monster
+              // For this implementation, we automatically select the first monster in play
               const chosenMonster = state.monsters[0];
               const monsterDef = getMonsterById(chosenMonster.monsterId);
               
