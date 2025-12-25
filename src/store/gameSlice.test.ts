@@ -3413,6 +3413,103 @@ describe("gameSlice", () => {
     });
   });
 
+  describe("Scream of the Sentry", () => {
+    it("should discard card when no monsters in play", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 }, tileId: "start-tile" }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "scream-of-sentry",
+          name: "Scream of the Sentry",
+          type: "event",
+          description: "If no Monster is in play, discard this card.",
+          effect: { type: "special", description: "Place tile and monster near existing monster." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsters: [],
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      expect(state.encounterEffectMessage).toBe("No monsters in play - card discarded");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("scream-of-sentry");
+    });
+
+    it("should place tile and spawn monster near existing monster", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 }, tileId: "start-tile" }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "scream-of-sentry",
+          name: "Scream of the Sentry",
+          type: "event",
+          description: "If no Monster is in play, discard this card.",
+          effect: { type: "special", description: "Place tile and monster near existing monster." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsters: [{
+          instanceId: 1,
+          monsterId: "kobold",
+          position: { x: 2, y: 2 },
+          tileId: "start-tile",
+          currentHp: 5,
+          targetHeroId: "quinn",
+          turnNumber: 1,
+        }],
+        monsterDeck: { drawPile: ["snake"], discardPile: [] },
+        dungeon: {
+          tiles: [{
+            id: "start-tile",
+            tileType: "start",
+            position: { x: 0, y: 0 },
+            rotation: 0,
+            edges: {
+              north: "unexplored",
+              south: "unexplored",
+              east: "unexplored",
+              west: "unexplored",
+            },
+          }],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: ["tile-black-2exit-a"],
+        },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Should have placed a tile (start with 1, add 1 more)
+      expect(state.dungeon.tiles.length).toBeGreaterThan(1);
+      // Should have spawned a monster (start with 1, add 1 more)
+      expect(state.monsters.length).toBe(2);
+      expect(state.monsters[1].monsterId).toBe("snake");
+      // Should show success message
+      expect(state.encounterEffectMessage).toContain("spawned");
+      // Tile deck should be empty now
+      expect(state.dungeon.tileDeck).toEqual([]);
+      // Monster deck should be empty now
+      expect(state.monsterDeck.drawPile).toEqual([]);
+    });
+  });
+
   describe("cancelEncounterCard", () => {
     it("should cancel encounter without applying effect when party has 5+ XP", () => {
       const initialState = createGameState({
