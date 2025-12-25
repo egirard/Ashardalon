@@ -273,6 +273,20 @@ export interface GameState {
   poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null;
   /** Cleric's Shield target: hero ID receiving +2 AC bonus (null if no bonus active) */
   clericsShieldTarget: string | null;
+  /** Pending monster choice: context and encounter ID for effects requiring monster selection */
+  pendingMonsterChoice: PendingMonsterChoiceState | null;
+}
+
+/**
+ * State for tracking when player needs to choose a monster for an encounter effect
+ */
+export interface PendingMonsterChoiceState {
+  /** The encounter card that requires monster selection */
+  encounterId: string;
+  /** The encounter card name for display */
+  encounterName: string;
+  /** Context for why the choice is needed (for UI display) */
+  context: string;
 }
 
 /**
@@ -467,6 +481,7 @@ const initialState: GameState = {
   poisonedDamageNotification: null,
   poisonRecoveryNotification: null,
   clericsShieldTarget: null,
+  pendingMonsterChoice: null,
 };
 
 /**
@@ -577,6 +592,107 @@ function shuffleArray<T>(
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+
+/**
+ * Helper function to handle "Scream of the Sentry" encounter effect with a chosen monster
+ * This is extracted as a reusable function that can be called from multiple places
+ */
+function handleScreamOfSentryEffect(state: GameState, chosenMonster: MonsterState): void {
+  const monsterDef = getMonsterById(chosenMonster.monsterId);
+  
+  // Find the closest unexplored edge to the monster
+  // Calculate distances from monster's position to all unexplored edges
+  const monsterTile = state.dungeon.tiles.find(t => t.id === chosenMonster.tileId);
+  
+  if (monsterTile && state.dungeon.unexploredEdges.length > 0) {
+    // Find closest unexplored edge based on tile distance
+    let closestEdge = state.dungeon.unexploredEdges[0];
+    let closestDistance = Infinity;
+    
+    for (const edge of state.dungeon.unexploredEdges) {
+      const edgeTile = state.dungeon.tiles.find(t => t.id === edge.tileId);
+      if (edgeTile) {
+        // Calculate Manhattan distance between tiles
+        const dx = Math.abs(edgeTile.position.x - monsterTile.position.x);
+        const dy = Math.abs(edgeTile.position.y - monsterTile.position.y);
+        const distance = dx + dy;
+        
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestEdge = edge;
+        }
+      }
+    }
+    
+    // Draw a tile from the bottom of the deck
+    const { drawnTile, remainingDeck } = drawTileFromBottom(state.dungeon.tileDeck);
+    
+    if (drawnTile) {
+      state.dungeon.tileDeck = remainingDeck;
+      
+      // Place the tile at the closest unexplored edge
+      const newTile = placeTile(closestEdge, drawnTile, state.dungeon);
+      
+      if (newTile) {
+        // Add the new tile to the dungeon
+        state.dungeon.tiles.push(newTile);
+        
+        // Update unexplored edges
+        state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
+        
+        // Draw a monster from the deck
+        const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+        state.monsterDeck = updatedMonsterDeck;
+        
+        if (newMonsterId) {
+          const newMonsterDef = getMonsterById(newMonsterId);
+          
+          // Get spawn position on the new tile
+          const spawnPosition = getMonsterSpawnPosition(newTile, state.monsters);
+          
+          if (spawnPosition) {
+            const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+            
+            // Create the new monster instance
+            const newMonster = createMonsterInstance(
+              newMonsterId,
+              spawnPosition,
+              activeHeroToken?.heroId || state.heroTokens[0].heroId,
+              newTile.id,
+              state.monsterInstanceCounter
+            );
+            
+            if (newMonster) {
+              state.monsters.push(newMonster);
+              state.monsterInstanceCounter++;
+              state.recentlySpawnedMonsterId = newMonster.instanceId;
+              
+              state.encounterEffectMessage = `Tile placed near ${monsterDef?.name || 'monster'}, ${newMonsterDef?.name || 'monster'} spawned`;
+            } else {
+              state.encounterEffectMessage = 'Failed to create monster';
+            }
+          } else {
+            state.encounterEffectMessage = 'No valid spawn position on new tile';
+          }
+        } else {
+          state.encounterEffectMessage = 'No monsters in deck to spawn';
+        }
+      } else {
+        state.encounterEffectMessage = 'Failed to place tile';
+      }
+    } else {
+      state.encounterEffectMessage = 'No tiles in deck to place';
+    }
+  } else {
+    state.encounterEffectMessage = 'No unexplored edges available';
+  }
+  
+  // Discard the encounter card
+  if (state.drawnEncounter) {
+    state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+    state.drawnEncounter = null;
+  }
 }
 
 export interface StartGamePayload {
@@ -1599,98 +1715,21 @@ export const gameSlice = createSlice({
             // Check if there are any monsters in play
             if (state.monsters.length === 0) {
               state.encounterEffectMessage = 'No monsters in play - card discarded';
+              // Discard the encounter card
+              state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+              state.drawnEncounter = null;
+            } else if (state.monsters.length === 1) {
+              // Only one monster - automatically use it
+              handleScreamOfSentryEffect(state, state.monsters[0]);
             } else {
-              // Choose a monster - in the board game, players choose which monster
-              // For this implementation, we automatically select the first monster in play
-              const chosenMonster = state.monsters[0];
-              const monsterDef = getMonsterById(chosenMonster.monsterId);
-              
-              // Find the closest unexplored edge to the monster
-              // Calculate distances from monster's position to all unexplored edges
-              const monsterTile = state.dungeon.tiles.find(t => t.id === chosenMonster.tileId);
-              
-              if (monsterTile && state.dungeon.unexploredEdges.length > 0) {
-                // Find closest unexplored edge based on tile distance
-                let closestEdge = state.dungeon.unexploredEdges[0];
-                let closestDistance = Infinity;
-                
-                for (const edge of state.dungeon.unexploredEdges) {
-                  const edgeTile = state.dungeon.tiles.find(t => t.id === edge.tileId);
-                  if (edgeTile) {
-                    // Calculate Manhattan distance between tiles
-                    const dx = Math.abs(edgeTile.position.x - monsterTile.position.x);
-                    const dy = Math.abs(edgeTile.position.y - monsterTile.position.y);
-                    const distance = dx + dy;
-                    
-                    if (distance < closestDistance) {
-                      closestDistance = distance;
-                      closestEdge = edge;
-                    }
-                  }
-                }
-                
-                // Draw a tile from the bottom of the deck
-                const { drawnTile, remainingDeck } = drawTileFromBottom(state.dungeon.tileDeck);
-                
-                if (drawnTile) {
-                  state.dungeon.tileDeck = remainingDeck;
-                  
-                  // Place the tile at the closest unexplored edge
-                  const newTile = placeTile(closestEdge, drawnTile, state.dungeon);
-                  
-                  if (newTile) {
-                    // Add the new tile to the dungeon
-                    state.dungeon.tiles.push(newTile);
-                    
-                    // Update unexplored edges
-                    state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
-                    
-                    // Draw a monster from the deck
-                    const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
-                    state.monsterDeck = updatedMonsterDeck;
-                    
-                    if (newMonsterId) {
-                      const newMonsterDef = getMonsterById(newMonsterId);
-                      
-                      // Get spawn position on the new tile
-                      const spawnPosition = getMonsterSpawnPosition(newTile, state.monsters);
-                      
-                      if (spawnPosition) {
-                        const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
-                        
-                        // Create the new monster instance
-                        const newMonster = createMonsterInstance(
-                          newMonsterId,
-                          spawnPosition,
-                          activeHeroToken?.heroId || state.heroTokens[0].heroId,
-                          newTile.id,
-                          state.monsterInstanceCounter
-                        );
-                        
-                        if (newMonster) {
-                          state.monsters.push(newMonster);
-                          state.monsterInstanceCounter++;
-                          state.recentlySpawnedMonsterId = newMonster.instanceId;
-                          
-                          state.encounterEffectMessage = `Tile placed near ${monsterDef?.name || 'monster'}, ${newMonsterDef?.name || 'monster'} spawned`;
-                        } else {
-                          state.encounterEffectMessage = 'Failed to create monster';
-                        }
-                      } else {
-                        state.encounterEffectMessage = 'No valid spawn position on new tile';
-                      }
-                    } else {
-                      state.encounterEffectMessage = 'No monsters in deck to spawn';
-                    }
-                  } else {
-                    state.encounterEffectMessage = 'Failed to place tile';
-                  }
-                } else {
-                  state.encounterEffectMessage = 'No tiles in deck to place';
-                }
-              } else {
-                state.encounterEffectMessage = 'No unexplored edges available';
-              }
+              // Multiple monsters - prompt player to choose
+              state.pendingMonsterChoice = {
+                encounterId: 'scream-of-sentry',
+                encounterName: state.drawnEncounter.name,
+                context: 'Choose a monster to place a tile near',
+              };
+              // Keep the encounter card displayed until choice is made
+              return;
             }
           }
           
@@ -1700,8 +1739,10 @@ export const gameSlice = createSlice({
             state.encounterEffectMessage = 'Effect not yet implemented';
           }
           
-          // Discard the encounter card
-          state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+          // Discard the encounter card (if not already discarded by effect handler)
+          if (state.drawnEncounter) {
+            state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+          }
           
           // Check if we need to draw another encounter card
           if (shouldDrawAnotherEncounter(encounterId)) {
@@ -3006,6 +3047,66 @@ export const gameSlice = createSlice({
         heroHp.currentHp = Math.min(heroHp.maxHp, heroHp.currentHp + amount);
       }
     },
+    /**
+     * Prompt player to choose a monster for an encounter effect
+     * This is a reusable action for any encounter card that requires monster selection
+     */
+    promptMonsterChoice: (state, action: PayloadAction<{ 
+      encounterId: string; 
+      encounterName: string; 
+      context: string;
+    }>) => {
+      const { encounterId, encounterName, context } = action.payload;
+      state.pendingMonsterChoice = {
+        encounterId,
+        encounterName,
+        context,
+      };
+    },
+    /**
+     * Handle player's monster selection for an encounter effect
+     * This is a reusable action that delegates to the appropriate encounter handler
+     */
+    selectMonsterForEncounter: (state, action: PayloadAction<{ monsterInstanceId: string }>) => {
+      const { monsterInstanceId } = action.payload;
+      
+      if (!state.pendingMonsterChoice) {
+        return;
+      }
+      
+      const { encounterId } = state.pendingMonsterChoice;
+      const selectedMonster = state.monsters.find(m => m.instanceId === monsterInstanceId);
+      
+      if (!selectedMonster) {
+        state.encounterEffectMessage = 'Selected monster not found';
+        state.pendingMonsterChoice = null;
+        return;
+      }
+      
+      // Clear the pending choice
+      state.pendingMonsterChoice = null;
+      
+      // Handle the specific encounter effect with the chosen monster
+      // This is a reusable pattern - add more cases here as needed
+      if (encounterId === 'scream-of-sentry') {
+        handleScreamOfSentryEffect(state, selectedMonster);
+      }
+      // Add more encounter handlers here as needed
+    },
+    /**
+     * Cancel monster selection prompt
+     */
+    cancelMonsterChoice: (state) => {
+      if (state.pendingMonsterChoice) {
+        // Discard the encounter card without applying effect
+        if (state.drawnEncounter) {
+          state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+          state.drawnEncounter = null;
+        }
+        state.pendingMonsterChoice = null;
+        state.encounterEffectMessage = 'Monster selection cancelled';
+      }
+    },
   },
 });
 
@@ -3076,5 +3177,8 @@ export const {
   removeMonsterStatus,
   processHeroStatusEffects,
   applyHealing,
+  promptMonsterChoice,
+  selectMonsterForEncounter,
+  cancelMonsterChoice,
 } = gameSlice.actions;
 export default gameSlice.reducer;
