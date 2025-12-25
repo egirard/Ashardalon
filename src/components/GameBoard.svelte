@@ -1427,7 +1427,7 @@
     // (only pinch gestures auto-enable map control mode)
     if (event instanceof TouchEvent && event.touches.length === 1 && !mapControlMode) return;
     
-    // For single touch or mouse events, proceed if panning is active
+    // Only proceed with panning if a pan gesture is currently active
     if (!isPanning) return;
     
     if (event instanceof MouseEvent) {
