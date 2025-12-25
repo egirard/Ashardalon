@@ -1379,10 +1379,13 @@
       return;
     }
     
-    // For touch events, auto-enable map control mode for better UX
+    // For single-finger touch events, only enable panning if map control mode is already active
+    // This allows normal gameplay interactions (taps) to work when map control is off
     // For mouse events, still require manual activation
     if (event instanceof TouchEvent && event.touches.length === 1 && !mapControlMode) {
-      mapControlMode = true;
+      // Don't auto-enable map control mode for single-finger touches
+      // Let the tap go through to handleTileClick or move square clicks
+      return;
     } else if (event instanceof MouseEvent && !mapControlMode) {
       // Mouse events still require map control mode to be manually enabled
       return;
@@ -1420,8 +1423,11 @@
     // For mouse events, still require map control mode
     if (event instanceof MouseEvent && !mapControlMode) return;
     
+    // For single-finger touch events, require map control mode to be active
+    // (only pinch gestures auto-enable map control mode)
+    if (event instanceof TouchEvent && event.touches.length === 1 && !mapControlMode) return;
+    
     // For single touch or mouse events, proceed if panning is active
-    // Touch events auto-enabled map control mode in handlePanStart
     if (!isPanning) return;
     
     if (event instanceof MouseEvent) {
