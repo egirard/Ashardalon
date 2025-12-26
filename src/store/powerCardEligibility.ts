@@ -56,9 +56,12 @@ export function isPowerCardEligibleForActivation(
   const currentHeroToken = gameState.heroTokens[gameState.turnState.currentHeroIndex];
   if (!currentHeroToken || currentHeroToken.heroId !== heroId) return false;
   
-  // Attack cards are handled separately by PowerCardAttackPanel
-  // Only utility cards and custom abilities can be activated directly from dashboard
-  if (card.attackBonus !== undefined) return false;
+  // Attack cards can be shown as eligible in the dashboard
+  // They are activated via PowerCardAttackPanel but should visually indicate availability
+  if (card.attackBonus !== undefined) {
+    // Attack cards are eligible during hero phase if hero can attack
+    return gameState.heroTurnActions?.canAttack ?? false;
+  }
   
   // Check card-specific eligibility based on type and rule text
   return isCardEligibleByRule(card, gameState, heroId);
@@ -154,7 +157,10 @@ export function getPowerCardIneligibilityReason(
   }
   
   if (card.attackBonus !== undefined) {
-    return 'Use the attack panel to activate attack powers';
+    if (!gameState.heroTurnActions?.canAttack) {
+      return 'You have already attacked this turn';
+    }
+    return 'Use the attack panel to select targets';
   }
   
   const rule = card.rule.toLowerCase();

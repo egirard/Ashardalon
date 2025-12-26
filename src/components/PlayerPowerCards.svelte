@@ -126,7 +126,14 @@
   }
 
   // Handle power card click
-  function handlePowerCardClick(cardId: number, highlightState: string) {
+  function handlePowerCardClick(cardId: number, highlightState: string, card: PowerCard) {
+    // Attack cards are shown as eligible but don't activate from mini cards
+    // They must be used via the PowerCardAttackPanel (Game State Panel)
+    if (card.attackBonus !== undefined) {
+      // Don't activate - just visual indicator
+      return;
+    }
+    
     if (highlightState === 'eligible' && onActivatePowerCard) {
       onActivatePowerCard(cardId);
     }
@@ -150,10 +157,10 @@
         class:disabled={highlightState === 'disabled'}
         title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
         style="border-color: {getPowerCardColor(card.type)};"
-        onclick={() => handlePowerCardClick(card.id, highlightState)}
+        onclick={() => handlePowerCardClick(card.id, highlightState, card)}
         disabled={highlightState !== 'eligible'}
         data-testid="power-card-{card.id}"
-        aria-label="{card.name} - {highlightState === 'eligible' ? 'Click to activate' : ineligibilityReason || 'Not available'}"
+        aria-label="{card.name} - {card.attackBonus !== undefined ? 'Available - use attack panel to select target' : (highlightState === 'eligible' ? 'Click to activate' : ineligibilityReason || 'Not available')}"
       >
         <span class="power-type" style="background-color: {getPowerCardColor(card.type)};">
           {getPowerCardAbbrev(card.type)}
