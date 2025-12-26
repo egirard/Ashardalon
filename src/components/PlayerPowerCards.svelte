@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { HeroPowerCards, PowerCard } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
-  import { XIcon } from './icons';
+  import { XIcon, TargetIcon } from './icons';
   import type { GameState } from '../store/gameSlice';
+  import type { MonsterState } from '../store/types';
+  import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
 
   interface Props {
@@ -13,9 +15,23 @@
     gameState?: GameState;
     /** Callback when a power card is clicked */
     onActivatePowerCard?: (cardId: number) => void;
+    /** Targetable monsters for attack powers */
+    targetableMonsters?: MonsterState[];
+    /** Callback when attacking with a card */
+    onAttackWithCard?: (cardId: number, targetInstanceId: string) => void;
   }
 
-  let { heroPowerCards, boardPosition = 'bottom', gameState, onActivatePowerCard }: Props = $props();
+  let { 
+    heroPowerCards, 
+    boardPosition = 'bottom', 
+    gameState, 
+    onActivatePowerCard,
+    targetableMonsters = [],
+    onAttackWithCard
+  }: Props = $props();
+
+  // State for expanded attack card
+  let expandedAttackCardId: number | null = $state(null);
 
   // Get power cards for display with highlight state
   let powerCards = $derived.by(() => {
@@ -128,7 +144,7 @@
   // Get aria label for power card based on type and state
   function getAriaLabel(card: PowerCard, highlightState: string, ineligibilityReason: string): string {
     if (card.attackBonus !== undefined) {
-      return `${card.name} - Available - use attack panel to select target`;
+      return `${card.name} - Click to expand and select target`;
     }
     if (highlightState === 'eligible') {
       return `${card.name} - Click to activate`;
@@ -136,11 +152,16 @@
     return `${card.name} - ${ineligibilityReason || 'Not available'}`;
   }
 
+  // Get monster name by ID
+  function getMonsterName(monsterId: string): string {
+    const monster = MONSTERS.find(m => m.id === monsterId);
+    return monster?.name || 'Unknown';
+  }
+
   /**
    * Handle power card click
    * 
-   * Attack cards are shown as eligible but don't activate from mini cards.
-   * They must be used via the PowerCardAttackPanel (Game State Panel).
+   * Attack cards expand to show details and monster selection.
    * Utility and custom ability cards can be activated directly from the dashboard.
    * 
    * @param cardId - The ID of the power card
@@ -148,15 +169,32 @@
    * @param card - The power card object
    */
   function handlePowerCardClick(cardId: number, highlightState: string, card: PowerCard) {
-    // Attack cards are shown as eligible but don't activate from mini cards
-    // They must be used via the PowerCardAttackPanel (Game State Panel)
+    if (highlightState !== 'eligible') return;
+    
+    // Attack cards expand to show monster selection
     if (card.attackBonus !== undefined) {
-      // Don't activate - just visual indicator
+      if (expandedAttackCardId === cardId) {
+        // Clicking again collapses it
+        expandedAttackCardId = null;
+      } else {
+        // Expand this card
+        expandedAttackCardId = cardId;
+      }
       return;
     }
     
-    if (highlightState === 'eligible' && onActivatePowerCard) {
+    // Non-attack cards activate directly
+    if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
+    }
+  }
+
+  // Handle selecting a monster target for attack
+  function handleSelectMonsterTarget(cardId: number, targetInstanceId: string) {
+    if (onAttackWithCard) {
+      onAttackWithCard(cardId, targetInstanceId);
+      // Collapse after attacking
+      expandedAttackCardId = null;
     }
   }
 
@@ -171,28 +209,81 @@
     data-testid="player-power-cards"
   >
     {#each powerCards as { card, isFlipped, highlightState, ineligibilityReason } (card.id)}
-      <button 
-        class="power-card-mini"
-        class:eligible={highlightState === 'eligible'}
-        class:ineligible={highlightState === 'ineligible'}
-        class:disabled={highlightState === 'disabled'}
-        title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
-        style="border-color: {getPowerCardColor(card.type)};"
-        onclick={() => handlePowerCardClick(card.id, highlightState, card)}
-        disabled={highlightState !== 'eligible'}
-        data-testid="power-card-{card.id}"
-        aria-label={getAriaLabel(card, highlightState, ineligibilityReason)}
+      {@const isExpanded = expandedAttackCardId === card.id}
+      {@const isAttackCard = card.attackBonus !== undefined}
+      
+      <div 
+        class="power-card-wrapper"
+        class:expanded={isExpanded}
       >
-        <span class="power-type" style="background-color: {getPowerCardColor(card.type)};">
-          {getPowerCardAbbrev(card.type)}
-        </span>
-        <span class="power-name">{card.name}</span>
-        {#if isFlipped}
-          <span class="flipped-indicator">
-            <XIcon size={14} ariaLabel="Used" />
+        <button 
+          class="power-card-mini"
+          class:eligible={highlightState === 'eligible'}
+          class:ineligible={highlightState === 'ineligible'}
+          class:disabled={highlightState === 'disabled'}
+          class:expanded={isExpanded}
+          title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
+          style="border-color: {getPowerCardColor(card.type)};"
+          onclick={() => handlePowerCardClick(card.id, highlightState, card)}
+          disabled={highlightState !== 'eligible'}
+          data-testid="power-card-{card.id}"
+          aria-label={getAriaLabel(card, highlightState, ineligibilityReason)}
+        >
+          <span class="power-type" style="background-color: {getPowerCardColor(card.type)};">
+            {getPowerCardAbbrev(card.type)}
           </span>
+          <span class="power-name">{card.name}</span>
+          {#if isFlipped}
+            <span class="flipped-indicator">
+              <XIcon size={14} ariaLabel="Used" />
+            </span>
+          {/if}
+        </button>
+        
+        <!-- Expanded attack card view -->
+        {#if isExpanded && isAttackCard}
+          <div class="attack-card-expanded" data-testid="attack-card-expanded-{card.id}">
+            <div class="attack-stats">
+              <span class="stat-item">
+                <strong>Bonus:</strong> +{card.attackBonus}
+              </span>
+              <span class="stat-item">
+                <strong>Damage:</strong> {card.damage || 1}
+              </span>
+            </div>
+            <div class="attack-rule">
+              {card.rule}
+            </div>
+            
+            <!-- Monster selection -->
+            {#if targetableMonsters.length > 0}
+              <div class="monster-selection">
+                <div class="selection-header">
+                  <TargetIcon size={12} ariaLabel="Target" />
+                  <span>Select Target:</span>
+                </div>
+                <div class="monster-buttons">
+                  {#each targetableMonsters as monster (monster.instanceId)}
+                    <button 
+                      class="monster-target-btn"
+                      onclick={() => handleSelectMonsterTarget(card.id, monster.instanceId)}
+                      data-testid="attack-target-{monster.instanceId}"
+                    >
+                      <TargetIcon size={10} ariaLabel="Attack" />
+                      {getMonsterName(monster.monsterId)}
+                      <span class="monster-hp">HP: {monster.hp}</span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+            {:else}
+              <div class="no-targets">
+                No valid targets in range
+              </div>
+            {/if}
+          </div>
         {/if}
-      </button>
+      </div>
     {/each}
   </div>
 {/if}
@@ -214,6 +305,20 @@
 
   /* Orientation is now handled by the parent container in GameBoard */
 
+  .power-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    transition: all 0.3s ease;
+  }
+
+  .power-card-wrapper.expanded {
+    background: rgba(40, 40, 60, 0.95);
+    border-radius: 4px;
+    padding: 0.3rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
   .power-card-mini {
     display: flex;
     align-items: center;
@@ -230,6 +335,12 @@
     text-align: left;
     font-family: inherit;
     color: inherit;
+  }
+
+  .power-card-mini.expanded {
+    border-width: 2px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    border-color: #ffd700;
   }
 
   /* Eligible state - can be activated */
@@ -291,6 +402,103 @@
     color: #e53935;
     font-weight: bold;
     flex-shrink: 0;
+  }
+
+  /* Expanded attack card styles */
+  .attack-card-expanded {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+    font-size: 0.6rem;
+    color: #ddd;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+  }
+
+  .attack-stats {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-item {
+    color: #ffd700;
+    font-size: 0.65rem;
+  }
+
+  .stat-item strong {
+    color: #fff;
+  }
+
+  .attack-rule {
+    font-size: 0.55rem;
+    color: #bbb;
+    font-style: italic;
+    line-height: 1.3;
+  }
+
+  .monster-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .selection-header {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.6rem;
+    color: #ffd700;
+    font-weight: bold;
+  }
+
+  .monster-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .monster-target-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.4rem;
+    background: rgba(255, 69, 0, 0.3);
+    border: 1px solid #ff4500;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 0.55rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    width: 100%;
+    text-align: left;
+  }
+
+  .monster-target-btn:hover {
+    background: rgba(255, 69, 0, 0.5);
+    border-color: #ff6347;
+    transform: translateX(2px);
+  }
+
+  .monster-target-btn:active {
+    transform: translateX(0);
+  }
+
+  .monster-hp {
+    margin-left: auto;
+    font-size: 0.5rem;
+    color: #ff6347;
+  }
+
+  .no-targets {
+    padding: 0.4rem;
+    text-align: center;
+    color: #999;
+    font-size: 0.55rem;
+    font-style: italic;
   }
 
   /* Pulse animation for eligible cards */
