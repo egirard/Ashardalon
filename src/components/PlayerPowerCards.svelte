@@ -58,10 +58,10 @@
       const state = heroPowerCards.cardStates.find(s => s.cardId === customAbility.id);
       const isFlipped = state?.isFlipped ?? false;
       const highlightState = gameState 
-        ? getPowerCardHighlightState(customAbility, isFlipped, gameState, heroPowerCards.heroId)
+        ? getPowerCardHighlightState(customAbility, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
         : 'ineligible';
       const ineligibilityReason = gameState && highlightState !== 'eligible'
-        ? getPowerCardIneligibilityReason(customAbility, isFlipped, gameState, heroPowerCards.heroId)
+        ? getPowerCardIneligibilityReason(customAbility, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
         : '';
       cards.push({ card: customAbility, isFlipped, highlightState, ineligibilityReason });
     }
@@ -72,10 +72,10 @@
       const state = heroPowerCards.cardStates.find(s => s.cardId === utility.id);
       const isFlipped = state?.isFlipped ?? false;
       const highlightState = gameState 
-        ? getPowerCardHighlightState(utility, isFlipped, gameState, heroPowerCards.heroId)
+        ? getPowerCardHighlightState(utility, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
         : 'ineligible';
       const ineligibilityReason = gameState && highlightState !== 'eligible'
-        ? getPowerCardIneligibilityReason(utility, isFlipped, gameState, heroPowerCards.heroId)
+        ? getPowerCardIneligibilityReason(utility, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
         : '';
       cards.push({ card: utility, isFlipped, highlightState, ineligibilityReason });
     }
@@ -87,10 +87,10 @@
         const state = heroPowerCards.cardStates.find(s => s.cardId === atWill.id);
         const isFlipped = state?.isFlipped ?? false;
         const highlightState = gameState 
-          ? getPowerCardHighlightState(atWill, isFlipped, gameState, heroPowerCards.heroId)
+          ? getPowerCardHighlightState(atWill, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
           : 'ineligible';
         const ineligibilityReason = gameState && highlightState !== 'eligible'
-          ? getPowerCardIneligibilityReason(atWill, isFlipped, gameState, heroPowerCards.heroId)
+          ? getPowerCardIneligibilityReason(atWill, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
           : '';
         cards.push({ card: atWill, isFlipped, highlightState, ineligibilityReason });
       }
@@ -102,10 +102,10 @@
       const state = heroPowerCards.cardStates.find(s => s.cardId === daily.id);
       const isFlipped = state?.isFlipped ?? false;
       const highlightState = gameState 
-        ? getPowerCardHighlightState(daily, isFlipped, gameState, heroPowerCards.heroId)
+        ? getPowerCardHighlightState(daily, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
         : 'ineligible';
       const ineligibilityReason = gameState && highlightState !== 'eligible'
-        ? getPowerCardIneligibilityReason(daily, isFlipped, gameState, heroPowerCards.heroId)
+        ? getPowerCardIneligibilityReason(daily, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
         : '';
       cards.push({ card: daily, isFlipped, highlightState, ineligibilityReason });
     }
@@ -117,10 +117,10 @@
         const state = heroPowerCards.cardStates.find(s => s.cardId === dailyL2.id);
         const isFlipped = state?.isFlipped ?? false;
         const highlightState = gameState 
-          ? getPowerCardHighlightState(dailyL2, isFlipped, gameState, heroPowerCards.heroId)
+          ? getPowerCardHighlightState(dailyL2, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
           : 'ineligible';
         const ineligibilityReason = gameState && highlightState !== 'eligible'
-          ? getPowerCardIneligibilityReason(dailyL2, isFlipped, gameState, heroPowerCards.heroId)
+          ? getPowerCardIneligibilityReason(dailyL2, isFlipped, gameState, heroPowerCards.heroId, targetableMonsters)
           : '';
         cards.push({ card: dailyL2, isFlipped, highlightState, ineligibilityReason });
       }

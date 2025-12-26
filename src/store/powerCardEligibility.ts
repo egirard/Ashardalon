@@ -4,6 +4,7 @@
 
 import type { PowerCard } from './powerCards';
 import type { GameState } from './gameSlice';
+import type { MonsterState } from './types';
 
 /**
  * Power card IDs for reference in eligibility checks
@@ -39,12 +40,20 @@ const POWER_CARD_IDS = {
 /**
  * Determines if a power card can be activated during the hero phase
  * based on game state and card rules.
+ * 
+ * @param card - The power card to check
+ * @param isFlipped - Whether the card has been used
+ * @param gameState - Current game state
+ * @param heroId - The hero's ID
+ * @param targetableMonsters - Optional array of monsters that can be targeted. If provided for attack cards,
+ *                             the card is only eligible if there's at least one valid target.
  */
 export function isPowerCardEligibleForActivation(
   card: PowerCard,
   isFlipped: boolean,
   gameState: GameState,
-  heroId: string
+  heroId: string,
+  targetableMonsters?: MonsterState[]
 ): boolean {
   // Can't use flipped cards
   if (isFlipped) return false;
@@ -60,7 +69,19 @@ export function isPowerCardEligibleForActivation(
   // They are activated via PowerCardAttackPanel but should visually indicate availability
   if (card.attackBonus !== undefined) {
     // Attack cards are eligible during hero phase if hero can attack
-    return gameState.heroTurnActions?.canAttack ?? false;
+    if (!(gameState.heroTurnActions?.canAttack ?? false)) {
+      return false;
+    }
+    
+    // If targetableMonsters is provided, verify there's at least one valid target
+    // This ensures attack cards are only enabled when there are monsters in range
+    if (targetableMonsters !== undefined) {
+      return targetableMonsters.length > 0;
+    }
+    
+    // If targetableMonsters not provided, fall back to just checking canAttack
+    // (for backwards compatibility)
+    return true;
   }
   
   // Check card-specific eligibility based on type and rule text
@@ -141,7 +162,8 @@ export function getPowerCardIneligibilityReason(
   card: PowerCard,
   isFlipped: boolean,
   gameState: GameState,
-  heroId: string
+  heroId: string,
+  targetableMonsters?: MonsterState[]
 ): string {
   if (isFlipped) {
     return 'This power has already been used';
@@ -160,7 +182,11 @@ export function getPowerCardIneligibilityReason(
     if (!gameState.heroTurnActions?.canAttack) {
       return 'You have already attacked this turn';
     }
-    return 'Use the attack panel to select targets';
+    // Check if there are no valid targets
+    if (targetableMonsters !== undefined && targetableMonsters.length === 0) {
+      return 'No valid targets in range';
+    }
+    return 'Click to expand and select target';
   }
   
   const rule = card.rule.toLowerCase();
@@ -189,11 +215,12 @@ export function getPowerCardHighlightState(
   card: PowerCard,
   isFlipped: boolean,
   gameState: GameState,
-  heroId: string
+  heroId: string,
+  targetableMonsters?: MonsterState[]
 ): 'eligible' | 'ineligible' | 'disabled' {
   if (isFlipped) return 'disabled';
   
-  if (isPowerCardEligibleForActivation(card, isFlipped, gameState, heroId)) {
+  if (isPowerCardEligibleForActivation(card, isFlipped, gameState, heroId, targetableMonsters)) {
     return 'eligible';
   }
   
