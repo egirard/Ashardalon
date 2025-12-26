@@ -15,9 +15,17 @@
     gameState?: GameState;
     /** Callback when a power card is clicked */
     onActivatePowerCard?: (cardId: number) => void;
-    /** Targetable monsters for attack powers */
+    /** 
+     * Targetable monsters for attack powers.
+     * Should only be provided for the active hero during hero phase.
+     * Used to populate monster selection UI when attack cards are expanded.
+     */
     targetableMonsters?: MonsterState[];
-    /** Callback when attacking with a card */
+    /** 
+     * Callback when attacking with a card.
+     * Should only be provided for the active hero.
+     * Integrates with existing handleAttackWithCard flow in GameBoard.
+     */
     onAttackWithCard?: (cardId: number, targetInstanceId: string) => void;
   }
 
@@ -169,6 +177,8 @@
    * @param card - The power card object
    */
   function handlePowerCardClick(cardId: number, highlightState: string, card: PowerCard) {
+    // Only eligible cards can be interacted with
+    // This includes both expanding attack cards and activating utility cards
     if (highlightState !== 'eligible') return;
     
     // Attack cards expand to show monster selection
