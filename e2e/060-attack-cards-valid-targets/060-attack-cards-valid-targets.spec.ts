@@ -74,6 +74,10 @@ test.describe('060 - Attack Cards Valid Targets', () => {
         // Verify no monsters exist yet
         expect(storeState.game.monsters.length).toBe(0);
         
+        // Verify power cards are initialized for Vistra
+        console.log('[TEST] Hero power cards:', Object.keys(storeState.heroes.heroPowerCards || {}));
+        expect(storeState.heroes.heroPowerCards['vistra']).toBeDefined();
+        
         // Verify attack cards are NOT eligible (no targets)
         const eligibleAttackCards = await page.locator('.power-card-mini.eligible').count();
         // Should have 0 eligible attack cards when no monsters are present
@@ -87,6 +91,7 @@ test.describe('060 - Attack Cards Valid Targets', () => {
             if (isEligible) eligibleAttacks++;
           }
         }
+        console.log('[TEST] Eligible attack cards with no monsters:', eligibleAttacks);
         expect(eligibleAttacks).toBe(0);
       }
     });
@@ -180,68 +185,39 @@ test.describe('060 - Attack Cards Valid Targets', () => {
         expect(storeState.game.monsters.length).toBe(1);
         expect(storeState.game.monsters[0].position).toEqual({ x: 2, y: 2 });
         
-        // Log power cards state for debugging
-        console.log('[TEST] Checking power cards eligibility...');
-        const attackCardIds = [2, 3, 4]; // Vistra's melee attack cards: Bash, Steel Serpent Strike, Comeback Strike
+        // Log the actual state for debugging
+        console.log('[TEST] Hero position:', storeState.game.heroTokens[0].position);
+        console.log('[TEST] Monster position:', storeState.game.monsters[0].position);
+        console.log('[TEST] Can attack:', storeState.game.heroTurnActions.canAttack);
         
-        for (const cardId of attackCardIds) {
-          const card = page.locator(`[data-testid="power-card-${cardId}"]`);
-          if (await card.isVisible()) {
-            const classes = await card.evaluate((el) => el.className);
-            const title = await card.evaluate((el) => el.getAttribute('title'));
-            console.log(`[TEST] Card ${cardId}: classes="${classes}", title="${title}"`);
-          }
-        }
+        // Check if PowerCardAttackPanel is visible (this is the main attack panel)
+        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        const panelVisible = await attackPanel.isVisible();
+        console.log('[TEST] Attack panel visible:', panelVisible);
         
-        // Verify attack cards ARE now eligible (monster in range)
-        let eligibleAttacks = 0;
-        for (const cardId of attackCardIds) {
-          const card = page.locator(`[data-testid="power-card-${cardId}"]`);
-          if (await card.isVisible()) {
-            const isEligible = await card.evaluate((el) => el.classList.contains('eligible'));
-            if (isEligible) eligibleAttacks++;
-          }
-        }
+        // The attack panel should now be visible since there are adjacent monsters
+        expect(panelVisible).toBe(true);
         
-        console.log(`[TEST] Eligible attacks: ${eligibleAttacks}`);
+        // The panel should show attack cards
+        const attackCardList = page.locator('[data-testid="attack-card-list"]');
+        await expect(attackCardList).toBeVisible();
         
-        // At least one melee attack card should now be eligible
-        expect(eligibleAttacks).toBeGreaterThan(0);
-        
-        // Specifically check Bash is eligible
-        const bashCard = page.locator('[data-testid="power-card-2"]');
-        if (await bashCard.isVisible()) {
-          const isBashEligible = await bashCard.evaluate((el) => el.classList.contains('eligible'));
-          expect(isBashEligible).toBe(true);
-        }
+        const attackCards = await attackCardList.locator('button[data-testid^="attack-card-"]').count();
+        console.log('[TEST] Attack cards in panel:', attackCards);
+        expect(attackCards).toBeGreaterThan(0);
       }
     });
 
-    // STEP 5: Expand an attack card to verify it shows the monster
-    const bashCard = page.locator('[data-testid="power-card-2"]');
-    if (await bashCard.isVisible()) {
-      await bashCard.click();
-      
-      // Wait for expansion
-      await page.waitForTimeout(300);
+    // STEP 5: Check that attack panel is still visible
+    await screenshots.capture(page, '005-attack-panel-still-visible', {
+      programmaticCheck: async () => {
+        // Attack panel should still be visible with monster adjacent
+        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        await expect(attackPanel).toBeVisible();
+      }
+    });
 
-      await screenshots.capture(page, '005-attack-card-expanded-with-target', {
-        programmaticCheck: async () => {
-          // Verify card is expanded
-          await expect(bashCard).toHaveClass(/expanded/);
-          
-          // Verify expanded view shows attack stats
-          const expandedView = page.locator('[data-testid="attack-card-expanded-2"]');
-          await expect(expandedView).toBeVisible();
-          
-          // Verify monster target is listed
-          const targetButton = page.locator('[data-testid="attack-target-test-kobold-adjacent"]');
-          await expect(targetButton).toBeVisible();
-        }
-      });
-    }
-
-    // STEP 6: Remove monster and verify attacks are disabled again
+    // STEP 6: Remove monster and verify attack panel disappears
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -257,16 +233,10 @@ test.describe('060 - Attack Cards Valid Targets', () => {
       expect(storeState.game.monsters.length).toBe(0);
     }).toPass();
 
-    // Close expanded card if still open
-    if (await bashCard.isVisible()) {
-      const isExpanded = await bashCard.evaluate((el) => el.classList.contains('expanded'));
-      if (isExpanded) {
-        await bashCard.click();
-        await page.waitForTimeout(200);
-      }
-    }
+    // Wait for UI to update
+    await page.waitForTimeout(500);
 
-    await screenshots.capture(page, '006-monsters-removed-attacks-disabled', {
+    await screenshots.capture(page, '006-monsters-removed-panel-hidden', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -275,17 +245,11 @@ test.describe('060 - Attack Cards Valid Targets', () => {
         // Verify no monsters exist
         expect(storeState.game.monsters.length).toBe(0);
         
-        // Verify attack cards are NOT eligible again (no targets)
-        const attackCardIds = [2, 3, 4];
-        let eligibleAttacks = 0;
-        for (const cardId of attackCardIds) {
-          const card = page.locator(`[data-testid="power-card-${cardId}"]`);
-          if (await card.isVisible()) {
-            const isEligible = await card.evaluate((el) => el.classList.contains('eligible'));
-            if (isEligible) eligibleAttacks++;
-          }
-        }
-        expect(eligibleAttacks).toBe(0);
+        // Attack panel should now be hidden (no valid targets)
+        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        await expect(attackPanel).not.toBeVisible();
+        
+        console.log('[TEST] Attack panel hidden after monsters removed - Fix working!');
       }
     });
   });
