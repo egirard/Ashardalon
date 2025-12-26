@@ -104,6 +104,7 @@
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
+  import TurnProgressCard from "./TurnProgressCard.svelte";
   import FeedbackButton from "./FeedbackButton.svelte";
   import CornerControls from "./CornerControls.svelte";
   import {
@@ -1618,6 +1619,16 @@
             targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
             onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
           />
+          <!-- Turn Progress Card (shown only for active player) - appears before PlayerCard after rotation -->
+          {#if isActiveHero(hero.id)}
+            <TurnProgressCard
+              currentPhase={turnState.currentPhase}
+              turnNumber={turnState.turnNumber}
+              heroTurnActions={heroTurnActions}
+              monstersToActivate={getMonstersForHero(hero.id).length}
+              monstersActivated={villainPhaseMonsterIndex}
+            />
+          {/if}
           <PlayerCard
             {hero}
             {heroHpState}
@@ -1680,6 +1691,16 @@
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="left"
             />
+            <!-- Turn Progress Card (shown only for active player) -->
+            {#if isActiveHero(hero.id)}
+              <TurnProgressCard
+                currentPhase={turnState.currentPhase}
+                turnNumber={turnState.turnNumber}
+                heroTurnActions={heroTurnActions}
+                monstersToActivate={getMonstersForHero(hero.id).length}
+                monstersActivated={villainPhaseMonsterIndex}
+              />
+            {/if}
             <!-- Power cards to the right of player card -->
             <PlayerPowerCards
               heroPowerCards={heroPowerCards[hero.id]}
@@ -2103,6 +2124,16 @@
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="right"
             />
+            <!-- Turn Progress Card (shown only for active player) -->
+            {#if isActiveHero(hero.id)}
+              <TurnProgressCard
+                currentPhase={turnState.currentPhase}
+                turnNumber={turnState.turnNumber}
+                heroTurnActions={heroTurnActions}
+                monstersToActivate={getMonstersForHero(hero.id).length}
+                monstersActivated={villainPhaseMonsterIndex}
+              />
+            {/if}
             <!-- Power cards to the right of player card -->
             <PlayerPowerCards
               heroPowerCards={heroPowerCards[hero.id]}
@@ -2151,6 +2182,16 @@
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="bottom"
           />
+          <!-- Turn Progress Card (shown only for active player) -->
+          {#if isActiveHero(hero.id)}
+            <TurnProgressCard
+              currentPhase={turnState.currentPhase}
+              turnNumber={turnState.turnNumber}
+              heroTurnActions={heroTurnActions}
+              monstersToActivate={getMonstersForHero(hero.id).length}
+              monstersActivated={villainPhaseMonsterIndex}
+            />
+          {/if}
           <!-- Power cards to the right of player card -->
           <PlayerPowerCards
             heroPowerCards={heroPowerCards[hero.id]}
