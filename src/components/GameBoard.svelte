@@ -1615,6 +1615,8 @@
             boardPosition="top"
             {gameState}
             onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
+            targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
+            onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
           />
           <PlayerCard
             {hero}
@@ -1684,6 +1686,8 @@
               boardPosition="left"
               {gameState}
               onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
+              targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
+              onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
             />
           </div>
         {/if}
@@ -2105,6 +2109,8 @@
               boardPosition="right"
               {gameState}
               onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
+              targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
+              onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
             />
           </div>
         {/if}
@@ -2151,6 +2157,8 @@
             boardPosition="bottom"
             {gameState}
             onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
+            targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
+            onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
           />
         </div>
       {/if}
