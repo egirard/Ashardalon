@@ -90,4 +90,4 @@ This scenario confirms that non-Dazed heroes retain their normal two-action capa
 
 - [Wrath of Ashardalon Rulebook](../../public/assets/WrathofAshardalon_v1.1.pdf)
 - [Dazed Condition Implementation Guide](../../DAZED_CONDITION_IMPLEMENTATION.md)
-- [E2E Test Guidelines](../../E2E_TEST_GUIDELINES.md)
+- [E2E Test Guidelines](../../docs/E2E_TEST_GUIDELINES.md)

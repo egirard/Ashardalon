@@ -34,8 +34,8 @@ The issue requested:
 - **23 cards (43%)**: Display only (show text but no mechanical effect)
 
 **Files**:
-- `/ENCOUNTER_CARDS_STATUS.md` - Complete catalog
-- `/ENCOUNTER_CARDS_IMPLEMENTATION.md` - Existing detailed documentation
+- `/docs/ENCOUNTER_CARDS_STATUS.md` - Complete catalog
+- `/docs/ENCOUNTER_CARDS_IMPLEMENTATION.md` - Existing detailed documentation
 - `/src/store/types.ts` - All 53 cards defined in `ENCOUNTER_CARDS` array (lines 762-1211)
 
 ---
@@ -192,8 +192,8 @@ export function shouldDrawEncounter(turnState: TurnState): boolean {
 3. **Hazards (3 cards)**: Require hazard marker system
 
 **Documentation Files**:
-- `/ENCOUNTER_CARDS_STATUS.md` - Complete catalog with status
-- `/ENCOUNTER_CARDS_IMPLEMENTATION.md` - Detailed implementation notes
+- `/docs/ENCOUNTER_CARDS_STATUS.md` - Complete catalog with status
+- `/docs/ENCOUNTER_CARDS_IMPLEMENTATION.md` - Detailed implementation notes
 
 ---
 
@@ -288,17 +288,17 @@ File: `/src/store/encounters.test.ts`
 ## Files Modified/Created
 
 ### New Files Created:
-1. `/ENCOUNTER_CARDS_STATUS.md` - Complete 53-card catalog
+1. `/docs/ENCOUNTER_CARDS_STATUS.md` - Complete 53-card catalog
 2. `/e2e/038-encounter-cards-comprehensive/038-encounter-cards-comprehensive.spec.ts` - Comprehensive E2E test
 3. `/e2e/038-encounter-cards-comprehensive/README.md` - Test documentation
 4. `/e2e/038-encounter-cards-comprehensive/038-encounter-cards-comprehensive.spec.ts-snapshots/` - 18 baseline screenshots
-5. `/ACCEPTANCE_CRITERIA_VERIFICATION.md` - This document
+5. `/docs/ACCEPTANCE_CRITERIA_VERIFICATION.md` - This document
 
 ### Files Updated:
 1. `/e2e/README.md` - Added test 038 to available tests list
 
 ### Existing Files Referenced:
-1. `/ENCOUNTER_CARDS_IMPLEMENTATION.md` - Detailed implementation status
+1. `/docs/ENCOUNTER_CARDS_IMPLEMENTATION.md` - Detailed implementation status
 2. `/src/store/encounters.ts` - Core encounter logic
 3. `/src/store/encounters.test.ts` - Unit tests
 4. `/src/store/types.ts` - Encounter card definitions

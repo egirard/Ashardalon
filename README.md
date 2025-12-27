@@ -56,24 +56,24 @@ For detailed rules and gameplay mechanics, refer to the original Wrath of Ashard
 ## Project Documentation
 
 ### User Experience & Design
-- [**lobby-ux.md**](lobby-ux.md) - Character selection screen layout and interactions
-- [**gameplay-ux.md**](gameplay-ux.md) - Game board screen layout and interactions
-- [UX Guidelines](UX_GUIDELINES.md) - General UX principles for tabletop displays
-- [Initial Screens](INITIAL_SCREENS.md) - Technical specification for screen flow
+- [**lobby-ux.md**](docs/lobby-ux.md) - Character selection screen layout and interactions
+- [**gameplay-ux.md**](docs/gameplay-ux.md) - Game board screen layout and interactions
+- [UX Guidelines](docs/UX_GUIDELINES.md) - General UX principles for tabletop displays
+- [Initial Screens](docs/INITIAL_SCREENS.md) - Technical specification for screen flow
 
 ### Project Overview
-- [Vision Document](VISION.md) - Project goals, roadmap, and design philosophy
+- [Vision Document](docs/VISION.md) - Project goals, roadmap, and design philosophy
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to the project
 - [Game Asset Rules](CONTRIBUTING.md#contributing-art-and-assets) - Guidelines for contributing artwork and assets
-- [Development Environment](DEVELOPMENT.md) - Setup and development tools
+- [Development Environment](docs/DEVELOPMENT.md) - Setup and development tools
 
 ### Game Mechanics Implementation
-- [Dazed Condition Implementation](DAZED_CONDITION_IMPLEMENTATION.md) - Complete specification for implementing the Dazed status condition
-- [Encounter Cards Implementation](ENCOUNTER_CARDS_IMPLEMENTATION.md) - Status of encounter card effects
-- [Monster Card Implementation](MONSTER_CARD_IMPLEMENTATION.md) - Monster behaviors and abilities
-- [Player Cards Implementation](PLAYER_CARDS_IMPLEMENTATION.md) - Hero cards and abilities
-- [Power Cards Implementation](POWER_CARDS_IMPLEMENTATION.md) - Hero power effects
-- [Treasure Implementation](docs/TREASURE_IMPLEMENTATION.md) - Treasure card effects (in docs folder)
+- [Dazed Condition Implementation](docs/DAZED_CONDITION_IMPLEMENTATION.md) - Complete specification for implementing the Dazed status condition
+- [Encounter Cards Implementation](docs/ENCOUNTER_CARDS_IMPLEMENTATION.md) - Status of encounter card effects
+- [Monster Card Implementation](docs/MONSTER_CARD_IMPLEMENTATION.md) - Monster behaviors and abilities
+- [Player Cards Implementation](docs/PLAYER_CARDS_IMPLEMENTATION.md) - Hero cards and abilities
+- [Power Cards Implementation](docs/POWER_CARDS_IMPLEMENTATION.md) - Hero power effects
+- [Treasure Implementation](docs/TREASURE_IMPLEMENTATION.md) - Treasure card effects
 
 ## Technology Stack
 

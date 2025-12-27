@@ -401,8 +401,8 @@ When reviewing these screenshots, verify:
 
 ## Related Documentation
 
-- [E2E Test Guidelines](../../E2E_TEST_GUIDELINES.md)
-- [Power Cards Implementation](../../POWER_CARDS_IMPLEMENTATION.md)
+- [E2E Test Guidelines](../../docs/E2E_TEST_GUIDELINES.md)
+- [Power Cards Implementation](../../docs/POWER_CARDS_IMPLEMENTATION.md)
 - [Action Card Parser](../../src/store/actionCardParser.ts)
 - [Game State Management](../../src/store/gameSlice.ts)
 - [Test 046: Movement Before Attack](../046-movement-before-attack/README.md) (opposite flow)

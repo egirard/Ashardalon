@@ -155,17 +155,23 @@ Ashardalon/
 │   ├── copilot-instructions.md      # Instructions for GitHub Copilot
 │   └── workflows/
 │       └── copilot-setup-steps.yml  # Copilot environment setup
-├── flake.nix                 # Nix flake (defines dev environment)
-├── flake.lock                # Locked dependencies (auto-generated)
-├── DEVELOPMENT.md            # This file
-├── E2E_TEST_GUIDELINES.md    # E2E testing guidelines
-├── README.md                 # Project overview
-├── CONTRIBUTING.md           # Contribution guidelines
-├── VISION.md                 # Project vision and roadmap
-├── assets/                   # Game assets (images, etc.)
+├── docs/                      # Documentation files
+│   ├── DEVELOPMENT.md         # Development environment guide
+│   ├── E2E_TEST_GUIDELINES.md # E2E testing guidelines
+│   ├── VISION.md              # Project vision and roadmap
+│   ├── design.md              # Complete game design and rules
+│   ├── gameplay-ux.md         # Game board screen design
+│   ├── lobby-ux.md            # Character selection screen design
+│   └── ... (other documentation)
+├── flake.nix                  # Nix flake (defines dev environment)
+├── flake.lock                 # Locked dependencies (auto-generated)
+├── README.md                  # Project overview
+├── CONTRIBUTING.md            # Contribution guidelines
+├── LICENSE                    # MIT License
+├── assets/                    # Game assets (images, etc.)
 └── tests/
-    ├── e2e/                  # End-to-end tests (Playwright)
-    └── unit/                 # Unit tests
+    ├── e2e/                   # End-to-end tests (Playwright)
+    └── unit/                  # Unit tests
 ```
 
 ## Testing

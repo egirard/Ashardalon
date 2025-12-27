@@ -74,5 +74,5 @@ This test validates the implementation of three healing utility power cards:
 - **Lay On Hands (ID 21)**: Finds adjacent heroes (excluding self) and heals one of them
 
 ## Related Documentation
-- [POWER_CARDS_IMPLEMENTATION.md](../../POWER_CARDS_IMPLEMENTATION.md) - Power card system overview
-- [E2E_TEST_GUIDELINES.md](../../E2E_TEST_GUIDELINES.md) - Testing guidelines
+- [POWER_CARDS_IMPLEMENTATION.md](../../docs/POWER_CARDS_IMPLEMENTATION.md) - Power card system overview
+- [E2E_TEST_GUIDELINES.md](../../docs/E2E_TEST_GUIDELINES.md) - Testing guidelines
