@@ -47,6 +47,8 @@
     applyHealing,
     selectMonsterForEncounter,
     cancelMonsterChoice,
+    selectTarget,
+    deselectTarget,
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
@@ -220,6 +222,8 @@
   let incrementalMovement: IncrementalMovementState | null = $state(null);
   let undoSnapshot: UndoSnapshot | null = $state(null);
   let pendingMonsterChoice: PendingMonsterChoiceState | null = $state(null);
+  let selectedTargetId: string | null = $state(null);
+  let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
 
   // Map control state
   let mapControlMode: boolean = $state(false);
@@ -286,6 +290,8 @@
       incrementalMovement = state.game.incrementalMovement;
       undoSnapshot = state.game.undoSnapshot;
       pendingMonsterChoice = state.game.pendingMonsterChoice;
+      selectedTargetId = state.game.selectedTargetId;
+      selectedTargetType = state.game.selectedTargetType;
     });
 
     // Initialize state
@@ -339,6 +345,8 @@
     incrementalMovement = state.game.incrementalMovement;
     undoSnapshot = state.game.undoSnapshot;
     pendingMonsterChoice = state.game.pendingMonsterChoice;
+    selectedTargetId = state.game.selectedTargetId;
+    selectedTargetType = state.game.selectedTargetType;
 
     return unsubscribe;
   });
@@ -1153,7 +1161,12 @@
       // If target died and this was a same-target attack, clear the multi-attack
       if (!targetStillAlive && wasSameTarget) {
         store.dispatch(clearMultiAttack());
+        // Deselect the target since it's no longer available
+        store.dispatch(deselectTarget());
       }
+    } else {
+      // Single attack completed, deselect the target
+      store.dispatch(deselectTarget());
     }
     
     store.dispatch(dismissAttackResult());
@@ -1354,6 +1367,16 @@
   // Handle dismissing/discarding the treasure card
   function handleDismissTreasure() {
     store.dispatch(dismissTreasureCard());
+  }
+
+  // Handle selecting a target (monster, trap, treasure)
+  function handleTargetClick(targetId: string, targetType: 'monster' | 'trap' | 'treasure') {
+    // Only allow target selection during hero phase and when not in map control mode
+    if (turnState.currentPhase !== "hero-phase" || mapControlMode) {
+      return;
+    }
+    
+    store.dispatch(selectTarget({ targetId, targetType }));
   }
 
   // Handle selecting a monster for an encounter effect
@@ -1825,12 +1848,19 @@
 
         <!-- Monster tokens -->
         {#each monsters as monsterState (monsterState.instanceId)}
+          {@const isTargetable = turnState.currentPhase === "hero-phase" && 
+                                 !mapControlMode && 
+                                 getTargetableMonstersForCurrentHero().some(m => m.instanceId === monsterState.instanceId)}
+          {@const isSelected = selectedTargetId === monsterState.instanceId && selectedTargetType === 'monster'}
           <MonsterToken
             monster={monsterState}
             cellSize={TILE_CELL_SIZE}
             tileOffsetX={TOKEN_OFFSET_X}
             tileOffsetY={TOKEN_OFFSET_Y}
             tilePixelOffset={getTilePixelOffsetById(monsterState.tileId)}
+            isTargetable={isTargetable}
+            isSelected={isSelected}
+            onClick={() => handleTargetClick(monsterState.instanceId, 'monster')}
           />
         {/each}
         

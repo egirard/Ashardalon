@@ -275,6 +275,10 @@ export interface GameState {
   clericsShieldTarget: string | null;
   /** Pending monster choice: context and encounter ID for effects requiring monster selection */
   pendingMonsterChoice: PendingMonsterChoiceState | null;
+  /** Selected target ID (for attack actions) - can be monster, trap, treasure, etc. */
+  selectedTargetId: string | null;
+  /** Selected target type (to differentiate between different targetable entity types) */
+  selectedTargetType: 'monster' | 'trap' | 'treasure' | null;
 }
 
 /**
@@ -482,6 +486,8 @@ const initialState: GameState = {
   poisonRecoveryNotification: null,
   clericsShieldTarget: null,
   pendingMonsterChoice: null,
+  selectedTargetId: null,
+  selectedTargetType: null,
 };
 
 /**
@@ -3107,6 +3113,29 @@ export const gameSlice = createSlice({
         state.encounterEffectMessage = 'Monster selection cancelled';
       }
     },
+    /**
+     * Select a target on the map (monster, trap, treasure, etc.)
+     */
+    selectTarget: (state, action: PayloadAction<{ targetId: string; targetType: 'monster' | 'trap' | 'treasure' }>) => {
+      const { targetId, targetType } = action.payload;
+      
+      // If clicking the same target, deselect it
+      if (state.selectedTargetId === targetId && state.selectedTargetType === targetType) {
+        state.selectedTargetId = null;
+        state.selectedTargetType = null;
+      } else {
+        // Select the new target
+        state.selectedTargetId = targetId;
+        state.selectedTargetType = targetType;
+      }
+    },
+    /**
+     * Deselect the currently selected target
+     */
+    deselectTarget: (state) => {
+      state.selectedTargetId = null;
+      state.selectedTargetType = null;
+    },
   },
 });
 
@@ -3180,5 +3209,7 @@ export const {
   promptMonsterChoice,
   selectMonsterForEncounter,
   cancelMonsterChoice,
+  selectTarget,
+  deselectTarget,
 } = gameSlice.actions;
 export default gameSlice.reducer;
