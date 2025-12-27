@@ -2,7 +2,7 @@
   /**
    * Corner Controls Component
    * Displays icon-only controls for Return to Character Select, Control Map, and Submit Feedback
-   * Positioned in corners (NW and SE) for accessibility from different player positions
+   * Positioned in corners (NE and SW) for accessibility from different player positions
    */
   import { HomeIcon, MapIcon, BugIcon } from './icons';
   import html2canvas from 'html2canvas';
