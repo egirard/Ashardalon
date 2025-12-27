@@ -78,12 +78,11 @@
   
   {#if isTargetable}
     <button
-      class="monster-token"
-      class:targetable={true}
+      class="monster-token targetable"
       class:selected={isSelected}
       data-testid="monster-token"
       data-monster-id={monster.instanceId}
-      data-targetable={true}
+      data-targetable={isTargetable}
       data-selected={isSelected}
       style={style()}
       onclick={handleClick}
@@ -96,8 +95,8 @@
       class="monster-token"
       data-testid="monster-token"
       data-monster-id={monster.instanceId}
-      data-targetable={false}
-      data-selected={false}
+      data-targetable={isTargetable}
+      data-selected={isSelected}
       style={style()}
     >
       {@render tokenContent()}
