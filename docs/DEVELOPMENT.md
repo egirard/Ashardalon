@@ -174,6 +174,51 @@ Ashardalon/
     └── unit/                  # Unit tests
 ```
 
+## Development Server
+
+The project uses Vite as the development server, configured to run on **port 3000**.
+
+### Running the Dev Server
+
+```bash
+# Start the development server
+bun run dev
+
+# Server will be available at http://localhost:3000
+```
+
+### Port Configuration
+
+The development server port is explicitly configured in `vite.config.ts`:
+
+```typescript
+server: {
+  port: 3000,
+  strictPort: true, // Fail if port 3000 is not available
+}
+```
+
+**Important**: The `strictPort: true` setting ensures that if port 3000 is already in use, Vite will fail to start instead of silently switching to a different port (like the default 5173). This prevents port mismatch issues with E2E tests.
+
+### E2E Test Port Configuration
+
+Playwright tests are configured to connect to the same port (3000) in `playwright.config.ts`:
+
+```typescript
+use: {
+  baseURL: 'http://localhost:3000',
+  // ...
+},
+webServer: {
+  command: 'bun run dev',
+  url: 'http://localhost:3000',
+  timeout: 120 * 1000, // 120 seconds to start the server
+  // ...
+}
+```
+
+This ensures consistency between the development server and E2E tests, preventing connection errors.
+
 ## Testing
 
 ### E2E Tests
