@@ -94,7 +94,7 @@ Integration point for PowerCardAttackPanel.
 ## Visual Evidence
 
 ### Screenshot: Attack Powers Dashboard
-![Attack Powers Dashboard](docs/attack-powers-dashboard-screenshot.png)
+![Attack Powers Dashboard](attack-powers-dashboard-screenshot.png)
 
 This screenshot from E2E test 044 shows the PowerCardAttackPanel in action:
 - Multiple attack power cards displayed in expanded format
@@ -114,7 +114,7 @@ This test documents the power card attack panel showing:
 
 **Test README:** `e2e/044-multi-target-attacks/README.md` (Lines 52-54)
 > ### Step 3: Power Card Attack Panel Displayed
-> ![Attack Panel Available](044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
+> ![Attack Panel Available](../e2e/044-multi-target-attacks/044-multi-target-attacks.spec.ts-snapshots/002-attack-panel-available-chromium-linux.png)
 > 
 > The power card attack panel appears, showing all available attack options. The daily power card is visible among the at-will attack cards, ready to be selected.
 
