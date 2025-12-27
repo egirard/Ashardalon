@@ -105,7 +105,6 @@
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import TurnProgressCard from "./TurnProgressCard.svelte";
-  import FeedbackButton from "./FeedbackButton.svelte";
   import CornerControls from "./CornerControls.svelte";
   import {
     resolveAttack,
@@ -1585,15 +1584,15 @@
 </script>
 
 <div class="game-board" data-testid="game-board">
-  <!-- Corner Controls - NW and SE for accessibility from different player positions -->
+  <!-- Corner Controls - NE and SW for accessibility from different player positions -->
   <CornerControls 
-    position="nw" 
+    position="ne" 
     {mapControlMode}
     onReset={handleReset}
     onToggleMapControl={toggleMapControlMode}
   />
   <CornerControls 
-    position="se" 
+    position="sw" 
     {mapControlMode}
     onReset={handleReset}
     onToggleMapControl={toggleMapControlMode}

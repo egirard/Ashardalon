@@ -9,7 +9,7 @@
   import ConfirmationDialog from './ConfirmationDialog.svelte';
   
   interface Props {
-    position: 'nw' | 'se';
+    position: 'ne' | 'sw';
     mapControlMode: boolean;
     onReset: () => void;
     onToggleMapControl: () => void;
@@ -277,15 +277,15 @@ ${screenshotSection}
     z-index: 1000;
   }
   
-  .corner-nw {
+  .corner-ne {
     top: 0.5rem;
-    left: 0.5rem;
-    transform: rotate(180deg);
+    right: 0.5rem;
   }
   
-  .corner-se {
+  .corner-sw {
     bottom: 0.5rem;
-    right: 0.5rem;
+    left: 0.5rem;
+    transform: rotate(180deg);
   }
   
   .icon-button {
