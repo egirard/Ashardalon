@@ -41,6 +41,27 @@ test.describe('015 - Healing Surge', () => {
       }
     });
 
+    // STEP 2a: Click on healing surge counter to show the popover
+    await page.locator('[data-testid="healing-surge-counter"]').click();
+    await page.locator('[data-testid="surge-popover"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'healing-surge-popover-displayed', {
+      programmaticCheck: async () => {
+        // Verify popover is visible with correct content
+        await expect(page.locator('[data-testid="surge-popover"]')).toBeVisible();
+        await expect(page.locator('[data-testid="surge-popover"]')).toContainText('Healing Surges');
+        await expect(page.locator('[data-testid="surge-popover"]')).toContainText('Remaining Surges: 2');
+        await expect(page.locator('[data-testid="surge-popover"]')).toContainText('How Healing Surges Work');
+        
+        // Verify surge value is still 2
+        await expect(page.locator('[data-testid="surge-value"]')).toHaveText('2');
+      }
+    });
+
+    // Close the popover
+    await page.locator('[data-testid="surge-popover"]').getByRole('button', { name: 'Close' }).click();
+    await expect(page.locator('[data-testid="surge-popover"]')).not.toBeVisible();
+
     // STEP 3: Set Quinn to 0 HP (simulating being knocked down by monster)
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;

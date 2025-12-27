@@ -36,6 +36,28 @@ test.describe('014 - Defeat Monster and Gain XP', () => {
       }
     });
 
+    // STEP 1a: Click on XP counter to show the popover with detailed information
+    await page.locator('[data-testid="xp-counter"]').click();
+    await page.locator('[data-testid="xp-popover"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'xp-popover-with-details', {
+      programmaticCheck: async () => {
+        // Verify popover is visible with correct content
+        await expect(page.locator('[data-testid="xp-popover"]')).toBeVisible();
+        await expect(page.locator('[data-testid="xp-popover"]')).toContainText('Experience Points (XP)');
+        await expect(page.locator('[data-testid="xp-popover"]')).toContainText('Current XP: 0');
+        await expect(page.locator('[data-testid="xp-popover"]')).toContainText('How XP Works');
+        await expect(page.locator('[data-testid="xp-popover"]')).toContainText('The party gains 1 XP for each monster defeated');
+        
+        // Verify XP value is still 0
+        await expect(page.locator('[data-testid="xp-value"]')).toHaveText('0');
+      }
+    });
+
+    // Close the popover
+    await page.locator('[data-testid="xp-popover"]').getByRole('button', { name: 'Close' }).click();
+    await expect(page.locator('[data-testid="xp-popover"]')).not.toBeVisible();
+
     // STEP 2: Add a Kobold monster with 1 HP for the test
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
