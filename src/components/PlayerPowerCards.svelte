@@ -344,6 +344,7 @@
 
 <style>
   .player-power-cards {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
