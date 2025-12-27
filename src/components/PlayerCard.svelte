@@ -4,9 +4,13 @@
   import { getTreasureById } from '../store/treasure';
   import { assetPath } from '../utils';
   import { HeartIcon, SkullIcon, SwordIcon, ShieldIcon, LightningIcon, DiceIcon, TargetIcon, StarIcon, XIcon } from './icons';
+  import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
 
   // Condition type constant for consistency
   const DAZED_CONDITION = 'dazed';
+
+  // State for selected card to show in detail view
+  let selectedCardDetail: CardDetail | null = $state(null);
 
   interface Props {
     hero: Hero;
@@ -102,6 +106,48 @@
       onUseTreasureItem(card.id);
     }
   }
+
+  // Handle clicking on a treasure item mini-card to show details
+  function handleTreasureItemClick(card: TreasureCard, isFlipped: boolean, event: MouseEvent) {
+    // Prevent triggering the use action if this is a detail view click
+    event.stopPropagation();
+    
+    // If clicking the same card, dismiss the detail view
+    if (selectedCardDetail?.type === 'treasure' && (selectedCardDetail.card as TreasureCard).id === card.id) {
+      selectedCardDetail = null;
+      return;
+    }
+    
+    // Show detail view for this treasure card
+    selectedCardDetail = {
+      type: 'treasure',
+      card: card,
+      isFlipped: isFlipped,
+      isClickable: isItemUsable(card, isFlipped) && isActive,
+      ineligibilityReason: !isActive ? 'Not your turn' : isFlipped ? 'Already used' : undefined
+    };
+  }
+
+  // Handle clicking on a condition badge to show details
+  function handleConditionClick(condition: HeroCondition) {
+    // If clicking the same condition, dismiss the detail view
+    if (selectedCardDetail?.type === 'condition' && (selectedCardDetail.card as HeroCondition).id === condition.id) {
+      selectedCardDetail = null;
+      return;
+    }
+    
+    // Show detail view for this condition
+    selectedCardDetail = {
+      type: 'condition',
+      card: condition,
+      isClickable: false
+    };
+  }
+
+  // Handle dismissing the card detail view
+  function handleDismissDetail() {
+    selectedCardDetail = null;
+  }
 </script>
 
 <div 
@@ -154,18 +200,20 @@
   {#if conditions.length > 0}
     <div class="conditions-section" data-testid="player-card-conditions">
       {#each conditions as condition (condition.id)}
-        <div 
+        <button
           class="condition-badge"
           class:condition-dazed={condition.id === DAZED_CONDITION}
+          class:selected={selectedCardDetail?.type === 'condition' && (selectedCardDetail.card as HeroCondition).id === condition.id}
           title="{condition.name}: {condition.description}"
           data-testid={`condition-${condition.id}`}
+          onclick={() => handleConditionClick(condition)}
         >
           <span class="condition-icon">{condition.icon}</span>
           <span class="condition-name">{condition.name}</span>
           {#if condition.id === DAZED_CONDITION && isActive}
             <span class="condition-detail-dazed">1 action only</span>
           {/if}
-        </div>
+        </button>
       {/each}
     </div>
   {/if}
@@ -219,8 +267,11 @@
           <button 
             class="treasure-item-mini usable"
             class:flipped={isFlipped}
-            title="{card.name}: {card.effect.description} (Click to use)"
-            onclick={() => handleUseTreasureItem(card, isFlipped)}
+            class:selected={selectedCardDetail?.type === 'treasure' && (selectedCardDetail.card as TreasureCard).id === card.id}
+            title="{card.name}: {card.effect.description} (Click to view details)"
+            onclick={(e) => handleTreasureItemClick(card, isFlipped, e)}
+            ondblclick={() => handleUseTreasureItem(card, isFlipped)}
+            data-testid={`treasure-item-${card.id}`}
           >
             <span class="treasure-icon">
               <svelte:component this={getTreasureIconComponent(card.effect.type)} size={14} ariaLabel={card.effect.type} />
@@ -233,10 +284,13 @@
             {/if}
           </button>
         {:else}
-          <div 
+          <button
             class="treasure-item-mini"
             class:flipped={isFlipped}
-            title="{card.name}: {card.effect.description}"
+            class:selected={selectedCardDetail?.type === 'treasure' && (selectedCardDetail.card as TreasureCard).id === card.id}
+            title="{card.name}: {card.effect.description} (Click to view details)"
+            onclick={(e) => handleTreasureItemClick(card, isFlipped, e)}
+            data-testid={`treasure-item-${card.id}`}
           >
             <span class="treasure-icon">
               <svelte:component this={getTreasureIconComponent(card.effect.type)} size={14} ariaLabel={card.effect.type} />
@@ -247,13 +301,20 @@
                 <XIcon size={14} ariaLabel="Used" />
               </span>
             {/if}
-          </div>
+          </button>
         {/if}
       {/each}
     </div>
   {/if}
 
 
+  <!-- Card Detail View (shows enlarged card details) -->
+  {#if selectedCardDetail}
+    <CardDetailView 
+      detail={selectedCardDetail}
+      onDismiss={handleDismissDetail}
+    />
+  {/if}
 
 </div>
 
@@ -458,10 +519,15 @@
   /* Reset button styles for usable items */
   button.treasure-item-mini {
     text-align: left;
+    cursor: pointer;
+  }
+
+  button.treasure-item-mini:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
   button.treasure-item-mini.usable {
-    cursor: pointer;
     background: rgba(46, 125, 50, 0.3);
     border-color: rgba(76, 175, 80, 0.7);
   }
@@ -469,8 +535,12 @@
   button.treasure-item-mini.usable:hover {
     background: rgba(46, 125, 50, 0.5);
     border-color: #4caf50;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .treasure-item-mini.selected {
+    border-color: #ffd700;
+    border-width: 2px;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
   }
 
   .treasure-item-mini.flipped {
@@ -560,12 +630,20 @@
     border: 1px solid rgba(156, 39, 176, 0.6);
     border-radius: 10px;
     font-size: 0.55rem;
-    cursor: help;
+    cursor: pointer;
     transition: all 0.2s ease;
+    font-family: inherit;
+    color: inherit;
   }
 
   .condition-badge:hover {
     background: rgba(156, 39, 176, 0.5);
+  }
+
+  .condition-badge.selected {
+    border-color: #ffd700;
+    border-width: 2px;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
   }
 
   .condition-badge.condition-dazed {

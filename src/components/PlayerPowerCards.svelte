@@ -6,6 +6,7 @@
   import type { MonsterState } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
+  import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
 
   interface Props {
     heroPowerCards?: HeroPowerCards;
@@ -40,6 +41,9 @@
 
   // State for expanded attack card
   let expandedAttackCardId: number | null = $state(null);
+  
+  // State for selected card to show in detail view
+  let selectedCardDetail: CardDetail | null = $state(null);
 
   // Get power cards for display with highlight state
   let powerCards = $derived.by(() => {
@@ -169,33 +173,57 @@
   /**
    * Handle power card click
    * 
-   * Attack cards expand to show details and monster selection.
-   * Utility and custom ability cards can be activated directly from the dashboard.
+   * Shows the card detail view on click.
+   * Attack cards also expand inline to show monster selection.
+   * Utility and custom ability cards can be activated from the detail view or double-click.
    * 
    * @param cardId - The ID of the power card
    * @param highlightState - Current state: 'eligible', 'ineligible', or 'disabled'
    * @param card - The power card object
+   * @param isFlipped - Whether the card is flipped/used
+   * @param ineligibilityReason - Reason why card is not eligible
    */
-  function handlePowerCardClick(cardId: number, highlightState: string, card: PowerCard) {
-    // Only eligible cards can be interacted with
-    // This includes both expanding attack cards and activating utility cards
-    if (highlightState !== 'eligible') return;
-    
-    // Attack cards expand to show monster selection
-    if (card.attackBonus !== undefined) {
+  function handlePowerCardClick(
+    cardId: number, 
+    highlightState: string, 
+    card: PowerCard, 
+    isFlipped: boolean,
+    ineligibilityReason: string
+  ) {
+    // If clicking the same card, dismiss the detail view
+    if (selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === cardId) {
+      selectedCardDetail = null;
+      // Also collapse attack card expansion if expanded
       if (expandedAttackCardId === cardId) {
-        // Clicking again collapses it
         expandedAttackCardId = null;
-      } else {
-        // Expand this card
-        expandedAttackCardId = cardId;
       }
       return;
     }
     
-    // Non-attack cards activate directly
+    // Show detail view for this power card
+    selectedCardDetail = {
+      type: 'power',
+      card: card,
+      isFlipped: isFlipped,
+      isClickable: highlightState === 'eligible',
+      ineligibilityReason: highlightState !== 'eligible' ? ineligibilityReason : undefined
+    };
+    
+    // For attack cards, also expand to show monster selection if eligible
+    if (card.attackBonus !== undefined && highlightState === 'eligible') {
+      expandedAttackCardId = cardId;
+    }
+  }
+  
+  /**
+   * Handle activating a non-attack power card (utility, custom ability)
+   * This is called on double-click or from a button in the detail view
+   */
+  function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
+      // Dismiss detail view after activation
+      selectedCardDetail = null;
     }
   }
 
@@ -203,9 +231,16 @@
   function handleSelectMonsterTarget(cardId: number, targetInstanceId: string) {
     if (onAttackWithCard) {
       onAttackWithCard(cardId, targetInstanceId);
-      // Collapse after attacking
+      // Collapse after attacking and dismiss detail view
       expandedAttackCardId = null;
+      selectedCardDetail = null;
     }
+  }
+
+  // Handle dismissing the card detail view
+  function handleDismissDetail() {
+    selectedCardDetail = null;
+    // Keep attack card expansion if it was expanded
   }
 
 </script>
@@ -232,10 +267,11 @@
           class:ineligible={highlightState === 'ineligible'}
           class:disabled={highlightState === 'disabled'}
           class:expanded={isExpanded}
+          class:selected={selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === card.id}
           title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
           style="border-color: {getPowerCardColor(card.type)};"
-          onclick={() => handlePowerCardClick(card.id, highlightState, card)}
-          disabled={highlightState !== 'eligible'}
+          onclick={() => handlePowerCardClick(card.id, highlightState, card, isFlipped, ineligibilityReason)}
+          ondblclick={() => highlightState === 'eligible' && !isAttackCard ? handleActivatePowerCard(card.id) : null}
           data-testid="power-card-{card.id}"
           aria-label={getAriaLabel(card, highlightState, ineligibilityReason)}
         >
@@ -295,6 +331,14 @@
         {/if}
       </div>
     {/each}
+    
+    <!-- Card Detail View (shows enlarged card details) -->
+    {#if selectedCardDetail}
+      <CardDetailView 
+        detail={selectedCardDetail}
+        onDismiss={handleDismissDetail}
+      />
+    {/if}
   </div>
 {/if}
 
@@ -350,7 +394,13 @@
   .power-card-mini.expanded {
     border-width: 2px;
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
-    border-color: #ffd700;
+    border-color: #ffd700 !important;
+  }
+
+  .power-card-mini.selected {
+    border-width: 2px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    border-color: #ffd700 !important;
   }
 
   /* Eligible state - can be activated */
@@ -377,13 +427,13 @@
   /* Ineligible state - cannot be activated right now */
   .power-card-mini.ineligible {
     opacity: 0.5;
-    cursor: not-allowed;
+    cursor: pointer; /* Allow clicking to see why it's not available */
   }
 
   /* Disabled state - already used/flipped */
   .power-card-mini.disabled {
     opacity: 0.4;
-    cursor: not-allowed;
+    cursor: pointer; /* Allow clicking to see details */
   }
 
   .power-type {
