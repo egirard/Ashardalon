@@ -270,7 +270,7 @@ The key innovation for movement-before-attack cards is that they should be **ena
 
 ## Related Documentation
 
-- [E2E Test Guidelines](../../E2E_TEST_GUIDELINES.md)
+- [E2E Test Guidelines](../../docs/E2E_TEST_GUIDELINES.md)
 - [Action Card Parser](../../src/store/actionCardParser.ts)
 - [Game State Management](../../src/store/gameSlice.ts)
 

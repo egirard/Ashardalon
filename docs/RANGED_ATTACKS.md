@@ -161,6 +161,6 @@ The ranged attack system is fully backward compatible:
 
 ## Related Documentation
 
-- [Power Cards Implementation](../POWER_CARDS_IMPLEMENTATION.md)
+- [Power Cards Implementation](../docs/POWER_CARDS_IMPLEMENTATION.md)
 - [Treasure Implementation](TREASURE_IMPLEMENTATION.md)
 - [E2E Test 039 - Ranged Attacks](../e2e/039-ranged-attacks/README.md)

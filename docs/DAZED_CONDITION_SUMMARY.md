@@ -4,7 +4,7 @@
 
 **Status**: Partially Implemented (Infrastructure exists, action restrictions not enforced)
 
-**Full Documentation**: [DAZED_CONDITION_IMPLEMENTATION.md](../DAZED_CONDITION_IMPLEMENTATION.md)
+**Full Documentation**: [DAZED_CONDITION_IMPLEMENTATION.md](DAZED_CONDITION_IMPLEMENTATION.md)
 
 ## What is Dazed?
 
@@ -96,11 +96,11 @@ These monsters can inflict Dazed status on hit:
 
 ## References
 
-- **Full Specification**: [DAZED_CONDITION_IMPLEMENTATION.md](../DAZED_CONDITION_IMPLEMENTATION.md)
+- **Full Specification**: [DAZED_CONDITION_IMPLEMENTATION.md](DAZED_CONDITION_IMPLEMENTATION.md)
 - **Status Effects Module**: `src/store/statusEffects.ts`
 - **E2E Test 034**: `e2e/034-status-effects/` (basic display)
 - **Design Document**: `design.md` (line 698)
 
 ---
 
-For complete implementation details, edge cases, and comprehensive testing requirements, see the full [Dazed Condition Implementation Guide](../DAZED_CONDITION_IMPLEMENTATION.md).
+For complete implementation details, edge cases, and comprehensive testing requirements, see the full [Dazed Condition Implementation Guide](DAZED_CONDITION_IMPLEMENTATION.md).

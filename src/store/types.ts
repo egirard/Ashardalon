@@ -151,11 +151,11 @@ export interface MonsterCardTactics {
  * - snake: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * - cultist: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * 
- * See MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
+ * See docs/MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
  */
 export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   kobold: {
-    type: 'attack-only', // See MONSTER_CARD_IMPLEMENTATION.md for exploration behavior
+    type: 'attack-only', // See docs/MONSTER_CARD_IMPLEMENTATION.md for exploration behavior
     adjacentAttack: { name: 'Sword', attackBonus: 7, damage: 1 },
     implementationNotes: 'Kobold exploration behavior (draw tile when on tile with unexplored edge and no heroes) not yet implemented.',
   },
@@ -785,7 +785,7 @@ export interface BoardTokenState {
  * - hazard: Hazard markers with ongoing effects
  * - special: Complex effects (tile manipulation, monster spawning, etc.)
  * 
- * See ENCOUNTER_CARDS_IMPLEMENTATION.md for full implementation details.
+ * See docs/ENCOUNTER_CARDS_IMPLEMENTATION.md for full implementation details.
  */
 export const ENCOUNTER_CARDS: EncounterCard[] = [
   // ===== CURSE CARDS (51-58) =====

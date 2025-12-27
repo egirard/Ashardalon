@@ -55,7 +55,7 @@ npm run test:e2e -- --update-snapshots
 
 ## Guidelines
 
-All E2E tests must follow the [E2E Test Guidelines](../E2E_TEST_GUIDELINES.md):
+All E2E tests must follow the [E2E Test Guidelines](../docs/E2E_TEST_GUIDELINES.md):
 
 1. **Baseline screenshots committed** - Tests include committed baseline screenshots
 2. **Zero-pixel tolerance** - Screenshots must match exactly

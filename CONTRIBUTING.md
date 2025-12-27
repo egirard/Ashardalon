@@ -22,7 +22,7 @@ If you find a bug, please create an issue with:
 
 Feature suggestions are welcome! When suggesting a feature:
 
-- Check if the feature aligns with our [Vision](VISION.md)
+- Check if the feature aligns with our [Vision](docs/VISION.md)
 - Search existing issues to avoid duplicates
 - Provide a clear description of the feature
 - Explain why this feature would be useful
