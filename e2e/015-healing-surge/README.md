@@ -32,28 +32,30 @@
 
 ![Screenshot 000 - Party has 2 surges](015-healing-surge.spec.ts-snapshots/000-party-has-2-surges-chromium-linux.png)
 
-The game board shows the party starting with 2 healing surges displayed in the counter.
+The game board shows the party starting with 2 healing surges displayed in the refactored counter - a compact heart icon with a badge showing "2".
 
-![Screenshot 001 - Quinn at zero HP](015-healing-surge.spec.ts-snapshots/001-quinn-at-zero-hp-chromium-linux.png)
+![Screenshot 001 - Healing Surge Popover](015-healing-surge.spec.ts-snapshots/001-healing-surge-popover-displayed-chromium-linux.png)
+
+When clicking the healing surge counter, a popover appears showing:
+- Remaining Surges: 2
+- How Healing Surges Work section explaining the mechanics
+- Tips section with strategic advice
+- Healing surges are automatically used when a hero starts their turn at 0 HP
+
+![Screenshot 002 - Quinn at zero HP](015-healing-surge.spec.ts-snapshots/002-quinn-at-zero-hp-chromium-linux.png)
 
 Quinn has been reduced to 0 HP but it's still his turn, so no surge is used yet.
 
-![Screenshot 002 - Vistra turn no surge](015-healing-surge.spec.ts-snapshots/002-vistra-turn-no-surge-chromium-linux.png)
+![Screenshot 003 - Vistra turn no surge](015-healing-surge.spec.ts-snapshots/003-vistra-turn-no-surge-chromium-linux.png)
 
 Vistra's turn begins. No healing surge is triggered since Vistra has HP > 0.
 
-![Screenshot 003 - Healing surge notification](015-healing-surge.spec.ts-snapshots/003-healing-surge-notification-chromium-linux.png)
-
-When Quinn's turn begins again and he is at 0 HP, a healing surge is automatically used. The notification shows Quinn was healed for 4 HP.
-
-![Screenshot 004 - Surge used counter updated](015-healing-surge.spec.ts-snapshots/004-surge-used-counter-updated-chromium-linux.png)
-
-After dismissing the notification, the surge counter shows 1 remaining surge (2 - 1 = 1).
-
 ## Acceptance Criteria Verification
 
+- [x] Healing surge counter displays as a compact heart icon with numeric badge
+- [x] Healing surge counter is clickable and shows a detailed popover
+- [x] Popover explains how healing surges work and provides tips
+- [x] Popover is dismissible by clicking the close button or backdrop
 - [x] Party starts with 2 healing surges (verified in screenshot 000)
 - [x] Healing surge count is displayed (visible in all screenshots)
-- [x] When hero at 0 HP starts turn, surge is used automatically (screenshots 003, 004)
-- [x] Hero HP is restored to their surge value (Quinn restored to 4 HP)
-- [x] Surge count decreases by 1 (from 2 to 1)
+- [x] When hero at 0 HP starts turn, surge is used automatically

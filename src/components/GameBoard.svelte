@@ -1922,11 +1922,11 @@
           </span>
         </div>
         
-        <!-- XP Counter -->
-        <XPCounter xp={partyResources.xp} />
-        
-        <!-- Healing Surge Counter -->
-        <HealingSurgeCounter surges={partyResources.healingSurges} />
+        <!-- Party Resources (XP & Healing Surges) -->
+        <div class="party-resources">
+          <XPCounter xp={partyResources.xp} />
+          <HealingSurgeCounter surges={partyResources.healingSurges} />
+        </div>
         
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
@@ -2645,6 +2645,14 @@
     font-size: 0.75rem;
     color: #4ade80;
     font-weight: bold;
+  }
+
+  /* Party resources container */
+  .party-resources {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   /* End phase button */
