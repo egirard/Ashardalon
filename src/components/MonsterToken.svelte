@@ -52,43 +52,73 @@
 </script>
 
 {#if monsterDef}
-  <div 
-    class="monster-token"
-    class:targetable={isTargetable}
-    class:selected={isSelected}
-    data-testid="monster-token"
-    data-monster-id={monster.instanceId}
-    data-targetable={isTargetable}
-    data-selected={isSelected}
-    style={style()}
-    onclick={handleClick}
-    onkeydown={(e) => e.key === 'Enter' && handleClick(e)}
-    role={isTargetable ? "button" : undefined}
-    tabindex={isTargetable ? 0 : undefined}
-    aria-label={isTargetable ? `Select ${monsterDef.name}` : undefined}
-  >
-    <img 
-      src={assetPath(monsterDef.imagePath)} 
-      alt={monsterDef.name} 
-      class="token-image"
-    />
-    <span class="token-label">{monsterDef.name}</span>
-    
-    <!-- Status effects badges -->
-    {#if statusConditions.length > 0}
-      <div class="status-badges" data-testid="monster-status-badges">
-        {#each statusConditions as condition (condition.id)}
-          <span 
-            class="status-badge"
-            title="{condition.name}: {condition.description}"
-            data-testid={`monster-status-${condition.id}`}
-          >
-            {condition.icon}
-          </span>
-        {/each}
-      </div>
-    {/if}
-  </div>
+  {#if isTargetable}
+    <button
+      class="monster-token"
+      class:targetable={true}
+      class:selected={isSelected}
+      data-testid="monster-token"
+      data-monster-id={monster.instanceId}
+      data-targetable={true}
+      data-selected={isSelected}
+      style={style()}
+      onclick={handleClick}
+      aria-label={`Select ${monsterDef.name}`}
+    >
+      <img 
+        src={assetPath(monsterDef.imagePath)} 
+        alt={monsterDef.name} 
+        class="token-image"
+      />
+      <span class="token-label">{monsterDef.name}</span>
+      
+      <!-- Status effects badges -->
+      {#if statusConditions.length > 0}
+        <div class="status-badges" data-testid="monster-status-badges">
+          {#each statusConditions as condition (condition.id)}
+            <span 
+              class="status-badge"
+              title="{condition.name}: {condition.description}"
+              data-testid={`monster-status-${condition.id}`}
+            >
+              {condition.icon}
+            </span>
+          {/each}
+        </div>
+      {/if}
+    </button>
+  {:else}
+    <div 
+      class="monster-token"
+      data-testid="monster-token"
+      data-monster-id={monster.instanceId}
+      data-targetable={false}
+      data-selected={false}
+      style={style()}
+    >
+      <img 
+        src={assetPath(monsterDef.imagePath)} 
+        alt={monsterDef.name} 
+        class="token-image"
+      />
+      <span class="token-label">{monsterDef.name}</span>
+      
+      <!-- Status effects badges -->
+      {#if statusConditions.length > 0}
+        <div class="status-badges" data-testid="monster-status-badges">
+          {#each statusConditions as condition (condition.id)}
+            <span 
+              class="status-badge"
+              title="{condition.name}: {condition.description}"
+              data-testid={`monster-status-${condition.id}`}
+            >
+              {condition.icon}
+            </span>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -105,6 +135,10 @@
     transform: translate(-50%, -50%);
     z-index: 8;
     transition: all 0.2s ease-out;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
   }
   
   /* Targetable state - shows a glow to indicate monster can be selected */
