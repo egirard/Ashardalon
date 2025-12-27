@@ -121,10 +121,16 @@ export function checkExploration(
 
 /**
  * Calculate the grid position for a new tile based on the edge being explored
+ * 
+ * For the start tile's east/west edges, the new tile's row position depends on
+ * which sub-tile (north or south) is being explored:
+ * - North sub-tile (y: 0-3) → new tile at row 0 (spans y: 0-3)
+ * - South sub-tile (y: 4-7) → new tile at row 1 (spans y: 4-7)
  */
 export function getNewTilePosition(
   existingTile: PlacedTile,
-  direction: Direction
+  direction: Direction,
+  subTileId?: string
 ): GridPosition {
   const { col, row } = existingTile.position;
   
@@ -134,8 +140,16 @@ export function getNewTilePosition(
     case 'south':
       return { col, row: row + 1 };
     case 'east':
+      // For start tile east/west edges, adjust row based on sub-tile
+      if (existingTile.tileType === 'start' && subTileId === 'start-tile-south') {
+        return { col: col + 1, row: 1 };
+      }
       return { col: col + 1, row };
     case 'west':
+      // For start tile east/west edges, adjust row based on sub-tile
+      if (existingTile.tileType === 'start' && subTileId === 'start-tile-south') {
+        return { col: col - 1, row: 1 };
+      }
       return { col: col - 1, row };
   }
 }
@@ -246,7 +260,7 @@ export function placeTile(
   }
   
   // Calculate position for the new tile
-  const newPosition = getNewTilePosition(existingTile, edge.direction);
+  const newPosition = getNewTilePosition(existingTile, edge.direction, edge.subTileId);
   
   // Get the tile definition for default edges
   const tileDef = getTileDefinition(tileType);
