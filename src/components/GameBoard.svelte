@@ -1158,10 +1158,10 @@
       // Record the attack hit
       store.dispatch(recordMultiAttackHit());
       
-      // If target died and this was a same-target attack, clear the multi-attack
+      // If target died and this was a same-target attack, clear the multi-attack and deselect the target
       if (!targetStillAlive && wasSameTarget) {
         store.dispatch(clearMultiAttack());
-        // Deselect the target since it's no longer available
+        // Deselect the target since it's been defeated
         store.dispatch(deselectTarget());
       }
     } else {
