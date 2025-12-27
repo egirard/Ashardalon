@@ -66,9 +66,9 @@ The Character Selection Screen is divided into **four edge zones** plus a **cent
 └─────────────────────────────────────────┘
 ```
 
-**Screenshot Reference**: See the initial character selection screen below ([E2E Test 001](e2e/001-character-selection/README.md)):
+**Screenshot Reference**: See the initial character selection screen below ([E2E Test 001](../e2e/001-character-selection/README.md)):
 
-<img src="e2e/001-character-selection/001-character-selection.spec.ts-snapshots/000-initial-screen-chromium-linux.png" alt="Character Selection Screen" width="700"/>
+<img src="../e2e/001-character-selection/001-character-selection.spec.ts-snapshots/000-initial-screen-chromium-linux.png" alt="Character Selection Screen" width="700"/>
 
 ### Edge Zones
 
@@ -202,16 +202,16 @@ When a hero is selected, a modal dialog appears showing:
 └────────────────────────────────┘
 ```
 
-**Screenshot References** ([E2E Test 022](e2e/022-multi-player-ui-orientation/README.md)):
+**Screenshot References** ([E2E Test 022](../e2e/022-multi-player-ui-orientation/README.md)):
 
 Power card selection from bottom edge:
-<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/000-power-selection-quinn-bottom-chromium-linux.png" alt="Power Card Selection - Bottom Edge" width="700"/>
+<img src="../e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/000-power-selection-quinn-bottom-chromium-linux.png" alt="Power Card Selection - Bottom Edge" width="700"/>
 
 Power card selection from top edge (rotated 180°):
-<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/001-power-selection-vistra-top-chromium-linux.png" alt="Power Card Selection - Top Edge" width="700"/>
+<img src="../e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/001-power-selection-vistra-top-chromium-linux.png" alt="Power Card Selection - Top Edge" width="700"/>
 
 Power card selection from left edge (rotated 90°):
-<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/002-power-selection-keyleth-left-chromium-linux.png" alt="Power Card Selection - Left Edge" width="700"/>
+<img src="../e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/002-power-selection-keyleth-left-chromium-linux.png" alt="Power Card Selection - Left Edge" width="700"/>
 
 #### Modal Orientation
 
@@ -293,9 +293,9 @@ Common configurations:
 - Bottom, top, left (right edge empty)
 - Bottom, left, right (top edge empty)
 
-**Screenshot Reference** ([E2E Test 022](e2e/022-multi-player-ui-orientation/README.md)):
+**Screenshot Reference** ([E2E Test 022](../e2e/022-multi-player-ui-orientation/README.md)):
 
-<img src="e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/003-character-selection-complete-chromium-linux.png" alt="3-Player Character Selection Complete" width="700"/>
+<img src="../e2e/022-multi-player-ui-orientation/022-multi-player-ui-orientation.spec.ts-snapshots/003-character-selection-complete-chromium-linux.png" alt="3-Player Character Selection Complete" width="700"/>
 
 ### 4-Player Game
 
@@ -352,9 +352,9 @@ For tabletop touch displays (all measurements in pixels):
 - [**gameplay-ux.md**](gameplay-ux.md) - Game board screen layout and interactions
 - [**UX_GUIDELINES.md**](UX_GUIDELINES.md) - General UX principles for tabletop displays
 - [**INITIAL_SCREENS.md**](INITIAL_SCREENS.md) - Technical specification for screen flow
-- [**E2E Test 001**](e2e/001-character-selection/README.md) - Character selection test with screenshots
-- [**E2E Test 019**](e2e/019-power-card-selection/README.md) - Power card selection test
-- [**E2E Test 022**](e2e/022-multi-player-ui-orientation/README.md) - Multi-player edge orientation test
+- [**E2E Test 001**](../e2e/001-character-selection/README.md) - Character selection test with screenshots
+- [**E2E Test 019**](../e2e/019-power-card-selection/README.md) - Power card selection test
+- [**E2E Test 022**](../e2e/022-multi-player-ui-orientation/README.md) - Multi-player edge orientation test
 
 ---
 
