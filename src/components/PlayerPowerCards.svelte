@@ -271,7 +271,7 @@
           title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
           style="border-color: {getPowerCardColor(card.type)};"
           onclick={() => handlePowerCardClick(card.id, highlightState, card, isFlipped, ineligibilityReason)}
-          ondblclick={() => highlightState === 'eligible' && !isAttackCard ? handleActivatePowerCard(card.id) : null}
+          ondblclick={highlightState === 'eligible' && !isAttackCard ? () => handleActivatePowerCard(card.id) : undefined}
           data-testid="power-card-{card.id}"
           aria-label={getAriaLabel(card, highlightState, ineligibilityReason)}
         >

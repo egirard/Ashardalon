@@ -4,6 +4,10 @@
   import type { HeroCondition } from '../store/types';
   import { SwordIcon, ShieldIcon, HeartIcon, DiceIcon, TargetIcon, StarIcon, XIcon } from './icons';
 
+  // Treasure usage type constants
+  const USAGE_TYPE_IMMEDIATE = 'immediate';
+  const USAGE_TYPE_REACTION = 'reaction';
+
   export interface CardDetail {
     type: 'power' | 'treasure' | 'condition';
     card: PowerCard | TreasureCard | HeroCondition;
@@ -161,11 +165,11 @@
             <div class="status-badge not-clickable">
               ✗ Already used
             </div>
-          {:else if treasureCard.usage === 'immediate'}
+          {:else if treasureCard.usage === USAGE_TYPE_IMMEDIATE}
             <div class="status-badge not-clickable">
               ✗ Passive effect (always active)
             </div>
-          {:else if treasureCard.usage === 'reaction'}
+          {:else if treasureCard.usage === USAGE_TYPE_REACTION}
             <div class="status-badge not-clickable">
               ✗ Activates automatically on trigger
             </div>

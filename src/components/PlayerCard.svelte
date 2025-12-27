@@ -632,8 +632,6 @@
     font-size: 0.55rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-family: inherit;
-    color: inherit;
   }
 
   .condition-badge:hover {
