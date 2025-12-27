@@ -3121,6 +3121,7 @@ export const gameSlice = createSlice({
       
       // If clicking the same target, deselect it
       if (state.selectedTargetId === targetId && state.selectedTargetType === targetType) {
+        // Use the same deselection logic
         state.selectedTargetId = null;
         state.selectedTargetType = null;
       } else {
