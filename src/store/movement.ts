@@ -84,8 +84,14 @@ export function getTileBounds(tile: PlacedTile): { minX: number; maxX: number; m
   }
   
   if (row > 0) {
-    // Tiles to the south: start after the start tile (y >= 8)
-    minY = START_TILE_HEIGHT + (row - 1) * NORMAL_TILE_SIZE;
+    // Special case: tiles at col=±1, row=1 are adjacent to the start tile's south sub-tile
+    // They should align with y: 4-7, not be placed below the start tile at y: 8-11
+    if ((col === 1 || col === -1) && row === 1) {
+      minY = 4; // Align with south sub-tile (y: 4-7)
+    } else {
+      // Tiles to the south: start after the start tile (y >= 8)
+      minY = START_TILE_HEIGHT + (row - 1) * NORMAL_TILE_SIZE;
+    }
   } else if (row < 0) {
     // Tiles to the north: start before y=0
     minY = row * NORMAL_TILE_SIZE;
