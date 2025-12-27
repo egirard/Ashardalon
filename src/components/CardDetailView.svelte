@@ -208,7 +208,7 @@
   .card-detail-view {
     position: absolute;
     top: 0;
-    right: calc(100% + 0.5rem);
+    left: calc(100% + 0.5rem);
     width: 250px;
     max-width: 90vw;
     background: rgba(20, 20, 35, 0.98);
@@ -223,7 +223,7 @@
   @keyframes slide-in {
     from {
       opacity: 0;
-      transform: translateX(10px);
+      transform: translateX(-10px);
     }
     to {
       opacity: 1;
