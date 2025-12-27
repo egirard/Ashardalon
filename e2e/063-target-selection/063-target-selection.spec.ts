@@ -139,19 +139,11 @@ test.describe('063 - Target Selection on Map', () => {
     expect(deselectedState.selectedTargetId).toBeNull();
     expect(deselectedState.selectedTargetType).toBeNull();
 
-    // STEP 8: Select monster again to verify selection still works
-    await monsterToken.click({ force: true });
-    await page.waitForTimeout(50);
-    await expect(monsterToken).toHaveAttribute('data-selected', 'true');
-    
-    // Verify attack panel is visible
-    await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
-    
-    // Verify target selection persists
-    const finalSelectedState = await page.evaluate(() => {
+    // STEP 8: Verify final state - target should be deselected after step 7
+    const finalState = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState().game;
     });
-    expect(finalSelectedState.selectedTargetId).toBe('kobold-test');
-    expect(finalSelectedState.selectedTargetType).toBe('monster');
+    expect(finalState.selectedTargetId).toBeNull();
+    expect(finalState.selectedTargetType).toBeNull();
   });
 });

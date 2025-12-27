@@ -52,6 +52,30 @@
 </script>
 
 {#if monsterDef}
+  {#snippet tokenContent()}
+    <img 
+      src={assetPath(monsterDef.imagePath)} 
+      alt={monsterDef.name} 
+      class="token-image"
+    />
+    <span class="token-label">{monsterDef.name}</span>
+    
+    <!-- Status effects badges -->
+    {#if statusConditions.length > 0}
+      <div class="status-badges" data-testid="monster-status-badges">
+        {#each statusConditions as condition (condition.id)}
+          <span 
+            class="status-badge"
+            title="{condition.name}: {condition.description}"
+            data-testid={`monster-status-${condition.id}`}
+          >
+            {condition.icon}
+          </span>
+        {/each}
+      </div>
+    {/if}
+  {/snippet}
+  
   {#if isTargetable}
     <button
       class="monster-token"
@@ -65,27 +89,7 @@
       onclick={handleClick}
       aria-label={`Select ${monsterDef.name}`}
     >
-      <img 
-        src={assetPath(monsterDef.imagePath)} 
-        alt={monsterDef.name} 
-        class="token-image"
-      />
-      <span class="token-label">{monsterDef.name}</span>
-      
-      <!-- Status effects badges -->
-      {#if statusConditions.length > 0}
-        <div class="status-badges" data-testid="monster-status-badges">
-          {#each statusConditions as condition (condition.id)}
-            <span 
-              class="status-badge"
-              title="{condition.name}: {condition.description}"
-              data-testid={`monster-status-${condition.id}`}
-            >
-              {condition.icon}
-            </span>
-          {/each}
-        </div>
-      {/if}
+      {@render tokenContent()}
     </button>
   {:else}
     <div 
@@ -96,27 +100,7 @@
       data-selected={false}
       style={style()}
     >
-      <img 
-        src={assetPath(monsterDef.imagePath)} 
-        alt={monsterDef.name} 
-        class="token-image"
-      />
-      <span class="token-label">{monsterDef.name}</span>
-      
-      <!-- Status effects badges -->
-      {#if statusConditions.length > 0}
-        <div class="status-badges" data-testid="monster-status-badges">
-          {#each statusConditions as condition (condition.id)}
-            <span 
-              class="status-badge"
-              title="{condition.name}: {condition.description}"
-              data-testid={`monster-status-${condition.id}`}
-            >
-              {condition.icon}
-            </span>
-          {/each}
-        </div>
-      {/if}
+      {@render tokenContent()}
     </div>
   {/if}
 {/if}
@@ -139,6 +123,7 @@
     border: none;
     padding: 0;
     font-family: inherit;
+    cursor: default;
   }
   
   /* Targetable state - shows a glow to indicate monster can be selected */
