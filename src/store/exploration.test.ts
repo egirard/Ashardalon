@@ -301,6 +301,52 @@ describe("exploration", () => {
       const result = getNewTilePosition(startTile, "west");
       expect(result).toEqual({ col: -1, row: 0 });
     });
+
+    it("should place tile at row 0 when exploring east from north sub-tile", () => {
+      const result = getNewTilePosition(startTile, "east", "start-tile-north");
+      expect(result).toEqual({ col: 1, row: 0 });
+    });
+
+    it("should place tile at row 1 when exploring east from south sub-tile", () => {
+      const result = getNewTilePosition(startTile, "east", "start-tile-south");
+      expect(result).toEqual({ col: 1, row: 1 });
+    });
+
+    it("should place tile at row 0 when exploring west from north sub-tile", () => {
+      const result = getNewTilePosition(startTile, "west", "start-tile-north");
+      expect(result).toEqual({ col: -1, row: 0 });
+    });
+
+    it("should place tile at row 1 when exploring west from south sub-tile", () => {
+      const result = getNewTilePosition(startTile, "west", "start-tile-south");
+      expect(result).toEqual({ col: -1, row: 1 });
+    });
+
+    it("should ensure new tile is adjacent when exploring from north sub-tile east edge", () => {
+      // Hero at position (3, 1) in north sub-tile explores east
+      const heroPosition = { x: 3, y: 1 };
+      const result = getNewTilePosition(startTile, "east", "start-tile-north");
+      
+      // New tile should be at col=1, row=0, which means it spans:
+      // x: 4-7, y: 0-3 (adjacent to hero at x=3, y=1)
+      expect(result).toEqual({ col: 1, row: 0 });
+      
+      // Verify adjacency: hero at (3, 1) should be able to move to (4, 1) on the new tile
+      // This is checked by the fact that x=3 is adjacent to x=4, and both are at y=1
+    });
+
+    it("should ensure new tile is adjacent when exploring from south sub-tile east edge", () => {
+      // Hero at position (3, 6) in south sub-tile explores east
+      const heroPosition = { x: 3, y: 6 };
+      const result = getNewTilePosition(startTile, "east", "start-tile-south");
+      
+      // New tile should be at col=1, row=1, which means it spans:
+      // x: 4-7, y: 4-7 (adjacent to hero at x=3, y=6)
+      expect(result).toEqual({ col: 1, row: 1 });
+      
+      // Verify adjacency: hero at (3, 6) should be able to move to (4, 6) on the new tile
+      // This is checked by the fact that x=3 is adjacent to x=4, and both are at y=6
+    });
   });
 
   describe("placeTile", () => {
@@ -386,6 +432,62 @@ describe("exploration", () => {
       expect(result).not.toBeNull();
       expect(result!.edges.east).toBe('open');  // Connecting edge must be open
       expect([0, 90, 180, 270]).toContain(result!.rotation);  // Must be a valid rotation
+    });
+
+    it("should place tile at row 0 when exploring east from north sub-tile", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { 
+        tileId: "start-tile", 
+        direction: "east",
+        subTileId: "start-tile-north"
+      };
+      
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.position).toEqual({ col: 1, row: 0 });
+    });
+
+    it("should place tile at row 1 when exploring east from south sub-tile", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { 
+        tileId: "start-tile", 
+        direction: "east",
+        subTileId: "start-tile-south"
+      };
+      
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.position).toEqual({ col: 1, row: 1 });
+    });
+
+    it("should place tile at row 0 when exploring west from north sub-tile", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { 
+        tileId: "start-tile", 
+        direction: "west",
+        subTileId: "start-tile-north"
+      };
+      
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.position).toEqual({ col: -1, row: 0 });
+    });
+
+    it("should place tile at row 1 when exploring west from south sub-tile", () => {
+      const dungeon = initializeDungeon();
+      const edge: TileEdge = { 
+        tileId: "start-tile", 
+        direction: "west",
+        subTileId: "start-tile-south"
+      };
+      
+      const result = placeTile(edge, "tile-black-2exit-a", dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result!.position).toEqual({ col: -1, row: 1 });
     });
   });
 
