@@ -10,9 +10,21 @@
     tileOffsetX: number;
     tileOffsetY: number;
     tilePixelOffset: { x: number; y: number };
+    isTargetable?: boolean;
+    isSelected?: boolean;
+    onClick?: () => void;
   }
   
-  let { monster, cellSize, tileOffsetX, tileOffsetY, tilePixelOffset }: Props = $props();
+  let { 
+    monster, 
+    cellSize, 
+    tileOffsetX, 
+    tileOffsetY, 
+    tilePixelOffset,
+    isTargetable = false,
+    isSelected = false,
+    onClick,
+  }: Props = $props();
   
   // Get monster definition
   const monsterDef = $derived(MONSTERS.find(m => m.id === monster.monsterId));
@@ -30,14 +42,30 @@
     const absoluteTop = tilePixelOffset.y + tileOffsetY + monster.position.y * cellSize + cellCenterOffset;
     return `left: ${absoluteLeft}px; top: ${absoluteTop}px;`;
   });
+  
+  function handleClick(e: Event) {
+    if (onClick && isTargetable) {
+      e.stopPropagation();
+      onClick();
+    }
+  }
 </script>
 
 {#if monsterDef}
   <div 
     class="monster-token"
+    class:targetable={isTargetable}
+    class:selected={isSelected}
     data-testid="monster-token"
     data-monster-id={monster.instanceId}
+    data-targetable={isTargetable}
+    data-selected={isSelected}
     style={style()}
+    onclick={handleClick}
+    onkeydown={(e) => e.key === 'Enter' && handleClick(e)}
+    role={isTargetable ? "button" : undefined}
+    tabindex={isTargetable ? 0 : undefined}
+    aria-label={isTargetable ? `Select ${monsterDef.name}` : undefined}
   >
     <img 
       src={assetPath(monsterDef.imagePath)} 
@@ -76,6 +104,38 @@
     align-items: center;
     transform: translate(-50%, -50%);
     z-index: 8;
+    transition: all 0.2s ease-out;
+  }
+  
+  /* Targetable state - shows a glow to indicate monster can be selected */
+  .monster-token.targetable {
+    cursor: pointer;
+  }
+  
+  .monster-token.targetable .token-image {
+    box-shadow: 0 0 10px 2px rgba(255, 215, 0, 0.6);
+    animation: targetable-pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes targetable-pulse {
+    0%, 100% {
+      box-shadow: 0 0 10px 2px rgba(255, 215, 0, 0.6);
+    }
+    50% {
+      box-shadow: 0 0 16px 4px rgba(255, 215, 0, 0.9);
+    }
+  }
+  
+  .monster-token.targetable:hover .token-image {
+    transform: scale(1.1);
+    box-shadow: 0 0 16px 4px rgba(255, 215, 0, 0.9);
+  }
+  
+  /* Selected state - shows a strong highlight ring */
+  .monster-token.selected .token-image {
+    box-shadow: 0 0 16px 4px rgba(0, 255, 0, 0.9);
+    transform: scale(1.15);
+    animation: none;
   }
   
   .token-image {
@@ -85,6 +145,7 @@
     border-radius: 4px;
     border: 2px solid var(--monster-color-primary);
     background: var(--monster-color-dark);
+    transition: all 0.2s ease-out;
   }
   
   .token-label {
