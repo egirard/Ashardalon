@@ -283,6 +283,8 @@ export interface GameState {
   selectedTargetId: string | null;
   /** Selected target type (to differentiate between different targetable entity types) */
   selectedTargetType: 'monster' | 'trap' | 'treasure' | null;
+  /** Whether the scenario introduction modal should be shown (can be reopened via objective panel) */
+  showScenarioIntroduction: boolean;
 }
 
 /**
@@ -492,6 +494,7 @@ const initialState: GameState = {
   pendingMonsterChoice: null,
   selectedTargetId: null,
   selectedTargetType: null,
+  showScenarioIntroduction: false,
 };
 
 /**
@@ -837,6 +840,9 @@ export const gameSlice = createSlice({
       
       // Clear encounter effect messages
       state.encounterEffectMessage = null;
+
+      // Show scenario introduction on game start
+      state.showScenarioIntroduction = true;
 
       state.currentScreen = "game-board";
     },
@@ -3146,6 +3152,13 @@ export const gameSlice = createSlice({
      */
     dismissScenarioIntroduction: (state) => {
       state.scenario.introductionShown = true;
+      state.showScenarioIntroduction = false;
+    },
+    /**
+     * Show the scenario introduction modal (e.g., when clicking objective panel)
+     */
+    showScenarioIntroductionModal: (state) => {
+      state.showScenarioIntroduction = true;
     },
   },
 });
@@ -3223,5 +3236,6 @@ export const {
   selectTarget,
   deselectTarget,
   dismissScenarioIntroduction,
+  showScenarioIntroductionModal,
 } = gameSlice.actions;
 export default gameSlice.reducer;
