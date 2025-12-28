@@ -35,14 +35,9 @@
   const customAbilityId = $derived(HERO_CUSTOM_ABILITIES[hero.id]);
   const customAbility = $derived(customAbilityId ? getPowerCardById(customAbilityId) : null);
   
-  // Progress text for at-will selection
-  const atWillProgressText = $derived(
-    selection.atWills.length === 0
-      ? 'Pick first of two'
-      : selection.atWills.length === 1
-        ? 'Pick second of two'
-        : 'Complete'
-  );
+  // Track which card is expanded for preview
+  let expandedCardId: number | null = $state(null);
+  let expandedCardType: 'utility' | 'atWill' | 'daily' | null = $state(null);
 
   // Check if selection is complete
   const isSelectionComplete = $derived(
@@ -51,16 +46,47 @@
     selection.daily !== null
   );
 
-  function handleUtilitySelect(cardId: number) {
-    store.dispatch(selectUtilityCard({ heroId: hero.id, cardId }));
+  // Power card type colors
+  function getPowerCardColor(type: string): string {
+    switch (type) {
+      case 'at-will': return '#2e7d32'; // Green
+      case 'daily': return '#7b1fa2'; // Purple
+      case 'utility': return '#1565c0'; // Blue
+      default: return '#666';
+    }
   }
 
-  function handleAtWillToggle(cardId: number) {
-    store.dispatch(toggleAtWillCard({ heroId: hero.id, cardId }));
+  // Power card type abbreviation
+  function getPowerCardAbbrev(type: string): string {
+    switch (type) {
+      case 'at-will': return 'AW';
+      case 'daily': return 'D';
+      case 'utility': return 'U';
+      default: return '';
+    }
   }
 
-  function handleDailySelect(cardId: number) {
-    store.dispatch(selectDailyCard({ heroId: hero.id, cardId }));
+  function handleCardClick(card: PowerCard, type: 'utility' | 'atWill' | 'daily') {
+    // If clicking the same card that's expanded, select it
+    if (expandedCardId === card.id && expandedCardType === type) {
+      selectCard(card.id, type);
+      expandedCardId = null;
+      expandedCardType = null;
+    } else {
+      // Otherwise, expand it for preview
+      expandedCardId = card.id;
+      expandedCardType = type;
+    }
+  }
+
+  function selectCard(cardId: number, type: 'utility' | 'atWill' | 'daily') {
+    if (type === 'utility') {
+      store.dispatch(selectUtilityCard({ heroId: hero.id, cardId }));
+    } else if (type === 'atWill') {
+      store.dispatch(toggleAtWillCard({ heroId: hero.id, cardId }));
+    } else if (type === 'daily') {
+      store.dispatch(selectDailyCard({ heroId: hero.id, cardId }));
+    }
   }
 
   function isUtilitySelected(cardId: number): boolean {
@@ -77,6 +103,25 @@
 
   function canSelectAtWill(cardId: number): boolean {
     return selection.atWills.includes(cardId) || selection.atWills.length < 2;
+  }
+
+  function isCardExpanded(cardId: number): boolean {
+    return expandedCardId === cardId;
+  }
+
+  function getExpandedCard(): { card: PowerCard; type: 'utility' | 'atWill' | 'daily' } | null {
+    if (!expandedCardId || !expandedCardType) return null;
+    
+    let card: PowerCard | null = null;
+    if (expandedCardType === 'utility') {
+      card = utilityCards.find(c => c.id === expandedCardId) || null;
+    } else if (expandedCardType === 'atWill') {
+      card = atWillCards.find(c => c.id === expandedCardId) || null;
+    } else if (expandedCardType === 'daily') {
+      card = dailyCards.find(c => c.id === expandedCardId) || null;
+    }
+    
+    return card ? { card, type: expandedCardType } : null;
   }
 </script>
 
@@ -109,114 +154,133 @@
       {/if}
     </div>
 
-    <div class="card-sections">
-      <!-- Custom Ability (automatic) -->
-      <div class="card-section">
-        <h3>Custom Ability (Automatic)</h3>
-        <div class="card-grid">
-          {#if customAbility}
-            <div class="power-card custom-ability" data-testid="custom-ability-card">
-              <div class="card-header">
-                <span class="card-name">{customAbility.name}</span>
-                <span class="card-type">{customAbility.type}</span>
-              </div>
-              <p class="card-description">{customAbility.description}</p>
-              <p class="card-rule">{customAbility.rule}</p>
-              {#if customAbility.attackBonus !== undefined}
-                <div class="card-stats">
-                  <span>Attack: +{customAbility.attackBonus}</span>
-                  {#if customAbility.damage !== undefined}
-                    <span>Damage: {customAbility.damage}</span>
-                  {/if}
-                </div>
-              {/if}
+    <div class="card-layout">
+      <!-- Left column: Mini cards -->
+      <div class="mini-cards-column">
+        <!-- Custom Ability (automatic) -->
+        {#if customAbility}
+          <div class="section-label">Custom Ability</div>
+          <div class="mini-card custom-ability" data-testid="custom-ability-card">
+            <span class="card-type-badge" style="background-color: {getPowerCardColor('utility')};">
+              {getPowerCardAbbrev('utility')}
+            </span>
+            <span class="card-name-mini">{customAbility.name}</span>
+            <span class="auto-label">AUTO</span>
+          </div>
+        {/if}
+
+        <!-- Utility Cards -->
+        <div class="section-label">Utility (Pick 1)</div>
+        {#each utilityCards as card (card.id)}
+          <button
+            class="mini-card"
+            class:selected={isUtilitySelected(card.id)}
+            class:expanded={isCardExpanded(card.id)}
+            style="border-color: {getPowerCardColor(card.type)};"
+            onclick={() => handleCardClick(card, 'utility')}
+            data-testid="utility-card-{card.id}"
+          >
+            <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
+              {getPowerCardAbbrev(card.type)}
+            </span>
+            <span class="card-name-mini">{card.name}</span>
+            {#if isUtilitySelected(card.id)}
+              <CheckIcon size={12} ariaLabel="Selected" />
+            {/if}
+          </button>
+        {/each}
+
+        <!-- At-Will Cards -->
+        <div class="section-label">At-Will (Pick 2) - {selection.atWills.length}/2</div>
+        {#each atWillCards as card (card.id)}
+          <button
+            class="mini-card"
+            class:selected={isAtWillSelected(card.id)}
+            class:expanded={isCardExpanded(card.id)}
+            class:disabled={!canSelectAtWill(card.id)}
+            style="border-color: {getPowerCardColor(card.type)};"
+            onclick={() => handleCardClick(card, 'atWill')}
+            disabled={!canSelectAtWill(card.id)}
+            data-testid="atwill-card-{card.id}"
+          >
+            <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
+              {getPowerCardAbbrev(card.type)}
+            </span>
+            <span class="card-name-mini">{card.name}</span>
+            {#if isAtWillSelected(card.id)}
+              <CheckIcon size={12} ariaLabel="Selected" />
+            {/if}
+          </button>
+        {/each}
+
+        <!-- Daily Cards -->
+        <div class="section-label">Daily (Pick 1)</div>
+        {#each dailyCards as card (card.id)}
+          <button
+            class="mini-card"
+            class:selected={isDailySelected(card.id)}
+            class:expanded={isCardExpanded(card.id)}
+            style="border-color: {getPowerCardColor(card.type)};"
+            onclick={() => handleCardClick(card, 'daily')}
+            data-testid="daily-card-{card.id}"
+          >
+            <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
+              {getPowerCardAbbrev(card.type)}
+            </span>
+            <span class="card-name-mini">{card.name}</span>
+            {#if isDailySelected(card.id)}
+              <CheckIcon size={12} ariaLabel="Selected" />
+            {/if}
+          </button>
+        {/each}
+      </div>
+
+      <!-- Right column: Expanded card view -->
+      <div class="expanded-card-column">
+        {#if getExpandedCard()}
+          {@const { card, type } = getExpandedCard()!}
+          <div class="expanded-card" data-testid="expanded-card">
+            <div class="expanded-header">
+              <span class="card-type-badge large" style="background-color: {getPowerCardColor(card.type)};">
+                {card.type}
+              </span>
+              <h3 class="expanded-card-name">{card.name}</h3>
             </div>
-          {/if}
-        </div>
-      </div>
-
-      <!-- Utility Cards -->
-      <div class="card-section">
-        <h3>Utility Power (Select 1)</h3>
-        <div class="card-grid" data-testid="utility-cards">
-          {#each utilityCards as card (card.id)}
-            <button
-              class="power-card"
-              class:selected={isUtilitySelected(card.id)}
-              onclick={() => handleUtilitySelect(card.id)}
-              data-testid="utility-card-{card.id}"
-            >
-              <div class="card-header">
-                <span class="card-name">{card.name}</span>
-                <span class="card-type">{card.type}</span>
+            
+            <p class="expanded-description">{card.description}</p>
+            <p class="expanded-rule">{card.rule}</p>
+            
+            {#if card.attackBonus !== undefined}
+              <div class="expanded-stats">
+                <span class="stat-item"><strong>Attack:</strong> +{card.attackBonus}</span>
+                {#if card.damage !== undefined}
+                  <span class="stat-item"><strong>Damage:</strong> {card.damage}</span>
+                {/if}
               </div>
-              <p class="card-description">{card.description}</p>
-              <p class="card-rule">{card.rule}</p>
-            </button>
-          {/each}
-        </div>
-      </div>
+            {/if}
 
-      <!-- At-Will Cards -->
-      <div class="card-section">
-        <h3>At-Will Powers — <span class="pick-progress" data-testid="atwill-progress">{atWillProgressText}</span></h3>
-        <div class="card-grid" data-testid="atwill-cards">
-          {#each atWillCards as card (card.id)}
             <button
-              class="power-card"
-              class:selected={isAtWillSelected(card.id)}
-              class:disabled={!canSelectAtWill(card.id)}
-              onclick={() => handleAtWillToggle(card.id)}
-              disabled={!canSelectAtWill(card.id)}
-              data-testid="atwill-card-{card.id}"
+              class="select-button"
+              onclick={() => selectCard(card.id, type)}
+              data-testid="select-expanded-card"
             >
-              <div class="card-header">
-                <span class="card-name">{card.name}</span>
-                <span class="card-type">{card.type}</span>
-              </div>
-              <p class="card-description">{card.description}</p>
-              <p class="card-rule">{card.rule}</p>
-              {#if card.attackBonus !== undefined}
-                <div class="card-stats">
-                  <span>Attack: +{card.attackBonus}</span>
-                  {#if card.damage !== undefined}
-                    <span>Damage: {card.damage}</span>
-                  {/if}
-                </div>
+              {#if type === 'utility' && isUtilitySelected(card.id)}
+                Selected
+              {:else if type === 'atWill' && isAtWillSelected(card.id)}
+                Selected
+              {:else if type === 'daily' && isDailySelected(card.id)}
+                Selected
+              {:else}
+                Select This Card
               {/if}
             </button>
-          {/each}
-        </div>
-      </div>
-
-      <!-- Daily Cards -->
-      <div class="card-section">
-        <h3>Daily Power (Select 1)</h3>
-        <div class="card-grid" data-testid="daily-cards">
-          {#each dailyCards as card (card.id)}
-            <button
-              class="power-card"
-              class:selected={isDailySelected(card.id)}
-              onclick={() => handleDailySelect(card.id)}
-              data-testid="daily-card-{card.id}"
-            >
-              <div class="card-header">
-                <span class="card-name">{card.name}</span>
-                <span class="card-type">{card.type}</span>
-              </div>
-              <p class="card-description">{card.description}</p>
-              <p class="card-rule">{card.rule}</p>
-              {#if card.attackBonus !== undefined}
-                <div class="card-stats">
-                  <span>Attack: +{card.attackBonus}</span>
-                  {#if card.damage !== undefined}
-                    <span>Damage: {card.damage}</span>
-                  {/if}
-                </div>
-              {/if}
-            </button>
-          {/each}
-        </div>
+          </div>
+        {:else}
+          <div class="no-selection">
+            <p>Tap a card to preview</p>
+            <p class="hint">Tap again to select</p>
+          </div>
+        {/if}
       </div>
     </div>
 
@@ -281,9 +345,8 @@
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
     padding: 1rem;
-    width: min(450px, 90vmin);
+    width: min(550px, 90vmin);
     max-height: min(85vh, 90vmin);
-    overflow-y: auto;
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     display: flex;
@@ -321,7 +384,7 @@
 
   .modal-header h2 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 
   .close-button {
@@ -341,10 +404,10 @@
   .selection-status {
     text-align: center;
     margin-bottom: 0.5rem;
-    padding: 0.4rem;
+    padding: 0.3rem;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.1);
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     flex-shrink: 0;
   }
 
@@ -357,107 +420,209 @@
     color: #ffa726;
   }
 
-  .card-sections {
+  .card-layout {
     display: flex;
-    flex-direction: column;
     gap: 0.75rem;
     flex: 1;
     min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Left column: Mini cards list */
+  .mini-cards-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 0 0 160px;
     overflow-y: auto;
+    padding-right: 0.5rem;
   }
 
-  .card-section h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.95rem;
+  .section-label {
+    font-size: 0.7rem;
     color: #ffd700;
+    font-weight: bold;
+    margin-top: 0.5rem;
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
   }
 
-  .pick-progress {
-    font-weight: normal;
-    color: #ffa726;
+  .section-label:first-child {
+    margin-top: 0;
   }
 
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .power-card {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid transparent;
-    border-radius: 6px;
-    padding: 0.5rem;
-    text-align: left;
+  .mini-card {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.7rem;
     cursor: pointer;
     transition: all 0.2s ease;
     color: #fff;
-    min-height: 0;
+    text-align: left;
+    font-family: inherit;
   }
 
-  .power-card:hover:not(:disabled) {
+  .mini-card:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
+    transform: translateX(2px);
   }
 
-  .power-card.selected {
-    border-color: #ffd700;
+  .mini-card.selected {
+    border-width: 2px;
+    border-color: #ffd700 !important;
     background: rgba(255, 215, 0, 0.2);
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
   }
 
-  .power-card.custom-ability {
+  .mini-card.expanded {
+    border-width: 2px;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+  }
+
+  .mini-card.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .mini-card.custom-ability {
     border-color: #9c27b0;
     background: rgba(156, 39, 176, 0.2);
     cursor: default;
   }
 
-  .power-card.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.35rem;
-  }
-
-  .card-name {
+  .card-type-badge {
+    font-size: 0.6rem;
     font-weight: bold;
-    font-size: 0.8rem;
+    color: #fff;
+    padding: 0.2rem 0.3rem;
+    border-radius: 3px;
+    flex-shrink: 0;
   }
 
-  .card-type {
-    font-size: 0.65rem;
-    color: #aaa;
+  .card-name-mini {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .auto-label {
+    font-size: 0.6rem;
+    color: #9c27b0;
+    font-weight: bold;
+  }
+
+  /* Right column: Expanded card view */
+  .expanded-card-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .expanded-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem;
+    height: 100%;
+  }
+
+  .expanded-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .card-type-badge.large {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
     text-transform: uppercase;
   }
 
-  .card-description {
-    font-size: 0.7rem;
-    color: #ccc;
-    margin: 0 0 0.35rem 0;
-    font-style: italic;
-    line-height: 1.2;
+  .expanded-card-name {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: bold;
   }
 
-  .card-rule {
-    font-size: 0.7rem;
+  .expanded-description {
+    font-size: 0.75rem;
+    color: #ccc;
     margin: 0;
-    white-space: pre-line;
+    font-style: italic;
     line-height: 1.3;
   }
 
-  .card-stats {
-    margin-top: 0.35rem;
-    padding-top: 0.35rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  .expanded-rule {
+    font-size: 0.75rem;
+    margin: 0;
+    white-space: pre-line;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .expanded-stats {
     display: flex;
     gap: 0.75rem;
-    font-size: 0.7rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
     color: #ffd700;
+  }
+
+  .stat-item strong {
+    color: #fff;
+  }
+
+  .select-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: auto;
+  }
+
+  .select-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  }
+
+  .no-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    font-size: 0.85rem;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .no-selection p {
+    margin: 0;
+  }
+
+  .no-selection .hint {
+    font-size: 0.75rem;
+    color: #666;
   }
 
   .modal-footer {
@@ -470,7 +635,7 @@
 
   .done-button {
     padding: 0.6rem 1.5rem;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: bold;
     background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
     color: #1a1a2e;
