@@ -292,13 +292,17 @@ describe('levelUpHero', () => {
 });
 
 describe('calculateDamage', () => {
-  it('should return base damage for level 1 hero on any roll', () => {
-    expect(calculateDamage(1, 20, 2)).toBe(2);
+  it('should return base damage +1 for level 1 hero on natural 20 (critical hit)', () => {
+    expect(calculateDamage(1, 20, 2)).toBe(3);
+    expect(calculateDamage(1, 20, 1)).toBe(2);
+  });
+
+  it('should return base damage for level 1 hero on non-20 rolls', () => {
     expect(calculateDamage(1, 15, 2)).toBe(2);
     expect(calculateDamage(1, 1, 2)).toBe(2);
   });
 
-  it('should return base damage +1 for level 2 hero on natural 20', () => {
+  it('should return base damage +1 for level 2 hero on natural 20 (critical hit)', () => {
     expect(calculateDamage(2, 20, 2)).toBe(3);
     expect(calculateDamage(2, 20, 1)).toBe(2);
   });
