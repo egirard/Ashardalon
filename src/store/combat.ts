@@ -196,16 +196,16 @@ export function levelUpHero(
 }
 
 /**
- * Calculate damage for an attack, including critical hit bonus for level 2 heroes
- * Level 2 heroes deal +1 damage on natural 20 rolls
+ * Calculate damage for an attack, including critical hit bonus
+ * All heroes deal +1 damage on natural 20 rolls (critical hits)
  */
 export function calculateDamage(
   heroLevel: HeroLevel,
   roll: number,
   baseDamage: number
 ): number {
-  if (roll === 20 && heroLevel === 2) {
-    return baseDamage + 1; // Critical attack bonus for level 2
+  if (roll === 20) {
+    return baseDamage + 1; // Critical attack bonus
   }
   return baseDamage;
 }
