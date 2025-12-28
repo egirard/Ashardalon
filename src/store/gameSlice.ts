@@ -146,6 +146,10 @@ const DEFAULT_SCENARIO_STATE: ScenarioState = {
   monstersDefeated: 0,
   monstersToDefeat: 12,
   objective: "Defeat 12 monsters",
+  title: "Into the Mountain",
+  description: "You and your fellow adventurers have entered the depths beneath Firestorm Peak. The dragon Ashardalon's corruption spreads through these caverns. As you explore the dungeon, you'll face hordes of monsters and discover the source of evil.",
+  instructions: "Work together to explore the dungeon tiles. When you explore, draw from the Monster Deck and place monsters on the board. Defeat monsters to gain XP and level up your heroes.",
+  introductionShown: false,
 };
 
 /**
@@ -3137,6 +3141,12 @@ export const gameSlice = createSlice({
       state.selectedTargetId = null;
       state.selectedTargetType = null;
     },
+    /**
+     * Dismiss the scenario introduction modal
+     */
+    dismissScenarioIntroduction: (state) => {
+      state.scenario.introductionShown = true;
+    },
   },
 });
 
@@ -3212,5 +3222,6 @@ export const {
   cancelMonsterChoice,
   selectTarget,
   deselectTarget,
+  dismissScenarioIntroduction,
 } = gameSlice.actions;
 export default gameSlice.reducer;

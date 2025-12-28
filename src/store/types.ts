@@ -323,6 +323,14 @@ export interface ScenarioState {
   monstersToDefeat: number;
   /** Objective description */
   objective: string;
+  /** Scenario title for display */
+  title: string;
+  /** Scenario description/story */
+  description: string;
+  /** Special setup instructions or flavor text */
+  instructions?: string;
+  /** Whether the scenario introduction has been shown to the player */
+  introductionShown: boolean;
 }
 
 /**
