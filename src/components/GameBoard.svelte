@@ -1651,6 +1651,9 @@
               heroTurnActions={heroTurnActions}
               monstersToActivate={getMonstersForHero(hero.id).length}
               monstersActivated={villainPhaseMonsterIndex}
+              onEndPhase={handleEndPhase}
+              endPhaseButtonText={getEndPhaseButtonText()}
+              endPhaseButtonDisabled={mapControlMode}
             />
           {/if}
           <PlayerCard
@@ -1663,9 +1666,6 @@
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="top"
-            onEndPhase={isHeroActive ? handleEndPhase : undefined}
-            endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
-            endPhaseButtonDisabled={mapControlMode}
           />
           <!-- Monster cards appear to the left of player card after 180° rotation -->
           {#if controlledMonsters.length > 0}
@@ -1718,9 +1718,6 @@
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="left"
-              onEndPhase={isHeroActive ? handleEndPhase : undefined}
-              endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
-              endPhaseButtonDisabled={mapControlMode}
             />
             <!-- Turn Progress Card (shown only for active player) -->
             {#if isHeroActive}
@@ -1730,6 +1727,9 @@
                 heroTurnActions={heroTurnActions}
                 monstersToActivate={getMonstersForHero(hero.id).length}
                 monstersActivated={villainPhaseMonsterIndex}
+                onEndPhase={handleEndPhase}
+                endPhaseButtonText={getEndPhaseButtonText()}
+                endPhaseButtonDisabled={mapControlMode}
               />
             {/if}
             <!-- Power cards to the right of player card -->
@@ -2152,9 +2152,6 @@
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="right"
-              onEndPhase={isHeroActive ? handleEndPhase : undefined}
-              endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
-              endPhaseButtonDisabled={mapControlMode}
             />
             <!-- Turn Progress Card (shown only for active player) -->
             {#if isHeroActive}
@@ -2164,6 +2161,9 @@
                 heroTurnActions={heroTurnActions}
                 monstersToActivate={getMonstersForHero(hero.id).length}
                 monstersActivated={villainPhaseMonsterIndex}
+                onEndPhase={handleEndPhase}
+                endPhaseButtonText={getEndPhaseButtonText()}
+                endPhaseButtonDisabled={mapControlMode}
               />
             {/if}
             <!-- Power cards to the right of player card -->
@@ -2214,9 +2214,6 @@
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="bottom"
-            onEndPhase={isHeroActive ? handleEndPhase : undefined}
-            endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
-            endPhaseButtonDisabled={mapControlMode}
           />
           <!-- Turn Progress Card (shown only for active player) -->
           {#if isHeroActive}
@@ -2226,6 +2223,9 @@
               heroTurnActions={heroTurnActions}
               monstersToActivate={getMonstersForHero(hero.id).length}
               monstersActivated={villainPhaseMonsterIndex}
+              onEndPhase={handleEndPhase}
+              endPhaseButtonText={getEndPhaseButtonText()}
+              endPhaseButtonDisabled={mapControlMode}
             />
           {/if}
           <!-- Power cards to the right of player card -->

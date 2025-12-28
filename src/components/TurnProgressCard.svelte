@@ -8,6 +8,12 @@
     heroTurnActions?: HeroTurnActions;
     monstersToActivate?: number;
     monstersActivated?: number;
+    /** Callback when the end phase button is clicked */
+    onEndPhase?: () => void;
+    /** Text to display on the end phase button */
+    endPhaseButtonText?: string;
+    /** Whether the end phase button should be disabled */
+    endPhaseButtonDisabled?: boolean;
   }
 
   let { 
@@ -15,7 +21,10 @@
     turnNumber, 
     heroTurnActions, 
     monstersToActivate = 0, 
-    monstersActivated = 0 
+    monstersActivated = 0,
+    onEndPhase,
+    endPhaseButtonText,
+    endPhaseButtonDisabled = false
   }: Props = $props();
 
   // Define phase information
@@ -99,6 +108,18 @@
             <div class="phase-detail" data-testid="phase-detail-{phase.id}">
               {getPhaseDetail(phase.id)}
             </div>
+          {/if}
+          
+          <!-- End Phase Button (shown only for active phase) -->
+          {#if phase.id === currentPhase && onEndPhase && endPhaseButtonText}
+            <button
+              class="end-phase-button"
+              data-testid="end-phase-button"
+              onclick={onEndPhase}
+              disabled={endPhaseButtonDisabled}
+            >
+              {endPhaseButtonText}
+            </button>
           {/if}
         </div>
       </div>
@@ -217,6 +238,32 @@
     padding: 0.2rem 0.3rem;
     background: rgba(142, 202, 230, 0.1);
     border-radius: 3px;
+  }
+
+  /* End phase button */
+  .end-phase-button {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: bold;
+    background: rgba(46, 125, 50, 0.9);
+    color: #fff;
+    border: 1px solid #4caf50;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+  }
+
+  .end-phase-button:hover:not(:disabled) {
+    background: rgba(76, 175, 80, 0.9);
+    border-color: #66bb6a;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  }
+
+  .end-phase-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Respect user's reduced motion preference */
