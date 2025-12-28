@@ -61,7 +61,7 @@ This test verifies that:
 
 ### Keyboard Interaction
 1. Follow steps 1-5 above
-2. Press Enter, Space, or Escape key
+2. Press Enter or Escape key
 3. **Verify:** Modal dismisses correctly
 4. **Verify:** Game board is interactive
 
@@ -85,7 +85,7 @@ This test verifies that:
 
 ✅ **AC3:** Must be dismissable by the player and not shown again until the map is re-entered or restarted.
 - Modal dismisses via button click
-- Modal dismisses via keyboard (Enter, Space, Escape)
+- Modal dismisses via keyboard (Enter, Escape)
 - Once dismissed, `introductionShown` flag is set to `true`
 - Modal never reappears during the same game session
 
@@ -111,5 +111,5 @@ This test verifies that:
 
 ### Integration
 - Modal renders in `GameBoard.svelte` when `!scenario.introductionShown`
-- High z-index (3000) ensures it displays above other UI elements
-- Keyboard accessible with Escape, Enter, and Space keys
+- Z-index of 2100 ensures it displays above other UI elements while maintaining hierarchy
+- Keyboard accessible with Escape and Enter keys (consistent with other modals)
