@@ -141,84 +141,92 @@
     </div>
 
     <div class="card-layout">
-      <!-- Left column: Mini cards -->
-      <div class="mini-cards-column">
-        <!-- Custom Ability (automatic) -->
+      <!-- Left columns: Mini cards organized by section -->
+      <div class="mini-cards-columns">
+        <!-- Custom Ability Column -->
         {#if customAbility}
-          <div class="section-label">Custom Ability</div>
-          <div class="mini-card custom-ability" data-testid="custom-ability-card">
-            <span class="card-type-badge" style="background-color: {getPowerCardColor('utility')};">
-              {getPowerCardAbbrev('utility')}
-            </span>
-            <span class="card-name-mini">{customAbility.name}</span>
-            <span class="auto-label">AUTO</span>
+          <div class="card-column">
+            <div class="section-label">Custom Ability</div>
+            <div class="mini-card custom-ability" data-testid="custom-ability-card">
+              <span class="card-type-badge" style="background-color: {getPowerCardColor('utility')};">
+                {getPowerCardAbbrev('utility')}
+              </span>
+              <span class="card-name-mini">{customAbility.name}</span>
+              <span class="auto-label">AUTO</span>
+            </div>
           </div>
         {/if}
 
-        <!-- Utility Cards -->
-        <div class="section-label">Utility (Pick 1)</div>
-        {#each utilityCards as card (card.id)}
-          <button
-            class="mini-card"
-            class:selected={isUtilitySelected(card.id)}
-            class:expanded={isCardExpanded(card.id)}
-            style="border-color: {getPowerCardColor(card.type)};"
-            onclick={() => handleCardClick(card, 'utility')}
-            data-testid="utility-card-{card.id}"
-          >
-            <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
-              {getPowerCardAbbrev(card.type)}
-            </span>
-            <span class="card-name-mini">{card.name}</span>
-            {#if isUtilitySelected(card.id)}
-              <CheckIcon size={12} ariaLabel="Selected" />
-            {/if}
-          </button>
-        {/each}
+        <!-- Utility Cards Column -->
+        <div class="card-column">
+          <div class="section-label">Utility (Pick 1)</div>
+          {#each utilityCards as card (card.id)}
+            <button
+              class="mini-card"
+              class:selected={isUtilitySelected(card.id)}
+              class:expanded={isCardExpanded(card.id)}
+              style="border-color: {getPowerCardColor(card.type)};"
+              onclick={() => handleCardClick(card, 'utility')}
+              data-testid="utility-card-{card.id}"
+            >
+              <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
+                {getPowerCardAbbrev(card.type)}
+              </span>
+              <span class="card-name-mini">{card.name}</span>
+              {#if isUtilitySelected(card.id)}
+                <CheckIcon size={12} ariaLabel="Selected" />
+              {/if}
+            </button>
+          {/each}
+        </div>
 
-        <!-- At-Will Cards -->
-        <div class="section-label">At-Will (Pick 2) - {selection.atWills.length}/2</div>
-        {#each atWillCards as card (card.id)}
-          <button
-            class="mini-card"
-            class:selected={isAtWillSelected(card.id)}
-            class:expanded={isCardExpanded(card.id)}
-            class:disabled={!canSelectAtWill(card.id)}
-            style="border-color: {getPowerCardColor(card.type)};"
-            onclick={() => handleCardClick(card, 'atWill')}
-            disabled={!canSelectAtWill(card.id)}
-            data-testid="atwill-card-{card.id}"
-          >
-            <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
-              {getPowerCardAbbrev(card.type)}
-            </span>
-            <span class="card-name-mini">{card.name}</span>
-            {#if isAtWillSelected(card.id)}
-              <CheckIcon size={12} ariaLabel="Selected" />
-            {/if}
-          </button>
-        {/each}
+        <!-- At-Will Cards Column -->
+        <div class="card-column">
+          <div class="section-label">At-Will (Pick 2) - {selection.atWills.length}/2</div>
+          {#each atWillCards as card (card.id)}
+            <button
+              class="mini-card"
+              class:selected={isAtWillSelected(card.id)}
+              class:expanded={isCardExpanded(card.id)}
+              class:disabled={!canSelectAtWill(card.id)}
+              style="border-color: {getPowerCardColor(card.type)};"
+              onclick={() => handleCardClick(card, 'atWill')}
+              disabled={!canSelectAtWill(card.id)}
+              data-testid="atwill-card-{card.id}"
+            >
+              <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
+                {getPowerCardAbbrev(card.type)}
+              </span>
+              <span class="card-name-mini">{card.name}</span>
+              {#if isAtWillSelected(card.id)}
+                <CheckIcon size={12} ariaLabel="Selected" />
+              {/if}
+            </button>
+          {/each}
+        </div>
 
-        <!-- Daily Cards -->
-        <div class="section-label">Daily (Pick 1)</div>
-        {#each dailyCards as card (card.id)}
-          <button
-            class="mini-card"
-            class:selected={isDailySelected(card.id)}
-            class:expanded={isCardExpanded(card.id)}
-            style="border-color: {getPowerCardColor(card.type)};"
-            onclick={() => handleCardClick(card, 'daily')}
-            data-testid="daily-card-{card.id}"
-          >
-            <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
-              {getPowerCardAbbrev(card.type)}
-            </span>
-            <span class="card-name-mini">{card.name}</span>
-            {#if isDailySelected(card.id)}
-              <CheckIcon size={12} ariaLabel="Selected" />
-            {/if}
-          </button>
-        {/each}
+        <!-- Daily Cards Column -->
+        <div class="card-column">
+          <div class="section-label">Daily (Pick 1)</div>
+          {#each dailyCards as card (card.id)}
+            <button
+              class="mini-card"
+              class:selected={isDailySelected(card.id)}
+              class:expanded={isCardExpanded(card.id)}
+              style="border-color: {getPowerCardColor(card.type)};"
+              onclick={() => handleCardClick(card, 'daily')}
+              data-testid="daily-card-{card.id}"
+            >
+              <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
+                {getPowerCardAbbrev(card.type)}
+              </span>
+              <span class="card-name-mini">{card.name}</span>
+              {#if isDailySelected(card.id)}
+                <CheckIcon size={12} ariaLabel="Selected" />
+              {/if}
+            </button>
+          {/each}
+        </div>
       </div>
 
       <!-- Right column: Expanded card view + Done button -->
@@ -394,28 +402,30 @@
     overflow: hidden;
   }
 
-  /* Left column: Mini cards list in two columns */
-  .mini-cards-column {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.3rem 0.5rem;
-    flex: 0 0 340px;
-    overflow-y: auto;
-    padding-right: 0.5rem;
+  /* Left: Mini cards organized in columns by section */
+  .mini-cards-columns {
+    display: flex;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+    max-height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .card-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 160px;
+    flex-shrink: 0;
   }
 
   .section-label {
     font-size: 0.7rem;
     color: #ffd700;
     font-weight: bold;
-    margin-top: 0.5rem;
     margin-bottom: 0.2rem;
     text-transform: uppercase;
-    grid-column: 1 / -1;
-  }
-
-  .section-label:first-child {
-    margin-top: 0;
   }
 
   .mini-card {
