@@ -45,7 +45,7 @@ When clicking the XP counter, a popover appears showing:
 - How XP Works section explaining the XP mechanics
 - Tips section with strategic advice
 - Party gains 1 XP per monster defeated
-- Level up occurs at 5 XP
+- Heroes can level up when rolling a natural 20 with 5+ XP available
 
 ### 002 - Monster on Board
 ![Monster on board ready to be attacked](014-defeat-monster-xp.spec.ts-snapshots/002-monster-on-board-chromium-linux.png)
