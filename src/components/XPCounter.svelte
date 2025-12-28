@@ -31,7 +31,7 @@
     onclick={togglePopover}
   >
     <span class="icon-wrapper">
-      <StarIcon size={20} ariaLabel="Experience Points" />
+      <StarIcon size={44} ariaLabel="Experience Points" />
       <span class="xp-badge" data-testid="xp-value">{xp}</span>
     </span>
   </button>
@@ -86,19 +86,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 215, 0, 0.15);
-    padding: 0.4rem;
+    background: transparent;
+    padding: 0.25rem;
     border-radius: 8px;
-    border: 1px solid rgba(255, 215, 0, 0.3);
+    border: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    width: 52px;
+    height: 52px;
   }
   
   .xp-counter:hover {
-    background: rgba(255, 215, 0, 0.25);
-    border-color: rgba(255, 215, 0, 0.5);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    filter: brightness(1.2);
   }
   
   .xp-counter:active {
@@ -107,23 +107,24 @@
   
   .icon-wrapper {
     position: relative;
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
   
   .xp-badge {
     position: absolute;
-    top: -4px;
-    right: -8px;
-    background: #ffd700;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     color: #000;
-    font-size: 0.65rem;
+    font-size: 0.9rem;
     font-weight: bold;
-    padding: 0.1rem 0.3rem;
-    border-radius: 10px;
-    min-width: 18px;
     text-align: center;
-    border: 2px solid rgba(30, 30, 50, 0.95);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
   }
   
   .popover-backdrop {

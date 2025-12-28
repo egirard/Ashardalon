@@ -31,7 +31,7 @@
     onclick={togglePopover}
   >
     <span class="icon-wrapper">
-      <HeartIcon size={20} ariaLabel="Healing Surges" />
+      <HeartIcon size={44} ariaLabel="Healing Surges" />
       <span class="surge-badge" data-testid="surge-value">{surges}</span>
     </span>
   </button>
@@ -88,19 +88,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(231, 76, 60, 0.15);
-    padding: 0.4rem;
+    background: transparent;
+    padding: 0.25rem;
     border-radius: 8px;
-    border: 1px solid rgba(231, 76, 60, 0.3);
+    border: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    width: 52px;
+    height: 52px;
   }
   
   .healing-surge-counter:hover {
-    background: rgba(231, 76, 60, 0.25);
-    border-color: rgba(231, 76, 60, 0.5);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    filter: brightness(1.2);
   }
   
   .healing-surge-counter:active {
@@ -109,23 +109,24 @@
   
   .icon-wrapper {
     position: relative;
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
   
   .surge-badge {
     position: absolute;
-    top: -4px;
-    right: -8px;
-    background: #e74c3c;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     color: #fff;
-    font-size: 0.65rem;
+    font-size: 0.9rem;
     font-weight: bold;
-    padding: 0.1rem 0.3rem;
-    border-radius: 10px;
-    min-width: 18px;
     text-align: center;
-    border: 2px solid rgba(30, 30, 50, 0.95);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
   
   .popover-backdrop {
