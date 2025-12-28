@@ -41,6 +41,13 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
+
 
     // Set deterministic position for Vistra
     await page.evaluate(() => {
@@ -191,6 +198,13 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton3 = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton3.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton3.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
+
 
     // Set deterministic position for Vistra
     await page.evaluate(() => {

@@ -23,6 +23,13 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
+
     // STEP 2: Set up scenario - position hero, spawn monster
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -107,6 +114,13 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -198,6 +212,13 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
 
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
