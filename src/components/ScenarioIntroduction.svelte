@@ -28,7 +28,7 @@
   }
   
   function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+    if (event.key === 'Escape' || event.key === 'Enter') {
       event.preventDefault();
       event.stopPropagation();
       handleDismiss();
@@ -37,7 +37,7 @@
   
   function handleDialogKeydown(event: KeyboardEvent) {
     // Stop propagation of handled keys to prevent interference
-    if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+    if (event.key === 'Escape' || event.key === 'Enter') {
       event.stopPropagation();
     }
   }
@@ -106,7 +106,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 3000;
+    z-index: 2100;
     backdrop-filter: blur(6px);
     animation: fadeIn 0.3s ease-out;
   }
