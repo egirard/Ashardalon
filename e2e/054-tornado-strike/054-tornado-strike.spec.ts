@@ -27,16 +27,19 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-tarak"]').click();
 
-    // Select power cards for Tarak - manually select Tornado Strike (daily #37)
+    // Select power cards for Tarak - select Tornado Strike (daily #37) instead of default
     await page.locator('[data-testid="select-powers-tarak"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
     
-    // Select Tornado Strike (daily #37) instead of the default Acrobatic Onslaught
-    await page.locator('[data-testid="daily-card-35"]').click(); // Deselect default
-    await page.locator('[data-testid="daily-card-37"]').click(); // Select Tornado Strike
+    // The default selection has daily 35 (Acrobatic Onslaught) selected
+    // We need to select daily 37 (Tornado Strike) instead
+    // Click to expand daily 37, then click select button
+    await page.locator('[data-testid="daily-card-37"]').click();
+    await page.locator('[data-testid="expanded-card"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="select-expanded-card"]').click();
     
-    // Verify selection is complete
-    await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
+    // Verify the Done button is enabled (selection is complete)
+    await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
     
     // Close modal
     await page.locator('[data-testid="done-power-selection"]').click();
@@ -54,6 +57,13 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
 
     // Set deterministic position for the hero
     await page.evaluate(() => {
