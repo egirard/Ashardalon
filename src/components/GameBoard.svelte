@@ -1662,6 +1662,9 @@
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="top"
+            onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
+            endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+            endPhaseButtonDisabled={mapControlMode}
           />
           <!-- Monster cards appear to the left of player card after 180° rotation -->
           {#if controlledMonsters.length > 0}
@@ -1713,6 +1716,9 @@
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="left"
+              onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
+              endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+              endPhaseButtonDisabled={mapControlMode}
             />
             <!-- Turn Progress Card (shown only for active player) -->
             {#if isActiveHero(hero.id)}
@@ -2085,16 +2091,6 @@
           </div>
         {/if}
 
-        <!-- End Phase Button - disabled during map control mode -->
-        <button
-          class="end-phase-button"
-          data-testid="end-phase-button"
-          onclick={handleEndPhase}
-          disabled={mapControlMode}
-        >
-          {getEndPhaseButtonText()}
-        </button>
-
         <!-- Power Card Attack Panel - only show during hero phase when adjacent to monster and can attack -->
         <!-- Disabled during map control mode to prevent actions while editing -->
         {#if turnState.currentPhase === "hero-phase" && (heroTurnActions.canAttack || multiAttackState) && !mapControlMode}
@@ -2153,6 +2149,9 @@
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="right"
+              onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
+              endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+              endPhaseButtonDisabled={mapControlMode}
             />
             <!-- Turn Progress Card (shown only for active player) -->
             {#if isActiveHero(hero.id)}
@@ -2211,6 +2210,9 @@
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="bottom"
+            onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
+            endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+            endPhaseButtonDisabled={mapControlMode}
           />
           <!-- Turn Progress Card (shown only for active player) -->
           {#if isActiveHero(hero.id)}
@@ -2653,29 +2655,6 @@
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  /* End phase button */
-  .end-phase-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    background: rgba(46, 125, 50, 0.9);
-    color: #fff;
-    border: 1px solid #4caf50;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .end-phase-button:hover:not(:disabled) {
-    background: rgba(76, 175, 80, 0.9);
-  }
-
-  .end-phase-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 
   /* Map control styles */
