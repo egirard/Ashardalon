@@ -13,6 +13,7 @@
     dismissMonsterCard,
     dismissEncounterCard,
     cancelEncounterCard,
+    dismissScenarioIntroduction,
     dismissEncounterResult,
     setAttackResult,
     dismissAttackResult,
@@ -109,6 +110,7 @@
   import TurnProgressCard from "./TurnProgressCard.svelte";
   import FeedbackButton from "./FeedbackButton.svelte";
   import CornerControls from "./CornerControls.svelte";
+  import ScenarioIntroduction from "./ScenarioIntroduction.svelte";
   import {
     resolveAttack,
     getAdjacentMonsters,
@@ -903,6 +905,11 @@
   // Handle dismissing the monster card
   function handleDismissMonsterCard() {
     store.dispatch(dismissMonsterCard());
+  }
+
+  // Handle dismissing the scenario introduction modal
+  function handleDismissScenarioIntroduction() {
+    store.dispatch(dismissScenarioIntroduction());
   }
 
   // Get the tile pixel offset for a given tile ID (for positioning tokens on that tile)
@@ -2432,6 +2439,17 @@
       onSelect={handleSelectMonster}
       onCancel={handleCancelMonsterChoice}
       edge={getActivePlayerEdge()}
+    />
+  {/if}
+
+  <!-- Scenario Introduction (shown when map is first displayed) -->
+  {#if !scenario.introductionShown}
+    <ScenarioIntroduction
+      title={scenario.title}
+      description={scenario.description}
+      objective={scenario.objective}
+      instructions={scenario.instructions}
+      onDismiss={handleDismissScenarioIntroduction}
     />
   {/if}
 </div>
