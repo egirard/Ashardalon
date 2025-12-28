@@ -80,7 +80,7 @@
   }
 </script>
 
-<div class="power-card-selection" data-testid="power-card-selection">
+<div class="power-card-selection" data-testid="power-card-selection" data-edge={edge}>
   <div 
     class="modal-overlay" 
     onclick={onClose} 
@@ -242,7 +242,27 @@
     bottom: 0;
     z-index: 1000;
     display: flex;
+    pointer-events: none;
+  }
+
+  /* Position modal at the appropriate edge based on player position */
+  .power-card-selection[data-edge="bottom"] {
     justify-content: center;
+    align-items: flex-end;
+  }
+
+  .power-card-selection[data-edge="top"] {
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .power-card-selection[data-edge="left"] {
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .power-card-selection[data-edge="right"] {
+    justify-content: flex-end;
     align-items: center;
   }
 
@@ -252,7 +272,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
   }
 
   .modal-content {
@@ -260,13 +281,32 @@
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
     padding: 1rem;
-    max-width: 95vw;
-    max-height: 95vh;
+    max-width: 450px;
+    max-height: 85vh;
     overflow-y: auto;
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
+    pointer-events: auto;
+    margin: 0.5rem;
+  }
+
+  /* Edge-specific spacing to keep modal away from edge zone */
+  .power-card-selection[data-edge="bottom"] .modal-content {
+    margin-bottom: 1rem;
+  }
+
+  .power-card-selection[data-edge="top"] .modal-content {
+    margin-top: 1rem;
+  }
+
+  .power-card-selection[data-edge="left"] .modal-content {
+    margin-left: 1rem;
+  }
+
+  .power-card-selection[data-edge="right"] .modal-content {
+    margin-right: 1rem;
   }
 
   .modal-header {
@@ -339,7 +379,7 @@
 
   .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.5rem;
   }
 
