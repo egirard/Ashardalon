@@ -64,6 +64,9 @@ const DEFAULT_POWER_CARD_SELECTIONS: Record<string, { utility: number; atWills: 
 /**
  * Selects default power cards for a hero in the character selection screen.
  * This is a helper function for E2E tests that need to start the game quickly.
+ * 
+ * Note: Power cards are automatically pre-selected when a hero is chosen.
+ * This helper just opens the modal (to visually confirm) and closes it.
  */
 export async function selectDefaultPowerCards(page: Page, heroId: string): Promise<void> {
   const selection = DEFAULT_POWER_CARD_SELECTIONS[heroId];
@@ -75,9 +78,9 @@ export async function selectDefaultPowerCards(page: Page, heroId: string): Promi
   await page.locator(`[data-testid="select-powers-${heroId}"]`).click();
   await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
 
-  // Power cards are automatically initialized when hero is selected
-  // The selection should already be complete - just verify and close
-  await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
+  // Power cards are automatically pre-selected when the hero is chosen
+  // Just verify the Done button is enabled and close the modal
+  await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
 
   // Close modal
   await page.locator('[data-testid="done-power-selection"]').click();
