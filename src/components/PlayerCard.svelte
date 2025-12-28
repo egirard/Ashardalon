@@ -314,7 +314,7 @@
   {/if}
 
   <!-- End Phase Button (shown only for active player) -->
-  {#if isActive && onEndPhase && endPhaseButtonText}
+  {#if isActive && onEndPhase}
     <button
       class="end-phase-button"
       data-testid="end-phase-button"
