@@ -43,6 +43,13 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
+
     // Set deterministic position for the hero
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -326,6 +333,13 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Dismiss scenario introduction modal if it appears
+    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
+    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await scenarioIntroButton.click();
+      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
+    }
 
     // Set deterministic position
     await page.evaluate(() => {
