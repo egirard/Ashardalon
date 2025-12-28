@@ -402,11 +402,10 @@
     overflow: hidden;
   }
 
-  /* Left: Mini cards in 2-column grid */
+  /* Left: Mini cards in CSS column layout (single column split in half) */
   .mini-cards-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.3rem 0.5rem;
+    column-count: 2;
+    column-gap: 0.5rem;
     flex: 0 0 340px;
     max-height: 100%;
     overflow-y: auto;
@@ -414,21 +413,24 @@
   }
 
   .card-column {
-    display: contents;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-column:last-child {
+    margin-bottom: 0;
   }
 
   .section-label {
-    grid-column: 1 / -1;
     font-size: 0.7rem;
     color: #ffd700;
     font-weight: bold;
-    margin-top: 0.5rem;
     margin-bottom: 0.2rem;
     text-transform: uppercase;
-  }
-
-  .section-label:first-child {
-    margin-top: 0;
   }
 
   .mini-card {
