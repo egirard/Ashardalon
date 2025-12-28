@@ -281,8 +281,8 @@
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
     padding: 1rem;
-    max-width: 450px;
-    max-height: 85vh;
+    width: min(450px, 90vmin);
+    max-height: min(85vh, 90vmin);
     overflow-y: auto;
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);

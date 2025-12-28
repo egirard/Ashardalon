@@ -30,7 +30,11 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     // Accept pre-selected power cards
     // Note: Power cards are pre-selected by default (utility + 2 at-wills + daily).
     // Manual selection would trigger toggle behavior, deselecting pre-selected cards.
-    await page.locator('[data-testid="done-power-selection"]').click();
+    // Use evaluate to click since rotated elements may be outside viewport bounds
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="done-power-selection"]') as HTMLButtonElement;
+      if (button) button.click();
+    });
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     // STEP 3: Select Vistra from top edge (180° rotation)
@@ -52,7 +56,11 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     });
     
     // Accept pre-selected power cards (same approach for all heroes)
-    await page.locator('[data-testid="done-power-selection"]').click();
+    // Use evaluate to click since rotated elements may be outside viewport bounds
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="done-power-selection"]') as HTMLButtonElement;
+      if (button) button.click();
+    });
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     // STEP 4: Select Keyleth from left edge (90° rotation)
@@ -74,7 +82,11 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     });
     
     // Accept pre-selected power cards (same approach for all heroes)
-    await page.locator('[data-testid="done-power-selection"]').click();
+    // Use evaluate to click since rotated elements may be outside viewport bounds
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="done-power-selection"]') as HTMLButtonElement;
+      if (button) button.click();
+    });
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'character-selection-complete', {
