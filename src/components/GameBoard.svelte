@@ -1631,6 +1631,7 @@
     {#each getHeroesForEdge('top') as hero (hero.id)}
       {@const heroHpState = getHeroHpState(hero.id)}
       {@const controlledMonsters = getMonstersForHero(hero.id)}
+      {@const isHeroActive = isActiveHero(hero.id)}
       {#if heroHpState}
         <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
           <!-- Power cards appear to the right of player card after 180° rotation -->
@@ -1639,11 +1640,11 @@
             boardPosition="top"
             {gameState}
             onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
-            targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
-            onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
+            targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
+            onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
           />
           <!-- Turn Progress Card (shown only for active player) - appears before PlayerCard after rotation -->
-          {#if isActiveHero(hero.id)}
+          {#if isHeroActive}
             <TurnProgressCard
               currentPhase={turnState.currentPhase}
               turnNumber={turnState.turnNumber}
@@ -1656,14 +1657,14 @@
             {hero}
             {heroHpState}
             heroInventory={heroInventories[hero.id]}
-            isActive={isActiveHero(hero.id)}
-            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+            isActive={isHeroActive}
+            turnPhase={isHeroActive ? formatPhase(turnState.currentPhase) : undefined}
+            turnNumber={isHeroActive ? turnState.turnNumber : undefined}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="top"
-            onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
-            endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+            onEndPhase={isHeroActive ? handleEndPhase : undefined}
+            endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
             endPhaseButtonDisabled={mapControlMode}
           />
           <!-- Monster cards appear to the left of player card after 180° rotation -->
@@ -1693,6 +1694,7 @@
       {#each getHeroesForEdge('left') as hero (hero.id)}
         {@const heroHpState = getHeroHpState(hero.id)}
         {@const controlledMonsters = getMonstersForHero(hero.id)}
+        {@const isHeroActive = isActiveHero(hero.id)}
         {#if heroHpState}
           <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
             <!-- Monster cards to the left of player card -->
@@ -1710,18 +1712,18 @@
               {hero}
               {heroHpState}
               heroInventory={heroInventories[hero.id]}
-              isActive={isActiveHero(hero.id)}
-              turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-              turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+              isActive={isHeroActive}
+              turnPhase={isHeroActive ? formatPhase(turnState.currentPhase) : undefined}
+              turnNumber={isHeroActive ? turnState.turnNumber : undefined}
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="left"
-              onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
-              endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+              onEndPhase={isHeroActive ? handleEndPhase : undefined}
+              endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
               endPhaseButtonDisabled={mapControlMode}
             />
             <!-- Turn Progress Card (shown only for active player) -->
-            {#if isActiveHero(hero.id)}
+            {#if isHeroActive}
               <TurnProgressCard
                 currentPhase={turnState.currentPhase}
                 turnNumber={turnState.turnNumber}
@@ -1736,8 +1738,8 @@
               boardPosition="left"
               {gameState}
               onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
-              targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
-              onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
+              targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
+              onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
             />
           </div>
         {/if}
@@ -2126,6 +2128,7 @@
       {#each getHeroesForEdge('right') as hero (hero.id)}
         {@const heroHpState = getHeroHpState(hero.id)}
         {@const controlledMonsters = getMonstersForHero(hero.id)}
+        {@const isHeroActive = isActiveHero(hero.id)}
         {#if heroHpState}
           <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
             <!-- Monster cards to the left of player card -->
@@ -2143,18 +2146,18 @@
               {hero}
               {heroHpState}
               heroInventory={heroInventories[hero.id]}
-              isActive={isActiveHero(hero.id)}
-              turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-              turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+              isActive={isHeroActive}
+              turnPhase={isHeroActive ? formatPhase(turnState.currentPhase) : undefined}
+              turnNumber={isHeroActive ? turnState.turnNumber : undefined}
               conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
               onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
               boardPosition="right"
-              onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
-              endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+              onEndPhase={isHeroActive ? handleEndPhase : undefined}
+              endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
               endPhaseButtonDisabled={mapControlMode}
             />
             <!-- Turn Progress Card (shown only for active player) -->
-            {#if isActiveHero(hero.id)}
+            {#if isHeroActive}
               <TurnProgressCard
                 currentPhase={turnState.currentPhase}
                 turnNumber={turnState.turnNumber}
@@ -2169,8 +2172,8 @@
               boardPosition="right"
               {gameState}
               onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
-              targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
-              onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
+              targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
+              onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
             />
           </div>
         {/if}
@@ -2187,6 +2190,7 @@
     {#each getHeroesForEdge('bottom') as hero (hero.id)}
       {@const heroHpState = getHeroHpState(hero.id)}
       {@const controlledMonsters = getMonstersForHero(hero.id)}
+      {@const isHeroActive = isActiveHero(hero.id)}
       {#if heroHpState}
         <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
           <!-- Monster cards to the left of player card -->
@@ -2204,18 +2208,18 @@
             {hero}
             {heroHpState}
             heroInventory={heroInventories[hero.id]}
-            isActive={isActiveHero(hero.id)}
-            turnPhase={isActiveHero(hero.id) ? formatPhase(turnState.currentPhase) : undefined}
-            turnNumber={isActiveHero(hero.id) ? turnState.turnNumber : undefined}
+            isActive={isHeroActive}
+            turnPhase={isHeroActive ? formatPhase(turnState.currentPhase) : undefined}
+            turnNumber={isHeroActive ? turnState.turnNumber : undefined}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition="bottom"
-            onEndPhase={isActiveHero(hero.id) ? handleEndPhase : undefined}
-            endPhaseButtonText={isActiveHero(hero.id) ? getEndPhaseButtonText() : undefined}
+            onEndPhase={isHeroActive ? handleEndPhase : undefined}
+            endPhaseButtonText={isHeroActive ? getEndPhaseButtonText() : undefined}
             endPhaseButtonDisabled={mapControlMode}
           />
           <!-- Turn Progress Card (shown only for active player) -->
-          {#if isActiveHero(hero.id)}
+          {#if isHeroActive}
             <TurnProgressCard
               currentPhase={turnState.currentPhase}
               turnNumber={turnState.turnNumber}
@@ -2230,8 +2234,8 @@
             boardPosition="bottom"
             {gameState}
             onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
-            targetableMonsters={isActiveHero(hero.id) ? getTargetableMonstersForCurrentHero() : []}
-            onAttackWithCard={isActiveHero(hero.id) ? handleAttackWithCard : undefined}
+            targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
+            onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
           />
         </div>
       {/if}
