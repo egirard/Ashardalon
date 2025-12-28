@@ -14,6 +14,7 @@
     dismissEncounterCard,
     cancelEncounterCard,
     dismissScenarioIntroduction,
+    showScenarioIntroductionModal,
     dismissEncounterResult,
     setAttackResult,
     dismissAttackResult,
@@ -206,6 +207,7 @@
   let pendingMonsterDisplayId: string | null = $state(null);
   let poisonedDamageNotification: { heroId: string; damage: number } | null = $state(null);
   let poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null = $state(null);
+  let showScenarioIntroduction: boolean = $state(false);
   let boardContainerRef: HTMLDivElement | null = $state(null);
   let heroPowerCards: Record<string, HeroPowerCards> = $state({});
   let attackName: string | null = $state(null);
@@ -294,6 +296,7 @@
       pendingMonsterChoice = state.game.pendingMonsterChoice;
       selectedTargetId = state.game.selectedTargetId;
       selectedTargetType = state.game.selectedTargetType;
+      showScenarioIntroduction = state.game.showScenarioIntroduction;
     });
 
     // Initialize state
@@ -349,6 +352,7 @@
     pendingMonsterChoice = state.game.pendingMonsterChoice;
     selectedTargetId = state.game.selectedTargetId;
     selectedTargetType = state.game.selectedTargetType;
+    showScenarioIntroduction = state.game.showScenarioIntroduction;
 
     return unsubscribe;
   });
@@ -910,6 +914,11 @@
   // Handle dismissing the scenario introduction modal
   function handleDismissScenarioIntroduction() {
     store.dispatch(dismissScenarioIntroduction());
+  }
+
+  // Handle showing the scenario introduction modal (when clicking objective panel)
+  function handleShowScenarioIntroduction() {
+    store.dispatch(showScenarioIntroductionModal());
   }
 
   // Get the tile pixel offset for a given tile ID (for positioning tokens on that tile)
@@ -1927,7 +1936,12 @@
         {/if}
         
         <!-- Objective Display -->
-        <div class="objective-display" data-testid="objective-display">
+        <button 
+          class="objective-display" 
+          data-testid="objective-display"
+          onclick={handleShowScenarioIntroduction}
+          aria-label="View scenario details"
+        >
           <span class="objective-label">
             <TargetIcon size={16} ariaLabel="Objective" /> Objective:
           </span>
@@ -1935,7 +1949,7 @@
           <span class="objective-progress" data-testid="objective-progress">
             {scenario.monstersDefeated} / {scenario.monstersToDefeat} defeated
           </span>
-        </div>
+        </button>
         
         <!-- Party Resources (XP & Healing Surges) -->
         <div class="party-resources">
@@ -2442,8 +2456,8 @@
     />
   {/if}
 
-  <!-- Scenario Introduction (shown when map is first displayed) -->
-  {#if !scenario.introductionShown}
+  <!-- Scenario Introduction (shown when map is first displayed or when clicking objective panel) -->
+  {#if showScenarioIntroduction}
     <ScenarioIntroduction
       title={scenario.title}
       description={scenario.description}
@@ -2652,6 +2666,21 @@
     flex-direction: column;
     align-items: flex-end;
     gap: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    text-align: right;
+  }
+
+  .objective-display:hover {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: #ffed4e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  }
+
+  .objective-display:active {
+    transform: translateY(0);
   }
 
   .objective-label {
