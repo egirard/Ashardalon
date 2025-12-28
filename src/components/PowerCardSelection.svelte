@@ -139,20 +139,6 @@
       <h2>Select Power Cards for {hero.name}</h2>
       <button class="close-button" onclick={onClose} data-testid="close-power-selection">×</button>
     </div>
-    
-    <div class="selection-status" data-testid="selection-status">
-      {#if isSelectionComplete}
-        <span class="status-complete">
-          <CheckIcon size={14} ariaLabel="Complete" /> Selection Complete
-        </span>
-      {:else}
-        <span class="status-incomplete">
-          Select: 1 Utility ({#if selection.utility}<CheckIcon size={12} ariaLabel="Selected" />{:else}<CircleIcon size={12} ariaLabel="Not selected" />{/if}), 
-          2 At-Wills ({selection.atWills.length}/2), 
-          1 Daily ({#if selection.daily}<CheckIcon size={12} ariaLabel="Selected" />{:else}<CircleIcon size={12} ariaLabel="Not selected" />{/if})
-        </span>
-      {/if}
-    </div>
 
     <div class="card-layout">
       <!-- Left column: Mini cards -->
@@ -235,7 +221,7 @@
         {/each}
       </div>
 
-      <!-- Right column: Expanded card view -->
+      <!-- Right column: Expanded card view + Done button -->
       <div class="expanded-card-column">
         {#if getExpandedCard()}
           {@const { card, type } = getExpandedCard()!}
@@ -281,18 +267,17 @@
             <p class="hint">Tap again to select</p>
           </div>
         {/if}
-      </div>
-    </div>
 
-    <div class="modal-footer">
-      <button
-        class="done-button"
-        onclick={onClose}
-        disabled={!isSelectionComplete}
-        data-testid="done-power-selection"
-      >
-        Done
-      </button>
+        <!-- Done button moved here -->
+        <button
+          class="done-button"
+          onclick={onClose}
+          disabled={!isSelectionComplete}
+          data-testid="done-power-selection"
+        >
+          Done
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -401,25 +386,6 @@
     color: #ffd700;
   }
 
-  .selection-status {
-    text-align: center;
-    margin-bottom: 0.5rem;
-    padding: 0.3rem;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    font-size: 0.75rem;
-    flex-shrink: 0;
-  }
-
-  .status-complete {
-    color: #4caf50;
-    font-weight: bold;
-  }
-
-  .status-incomplete {
-    color: #ffa726;
-  }
-
   .card-layout {
     display: flex;
     gap: 0.75rem;
@@ -517,13 +483,13 @@
     font-weight: bold;
   }
 
-  /* Right column: Expanded card view */
+  /* Right column: Expanded card view + Done button */
   .expanded-card-column {
     flex: 1;
     display: flex;
     flex-direction: column;
+    gap: 0.75rem;
     min-height: 0;
-    overflow-y: auto;
   }
 
   .expanded-card {
@@ -534,7 +500,8 @@
     border: 2px solid rgba(255, 215, 0, 0.3);
     border-radius: 8px;
     padding: 0.75rem;
-    height: 100%;
+    max-height: 300px;
+    overflow-y: auto;
   }
 
   .expanded-header {
@@ -570,7 +537,6 @@
     margin: 0;
     white-space: pre-line;
     line-height: 1.4;
-    flex: 1;
   }
 
   .expanded-stats {
@@ -596,7 +562,6 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin-top: auto;
   }
 
   .select-button:hover {
@@ -609,7 +574,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    flex: 1;
     color: #999;
     font-size: 0.85rem;
     text-align: center;
@@ -625,14 +590,6 @@
     color: #666;
   }
 
-  .modal-footer {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
-    flex-shrink: 0;
-  }
-
   .done-button {
     padding: 0.6rem 1.5rem;
     font-size: 0.9rem;
@@ -643,6 +600,7 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    width: 100%;
   }
 
   .done-button:hover:not(:disabled) {
