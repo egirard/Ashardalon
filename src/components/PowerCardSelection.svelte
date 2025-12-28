@@ -330,7 +330,7 @@
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
     padding: 1rem;
-    width: min(550px, 90vmin);
+    width: min(700px, 90vmin);
     max-height: min(85vh, 90vmin);
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -394,12 +394,12 @@
     overflow: hidden;
   }
 
-  /* Left column: Mini cards list */
+  /* Left column: Mini cards list in two columns */
   .mini-cards-column {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    flex: 0 0 160px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem 0.5rem;
+    flex: 0 0 340px;
     overflow-y: auto;
     padding-right: 0.5rem;
   }
@@ -411,6 +411,7 @@
     margin-top: 0.5rem;
     margin-bottom: 0.2rem;
     text-transform: uppercase;
+    grid-column: 1 / -1;
   }
 
   .section-label:first-child {
