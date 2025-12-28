@@ -58,16 +58,18 @@
           <h4>How XP Works</h4>
           <ul>
             <li>The party gains <strong>1 XP</strong> for each monster defeated</li>
-            <li>When the party reaches <strong>5 XP</strong>, all heroes level up to Level 2</li>
+            <li>When a hero rolls a <strong>natural 20</strong> and the party has <strong>5+ XP</strong>, that hero levels up to Level 2</li>
+            <li>Leveling up costs <strong>5 XP</strong> and only that individual hero gains the level</li>
             <li>Level 2 heroes gain enhanced abilities and can flip their daily power cards</li>
+            <li>The <strong>Battlefield Promotion</strong> treasure card also allows a hero to level up</li>
           </ul>
         </div>
         <div class="info-section">
           <h4>Tips</h4>
           <ul>
             <li>XP is shared across the entire party</li>
-            <li>Leveling up happens immediately when reaching 5 XP</li>
-            <li>Plan your strategy to defeat monsters and gain levels quickly</li>
+            <li>Only one hero levels up at a time (the one who rolled the natural 20)</li>
+            <li>Plan your strategy to defeat monsters and gain XP for leveling opportunities</li>
           </ul>
         </div>
       </div>
