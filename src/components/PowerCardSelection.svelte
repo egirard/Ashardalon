@@ -402,22 +402,27 @@
     overflow: hidden;
   }
 
-  /* Left: Mini cards organized in columns by section */
+  /* Left: Mini cards in multi-column layout */
   .mini-cards-columns {
-    display: flex;
-    gap: 0.5rem;
-    flex: 0 0 auto;
+    column-count: 2;
+    column-gap: 0.5rem;
+    flex: 0 0 340px;
     max-height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
+    padding-right: 0.5rem;
   }
 
   .card-column {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    min-width: 160px;
-    flex-shrink: 0;
+    width: 100%;
+    break-inside: avoid;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-column:last-child {
+    margin-bottom: 0;
   }
 
   .section-label {
