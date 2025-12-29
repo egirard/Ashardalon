@@ -625,7 +625,13 @@
     `transform: scale(${mapScale}) translate(${scaledPanOffset.x}px, ${scaledPanOffset.y}px); width: ${mapBounds.width}px; height: ${mapBounds.height}px;`
   );
   
-  // Calculate dynamic padding based on actual panel sizes
+  /**
+   * Calculates dynamic padding based on actual rendered panel sizes.
+   * Measures player panel overlays and board controls to determine the unobscured space
+   * available for map content. Called during map scale calculation and on resize events.
+   * 
+   * @returns Object with padding values in pixels for each edge (top, right, bottom, left)
+   */
   function calculateDynamicPadding(): { top: number; right: number; bottom: number; left: number } {
     // Default padding if panels aren't rendered yet
     const defaultPadding = { top: CONTAINER_PADDING, right: CONTAINER_PADDING, bottom: CONTAINER_PADDING, left: CONTAINER_PADDING };
