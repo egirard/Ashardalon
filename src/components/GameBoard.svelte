@@ -621,16 +621,66 @@
     `transform: scale(${mapScale}) translate(${scaledPanOffset.x}px, ${scaledPanOffset.y}px); width: ${mapBounds.width}px; height: ${mapBounds.height}px;`
   );
   
-  // Calculate base scale to fit the map in the available space
+  // Calculate dynamic padding based on actual panel sizes
+  function calculateDynamicPadding(): { top: number; right: number; bottom: number; left: number } {
+    // Default padding if panels aren't rendered yet
+    const defaultPadding = { top: CONTAINER_PADDING, right: CONTAINER_PADDING, bottom: CONTAINER_PADDING, left: CONTAINER_PADDING };
+    
+    if (typeof document === 'undefined') return defaultPadding;
+    
+    const padding = { top: 0, right: 0, bottom: 0, left: 0 };
+    
+    // Measure player panel overlays
+    document.querySelectorAll('.player-panel-overlay').forEach((panel) => {
+      const rect = panel.getBoundingClientRect();
+      const classList = Array.from(panel.classList);
+      
+      if (classList.includes('player-panel-top')) {
+        padding.top = Math.max(padding.top, rect.bottom + 20); // Panel bottom + gap
+      } else if (classList.includes('player-panel-bottom')) {
+        padding.bottom = Math.max(padding.bottom, window.innerHeight - rect.top + 20); // Space from bottom + gap
+      } else if (classList.includes('player-panel-left')) {
+        padding.left = Math.max(padding.left, rect.right + 20); // Panel right + gap
+      } else if (classList.includes('player-panel-right')) {
+        padding.right = Math.max(padding.right, window.innerWidth - rect.left + 20); // Space from right + gap
+      }
+    });
+    
+    // Measure board controls overlay
+    const boardControls = document.querySelector('.board-controls');
+    if (boardControls) {
+      const rect = boardControls.getBoundingClientRect();
+      padding.bottom = Math.max(padding.bottom, window.innerHeight - rect.top + 20);
+      padding.right = Math.max(padding.right, window.innerWidth - rect.left + 20);
+    }
+    
+    // Use default padding if no panels measured (fallback)
+    if (padding.top === 0 && padding.right === 0 && padding.bottom === 0 && padding.left === 0) {
+      return defaultPadding;
+    }
+    
+    // Add minimum padding to ensure some buffer
+    padding.top = Math.max(padding.top, 20);
+    padding.right = Math.max(padding.right, 20);
+    padding.bottom = Math.max(padding.bottom, 20);
+    padding.left = Math.max(padding.left, 20);
+    
+    return padding;
+  }
+  
+  // Calculate base scale to fit the map in the available unobscured space
   $effect(() => {
     if (boardContainerRef) {
       const calculateBaseScale = () => {
         const container = boardContainerRef;
         if (!container) return;
 
-        // Get available space (accounting for padding)
-        const availableWidth = container.clientWidth - CONTAINER_PADDING;
-        const availableHeight = container.clientHeight - CONTAINER_PADDING;
+        // Calculate dynamic padding based on panel sizes
+        const padding = calculateDynamicPadding();
+        
+        // Get available space (accounting for dynamic padding)
+        const availableWidth = container.clientWidth - padding.left - padding.right;
+        const availableHeight = container.clientHeight - padding.top - padding.bottom;
 
         // Use the derived mapBounds
         const bounds = mapBounds;
