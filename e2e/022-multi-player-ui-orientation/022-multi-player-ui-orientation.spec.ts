@@ -148,18 +148,18 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     await screenshots.capture(page, 'game-board-quinn-turn-bottom', {
       programmaticCheck: async () => {
         // Verify Quinn is active (bottom edge) - should show turn indicator
-        await expect(page.locator('[data-testid="player-zone-bottom"] [data-testid="turn-indicator"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-bottom"] [data-testid="turn-indicator"]')).toBeVisible();
         await expect(page.locator('[data-testid="turn-indicator"]')).toContainText("Quinn's Turn");
-        await expect(page.locator('[data-testid="player-zone-bottom"]')).toContainText('Hero Phase');
-        await expect(page.locator('[data-testid="player-zone-bottom"]')).toContainText('HP: 8/8');
+        await expect(page.locator('[data-testid="player-panel-bottom"]')).toContainText('Hero Phase');
+        await expect(page.locator('[data-testid="player-panel-bottom"]')).toContainText('HP: 8/8');
         
         // Vistra (top edge) - should show dashboard with name and HP (not active)
-        await expect(page.locator('[data-testid="player-zone-top"]')).toContainText('Vistra');
-        await expect(page.locator('[data-testid="player-zone-top"]')).toContainText('HP: 10/10');
+        await expect(page.locator('[data-testid="player-panel-top"]')).toContainText('Vistra');
+        await expect(page.locator('[data-testid="player-panel-top"]')).toContainText('HP: 10/10');
         
         // Keyleth (left edge) - should show dashboard with name and HP (not active)
-        await expect(page.locator('[data-testid="player-zone-left"]')).toContainText('Keyleth');
-        await expect(page.locator('[data-testid="player-zone-left"]')).toContainText('HP: 10/10');
+        await expect(page.locator('[data-testid="player-panel-left"]')).toContainText('Keyleth');
+        await expect(page.locator('[data-testid="player-panel-left"]')).toContainText('HP: 10/10');
       }
     });
 
@@ -212,14 +212,14 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     await screenshots.capture(page, 'game-board-vistra-turn-top-rotated', {
       programmaticCheck: async () => {
         // Vistra is now active (top edge) - turn indicator should be at top, rotated 180°
-        await expect(page.locator('[data-testid="player-zone-top"] [data-testid="turn-indicator"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-top"] [data-testid="turn-indicator"]')).toBeVisible();
         await expect(page.locator('[data-testid="turn-indicator"]')).toContainText("Vistra's Turn");
         
         // Quinn (bottom edge) - should now show inactive dashboard
-        await expect(page.locator('[data-testid="player-zone-bottom"]')).toContainText('Quinn');
+        await expect(page.locator('[data-testid="player-panel-bottom"]')).toContainText('Quinn');
         
         // Keyleth (left edge) - still inactive
-        await expect(page.locator('[data-testid="player-zone-left"]')).toContainText('Keyleth');
+        await expect(page.locator('[data-testid="player-panel-left"]')).toContainText('Keyleth');
       }
     });
 
@@ -276,14 +276,14 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     await screenshots.capture(page, 'game-board-keyleth-turn-left-rotated', {
       programmaticCheck: async () => {
         // Keyleth is now active (left edge) - turn indicator should be at left, rotated 90°
-        await expect(page.locator('[data-testid="player-zone-left"] [data-testid="turn-indicator"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-left"] [data-testid="turn-indicator"]')).toBeVisible();
         await expect(page.locator('[data-testid="turn-indicator"]')).toContainText("Keyleth's Turn");
         
         // Quinn (bottom edge) - inactive dashboard
-        await expect(page.locator('[data-testid="player-zone-bottom"]')).toContainText('Quinn');
+        await expect(page.locator('[data-testid="player-panel-bottom"]')).toContainText('Quinn');
         
         // Vistra (top edge) - now inactive dashboard
-        await expect(page.locator('[data-testid="player-zone-top"]')).toContainText('Vistra');
+        await expect(page.locator('[data-testid="player-panel-top"]')).toContainText('Vistra');
       }
     });
   });

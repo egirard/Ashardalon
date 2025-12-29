@@ -108,10 +108,10 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
         await expect(page.locator('[data-testid="game-board"]')).toBeVisible();
         
         // Verify all four player edge zones exist
-        await expect(page.locator('[data-testid="player-zone-top"]')).toBeVisible();
-        await expect(page.locator('[data-testid="player-zone-bottom"]')).toBeVisible();
-        await expect(page.locator('[data-testid="player-zone-left"]')).toBeVisible();
-        await expect(page.locator('[data-testid="player-zone-right"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-top"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-bottom"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-left"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-right"]')).toBeVisible();
         
         // Verify start tile is displayed in center
         await expect(page.locator('[data-testid="start-tile"]')).toBeVisible();
@@ -120,7 +120,7 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
         await expect(page.locator('[data-testid="hero-token"]')).toBeVisible();
         
         // Verify turn indicator shows first player in the bottom edge zone (player 0 -> bottom edge)
-        await expect(page.locator('[data-testid="player-zone-bottom"] [data-testid="turn-indicator"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-bottom"] [data-testid="turn-indicator"]')).toBeVisible();
         await expect(page.locator('[data-testid="turn-indicator"]')).toContainText("Quinn's Turn");
         
         // Verify phase display shows Hero Phase
