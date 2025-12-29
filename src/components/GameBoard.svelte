@@ -149,6 +149,10 @@
   const CONTAINER_PADDING = 140;
   const MIN_SCALE = 0.15; // Minimum scale for legibility (lower to fit more tiles)
   const MAX_SCALE = 1; // Maximum scale (no upscaling)
+  
+  // Dynamic padding constants for overlay panels
+  const PANEL_GAP_BUFFER = 20; // Gap between panel edge and map content (in px)
+  const MIN_PANEL_PADDING = 20; // Minimum padding when no panels are present (in px)
 
   // Token positioning constants - offset from image edge to playable grid
   const TOKEN_OFFSET_X = 36; // Offset from left edge of tile image to playable grid
@@ -636,13 +640,13 @@
       const classList = Array.from(panel.classList);
       
       if (classList.includes('player-panel-top')) {
-        padding.top = Math.max(padding.top, rect.bottom + 20); // Panel bottom + gap
+        padding.top = Math.max(padding.top, rect.bottom + PANEL_GAP_BUFFER);
       } else if (classList.includes('player-panel-bottom')) {
-        padding.bottom = Math.max(padding.bottom, window.innerHeight - rect.top + 20); // Space from bottom + gap
+        padding.bottom = Math.max(padding.bottom, window.innerHeight - rect.top + PANEL_GAP_BUFFER);
       } else if (classList.includes('player-panel-left')) {
-        padding.left = Math.max(padding.left, rect.right + 20); // Panel right + gap
+        padding.left = Math.max(padding.left, rect.right + PANEL_GAP_BUFFER);
       } else if (classList.includes('player-panel-right')) {
-        padding.right = Math.max(padding.right, window.innerWidth - rect.left + 20); // Space from right + gap
+        padding.right = Math.max(padding.right, window.innerWidth - rect.left + PANEL_GAP_BUFFER);
       }
     });
     
@@ -650,8 +654,8 @@
     const boardControls = document.querySelector('.board-controls');
     if (boardControls) {
       const rect = boardControls.getBoundingClientRect();
-      padding.bottom = Math.max(padding.bottom, window.innerHeight - rect.top + 20);
-      padding.right = Math.max(padding.right, window.innerWidth - rect.left + 20);
+      padding.bottom = Math.max(padding.bottom, window.innerHeight - rect.top + PANEL_GAP_BUFFER);
+      padding.right = Math.max(padding.right, window.innerWidth - rect.left + PANEL_GAP_BUFFER);
     }
     
     // Use default padding if no panels measured (fallback)
@@ -660,10 +664,10 @@
     }
     
     // Add minimum padding to ensure some buffer
-    padding.top = Math.max(padding.top, 20);
-    padding.right = Math.max(padding.right, 20);
-    padding.bottom = Math.max(padding.bottom, 20);
-    padding.left = Math.max(padding.left, 20);
+    padding.top = Math.max(padding.top, MIN_PANEL_PADDING);
+    padding.right = Math.max(padding.right, MIN_PANEL_PADDING);
+    padding.bottom = Math.max(padding.bottom, MIN_PANEL_PADDING);
+    padding.left = Math.max(padding.left, MIN_PANEL_PADDING);
     
     return padding;
   }
