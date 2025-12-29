@@ -78,10 +78,6 @@
 </script>
 
 <div class="turn-progress-card" data-testid="turn-progress-card">
-  <div class="card-header">
-    <span class="turn-label">Turn {turnNumber}</span>
-  </div>
-  
   <div class="phases-list">
     {#each phases as phase (phase.id)}
       <div 
@@ -139,22 +135,6 @@
     min-width: 200px;
     max-width: 280px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  }
-
-  .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
-  }
-
-  .turn-label {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #8ecae6;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
   }
 
   .phases-list {

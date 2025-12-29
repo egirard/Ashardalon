@@ -41,10 +41,6 @@ test.describe('061 - Turn Progress Indicator', () => {
         // Verify other phases are not active
         await expect(page.locator('[data-testid="phase-exploration-phase"]')).not.toHaveClass(/active/);
         await expect(page.locator('[data-testid="phase-villain-phase"]')).not.toHaveClass(/active/);
-        
-        // Verify turn number is displayed
-        const turnProgressCard = page.locator('[data-testid="turn-progress-card"]');
-        await expect(turnProgressCard).toContainText('Turn 1');
       }
     });
     
