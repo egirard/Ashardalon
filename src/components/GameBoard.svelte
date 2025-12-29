@@ -777,11 +777,6 @@
     return edges[edgeIndex];
   }
 
-  // Get all heroes that joined from a specific edge
-  function getHeroesForEdge(edge: EdgePosition): Hero[] {
-    return selectedHeroes.filter(hero => heroEdgeMap[hero.id] === edge);
-  }
-
   // Check if a specific hero is the current active hero
   function isActiveHero(heroId: string): boolean {
     return getCurrentHeroId() === heroId;
@@ -2381,32 +2376,40 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
   }
 
-  /* Top edge - centered horizontally at top */
+  /* Top edge - at top center */
   .player-panel-top {
     top: 0.75rem;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: fit-content;
   }
 
-  /* Bottom edge - centered horizontally at bottom */
+  /* Bottom edge - at bottom center */
   .player-panel-bottom {
     bottom: 0.75rem;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: fit-content;
   }
 
-  /* Left edge - centered vertically on left side */
+  /* Left edge - at left center */
   .player-panel-left {
     left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    height: fit-content;
   }
 
-  /* Right edge - centered vertically on right side */
+  /* Right edge - at right center */
   .player-panel-right {
     right: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    height: fit-content;
   }
 
   /* Board container - fullscreen, map fills entire viewport */
