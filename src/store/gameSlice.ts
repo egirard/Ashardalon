@@ -26,7 +26,7 @@ import {
   BoardTokenState,
   MONSTER_TACTICS,
 } from "./types";
-import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId } from "./movement";
+import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
 import {
   initializeDungeon,
   initializeTileDeck,
@@ -2202,13 +2202,14 @@ export const gameSlice = createSlice({
           const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
           const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
           if (currentToken && currentHeroId) {
-            const tileId = getTileOrSubTileId(currentToken.position, state.dungeon);
-            if (tileId) {
+            // Find the actual tile (not sub-tile ID)
+            const tile = findTileAtPosition(currentToken.position, state.dungeon);
+            if (tile) {
               // Trigger hero placement selection
               state.pendingHeroPlacement = {
                 cardId,
                 heroId: currentHeroId,
-                tileId,
+                tileId: tile.id, // Use the tile's actual ID
               };
               // Don't track the attack action yet - wait until placement is complete
               return;

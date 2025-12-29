@@ -15,11 +15,21 @@
 
   const { cardId, heroId, tileId, currentPosition, dungeon, onSelect, onCancel }: Props = $props();
 
-  // Get all valid squares on the tile
-  const validSquares = getTileSquares(tileId, dungeon);
+  // Get all valid squares on the tile (derived)
+  const validSquares = $derived(getTileSquares(tileId, dungeon));
   
   // Get power card details
   const powerCard = getPowerCardById(cardId);
+
+  // Debug logging
+  $effect(() => {
+    console.log('HeroPlacementModal:', {
+      tileId,
+      dungeonTiles: dungeon.tiles.length,
+      validSquares: validSquares.length,
+      currentPosition,
+    });
+  });
 
   // Track selected square
   let selectedSquare: Position | null = $state(null);
@@ -55,24 +65,31 @@
     </div>
 
     <div class="hero-placement-content">
-      <div class="square-grid">
-        {#each validSquares as square (square.x + '-' + square.y)}
-          {@const isSelected = selectedSquare && isSamePosition(selectedSquare, square)}
-          {@const isCurrent = isSamePosition(currentPosition, square)}
-          <button
-            class="square-option"
-            class:selected={isSelected}
-            class:current={isCurrent}
-            data-testid="square-option-{square.x}-{square.y}"
-            onclick={() => handleSquareClick(square)}
-          >
-            <div class="square-coords">({square.x}, {square.y})</div>
-            {#if isCurrent}
-              <div class="current-label">Current</div>
-            {/if}
-          </button>
-        {/each}
-      </div>
+      {#if validSquares.length > 0}
+        <div class="square-grid">
+          {#each validSquares as square (square.x + '-' + square.y)}
+            {@const isSelected = selectedSquare && isSamePosition(selectedSquare, square)}
+            {@const isCurrent = isSamePosition(currentPosition, square)}
+            <button
+              class="square-option"
+              class:selected={isSelected}
+              class:current={isCurrent}
+              data-testid="square-option-{square.x}-{square.y}"
+              onclick={() => handleSquareClick(square)}
+            >
+              <div class="square-coords">({square.x}, {square.y})</div>
+              {#if isCurrent}
+                <div class="current-label">Current</div>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      {:else}
+        <div class="no-squares-message">
+          <p>No valid squares found on tile: {tileId}</p>
+          <p>Dungeon has {dungeon.tiles.length} tiles</p>
+        </div>
+      {/if}
     </div>
 
     <div class="hero-placement-actions">
