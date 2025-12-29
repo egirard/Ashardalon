@@ -566,8 +566,9 @@
       // Special case: tiles at col=±1, row=1 are adjacent to the start tile's south sub-tile
       // They should align with y: 4-7 (south sub-tile), not be placed below the entire start tile
       if ((tile.position.col === 1 || tile.position.col === -1) && tile.position.row === 1) {
-        // Position at half the start tile height to align with south sub-tile (y: 4-7)
-        y = northTileCount * NORMAL_TILE_HEIGHT + START_TILE_HEIGHT / 2;
+        // Position to align with south sub-tile which starts at y=4 (NORMAL_TILE_HEIGHT in pixels)
+        // The south sub-tile occupies y: 4-7, equivalent to the second half of the start tile
+        y = northTileCount * NORMAL_TILE_HEIGHT + NORMAL_TILE_HEIGHT;
       } else {
         // Other south tiles: positioned after the full start tile
         // Don't subtract START_TILE_NORTH_OFFSET_DIFF for south tiles.
