@@ -23,6 +23,8 @@
     onCancelMoveAttack?: () => void;
     /** Whether hero can currently move (for move-then-attack cards) */
     canMove?: boolean;
+    /** Callback to expose the currently selected card ID to parent */
+    onSelectedCardChange?: (cardId: number | null) => void;
   }
   
   let { 
@@ -36,10 +38,18 @@
     onStartMoveAttack,
     onCancelMoveAttack,
     canMove = true,
+    onSelectedCardChange,
   }: Props = $props();
   
   // State for selected card
   let selectedCardId: number | null = $state(null);
+  
+  // Notify parent when selected card changes
+  $effect(() => {
+    if (onSelectedCardChange) {
+      onSelectedCardChange(selectedCardId);
+    }
+  });
   
   // Get all available (unflipped) attack power cards
   const availableAttackCards = $derived(() => {

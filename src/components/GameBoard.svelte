@@ -238,6 +238,9 @@
   let pendingMonsterChoice: PendingMonsterChoiceState | null = $state(null);
   let selectedTargetId: string | null = $state(null);
   let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
+  
+  // Track which power card is selected for attacking (so map clicks can trigger attacks)
+  let selectedAttackCardId: number | null = $state(null);
 
   // Map control state
   let mapControlMode: boolean = $state(false);
@@ -1295,6 +1298,21 @@
   function handleCancelMoveAttack() {
     store.dispatch(cancelMoveAttack());
   }
+  
+  // Handle when the selected attack card changes in the PowerCardAttackPanel
+  function handleSelectedAttackCardChange(cardId: number | null) {
+    selectedAttackCardId = cardId;
+  }
+  
+  // Clear selected attack card when we're not in an attack-ready state
+  $effect(() => {
+    // Clear selected card if not in hero phase, can't attack, or no targetable monsters
+    if (turnState.currentPhase !== "hero-phase" || 
+        (!heroTurnActions.canAttack && !multiAttackState) ||
+        mapControlMode) {
+      selectedAttackCardId = null;
+    }
+  });
 
   // Handle completing a move-after-attack sequence
   function handleCompleteMoveAfterAttack() {
@@ -1475,6 +1493,30 @@
       return;
     }
     
+    // If this is a monster click and we have a selected attack card, trigger the attack
+    if (targetType === 'monster' && selectedAttackCardId !== null && heroTurnActions.canAttack) {
+      const currentHeroId = getCurrentHeroId();
+      if (!currentHeroId) return;
+      
+      // Check if this monster is targetable with the selected card
+      const targetableMonsters = getTargetableMonstersForCurrentHero();
+      const isTargetable = targetableMonsters.some(m => m.instanceId === targetId);
+      
+      if (isTargetable) {
+        // Check if the selected card can target this specific monster
+        const card = getPowerCardById(selectedAttackCardId);
+        if (card) {
+          const monster = monsters.find(m => m.instanceId === targetId);
+          if (monster) {
+            // Use the existing attack handler
+            handleAttackWithCard(selectedAttackCardId, targetId);
+            return;
+          }
+        }
+      }
+    }
+    
+    // Otherwise, just select the target (existing behavior)
     store.dispatch(selectTarget({ targetId, targetType }));
   }
 
@@ -2093,6 +2135,7 @@
               onStartMoveAttack={handleStartMoveAttack}
               onCancelMoveAttack={handleCancelMoveAttack}
               canMove={heroTurnActions.canMove}
+              onSelectedCardChange={handleSelectedAttackCardChange}
             />
           {/if}
         {/if}
