@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('049 - Home Button Confirmation Dialog', () => {
   test('user sees confirmation dialog when clicking Home button and can cancel or confirm', async ({ page }) => {
@@ -18,6 +18,7 @@ test.describe('049 - Home Button Confirmation Dialog', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     await screenshots.capture(page, 'game-started', {
       programmaticCheck: async () => {
@@ -117,6 +118,7 @@ test.describe('049 - Home Button Confirmation Dialog', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Click Home button to show dialog
     await page.locator('[data-testid="corner-home-button"]').first().click();
@@ -153,6 +155,7 @@ test.describe('049 - Home Button Confirmation Dialog', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Click Home button to show dialog
     await page.locator('[data-testid="corner-home-button"]').first().click();

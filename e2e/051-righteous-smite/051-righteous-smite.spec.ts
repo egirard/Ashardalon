@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('051 - Righteous Smite (ID: 27)', () => {
   test('All heroes on tile regain 1 HP on both hit and miss', async ({ page }) => {
@@ -27,6 +27,7 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
@@ -152,6 +153,7 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
@@ -269,6 +271,7 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');

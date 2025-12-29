@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('056 - Encounter Result Popup', () => {
   test('displays popup showing encounter effects on players with damage and attack results', async ({ page }) => {
@@ -25,6 +25,7 @@ test.describe('056 - Encounter Result Popup', () => {
     
     // Wait for game board
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // STEP 2: Set up game state - trigger a damage encounter
     await page.evaluate(() => {

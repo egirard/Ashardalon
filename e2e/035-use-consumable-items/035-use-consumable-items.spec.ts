@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('035 - Use Consumable Items', () => {
   test('Hero can use Potion of Healing to restore HP', async ({ page }) => {
@@ -12,6 +12,7 @@ test.describe('035 - Use Consumable Items', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up deterministic state - position hero and hide movement
     await page.evaluate(() => {
@@ -101,6 +102,7 @@ test.describe('035 - Use Consumable Items', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up state with passive bonus item (+1 Magic Sword - ID: 134)
     await page.evaluate(() => {
@@ -153,6 +155,7 @@ test.describe('035 - Use Consumable Items', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up state with a flipped action item (Ring of Shooting Stars - ID: 157)
     await page.evaluate(() => {

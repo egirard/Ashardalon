@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('014 - Defeat Monster and Gain XP', () => {
   test('Hero defeats monster and gains experience points', async ({ page }) => {
@@ -13,6 +13,7 @@ test.describe('014 - Defeat Monster and Gain XP', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for the screenshot and hide movement overlay
     await page.evaluate(() => {
@@ -184,6 +185,7 @@ test.describe('014 - Defeat Monster and Gain XP', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Hide movement overlay
     await page.evaluate(() => {
@@ -280,6 +282,7 @@ test.describe('014 - Defeat Monster and Gain XP', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Hide movement overlay
     await page.evaluate(() => {

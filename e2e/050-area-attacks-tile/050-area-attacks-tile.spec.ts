@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
   test('Hurled Breath (ID 41) attacks all monsters on a tile with sequential results', async ({ page }) => {
@@ -18,6 +18,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Set deterministic position for the hero
     await page.evaluate(() => {
@@ -246,6 +247,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Set deterministic position for the hero
     await page.evaluate(() => {

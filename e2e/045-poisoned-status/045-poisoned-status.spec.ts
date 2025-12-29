@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectDefaultPowerCards, createScreenshotHelper } from '../helpers/screenshot-helper';
+import { selectDefaultPowerCards, createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('045 - Poisoned Status Effect', () => {
   test('Apply poisoned status, take damage at start of turn, attempt recovery at end of turn', async ({ page }) => {
@@ -12,6 +12,7 @@ test.describe('045 - Poisoned Status Effect', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Wait for initial animations to complete
     await page.waitForTimeout(1000);

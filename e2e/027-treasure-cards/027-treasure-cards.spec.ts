@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('027 - Treasure Cards', () => {
   test('Hero defeats monster, draws treasure, and assigns it to inventory', async ({ page }) => {
@@ -12,6 +12,7 @@ test.describe('027 - Treasure Cards', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up deterministic state - position hero and hide movement
     await page.evaluate(() => {
@@ -162,6 +163,7 @@ test.describe('027 - Treasure Cards', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up state with a monster
     await page.evaluate(() => {
@@ -253,6 +255,7 @@ test.describe('027 - Treasure Cards', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up state with two monsters
     await page.evaluate(() => {
@@ -369,6 +372,7 @@ test.describe('027 - Treasure Cards', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up state with treasure drawn this turn
     await page.evaluate(() => {

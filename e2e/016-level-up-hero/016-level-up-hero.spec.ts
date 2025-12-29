@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('016 - Level Up Hero', () => {
   test('Hero levels up on natural 20 with 5+ XP', async ({ page }) => {
@@ -13,6 +13,7 @@ test.describe('016 - Level Up Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position and hide movement overlay
     await page.evaluate(() => {
@@ -186,6 +187,7 @@ test.describe('016 - Level Up Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set position and hide movement
     await page.evaluate(() => {
@@ -277,6 +279,7 @@ test.describe('016 - Level Up Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set position and hide movement
     await page.evaluate(() => {
@@ -368,6 +371,7 @@ test.describe('016 - Level Up Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set position and hide movement
     await page.evaluate(() => {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('064 - Scenario Introduction Modal', () => {
   test('scenario introduction is shown when map loads and can be dismissed', async ({ page }) => {
@@ -16,6 +16,7 @@ test.describe('064 - Scenario Introduction Modal', () => {
     // STEP 3: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Wait for scenario introduction to appear
     await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'visible' });
@@ -80,6 +81,7 @@ test.describe('064 - Scenario Introduction Modal', () => {
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'keyboard-dismiss-ready', {

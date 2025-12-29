@@ -107,6 +107,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     // STEP 5: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic positions for reproducible screenshots
     await page.evaluate(() => {

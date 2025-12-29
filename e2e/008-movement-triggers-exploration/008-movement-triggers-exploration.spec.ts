@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 // Test constants for better readability
 const INITIAL_TILE_DECK_SIZE = 8;
@@ -45,6 +45,7 @@ test.describe('008 - Movement Triggers Exploration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for Quinn at center position for predictable testing
     // This is near the center, with enough movement to reach any edge
@@ -237,6 +238,7 @@ test.describe('008 - Movement Triggers Exploration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for Quinn at (2, 5) - closer to south edge
     // This position is NOT on an edge (x=2 is middle, y=5 is not 0 or 7)
@@ -316,6 +318,7 @@ test.describe('008 - Movement Triggers Exploration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for Quinn at center
     const startPosition = NON_EDGE_POSITIONS.CENTER;

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
   test('Objective display shows current progress', async ({ page }) => {
@@ -13,6 +13,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for the screenshot and hide movement overlay
     await page.evaluate(() => {
@@ -55,6 +56,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Verify we're in hero phase
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
@@ -196,6 +198,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Directly set hero HP to 0 and transition to defeat screen
     // This bypasses the complex monster attack flow and tests the defeat screen directly
@@ -342,6 +345,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position and hide movement overlay
     await page.evaluate(() => {

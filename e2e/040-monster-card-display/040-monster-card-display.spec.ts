@@ -25,6 +25,7 @@ test.describe('040 - Monster Card Display', () => {
     // STEP 3: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Wait for initial game state to settle
     await page.waitForFunction(() => {

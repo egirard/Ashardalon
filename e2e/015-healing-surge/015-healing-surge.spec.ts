@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('015 - Healing Surge', () => {
   test('Hero automatically healed at turn start when at 0 HP', async ({ page }) => {
@@ -15,6 +15,7 @@ test.describe('015 - Healing Surge', () => {
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic positions and hide movement overlay
     await page.evaluate(() => {
@@ -171,6 +172,7 @@ test.describe('015 - Healing Surge', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set position and hide movement
     await page.evaluate(() => {
@@ -223,6 +225,7 @@ test.describe('015 - Healing Surge', () => {
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up state - Quinn at 0 HP, Vistra at full HP, but 0 surges
     await page.evaluate(() => {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('010 - Monster Attacks Hero', () => {
   test('Monster moves toward hero and attacks during villain phase', async ({ page }) => {
@@ -11,6 +11,7 @@ test.describe('010 - Monster Attacks Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Verify hero HP is initialized
     const initialState = await page.evaluate(() => {
@@ -88,6 +89,7 @@ test.describe('010 - Monster Attacks Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Verify initial HP
     const initialState = await page.evaluate(() => {
@@ -174,6 +176,7 @@ test.describe('010 - Monster Attacks Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Verify initial HP display
     await expect(page.locator('[data-testid="hero-hp"]')).toContainText('HP: 8/8');
@@ -207,6 +210,7 @@ test.describe('010 - Monster Attacks Hero', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Move Quinn to a non-edge position to avoid exploration
     await page.evaluate(() => {

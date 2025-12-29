@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('006 - Move a Hero', () => {
   test('User moves hero to a new position', async ({ page }) => {
@@ -15,6 +15,7 @@ test.describe('006 - Move a Hero', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for Quinn at (2, 2) for predictable testing
     await page.evaluate(() => {
@@ -147,6 +148,7 @@ test.describe('006 - Move a Hero', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic positions - Quinn at (2, 2), Vistra at (3, 2)
     await page.evaluate(() => {

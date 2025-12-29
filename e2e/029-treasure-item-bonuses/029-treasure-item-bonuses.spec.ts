@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('029 - Treasure Item Bonuses Integration', () => {
   test('Hero with equipped items gets attack, AC, and speed bonuses applied in gameplay', async ({ page }) => {
@@ -12,6 +12,7 @@ test.describe('029 - Treasure Item Bonuses Integration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up deterministic state:
     // - Position hero at x:2, y:3
@@ -145,6 +146,7 @@ test.describe('029 - Treasure Item Bonuses Integration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set up state WITHOUT speed bonus items
     await page.evaluate(() => {

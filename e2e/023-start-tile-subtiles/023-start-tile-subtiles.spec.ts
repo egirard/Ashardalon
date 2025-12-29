@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 /**
  * E2E Test: Start Tile Sub-Tiles
@@ -26,6 +26,7 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Verify the start tile is visible as a single unified tile
     await screenshots.capture(page, 'start-tile-unified', {
@@ -144,6 +145,7 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Position hero at the boundary between sub-tiles (y: 2, near staircase)
     await page.evaluate(() => {
@@ -226,6 +228,7 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Position Quinn in north sub-tile
     await page.evaluate(() => {

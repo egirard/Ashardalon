@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 // Helper function to seed dice roll for deterministic tests
 async function seedDiceRoll(page: any, value: number) {
@@ -42,6 +42,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
@@ -333,6 +334,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');

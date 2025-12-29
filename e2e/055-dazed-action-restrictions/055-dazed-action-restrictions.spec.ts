@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectDefaultPowerCards, createScreenshotHelper } from '../helpers/screenshot-helper';
+import { selectDefaultPowerCards, createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('055 - Dazed Action Restrictions', () => {
   test('Dazed hero can only take one action per turn', async ({ page }) => {
@@ -12,6 +12,7 @@ test.describe('055 - Dazed Action Restrictions', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Capture initial state (hero with normal actions)
     await screenshots.capture(page, 'initial-no-dazed', {
@@ -130,6 +131,7 @@ test.describe('055 - Dazed Action Restrictions', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Apply Dazed status and add a monster
     await page.evaluate(() => {
@@ -216,6 +218,7 @@ test.describe('055 - Dazed Action Restrictions', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Capture normal hero with no status effects
     await screenshots.capture(page, 'normal-hero-no-status', {

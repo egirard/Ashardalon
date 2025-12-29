@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('063 - Target Selection on Map', () => {
   test('Player can select targets by tapping on the map', async ({ page }) => {
@@ -12,6 +12,7 @@ test.describe('063 - Target Selection on Map', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Set up Quinn and create a deterministic monster for consistent screenshots
     await page.evaluate(() => {

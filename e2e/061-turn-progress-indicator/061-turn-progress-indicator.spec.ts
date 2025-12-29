@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('061 - Turn Progress Indicator', () => {
   test('turn progress card displays and updates through all phases', async ({ page }) => {
@@ -19,6 +19,7 @@ test.describe('061 - Turn Progress Indicator', () => {
     
     // Wait for game board to appear
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // STEP 2: Verify turn progress card appears in hero phase
     await screenshots.capture(page, 'hero-phase-turn-progress', {

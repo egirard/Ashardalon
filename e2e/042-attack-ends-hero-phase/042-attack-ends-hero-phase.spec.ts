@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 /**
  * E2E Test 042: Attack Ends Hero Phase
@@ -23,6 +23,7 @@ test.describe('042 - Attack Ends Hero Phase', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Wait for hero phase to start
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
@@ -156,6 +157,7 @@ test.describe('042 - Attack Ends Hero Phase', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // STEP 2: Use programmatic dispatch to create an attack result directly
     // This avoids issues with monster setup and focuses on the core behavior
