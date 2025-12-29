@@ -1306,7 +1306,7 @@
   
   // Clear selected attack card when we're not in an attack-ready state
   $effect(() => {
-    // Clear selected card if not in hero phase, can't attack, or no targetable monsters
+    // Clear selected card if not in hero phase, can't attack, or in map control mode
     if (turnState.currentPhase !== "hero-phase" || 
         (!heroTurnActions.canAttack && !multiAttackState) ||
         mapControlMode) {
@@ -1494,7 +1494,7 @@
     }
     
     // If this is a monster click and we have a selected attack card, trigger the attack
-    if (targetType === 'monster' && selectedAttackCardId !== null && heroTurnActions.canAttack) {
+    if (targetType === 'monster' && selectedAttackCardId !== null) {
       const currentHeroId = getCurrentHeroId();
       if (!currentHeroId) return;
       
