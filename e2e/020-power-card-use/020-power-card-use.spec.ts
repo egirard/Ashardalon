@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('020 - Power Card Use', () => {
   test('player can use at-will and daily attack power cards during gameplay', async ({ page }) => {
@@ -25,6 +25,7 @@ test.describe('020 - Power Card Use', () => {
     // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for the hero
     await page.evaluate(() => {
@@ -168,6 +169,7 @@ test.describe('020 - Power Card Use', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position
     await page.evaluate(() => {

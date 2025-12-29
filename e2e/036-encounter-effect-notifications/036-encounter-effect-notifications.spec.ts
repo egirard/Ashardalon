@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('036 - Encounter Effect Notifications', () => {
   test('special encounter cards display effect notifications with details', async ({ page }) => {
@@ -25,6 +25,7 @@ test.describe('036 - Encounter Effect Notifications', () => {
     
     // Wait for game board
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // STEP 2: Set up game state to trigger special encounter
     await page.evaluate(() => {

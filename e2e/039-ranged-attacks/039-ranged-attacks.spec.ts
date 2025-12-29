@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('039 - Ranged Attacks', () => {
   test('Haskan explores north, reveals monster, then attacks with ranged power card', async ({ page }) => {
@@ -36,6 +36,7 @@ test.describe('039 - Ranged Attacks', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     await screenshots.capture(page, 'game-started', {
       programmaticCheck: async () => {
@@ -277,6 +278,7 @@ test.describe('039 - Ranged Attacks', () => {
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Verify Haskan started and has ranged power cards in state
     const state = await page.evaluate(() => {

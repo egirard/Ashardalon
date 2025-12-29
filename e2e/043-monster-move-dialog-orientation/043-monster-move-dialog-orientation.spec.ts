@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('043 - Monster Move Dialog Orientation', () => {
   test('Monster move dialog rotates to face controlling player during villain phase', async ({ page }) => {
@@ -24,6 +24,7 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Set up a monster that will move but not attack (far from hero)
     await page.evaluate(() => {

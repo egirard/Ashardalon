@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 /**
  * E2E Test 048: Attack Then Move (Righteous Advance Card Flow)
@@ -42,6 +42,7 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     // Start game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Character placed on tile - Set deterministic hero position
     await page.evaluate(() => {
@@ -272,6 +273,7 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set hero position
     await page.evaluate(() => {
@@ -433,6 +435,7 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     // Start game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Place both heroes on the same tile at the same position
     await page.evaluate(() => {

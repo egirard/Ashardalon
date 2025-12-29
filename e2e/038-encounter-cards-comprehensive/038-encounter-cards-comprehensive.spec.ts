@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('038 - Encounter Cards Comprehensive System Test', () => {
   test('demonstrates all encounter card types with proper drawing, presentation, and resolution', async ({ page }) => {
@@ -25,6 +25,7 @@ test.describe('038 - Encounter Cards Comprehensive System Test', () => {
     // Start game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Position hero
     await page.evaluate(() => {

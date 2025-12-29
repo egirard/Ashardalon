@@ -86,3 +86,19 @@ export async function selectDefaultPowerCards(page: Page, heroId: string): Promi
   await page.locator('[data-testid="done-power-selection"]').click();
   await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 }
+
+/**
+ * Dismisses the scenario introduction modal that appears after starting a game.
+ * This should be called after clicking the start-game-button to ensure the game board is ready for testing.
+ */
+export async function dismissScenarioIntroduction(page: Page): Promise<void> {
+  // Wait for the scenario introduction modal to appear
+  const scenarioButton = page.locator('[data-testid="start-scenario-button"]');
+  await scenarioButton.waitFor({ state: 'visible', timeout: 5000 });
+  
+  // Click the button to dismiss the modal
+  await scenarioButton.click();
+  
+  // Wait for the modal to be hidden
+  await scenarioButton.waitFor({ state: 'hidden', timeout: 5000 });
+}

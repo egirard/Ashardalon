@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('009 - Hero Attacks Monster', () => {
   test('Hero attacks adjacent monster and sees result', async ({ page }) => {
@@ -11,6 +11,7 @@ test.describe('009 - Hero Attacks Monster', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Move Quinn to the north edge to trigger exploration
     await page.locator('[data-testid="start-tile"]').click();
@@ -186,6 +187,7 @@ test.describe('009 - Hero Attacks Monster', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dispatch an attack that misses
     await page.evaluate(() => {
@@ -241,6 +243,7 @@ test.describe('009 - Hero Attacks Monster', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dispatch a critical hit
     await page.evaluate(() => {
@@ -280,6 +283,7 @@ test.describe('009 - Hero Attacks Monster', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Add a monster to the game state
     await page.evaluate(() => {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('047 - Environment Indicator Positioning', () => {
   test('environment indicator displays at top of game state panel without overlapping controls', async ({ page }) => {
@@ -25,6 +25,7 @@ test.describe('047 - Environment Indicator Positioning', () => {
     
     // Wait for game board
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // STEP 2: Verify initial state without environment
     await screenshots.capture(page, 'game-started-no-environment', {

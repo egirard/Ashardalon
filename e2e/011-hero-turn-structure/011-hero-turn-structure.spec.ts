@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('011 - Hero Turn Structure', () => {
   test('hero turn auto-advances after double move', async ({ page }) => {
@@ -19,6 +19,7 @@ test.describe('011 - Hero Turn Structure', () => {
     
     // Wait for game board to appear
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Set deterministic position for Quinn at (2, 4) for predictable testing
     await page.evaluate(() => {
@@ -112,6 +113,7 @@ test.describe('011 - Hero Turn Structure', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Set deterministic position for Quinn at (2, 4) for predictable testing
     await page.evaluate(() => {
@@ -164,6 +166,7 @@ test.describe('011 - Hero Turn Structure', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Set deterministic position for Quinn at (2, 4) for predictable testing
     await page.evaluate(() => {

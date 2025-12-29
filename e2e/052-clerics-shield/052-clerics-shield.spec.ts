@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
   test('AC bonus applies on hit and persists', async ({ page }) => {
@@ -22,6 +22,7 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
@@ -114,6 +115,7 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
@@ -212,6 +214,7 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
 
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');

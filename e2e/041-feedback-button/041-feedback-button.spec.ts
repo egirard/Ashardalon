@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('041 - Submit Feedback Button', () => {
   test('feedback button is visible and accessible on game board', async ({ page }) => {
@@ -16,6 +16,7 @@ test.describe('041 - Submit Feedback Button', () => {
     // STEP 3: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Wait for the game board to be fully rendered
     await page.locator('[data-testid="start-tile"]').waitFor({ state: 'visible' });
@@ -48,6 +49,7 @@ test.describe('041 - Submit Feedback Button', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Set up window.open spy before clicking
     const windowOpenPromise = page.evaluateHandle(() => {

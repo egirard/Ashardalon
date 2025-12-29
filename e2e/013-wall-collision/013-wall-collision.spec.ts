@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('013 - Wall Collision Detection', () => {
   test('Movement overlay excludes diagonal moves through wall corners', async ({ page }) => {
@@ -13,6 +13,7 @@ test.describe('013 - Wall Collision Detection', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set hero position at a corner of the start tile (x=3, y=0) - north-east corner
     // and refresh movement overlay
@@ -90,6 +91,7 @@ test.describe('013 - Wall Collision Detection', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set hero position at east edge of start tile (x=3, y=2) and refresh movement
     await page.evaluate(() => {
@@ -170,6 +172,7 @@ test.describe('013 - Wall Collision Detection', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Set up three tiles: Start, North, and East
     // This creates a scenario where North tile (3,-1) is diagonally adjacent to East tile (4,0)
@@ -374,6 +377,7 @@ test.describe('013 - Wall Collision Detection', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set hero position at west edge of walkable area (x=1, y=2) and refresh movement
     // x=0 is the wall column on start tile
@@ -453,6 +457,7 @@ test.describe('013 - Wall Collision Detection', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Verify movement on start tile respects wall squares
     // The start tile has:

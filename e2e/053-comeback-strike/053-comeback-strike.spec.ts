@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 // Helper function to seed dice roll for deterministic tests
 async function seedDiceRoll(page: Page, value: number) {
@@ -41,6 +41,7 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
     if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
@@ -198,6 +199,7 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     // Dismiss scenario introduction modal if it appears
     const scenarioIntroButton3 = page.locator('[data-testid="start-scenario-button"]');
     if (await scenarioIntroButton3.isVisible({ timeout: 2000 }).catch(() => false)) {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('008 - Spawn Monster on Exploration', () => {
   test('Monster appears on newly placed tile at black spot position', async ({ page }) => {
@@ -13,6 +13,7 @@ test.describe('008 - Spawn Monster on Exploration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Move Quinn to north edge for exploration
     await page.evaluate(() => {
@@ -128,6 +129,7 @@ test.describe('008 - Spawn Monster on Exploration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Move Quinn to south edge
     await page.evaluate(() => {
@@ -170,6 +172,7 @@ test.describe('008 - Spawn Monster on Exploration', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Move Quinn to center (not on edge)
     await page.evaluate(() => {

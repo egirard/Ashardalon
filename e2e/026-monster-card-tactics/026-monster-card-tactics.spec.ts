@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('026 - Monster Card Tactics', () => {
   test('Snake monster moves adjacent and attacks in one turn (move-and-attack)', async ({ page }) => {
@@ -12,6 +12,7 @@ test.describe('026 - Monster Card Tactics', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     await screenshots.capture(page, 'initial-game-board', {
       programmaticCheck: async () => {
@@ -118,6 +119,7 @@ test.describe('026 - Monster Card Tactics', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Set up test scenario and verify state using Redux directly
     const result = await page.evaluate(() => {
@@ -171,6 +173,7 @@ test.describe('026 - Monster Card Tactics', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Set up test scenario and verify attack stats
     const result = await page.evaluate(() => {

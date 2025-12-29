@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('028 - Map Zoom and Pan Controls', () => {
   test('User can toggle map control mode and use zoom controls', async ({ page }) => {
@@ -15,6 +15,7 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for Quinn
     await page.evaluate(() => {
@@ -124,6 +125,7 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Hide movement overlay
     await page.evaluate(() => {
@@ -155,6 +157,7 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Hide movement overlay
     await page.evaluate(() => {

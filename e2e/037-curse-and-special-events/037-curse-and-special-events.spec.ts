@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('037 - Curse and Special Event Encounter Cards', () => {
   test('curse cards apply status effects and special events execute game actions', async ({ page }) => {
@@ -25,6 +25,7 @@ test.describe('037 - Curse and Special Event Encounter Cards', () => {
     
     // Wait for game board
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // STEP 2: Set up game state and test curse encounter
     await page.evaluate(() => {

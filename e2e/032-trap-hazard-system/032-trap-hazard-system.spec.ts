@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('032 - Trap and Hazard System', () => {
   test('trap and hazard markers display correctly on the game board', async ({ page }) => {
@@ -25,6 +25,7 @@ test.describe('032 - Trap and Hazard System', () => {
     
     // Wait for game board
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // STEP 2: Position Quinn and verify initial state
     await page.evaluate(() => {

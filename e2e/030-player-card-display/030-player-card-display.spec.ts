@@ -40,6 +40,7 @@ test.describe('030 - Player Card Display', () => {
     // STEP 3: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for reproducible screenshots
     await page.evaluate(() => {

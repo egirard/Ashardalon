@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 /**
  * E2E Test 046: Movement Before Attack (All Movement-Attack Card Flows)
@@ -43,6 +43,7 @@ test.describe('046 - Movement Before Attack', () => {
     // Start game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // STEP 2: Character placed on tile - Set deterministic hero position
     await page.evaluate(() => {
@@ -327,6 +328,7 @@ test.describe('046 - Movement Before Attack', () => {
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set hero position
     await page.evaluate(() => {

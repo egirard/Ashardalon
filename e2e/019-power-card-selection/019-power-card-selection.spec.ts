@@ -123,6 +123,7 @@ test.describe('019 - Power Card Selection', () => {
     // STEP 6: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic position for the screenshot
     await page.evaluate(() => {

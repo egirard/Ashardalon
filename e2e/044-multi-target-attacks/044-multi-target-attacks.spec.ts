@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('044 - Multi-Target Attacks', () => {
   test('Arcing Strike (ID 25) attacks two adjacent monsters', async ({ page }) => {
@@ -18,6 +18,7 @@ test.describe('044 - Multi-Target Attacks', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Set deterministic position for the hero
     await page.evaluate(() => {
@@ -259,6 +260,7 @@ test.describe('044 - Multi-Target Attacks', () => {
     // Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
     
     // Set deterministic position for the hero
     await page.evaluate(() => {
