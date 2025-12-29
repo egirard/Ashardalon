@@ -21,16 +21,6 @@
   // Get power card details
   const powerCard = getPowerCardById(cardId);
 
-  // Debug logging
-  $effect(() => {
-    console.log('HeroPlacementModal:', {
-      tileId,
-      dungeonTiles: dungeon.tiles.length,
-      validSquares: validSquares.length,
-      currentPosition,
-    });
-  });
-
   // Track selected square
   let selectedSquare: Position | null = $state(null);
 

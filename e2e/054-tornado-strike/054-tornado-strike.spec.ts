@@ -400,20 +400,27 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     });
 
     // STEP 9: Select a new position for the hero
-    // Select a square different from the current position (3, 2)
-    // Let's select (4, 3) if it's available
-    await page.locator('[data-testid="square-option-4-3"]').click();
+    // Available squares on the start tile are (1,1) to (2,6)
+    // Let's select (2, 3)
+    await page.locator('[data-testid="square-option-2-3"]').click();
+    
+    // Wait for button to be enabled
+    await page.locator('[data-testid="confirm-hero-placement"]').waitFor({ state: 'visible' });
+    await expect(page.locator('[data-testid="confirm-hero-placement"]')).toBeEnabled();
     
     await screenshots.capture(page, 'hero-placement-square-selected', {
       programmaticCheck: async () => {
         // Verify the square is selected
-        await expect(page.locator('[data-testid="square-option-4-3"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="square-option-2-3"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="confirm-hero-placement"]')).toBeEnabled();
       }
     });
 
     // STEP 10: Confirm the hero placement
     await page.locator('[data-testid="confirm-hero-placement"]').click();
+    
+    // Give it a moment to process
+    await page.waitForTimeout(500);
     
     // Wait for placement to complete
     await expect(async () => {
@@ -432,7 +439,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
         
         // Hero should have moved to the new position
         const tarakToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'tarak');
-        expect(tarakToken?.position).toEqual({ x: 4, y: 3 });
+        expect(tarakToken?.position).toEqual({ x: 2, y: 3 });
         
         // Hero placement should be cleared
         expect(storeState.game.pendingHeroPlacement).toBeNull();
