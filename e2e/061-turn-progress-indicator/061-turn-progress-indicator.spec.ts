@@ -21,6 +21,10 @@ test.describe('061 - Turn Progress Indicator', () => {
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
     
+    // Wait for turn progress card to be visible and stable
+    await page.locator('[data-testid="turn-progress-card"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="phase-hero-phase"]').waitFor({ state: 'visible' });
+    
     // STEP 2: Verify turn progress card appears in hero phase
     await screenshots.capture(page, 'hero-phase-turn-progress', {
       programmaticCheck: async () => {
@@ -91,10 +95,12 @@ test.describe('061 - Turn Progress Indicator', () => {
     });
     
     // STEP 5: End exploration phase and verify villain phase is highlighted
-    await page.locator('[data-testid="end-phase-button"]').click();
+    const endPhaseButton = page.locator('[data-testid="end-phase-button"]');
+    await endPhaseButton.waitFor({ state: 'visible' });
+    await endPhaseButton.click();
     
     // Wait for villain phase
-    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase', { timeout: 10000 });
     
     await screenshots.capture(page, 'villain-phase-active', {
       programmaticCheck: async () => {
