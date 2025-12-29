@@ -11,7 +11,6 @@ This E2E test verifies that the Turn Progress Card component:
 - Shows all three game phases (Hero Phase, Exploration, Villain Phase)
 - Highlights the currently active phase
 - Updates phase-specific details as the turn progresses
-- Displays the current turn number
 
 ## Screenshots
 
@@ -20,7 +19,6 @@ This E2E test verifies that the Turn Progress Card component:
 
 **What to verify:**
 - Turn Progress Card is visible next to Quinn's player dashboard
-- "TURN 1" label is displayed at the top
 - Hero Phase is highlighted with a golden/yellow indicator
 - Phase detail shows "Ready to act"
 - Exploration and Villain Phase are shown but not highlighted
@@ -55,7 +53,6 @@ This E2E test verifies that the Turn Progress Card component:
 ## Manual Verification Checklist
 
 - [ ] Turn Progress Card appears next to the active player's dashboard
-- [ ] Card shows "TURN 1" (or current turn number) at the top
 - [ ] All three phases are listed: Hero Phase, Exploration, Villain Phase
 - [ ] Each phase has a brief description of what happens
 - [ ] Active phase is visually highlighted (golden border, active indicator)
