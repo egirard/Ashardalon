@@ -251,6 +251,8 @@ export interface GameState {
   pendingMoveAttack: PendingMoveAttackState | null;
   /** Attack-then-move state: set when using cards like Righteous Advance that allow movement after attack */
   pendingMoveAfterAttack: PendingMoveAfterAttackState | null;
+  /** Hero placement state: set when using cards like Tornado Strike that require hero placement after attacks */
+  pendingHeroPlacement: PendingHeroPlacementState | null;
   /** Treasure deck for drawing treasure on monster defeat */
   treasureDeck: TreasureDeck;
   /** Currently drawn treasure card awaiting assignment to a hero */
@@ -344,6 +346,18 @@ export interface PendingMoveAfterAttackState {
   selectedHeroId: string | null;
   /** Available heroes that can be moved (on the same tile as the attacker) */
   availableHeroes: string[];
+}
+
+/**
+ * State for tracking hero placement selection (e.g., Tornado Strike post-attack placement)
+ */
+export interface PendingHeroPlacementState {
+  /** Power card ID that requires hero placement */
+  cardId: number;
+  /** Hero ID that needs to be placed */
+  heroId: string;
+  /** Tile ID where hero can be placed */
+  tileId: string;
 }
 
 /**
@@ -478,6 +492,7 @@ const initialState: GameState = {
   multiAttackState: null,
   pendingMoveAttack: null,
   pendingMoveAfterAttack: null,
+  pendingHeroPlacement: null,
   treasureDeck: { drawPile: [], discardPile: [] },
   drawnTreasure: null,
   heroInventories: {},
@@ -2177,8 +2192,30 @@ export const gameSlice = createSlice({
       
       // Check if multi-attack sequence is complete
       if (state.multiAttackState.attacksCompleted >= state.multiAttackState.totalAttacks) {
+        const cardId = state.multiAttackState.cardId;
+        
         // Clear multi-attack state when done
         state.multiAttackState = null;
+        
+        // Check if this is Tornado Strike (ID: 37) which requires hero placement after attacks
+        if (cardId === 37) {
+          const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+          const currentToken = state.heroTokens.find(t => t.heroId === currentHeroId);
+          if (currentToken && currentHeroId) {
+            const tileId = getTileOrSubTileId(currentToken.position, state.dungeon);
+            if (tileId) {
+              // Trigger hero placement selection
+              state.pendingHeroPlacement = {
+                cardId,
+                heroId: currentHeroId,
+                tileId,
+              };
+              // Don't track the attack action yet - wait until placement is complete
+              return;
+            }
+          }
+        }
+        
         // Track the attack action (only once per multi-attack sequence)
         const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
         if (currentHeroId) {
@@ -2202,6 +2239,51 @@ export const gameSlice = createSlice({
         }
         state.multiAttackState = null;
       }
+    },
+    /**
+     * Start hero placement selection (for cards like Tornado Strike)
+     */
+    startHeroPlacement: (
+      state,
+      action: PayloadAction<{ cardId: number; heroId: string; tileId: string }>
+    ) => {
+      const { cardId, heroId, tileId } = action.payload;
+      state.pendingHeroPlacement = {
+        cardId,
+        heroId,
+        tileId,
+      };
+    },
+    /**
+     * Complete hero placement by moving hero to selected square
+     */
+    completeHeroPlacement: (
+      state,
+      action: PayloadAction<{ position: Position }>
+    ) => {
+      if (!state.pendingHeroPlacement) return;
+      
+      const { heroId } = state.pendingHeroPlacement;
+      const { position } = action.payload;
+      
+      // Find hero token and update position
+      const heroToken = state.heroTokens.find(t => t.heroId === heroId);
+      if (heroToken) {
+        heroToken.position = position;
+      }
+      
+      // Clear the pending placement state
+      state.pendingHeroPlacement = null;
+      
+      // Track the attack action now that placement is complete
+      const heroStatuses = getHeroStatuses(state, heroId);
+      state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack', heroStatuses);
+    },
+    /**
+     * Cancel hero placement selection
+     */
+    cancelHeroPlacement: (state) => {
+      state.pendingHeroPlacement = null;
     },
     /**
      * Start a move-then-attack sequence (for cards like Charge)
@@ -3205,6 +3287,9 @@ export const {
   startMultiAttack,
   recordMultiAttackHit,
   clearMultiAttack,
+  startHeroPlacement,
+  completeHeroPlacement,
+  cancelHeroPlacement,
   startMoveAttack,
   completeMoveAttackMovement,
   clearMoveAttack,

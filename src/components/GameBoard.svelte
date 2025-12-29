@@ -36,6 +36,9 @@
     startMultiAttack,
     recordMultiAttackHit,
     clearMultiAttack,
+    startHeroPlacement,
+    completeHeroPlacement,
+    cancelHeroPlacement,
     startMoveAttack,
     completeMoveAttackMovement,
     clearMoveAttack,
@@ -54,6 +57,7 @@
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
+    type PendingHeroPlacementState,
     type PendingMonsterChoiceState,
     type IncrementalMovementState,
     type UndoSnapshot,
@@ -106,6 +110,7 @@
   import PoisonRecoveryNotification from "./PoisonRecoveryNotification.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
+  import HeroPlacementModal from "./HeroPlacementModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import TurnProgressCard from "./TurnProgressCard.svelte";
@@ -221,6 +226,7 @@
   let multiAttackState: MultiAttackState | null = $state(null);
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
   let pendingMoveAfterAttack: PendingMoveAfterAttackState | null = $state(null);
+  let pendingHeroPlacement: PendingHeroPlacementState | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
   let incrementalMovement: IncrementalMovementState | null = $state(null);
@@ -289,6 +295,7 @@
       multiAttackState = state.game.multiAttackState;
       pendingMoveAttack = state.game.pendingMoveAttack;
       pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
+      pendingHeroPlacement = state.game.pendingHeroPlacement;
       drawnTreasure = state.game.drawnTreasure;
       heroInventories = state.game.heroInventories;
       incrementalMovement = state.game.incrementalMovement;
@@ -345,6 +352,7 @@
     multiAttackState = state.game.multiAttackState;
     pendingMoveAttack = state.game.pendingMoveAttack;
     pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
+    pendingHeroPlacement = state.game.pendingHeroPlacement;
     drawnTreasure = state.game.drawnTreasure;
     heroInventories = state.game.heroInventories;
     incrementalMovement = state.game.incrementalMovement;
@@ -1383,6 +1391,16 @@
   // Handle dismissing/discarding the treasure card
   function handleDismissTreasure() {
     store.dispatch(dismissTreasureCard());
+  }
+
+  // Handle hero placement selection
+  function handleHeroPlacementSelect(position: Position) {
+    store.dispatch(completeHeroPlacement({ position }));
+  }
+
+  // Handle canceling hero placement
+  function handleCancelHeroPlacement() {
+    store.dispatch(cancelHeroPlacement());
   }
 
   // Handle selecting a target (monster, trap, treasure)
@@ -2454,6 +2472,22 @@
       onCancel={handleCancelMonsterChoice}
       edge={getActivePlayerEdge()}
     />
+  {/if}
+
+  <!-- Hero Placement Selection (for cards like Tornado Strike) -->
+  {#if pendingHeroPlacement}
+    {@const currentHero = heroTokens.find(t => t.heroId === pendingHeroPlacement.heroId)}
+    {#if currentHero}
+      <HeroPlacementModal
+        cardId={pendingHeroPlacement.cardId}
+        heroId={pendingHeroPlacement.heroId}
+        tileId={pendingHeroPlacement.tileId}
+        currentPosition={currentHero.position}
+        dungeon={dungeon}
+        onSelect={handleHeroPlacementSelect}
+        onCancel={handleCancelHeroPlacement}
+      />
+    {/if}
   {/if}
 
   <!-- Scenario Introduction (shown when map is first displayed or when clicking objective panel) -->
