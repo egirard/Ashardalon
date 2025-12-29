@@ -357,16 +357,18 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
 
     await page.locator('[data-testid="dismiss-combat-result"]').click();
     
-    // Wait for multi-attack sequence to complete
+    // Wait for multi-attack sequence to complete and hero placement to trigger
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
       });
       // Multi-attack should be cleared after 4th attack
       expect(storeState.game.multiAttackState).toBeNull();
+      // Hero placement should be triggered for Tornado Strike
+      expect(storeState.game.pendingHeroPlacement).toBeTruthy();
     }).toPass();
 
-    await screenshots.capture(page, 'after-fourth-attack-sequence-complete', {
+    await screenshots.capture(page, 'after-fourth-attack-placement-modal', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -379,13 +381,67 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
         // Multi-attack state should be cleared
         expect(storeState.game.multiAttackState).toBeNull();
         
-        // Daily card should now be flipped
+        // Hero placement should be pending
+        expect(storeState.game.pendingHeroPlacement).toBeTruthy();
+        expect(storeState.game.pendingHeroPlacement?.cardId).toBe(37);
+        expect(storeState.game.pendingHeroPlacement?.heroId).toBe('tarak');
+        
+        // Attack action should NOT be consumed yet (placement must complete first)
+        expect(storeState.game.heroTurnActions.canAttack).toBe(true);
+        
+        // Daily card should be flipped (after first attack)
         const cardStates = storeState.heroes.heroPowerCards.tarak.cardStates;
         const tornadoStrikeState = cardStates.find((s: { cardId: number }) => s.cardId === 37);
         expect(tornadoStrikeState?.isFlipped).toBe(true);
         
-        // Attack action should be consumed
+        // Hero placement modal should be visible
+        await expect(page.locator('[data-testid="hero-placement-modal"]')).toBeVisible();
+      }
+    });
+
+    // STEP 9: Select a new position for the hero
+    // Select a square different from the current position (3, 2)
+    // Let's select (4, 3) if it's available
+    await page.locator('[data-testid="square-option-4-3"]').click();
+    
+    await screenshots.capture(page, 'hero-placement-square-selected', {
+      programmaticCheck: async () => {
+        // Verify the square is selected
+        await expect(page.locator('[data-testid="square-option-4-3"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="confirm-hero-placement"]')).toBeEnabled();
+      }
+    });
+
+    // STEP 10: Confirm the hero placement
+    await page.locator('[data-testid="confirm-hero-placement"]').click();
+    
+    // Wait for placement to complete
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      // Hero placement should be cleared
+      expect(storeState.game.pendingHeroPlacement).toBeNull();
+    }).toPass();
+
+    await screenshots.capture(page, 'after-hero-placement-complete', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Hero should have moved to the new position
+        const tarakToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'tarak');
+        expect(tarakToken?.position).toEqual({ x: 4, y: 3 });
+        
+        // Hero placement should be cleared
+        expect(storeState.game.pendingHeroPlacement).toBeNull();
+        
+        // Attack action should NOW be consumed (after placement completion)
         expect(storeState.game.heroTurnActions.canAttack).toBe(false);
+        
+        // Hero placement modal should be hidden
+        await expect(page.locator('[data-testid="hero-placement-modal"]')).not.toBeVisible();
       }
     });
   });
