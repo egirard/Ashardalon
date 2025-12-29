@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TileSet xmlns="tileset" version="1">
+
+<!-- =========================================
+     =========   Declare Tile Types  ========= 
+     ========================================= -->
+
+   <TileType type="1">Heroes</TileType>
+
+
+<!-- =========================================
+     ==============  End Tiles  ==============
+     ========================================= -->
+
+   <Tile name="Cleric" sort="50" type="1" maxcount="1" warn="true">Ashardalon\Hero_Cleric_Quinn.png</Tile>
+   <Tile name="Fighter" sort="50" type="1" maxcount="1" warn="true">Ashardalon\Hero_Fighter_Vistra.png</Tile>
+   <Tile name="Ranger" sort="50" type="1" maxcount="1" warn="true">Ashardalon\Hero_Paladin_Keyleth.png</Tile>
+   <Tile name="Rogue" sort="50" type="1" maxcount="1" warn="true">Ashardalon\Hero_Rogue_Tarak.png</Tile>
+   <Tile name="Wizard" sort="50" type="1" maxcount="1" warn="true">Ashardalon\Hero_Wizard_Haskan.png</Tile>
+</TileSet>
