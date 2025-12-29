@@ -1666,131 +1666,7 @@
     onToggleMapControl={toggleMapControlMode}
   />
   
-  <!-- Top edge player zone - shows all heroes who joined from top -->
-  <div
-    class="edge-zone edge-top"
-    class:has-players={getHeroesForEdge('top').length > 0}
-    data-testid="player-zone-top"
-  >
-    {#each getHeroesForEdge('top') as hero (hero.id)}
-      {@const heroHpState = getHeroHpState(hero.id)}
-      {@const controlledMonsters = getMonstersForHero(hero.id)}
-      {@const isHeroActive = isActiveHero(hero.id)}
-      {#if heroHpState}
-        <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
-          <!-- Power cards appear to the right of player card after 180° rotation -->
-          <PlayerPowerCards
-            heroPowerCards={heroPowerCards[hero.id]}
-            boardPosition="top"
-            {gameState}
-            onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
-            targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
-            onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
-          />
-          <!-- Turn Progress Card (shown only for active player) - appears before PlayerCard after rotation -->
-          {#if isHeroActive}
-            <TurnProgressCard
-              currentPhase={turnState.currentPhase}
-              turnNumber={turnState.turnNumber}
-              heroTurnActions={heroTurnActions}
-              monstersToActivate={getMonstersForHero(hero.id).length}
-              monstersActivated={villainPhaseMonsterIndex}
-              onEndPhase={handleEndPhase}
-              endPhaseButtonText={getEndPhaseButtonText()}
-              endPhaseButtonDisabled={mapControlMode}
-            />
-          {/if}
-          <PlayerCard
-            {hero}
-            {heroHpState}
-            heroInventory={heroInventories[hero.id]}
-            isActive={isHeroActive}
-            turnPhase={isHeroActive ? formatPhase(turnState.currentPhase) : undefined}
-            turnNumber={isHeroActive ? turnState.turnNumber : undefined}
-            conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
-            onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-            boardPosition="top"
-          />
-          <!-- Monster cards appear to the left of player card after 180° rotation -->
-          {#if controlledMonsters.length > 0}
-            <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
-              {#each controlledMonsters as monster (monster.instanceId)}
-                <MonsterCardMini 
-                  {monster}
-                  isActivating={activatingMonsterId === monster.instanceId}
-                />
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {/if}
-    {/each}
-  </div>
-
-  <!-- Middle section with left edge, center board, and right edge -->
-  <div class="middle-section">
-    <!-- Left edge player zone - shows all heroes who joined from left -->
-    <div
-      class="edge-zone edge-left"
-      class:has-players={getHeroesForEdge('left').length > 0}
-      data-testid="player-zone-left"
-    >
-      {#each getHeroesForEdge('left') as hero (hero.id)}
-        {@const heroHpState = getHeroHpState(hero.id)}
-        {@const controlledMonsters = getMonstersForHero(hero.id)}
-        {@const isHeroActive = isActiveHero(hero.id)}
-        {#if heroHpState}
-          <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
-            <!-- Monster cards to the left of player card -->
-            {#if controlledMonsters.length > 0}
-              <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
-                {#each controlledMonsters as monster (monster.instanceId)}
-                  <MonsterCardMini 
-                    {monster}
-                    isActivating={activatingMonsterId === monster.instanceId}
-                  />
-                {/each}
-              </div>
-            {/if}
-            <PlayerCard
-              {hero}
-              {heroHpState}
-              heroInventory={heroInventories[hero.id]}
-              isActive={isHeroActive}
-              turnPhase={isHeroActive ? formatPhase(turnState.currentPhase) : undefined}
-              turnNumber={isHeroActive ? turnState.turnNumber : undefined}
-              conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
-              onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-              boardPosition="left"
-            />
-            <!-- Turn Progress Card (shown only for active player) -->
-            {#if isHeroActive}
-              <TurnProgressCard
-                currentPhase={turnState.currentPhase}
-                turnNumber={turnState.turnNumber}
-                heroTurnActions={heroTurnActions}
-                monstersToActivate={getMonstersForHero(hero.id).length}
-                monstersActivated={villainPhaseMonsterIndex}
-                onEndPhase={handleEndPhase}
-                endPhaseButtonText={getEndPhaseButtonText()}
-                endPhaseButtonDisabled={mapControlMode}
-              />
-            {/if}
-            <!-- Power cards to the right of player card -->
-            <PlayerPowerCards
-              heroPowerCards={heroPowerCards[hero.id]}
-              boardPosition="left"
-              {gameState}
-              onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
-              targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
-              onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
-            />
-          </div>
-        {/if}
-      {/each}
-    </div>
-
-    <!-- Center board area -->
+  <!-- Fullscreen board container - map fills entire viewport -->
     <div class="board-container" bind:this={boardContainerRef}>
       <div
         class="dungeon-map"
@@ -2168,79 +2044,18 @@
       </div>
     </div>
 
-    <!-- Right edge player zone - shows all heroes who joined from right -->
-    <div
-      class="edge-zone edge-right"
-      class:has-players={getHeroesForEdge('right').length > 0}
-      data-testid="player-zone-right"
-    >
-      {#each getHeroesForEdge('right') as hero (hero.id)}
-        {@const heroHpState = getHeroHpState(hero.id)}
-        {@const controlledMonsters = getMonstersForHero(hero.id)}
-        {@const isHeroActive = isActiveHero(hero.id)}
-        {#if heroHpState}
-          <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
-            <!-- Monster cards to the left of player card -->
-            {#if controlledMonsters.length > 0}
-              <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
-                {#each controlledMonsters as monster (monster.instanceId)}
-                  <MonsterCardMini 
-                    {monster}
-                    isActivating={activatingMonsterId === monster.instanceId}
-                  />
-                {/each}
-              </div>
-            {/if}
-            <PlayerCard
-              {hero}
-              {heroHpState}
-              heroInventory={heroInventories[hero.id]}
-              isActive={isHeroActive}
-              turnPhase={isHeroActive ? formatPhase(turnState.currentPhase) : undefined}
-              turnNumber={isHeroActive ? turnState.turnNumber : undefined}
-              conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
-              onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-              boardPosition="right"
-            />
-            <!-- Turn Progress Card (shown only for active player) -->
-            {#if isHeroActive}
-              <TurnProgressCard
-                currentPhase={turnState.currentPhase}
-                turnNumber={turnState.turnNumber}
-                heroTurnActions={heroTurnActions}
-                monstersToActivate={getMonstersForHero(hero.id).length}
-                monstersActivated={villainPhaseMonsterIndex}
-                onEndPhase={handleEndPhase}
-                endPhaseButtonText={getEndPhaseButtonText()}
-                endPhaseButtonDisabled={mapControlMode}
-              />
-            {/if}
-            <!-- Power cards to the right of player card -->
-            <PlayerPowerCards
-              heroPowerCards={heroPowerCards[hero.id]}
-              boardPosition="right"
-              {gameState}
-              onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
-              targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
-              onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
-            />
-          </div>
-        {/if}
-      {/each}
-    </div>
-  </div>
-
-  <!-- Bottom edge player zone - shows all heroes who joined from bottom -->
-  <div
-    class="edge-zone edge-bottom"
-    class:has-players={getHeroesForEdge('bottom').length > 0}
-    data-testid="player-zone-bottom"
-  >
-    {#each getHeroesForEdge('bottom') as hero (hero.id)}
-      {@const heroHpState = getHeroHpState(hero.id)}
-      {@const controlledMonsters = getMonstersForHero(hero.id)}
-      {@const isHeroActive = isActiveHero(hero.id)}
-      {#if heroHpState}
+  <!-- Player panels as overlays positioned in corners based on edge -->
+  {#each selectedHeroes as hero (hero.id)}
+    {@const heroHpState = getHeroHpState(hero.id)}
+    {@const controlledMonsters = getMonstersForHero(hero.id)}
+    {@const isHeroActive = isActiveHero(hero.id)}
+    {@const edge = heroEdgeMap[hero.id] || 'bottom'}
+    {#if heroHpState}
+      <div 
+        class="player-panel-overlay player-panel-{edge}" 
+        data-testid="player-panel-{edge}"
+        data-hero-id={hero.id}
+      >
         <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
           <!-- Monster cards to the left of player card -->
           {#if controlledMonsters.length > 0}
@@ -2262,7 +2077,7 @@
             turnNumber={isHeroActive ? turnState.turnNumber : undefined}
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
-            boardPosition="bottom"
+            boardPosition={edge}
           />
           <!-- Turn Progress Card (shown only for active player) -->
           {#if isHeroActive}
@@ -2280,16 +2095,16 @@
           <!-- Power cards to the right of player card -->
           <PlayerPowerCards
             heroPowerCards={heroPowerCards[hero.id]}
-            boardPosition="bottom"
+            boardPosition={edge}
             {gameState}
             onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
             targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
             onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
           />
         </div>
-      {/if}
-    {/each}
-  </div>
+      </div>
+    {/if}
+  {/each}
 
   <!-- Monster Card Display (shown when monster spawns) -->
   {#if recentlySpawnedMonsterId}
@@ -2514,28 +2329,12 @@
 
 <style>
   .game-board {
-    display: flex;
-    flex-direction: column;
+    position: relative;
     height: 100vh;
+    width: 100vw;
     background: #1a1a2e;
     color: #fff;
     overflow: hidden;
-  }
-
-  /* Edge zones for player UI */
-  .edge-zone {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem;
-    background: rgba(0, 0, 0, 0.3);
-    min-height: 80px;
-    transition: all 0.3s ease-out;
-  }
-
-  .edge-zone.has-players {
-    background: rgba(0, 0, 0, 0.4);
   }
 
   /* Container for hero with monsters to the left */
@@ -2546,17 +2345,17 @@
   }
 
   /* Rotate hero containers based on edge position */
-  .edge-top .hero-with-monsters-container {
+  .player-panel-top .hero-with-monsters-container {
     transform: rotate(180deg);
     transform-origin: center;
   }
 
-  .edge-left .hero-with-monsters-container {
+  .player-panel-left .hero-with-monsters-container {
     transform: rotate(90deg);
     transform-origin: center;
   }
 
-  .edge-right .hero-with-monsters-container {
+  .player-panel-right .hero-with-monsters-container {
     transform: rotate(-90deg);
     transform-origin: center;
   }
@@ -2568,47 +2367,60 @@
     gap: 0.5rem;
   }
 
-  /* Edge zones layout - rotation handled by hero-with-monsters-container */
-  .edge-top {
-    border-bottom: 2px solid #333;
-  }
-
-  .edge-left {
-    border-right: 2px solid #333;
-    min-width: 80px;
-    min-height: auto;
-    flex-direction: column;
-  }
-
-  .edge-right {
-    border-left: 2px solid #333;
-    min-width: 80px;
-    min-height: auto;
-    flex-direction: column;
-  }
-
-  .edge-bottom {
-    border-top: 2px solid #333;
-  }
-
-  /* Middle section layout */
-  .middle-section {
-    flex: 1;
+  /* Player panel overlays - positioned along edges */
+  .player-panel-overlay {
+    position: absolute;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.75rem;
+    border-radius: 8px;
     display: flex;
-    flex-direction: row;
-    min-height: 0;
-    overflow: hidden;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
   }
 
-  /* Board container */
+  /* Top edge - centered horizontally at top */
+  .player-panel-top {
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Bottom edge - centered horizontally at bottom */
+  .player-panel-bottom {
+    bottom: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Left edge - centered vertically on left side */
+  .player-panel-left {
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Right edge - centered vertically on right side */
+  .player-panel-right {
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Board container - fullscreen, map fills entire viewport */
   .board-container {
-    flex: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 1rem;
-    position: relative;
     overflow: hidden;
   }
 
