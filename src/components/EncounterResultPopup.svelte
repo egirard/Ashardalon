@@ -3,11 +3,13 @@
    * Encounter Result Popup Component
    * Displays the outcome of an encounter card's effect on players
    * Shows card name/image, affected players, and results (damage, status, misses)
+   * Now supports rotation for multi-player scenarios
    */
   
   import type { EncounterCard, EncounterResultTarget } from '../store/types';
   import { assetPath } from '../utils';
   import { LightningIcon, WarningIcon, CrystalIcon } from './icons';
+  import RotationControls from './RotationControls.svelte';
   
   interface Props {
     encounter: EncounterCard;
@@ -19,6 +21,8 @@
   
   let overlayElement: HTMLDivElement | undefined = $state();
   let imageError = $state(false);
+  let rotation = $state<0 | 90 | 180 | 270>(0);
+  let isRotating = $state(false);
   
   // Auto-focus the overlay when it's mounted
   $effect(() => {
@@ -29,6 +33,18 @@
   
   function handleDismiss() {
     onDismiss();
+  }
+  
+  function handleRotate(newRotation: 0 | 90 | 180 | 270) {
+    if (newRotation !== rotation) {
+      isRotating = true;
+      rotation = newRotation;
+      
+      // Reset rotation animation flag after animation completes
+      setTimeout(() => {
+        isRotating = false;
+      }, 300);
+    }
   }
   
   function handleKeydown(event: KeyboardEvent) {
@@ -80,14 +96,19 @@
   tabindex="0"
   data-testid="encounter-result-popup"
 >
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div 
-    class="result-dialog" 
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={handleDialogKeydown}
-    role="document"
-    data-testid="encounter-result-dialog"
-  >
+  <div class="dialog-wrapper">
+    <RotationControls currentRotation={rotation} onRotate={handleRotate} />
+    
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div 
+      class="result-dialog"
+      class:rotating={isRotating}
+      style="transform: rotate({rotation}deg);"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={handleDialogKeydown}
+      role="document"
+      data-testid="encounter-result-dialog"
+    >
     <div class="dialog-header">
       <span class="type-badge" data-testid="encounter-result-type">
         <svelte:component this={getTypeIconComponent(encounter.type)} size={16} ariaLabel={encounter.type} />
@@ -238,6 +259,7 @@
     
     <p class="hint-text">Press Enter or Space to continue</p>
   </div>
+  </div>
 </div>
 
 <style>
@@ -255,6 +277,10 @@
     backdrop-filter: blur(4px);
   }
   
+  .dialog-wrapper {
+    position: relative;
+  }
+  
   .result-dialog {
     background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%);
     border: 3px solid #8b5cf6;
@@ -265,6 +291,11 @@
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+    transition: transform 0.3s ease-out;
+  }
+  
+  .result-dialog.rotating {
+    transition: transform 0.3s ease-out;
   }
   
   .dialog-header {

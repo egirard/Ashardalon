@@ -2,7 +2,9 @@
   /**
    * Scenario Introduction Modal
    * Displays scenario information when the map is first shown
+   * Now supports rotation for multi-player scenarios
    */
+  import RotationControls from './RotationControls.svelte';
   
   interface Props {
     title: string;
@@ -15,6 +17,8 @@
   let { title, description, objective, instructions, onDismiss }: Props = $props();
   
   let overlayElement: HTMLDivElement | undefined = $state();
+  let rotation = $state<0 | 90 | 180 | 270>(0);
+  let isRotating = $state(false);
   
   // Auto-focus the overlay when it's mounted
   $effect(() => {
@@ -25,6 +29,18 @@
   
   function handleDismiss() {
     onDismiss();
+  }
+  
+  function handleRotate(newRotation: 0 | 90 | 180 | 270) {
+    if (newRotation !== rotation) {
+      isRotating = true;
+      rotation = newRotation;
+      
+      // Reset rotation animation flag after animation completes
+      setTimeout(() => {
+        isRotating = false;
+      }, 300);
+    }
   }
   
   function handleKeydown(event: KeyboardEvent) {
@@ -54,43 +70,49 @@
   tabindex="0"
   data-testid="scenario-introduction-overlay"
 >
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div 
-    class="scenario-modal" 
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={handleDialogKeydown}
-    role="document"
-    data-testid="scenario-introduction-modal"
-  >
-    <div class="modal-header">
-      <h1 id="scenario-title" class="scenario-title" data-testid="scenario-title">{title}</h1>
-    </div>
+  <div class="modal-wrapper">
+    <RotationControls currentRotation={rotation} onRotate={handleRotate} />
     
-    <div class="modal-content">
-      <p id="scenario-description" class="scenario-description" data-testid="scenario-description">{description}</p>
-      
-      <div class="objective-section">
-        <h2 class="section-label">Objective:</h2>
-        <p class="objective-text" data-testid="scenario-objective">{objective}</p>
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div 
+      class="scenario-modal"
+      class:rotating={isRotating}
+      style="transform: rotate({rotation}deg);"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={handleDialogKeydown}
+      role="document"
+      data-testid="scenario-introduction-modal"
+    >
+      <div class="modal-header">
+        <h1 id="scenario-title" class="scenario-title" data-testid="scenario-title">{title}</h1>
       </div>
       
-      {#if instructions}
-        <div class="instructions-section">
-          <h2 class="section-label">Instructions:</h2>
-          <p class="instructions-text" data-testid="scenario-instructions">{instructions}</p>
+      <div class="modal-content">
+        <p id="scenario-description" class="scenario-description" data-testid="scenario-description">{description}</p>
+        
+        <div class="objective-section">
+          <h2 class="section-label">Objective:</h2>
+          <p class="objective-text" data-testid="scenario-objective">{objective}</p>
         </div>
-      {/if}
-    </div>
-    
-    <div class="modal-actions">
-      <button 
-        class="start-button"
-        onclick={handleDismiss}
-        data-testid="start-scenario-button"
-        aria-label="Begin scenario"
-      >
-        Begin Adventure
-      </button>
+        
+        {#if instructions}
+          <div class="instructions-section">
+            <h2 class="section-label">Instructions:</h2>
+            <p class="instructions-text" data-testid="scenario-instructions">{instructions}</p>
+          </div>
+        {/if}
+      </div>
+      
+      <div class="modal-actions">
+        <button 
+          class="start-button"
+          onclick={handleDismiss}
+          data-testid="start-scenario-button"
+          aria-label="Begin scenario"
+        >
+          Begin Adventure
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -120,6 +142,10 @@
     }
   }
   
+  .modal-wrapper {
+    position: relative;
+  }
+  
   .scenario-modal {
     background: linear-gradient(135deg, #2d2020 0%, #1a1010 100%);
     border: 3px solid rgba(184, 134, 11, 0.5);
@@ -132,6 +158,11 @@
     display: flex;
     flex-direction: column;
     animation: slideIn 0.4s ease-out;
+    transition: transform 0.3s ease-out;
+  }
+  
+  .scenario-modal.rotating {
+    transition: transform 0.3s ease-out;
   }
   
   @keyframes slideIn {

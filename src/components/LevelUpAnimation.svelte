@@ -3,6 +3,7 @@
   import { AVAILABLE_HEROES } from '../store/types';
   import { assetPath } from '../utils';
   import { StarIcon, SwordIcon } from './icons';
+  import RotationControls from './RotationControls.svelte';
   
   interface Props {
     heroId: string;
@@ -16,9 +17,24 @@
   // Get hero info for display
   const hero = AVAILABLE_HEROES.find(h => h.id === heroId);
   
+  let rotation = $state<0 | 90 | 180 | 270>(0);
+  let isRotating = $state(false);
+  
   function handleDismiss() {
     if (onDismiss) {
       onDismiss();
+    }
+  }
+  
+  function handleRotate(newRotation: 0 | 90 | 180 | 270) {
+    if (newRotation !== rotation) {
+      isRotating = true;
+      rotation = newRotation;
+      
+      // Reset rotation animation flag after animation completes
+      setTimeout(() => {
+        isRotating = false;
+      }, 300);
     }
   }
   
@@ -40,20 +56,25 @@
   tabindex="0"
   data-testid="level-up-overlay"
 >
-  <div 
-    class="level-up-notification" 
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={(e) => {
-      // Only stop propagation for keys that are handled by the parent overlay
-      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
-        e.stopPropagation();
-      }
-    }}
-    role="dialog"
-    aria-labelledby="level-up-title"
-    tabindex="-1"
-    data-testid="level-up-notification"
-  >
+  <div class="notification-wrapper">
+    <RotationControls currentRotation={rotation} onRotate={handleRotate} />
+    
+    <div 
+      class="level-up-notification"
+      class:rotating={isRotating}
+      style="transform: rotate({rotation}deg);"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => {
+        // Only stop propagation for keys that are handled by the parent overlay
+        if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+          e.stopPropagation();
+        }
+      }}
+      role="dialog"
+      aria-labelledby="level-up-title"
+      tabindex="-1"
+      data-testid="level-up-notification"
+    >
     <div class="level-up-header">
       <span class="level-up-icon">✨</span>
       <h3 class="level-up-title" id="level-up-title" data-testid="level-up-title">LEVEL UP!</h3>
@@ -125,6 +146,7 @@
     
     <p class="dismiss-hint">Click anywhere to dismiss</p>
   </div>
+  </div>
 </div>
 
 <style>
@@ -142,6 +164,10 @@
     cursor: pointer;
   }
   
+  .notification-wrapper {
+    position: relative;
+  }
+  
   .level-up-notification {
     background: linear-gradient(145deg, #2e2a1a 0%, #2b2616 100%);
     border: 3px solid #ffd700;
@@ -152,6 +178,11 @@
     cursor: default;
     animation: levelUpBounce 0.5s ease-out;
     box-shadow: 0 0 40px rgba(255, 215, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease-out;
+  }
+  
+  .level-up-notification.rotating {
+    transition: transform 0.3s ease-out;
   }
   
   @keyframes levelUpBounce {

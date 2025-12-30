@@ -3,7 +3,9 @@
    * Confirmation Dialog Component
    * A modal dialog for confirming destructive actions
    * Follows the same pattern as MonsterCard and EncounterCard overlays
+   * Now supports rotation for multi-player scenarios
    */
+  import RotationControls from './RotationControls.svelte';
   
   interface Props {
     title: string;
@@ -24,6 +26,8 @@
   }: Props = $props();
   
   let overlayElement: HTMLDivElement | undefined = $state();
+  let rotation = $state<0 | 90 | 180 | 270>(0);
+  let isRotating = $state(false);
   
   // Auto-focus the overlay when it's mounted
   $effect(() => {
@@ -38,6 +42,18 @@
   
   function handleCancel() {
     onCancel();
+  }
+  
+  function handleRotate(newRotation: 0 | 90 | 180 | 270) {
+    if (newRotation !== rotation) {
+      isRotating = true;
+      rotation = newRotation;
+      
+      // Reset rotation animation flag after animation completes
+      setTimeout(() => {
+        isRotating = false;
+      }, 300);
+    }
   }
   
   function handleKeydown(event: KeyboardEvent) {
@@ -71,34 +87,40 @@
   tabindex="0"
   data-testid="confirmation-dialog-overlay"
 >
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div 
-    class="confirmation-dialog" 
-    onclick={(e) => e.stopPropagation()}
-    onkeydown={handleDialogKeydown}
-    role="document"
-    data-testid="confirmation-dialog"
-  >
-    <h2 id="dialog-title" class="dialog-title" data-testid="dialog-title">{title}</h2>
-    <p id="dialog-message" class="dialog-message" data-testid="dialog-message">{message}</p>
+  <div class="dialog-wrapper">
+    <RotationControls currentRotation={rotation} onRotate={handleRotate} />
     
-    <div class="dialog-actions">
-      <button 
-        class="dialog-button cancel-button"
-        onclick={handleCancel}
-        data-testid="dialog-cancel-button"
-        aria-label={cancelText}
-      >
-        {cancelText}
-      </button>
-      <button 
-        class="dialog-button confirm-button"
-        onclick={handleConfirm}
-        data-testid="dialog-confirm-button"
-        aria-label={confirmText}
-      >
-        {confirmText}
-      </button>
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div 
+      class="confirmation-dialog" 
+      class:rotating={isRotating}
+      style="transform: rotate({rotation}deg);"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={handleDialogKeydown}
+      role="document"
+      data-testid="confirmation-dialog"
+    >
+      <h2 id="dialog-title" class="dialog-title" data-testid="dialog-title">{title}</h2>
+      <p id="dialog-message" class="dialog-message" data-testid="dialog-message">{message}</p>
+      
+      <div class="dialog-actions">
+        <button 
+          class="dialog-button cancel-button"
+          onclick={handleCancel}
+          data-testid="dialog-cancel-button"
+          aria-label={cancelText}
+        >
+          {cancelText}
+        </button>
+        <button 
+          class="dialog-button confirm-button"
+          onclick={handleConfirm}
+          data-testid="dialog-confirm-button"
+          aria-label={confirmText}
+        >
+          {confirmText}
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -118,6 +140,10 @@
     backdrop-filter: blur(4px);
   }
   
+  .dialog-wrapper {
+    position: relative;
+  }
+  
   .confirmation-dialog {
     background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -126,6 +152,11 @@
     max-width: 500px;
     width: 90%;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease-out;
+  }
+  
+  .confirmation-dialog.rotating {
+    transition: transform 0.3s ease-out;
   }
   
   .dialog-title {
