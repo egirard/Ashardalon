@@ -94,7 +94,7 @@
 <style>
   .rotation-controls {
     position: absolute;
-    inset: -40px;
+    inset: 0;
     pointer-events: none;
   }
   
@@ -135,32 +135,32 @@
     transform: scale(1.05);
   }
   
-  /* Position arrows on each side */
+  /* Position arrows on each side - half overlapping the dialog */
   .rotation-arrow-top {
-    top: 0;
+    top: -18px; /* Half of 36px height */
     left: 50%;
     transform: translateX(-50%);
   }
   
   .rotation-arrow-bottom {
-    bottom: 0;
+    bottom: -18px; /* Half of 36px height */
     left: 50%;
     transform: translateX(-50%) rotate(180deg);
   }
   
   .rotation-arrow-left {
-    left: 0;
+    left: -18px; /* Half of 36px width */
     top: 50%;
     transform: translateY(-50%) rotate(-90deg);
   }
   
   .rotation-arrow-right {
-    right: 0;
+    right: -18px; /* Half of 36px width */
     top: 50%;
     transform: translateY(-50%) rotate(90deg);
   }
   
-  /* Hover state adjustments to maintain rotation */
+  /* Hover state adjustments to maintain rotation and centering */
   .rotation-arrow-top:hover {
     transform: translateX(-50%) scale(1.1);
   }
@@ -177,7 +177,7 @@
     transform: translateY(-50%) rotate(90deg) scale(1.1);
   }
   
-  /* Active state adjustments to maintain rotation */
+  /* Active state adjustments to maintain rotation and centering */
   .rotation-arrow-top.active:hover {
     transform: translateX(-50%) scale(1.05);
   }

@@ -293,8 +293,9 @@
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4), 0 0 0 20px rgba(0, 0, 0, 0.9); /* Extra shadow to visually cover arrows */
     transition: transform 0.3s ease-out;
+    position: relative;
   }
   
   .result-dialog.rotating {

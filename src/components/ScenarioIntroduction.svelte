@@ -157,11 +157,12 @@
     max-width: 700px;
     width: 90%;
     max-height: 85vh;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 20px rgba(184, 134, 11, 0.3);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 20px rgba(184, 134, 11, 0.3), 0 0 0 20px rgba(0, 0, 0, 0.9); /* Extra shadow to visually cover arrows */
     display: flex;
     flex-direction: column;
     animation: slideIn 0.4s ease-out;
     transition: transform 0.3s ease-out;
+    position: relative;
   }
   
   .scenario-modal.rotating {
