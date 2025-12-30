@@ -94,7 +94,8 @@
 <style>
   .rotation-controls {
     position: absolute;
-    inset: 0;
+    /* Extend the container by 18px on all sides to accommodate arrows */
+    inset: -18px;
     pointer-events: none;
   }
   
@@ -135,27 +136,27 @@
     transform: scale(1.05);
   }
   
-  /* Position arrows on each side - half overlapping the dialog */
+  /* Position arrows on each side - within the extended container */
   .rotation-arrow-top {
-    top: -18px; /* Half of 36px height */
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
   }
   
   .rotation-arrow-bottom {
-    bottom: -18px; /* Half of 36px height */
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%) rotate(180deg);
   }
   
   .rotation-arrow-left {
-    left: -18px; /* Half of 36px width */
+    left: 0;
     top: 50%;
     transform: translateY(-50%) rotate(-90deg);
   }
   
   .rotation-arrow-right {
-    right: -18px; /* Half of 36px width */
+    right: 0;
     top: 50%;
     transform: translateY(-50%) rotate(90deg);
   }
