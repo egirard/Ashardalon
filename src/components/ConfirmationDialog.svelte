@@ -145,6 +145,7 @@
   
   .dialog-wrapper {
     position: relative;
+    overflow: visible; /* Ensure rotation controls are not clipped */
   }
   
   .confirmation-dialog {

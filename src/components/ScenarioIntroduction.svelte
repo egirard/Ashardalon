@@ -147,6 +147,7 @@
   
   .modal-wrapper {
     position: relative;
+    overflow: visible; /* Ensure rotation controls are not clipped */
   }
   
   .scenario-modal {
