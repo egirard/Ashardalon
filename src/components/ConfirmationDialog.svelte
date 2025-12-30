@@ -7,6 +7,9 @@
    */
   import RotationControls from './RotationControls.svelte';
   
+  // Rotation animation duration (must match CSS transition)
+  const ROTATION_DURATION = 300; // milliseconds
+  
   interface Props {
     title: string;
     message: string;
@@ -52,7 +55,7 @@
       // Reset rotation animation flag after animation completes
       setTimeout(() => {
         isRotating = false;
-      }, 300);
+      }, ROTATION_DURATION);
     }
   }
   

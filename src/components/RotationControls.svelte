@@ -21,14 +21,6 @@
     270: 'right'
   } as const;
   
-  // Map edge to rotation
-  const edgeToRotation = {
-    bottom: 0,
-    left: 90,
-    top: 180,
-    right: 270
-  } as const;
-  
   // Current edge based on rotation
   let currentEdge = $derived(rotationToEdge[currentRotation]);
   
