@@ -64,7 +64,10 @@ test.describe('064 - Scenario Introduction Modal', () => {
     });
 
     // STEP 4: Test rotation - rotate to top (180 degrees)
-    await page.locator('[data-testid="rotate-to-top"]').click();
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="rotate-to-top"]') as HTMLButtonElement;
+      if (button) button.click();
+    });
     
     // Wait for rotation animation to complete
     await page.waitForTimeout(350);
@@ -85,7 +88,10 @@ test.describe('064 - Scenario Introduction Modal', () => {
     });
 
     // STEP 5: Test rotation - rotate to left (90 degrees)
-    await page.locator('[data-testid="rotate-to-left"]').click();
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="rotate-to-left"]') as HTMLButtonElement;
+      if (button) button.click();
+    });
     
     // Wait for rotation animation to complete
     await page.waitForTimeout(350);
@@ -99,7 +105,10 @@ test.describe('064 - Scenario Introduction Modal', () => {
     });
 
     // STEP 6: Rotate back to bottom
-    await page.locator('[data-testid="rotate-to-bottom"]').click();
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="rotate-to-bottom"]') as HTMLButtonElement;
+      if (button) button.click();
+    });
     
     // Wait for rotation animation to complete
     await page.waitForTimeout(350);

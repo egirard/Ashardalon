@@ -180,8 +180,9 @@
     max-width: 400px;
     cursor: default;
     animation: levelUpBounce 0.5s ease-out;
-    box-shadow: 0 0 40px rgba(255, 215, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 20px rgba(0, 0, 0, 0.9); /* Extra shadow to visually cover arrows */
     transition: transform 0.3s ease-out;
+    position: relative;
   }
   
   .level-up-notification.rotating {

@@ -154,8 +154,9 @@
     padding: 2rem;
     max-width: 500px;
     width: 90%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 20px rgba(0, 0, 0, 0.9); /* Extra shadow to visually cover arrows */
     transition: transform 0.3s ease-out;
+    position: relative;
   }
   
   .confirmation-dialog.rotating {
