@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
 
 test.describe('064 - Scenario Introduction Modal', () => {
-  test('scenario introduction is shown when map loads and can be dismissed', async ({ page }) => {
+  test('scenario introduction is shown when map loads and can be rotated and dismissed', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
     // STEP 1: Navigate to character selection screen
@@ -16,7 +16,6 @@ test.describe('064 - Scenario Introduction Modal', () => {
     // STEP 3: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
-    await dismissScenarioIntroduction(page);
 
     // Wait for scenario introduction to appear
     await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'visible' });
@@ -43,6 +42,16 @@ test.describe('064 - Scenario Introduction Modal', () => {
         // Verify dismiss button is visible
         await expect(page.locator('[data-testid="start-scenario-button"]')).toBeVisible();
         await expect(page.locator('[data-testid="start-scenario-button"]')).toContainText('Begin Adventure');
+        
+        // Verify rotation controls are visible
+        await expect(page.locator('[data-testid="rotation-controls"]')).toBeVisible();
+        await expect(page.locator('[data-testid="rotate-to-top"]')).toBeVisible();
+        await expect(page.locator('[data-testid="rotate-to-bottom"]')).toBeVisible();
+        await expect(page.locator('[data-testid="rotate-to-left"]')).toBeVisible();
+        await expect(page.locator('[data-testid="rotate-to-right"]')).toBeVisible();
+        
+        // Verify bottom is active by default (rotation 0)
+        await expect(page.locator('[data-testid="rotate-to-bottom"]')).toHaveClass(/active/);
 
         // Verify Redux store state - introduction not yet shown
         const storeState = await page.evaluate(() => {
@@ -54,7 +63,56 @@ test.describe('064 - Scenario Introduction Modal', () => {
       }
     });
 
-    // STEP 4: Dismiss the scenario introduction by clicking the button
+    // STEP 4: Test rotation - rotate to top (180 degrees)
+    await page.locator('[data-testid="rotate-to-top"]').click();
+    
+    // Wait for rotation animation to complete
+    await page.waitForTimeout(350);
+
+    await screenshots.capture(page, 'scenario-rotated-to-top', {
+      programmaticCheck: async () => {
+        // Verify the modal is rotated
+        const transform = await page.locator('[data-testid="scenario-introduction-modal"]').evaluate(el => 
+          window.getComputedStyle(el).transform
+        );
+        // Rotation 180 degrees should result in a specific transform matrix
+        expect(transform).not.toBe('none');
+        
+        // Verify top arrow is now active
+        await expect(page.locator('[data-testid="rotate-to-top"]')).toHaveClass(/active/);
+        await expect(page.locator('[data-testid="rotate-to-bottom"]')).not.toHaveClass(/active/);
+      }
+    });
+
+    // STEP 5: Test rotation - rotate to left (90 degrees)
+    await page.locator('[data-testid="rotate-to-left"]').click();
+    
+    // Wait for rotation animation to complete
+    await page.waitForTimeout(350);
+
+    await screenshots.capture(page, 'scenario-rotated-to-left', {
+      programmaticCheck: async () => {
+        // Verify left arrow is now active
+        await expect(page.locator('[data-testid="rotate-to-left"]')).toHaveClass(/active/);
+        await expect(page.locator('[data-testid="rotate-to-top"]')).not.toHaveClass(/active/);
+      }
+    });
+
+    // STEP 6: Rotate back to bottom
+    await page.locator('[data-testid="rotate-to-bottom"]').click();
+    
+    // Wait for rotation animation to complete
+    await page.waitForTimeout(350);
+
+    await screenshots.capture(page, 'scenario-rotated-back-to-bottom', {
+      programmaticCheck: async () => {
+        // Verify bottom arrow is now active again
+        await expect(page.locator('[data-testid="rotate-to-bottom"]')).toHaveClass(/active/);
+        await expect(page.locator('[data-testid="rotate-to-left"]')).not.toHaveClass(/active/);
+      }
+    });
+
+    // STEP 7: Dismiss the scenario introduction by clicking the button
     await page.locator('[data-testid="start-scenario-button"]').click();
     await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
 
@@ -81,7 +139,6 @@ test.describe('064 - Scenario Introduction Modal', () => {
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
-    await dismissScenarioIntroduction(page);
     await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'keyboard-dismiss-ready', {
