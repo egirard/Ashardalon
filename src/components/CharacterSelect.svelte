@@ -12,8 +12,8 @@
   let heroEdgeMap: Record<string, EdgePosition> = $state({});
   let powerCardSelections: Record<string, HeroPowerCardSelection> = $state({});
   
-  // Track which hero's power card selection modal is open
-  let powerCardSelectionHero: Hero | null = $state(null);
+  // Track which heroes have open power card selection panels
+  let openPowerSelectionHeroes: Set<string> = $state(new Set());
   
   // Subscribe to store updates
   $effect(() => {
@@ -75,12 +75,19 @@
     return selectedHeroes.length >= 1 && selectedHeroes.length <= 5 && allPowerCardsSelected();
   }
   
-  function openPowerCardSelection(hero: Hero) {
-    powerCardSelectionHero = hero;
+  function togglePowerCardSelection(hero: Hero) {
+    if (openPowerSelectionHeroes.has(hero.id)) {
+      openPowerSelectionHeroes.delete(hero.id);
+    } else {
+      openPowerSelectionHeroes.add(hero.id);
+    }
+    // Trigger reactivity by creating a new Set
+    openPowerSelectionHeroes = new Set(openPowerSelectionHeroes);
   }
   
-  function closePowerCardSelection() {
-    powerCardSelectionHero = null;
+  function closePowerCardSelection(heroId: string) {
+    openPowerSelectionHeroes.delete(heroId);
+    openPowerSelectionHeroes = new Set(openPowerSelectionHeroes);
   }
 </script>
 
@@ -102,6 +109,25 @@
             <span class="hero-name" data-testid="hero-name">{hero.name}</span>
             <span class="hero-class">{hero.heroClass}</span>
           </div>
+        </button>
+      {/each}
+      
+      <!-- Power selection buttons for heroes selected from this edge -->
+      {#each selectedHeroes.filter(h => heroEdgeMap[h.id] === 'top') as hero (hero.id)}
+        <button
+          class="power-select-button"
+          class:complete={isPowerCardSelectionComplete(hero.id)}
+          class:open={openPowerSelectionHeroes.has(hero.id)}
+          onclick={() => togglePowerCardSelection(hero)}
+          data-testid="select-powers-{hero.id}"
+          title="{hero.name}: {isPowerCardSelectionComplete(hero.id) ? 'Powers Selected' : 'Select Powers'}"
+        >
+          <img src={assetPath(hero.imagePath)} alt={hero.name} class="power-select-hero-image" />
+          {#if isPowerCardSelectionComplete(hero.id)}
+            <CheckIcon size={14} ariaLabel="Complete" />
+          {:else}
+            <span class="power-icon">⚡</span>
+          {/if}
         </button>
       {/each}
     </div>
@@ -128,6 +154,25 @@
             </div>
           </button>
         {/each}
+        
+        <!-- Power selection buttons for heroes selected from this edge -->
+        {#each selectedHeroes.filter(h => heroEdgeMap[h.id] === 'left') as hero (hero.id)}
+          <button
+            class="power-select-button"
+            class:complete={isPowerCardSelectionComplete(hero.id)}
+            class:open={openPowerSelectionHeroes.has(hero.id)}
+            onclick={() => togglePowerCardSelection(hero)}
+            data-testid="select-powers-{hero.id}"
+            title="{hero.name}: {isPowerCardSelectionComplete(hero.id) ? 'Powers Selected' : 'Select Powers'}"
+          >
+            <img src={assetPath(hero.imagePath)} alt={hero.name} class="power-select-hero-image" />
+            {#if isPowerCardSelectionComplete(hero.id)}
+              <CheckIcon size={14} ariaLabel="Complete" />
+            {:else}
+              <span class="power-icon">⚡</span>
+            {/if}
+          </button>
+        {/each}
       </div>
     </div>
 
@@ -136,36 +181,11 @@
       <h1>Select Your Heroes</h1>
       <p class="instructions">Choose 1-5 heroes for your adventure</p>
       <p class="instructions">Tap a hero from your edge of the table</p>
+      <p class="instructions">Then tap the power icon (⚡) to select powers</p>
       
       <div class="selection-info">
         <span data-testid="selected-count">{selectedHeroes.length} heroes selected</span>
       </div>
-      
-      <!-- Selected Heroes with Power Card Selection -->
-      {#if selectedHeroes.length > 0}
-        <div class="selected-heroes" data-testid="selected-heroes-list">
-          {#each selectedHeroes as hero (hero.id)}
-            <button
-              class="selected-hero-item"
-              class:complete={isPowerCardSelectionComplete(hero.id)}
-              onclick={() => openPowerCardSelection(hero)}
-              data-testid="select-powers-{hero.id}"
-            >
-              <img src={assetPath(hero.imagePath)} alt={hero.name} class="selected-hero-image" />
-              <div class="selected-hero-info">
-                <span class="selected-hero-name">{hero.name}</span>
-                {#if isPowerCardSelectionComplete(hero.id)}
-                  <span class="power-status complete">
-                    <CheckIcon size={14} ariaLabel="Complete" /> Powers Selected
-                  </span>
-                {:else}
-                  <span class="power-status incomplete">Select Powers</span>
-                {/if}
-              </div>
-            </button>
-          {/each}
-        </div>
-      {/if}
       
       <button
         class="start-button"
@@ -196,6 +216,25 @@
             </div>
           </button>
         {/each}
+        
+        <!-- Power selection buttons for heroes selected from this edge -->
+        {#each selectedHeroes.filter(h => heroEdgeMap[h.id] === 'right') as hero (hero.id)}
+          <button
+            class="power-select-button"
+            class:complete={isPowerCardSelectionComplete(hero.id)}
+            class:open={openPowerSelectionHeroes.has(hero.id)}
+            onclick={() => togglePowerCardSelection(hero)}
+            data-testid="select-powers-{hero.id}"
+            title="{hero.name}: {isPowerCardSelectionComplete(hero.id) ? 'Powers Selected' : 'Select Powers'}"
+          >
+            <img src={assetPath(hero.imagePath)} alt={hero.name} class="power-select-hero-image" />
+            {#if isPowerCardSelectionComplete(hero.id)}
+              <CheckIcon size={14} ariaLabel="Complete" />
+            {:else}
+              <span class="power-icon">⚡</span>
+            {/if}
+          </button>
+        {/each}
       </div>
     </div>
   </div>
@@ -219,19 +258,38 @@
           </div>
         </button>
       {/each}
+      
+      <!-- Power selection buttons for heroes selected from this edge -->
+      {#each selectedHeroes.filter(h => heroEdgeMap[h.id] === 'bottom') as hero (hero.id)}
+        <button
+          class="power-select-button"
+          class:complete={isPowerCardSelectionComplete(hero.id)}
+          class:open={openPowerSelectionHeroes.has(hero.id)}
+          onclick={() => togglePowerCardSelection(hero)}
+          data-testid="select-powers-{hero.id}"
+          title="{hero.name}: {isPowerCardSelectionComplete(hero.id) ? 'Powers Selected' : 'Select Powers'}"
+        >
+          <img src={assetPath(hero.imagePath)} alt={hero.name} class="power-select-hero-image" />
+          {#if isPowerCardSelectionComplete(hero.id)}
+            <CheckIcon size={14} ariaLabel="Complete" />
+          {:else}
+            <span class="power-icon">⚡</span>
+          {/if}
+        </button>
+      {/each}
     </div>
   </div>
 </div>
 
-<!-- Power Card Selection Modal -->
-{#if powerCardSelectionHero}
+<!-- Power Card Selection Panels - one for each open hero -->
+{#each selectedHeroes.filter(hero => openPowerSelectionHeroes.has(hero.id)) as hero (hero.id)}
   <PowerCardSelection
-    hero={powerCardSelectionHero}
-    selection={powerCardSelections[powerCardSelectionHero.id]}
-    onClose={closePowerCardSelection}
-    edge={heroEdgeMap[powerCardSelectionHero.id]}
+    hero={hero}
+    selection={powerCardSelections[hero.id]}
+    onClose={() => closePowerCardSelection(hero.id)}
+    edge={heroEdgeMap[hero.id]}
   />
-{/if}
+{/each}
 
 <style>
   .character-select {
@@ -371,6 +429,56 @@
   .hero-class {
     color: #aaa;
     font-size: 0.7rem;
+  }
+  
+  /* Power selection button - appears in edge zones next to selected heroes */
+  .power-select-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    background: rgba(255, 165, 0, 0.3);
+    border: 2px solid rgba(255, 165, 0, 0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+    min-width: 60px;
+    min-height: 80px;
+    gap: 0.25rem;
+  }
+  
+  .power-select-button:hover {
+    background: rgba(255, 165, 0, 0.4);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.5);
+  }
+  
+  .power-select-button.complete {
+    border-color: #4caf50;
+    background: rgba(76, 175, 80, 0.3);
+  }
+  
+  .power-select-button.complete:hover {
+    background: rgba(76, 175, 80, 0.4);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+  }
+  
+  .power-select-button.open {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  }
+  
+  .power-select-hero-image {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+  }
+  
+  .power-icon {
+    font-size: 1.5rem;
+    line-height: 1;
   }
   
   .selection-info {

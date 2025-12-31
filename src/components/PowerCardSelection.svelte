@@ -126,14 +126,6 @@
 </script>
 
 <div class="power-card-selection" data-testid="power-card-selection" data-edge={edge}>
-  <div 
-    class="modal-overlay" 
-    onclick={onClose} 
-    onkeydown={(e) => e.key === 'Escape' && onClose()}
-    role="button"
-    tabindex="-1"
-    aria-label="Close modal"
-  ></div>
   <div class="modal-content" style="transform: rotate({getEdgeRotation(edge)}deg);">
     <div class="modal-header">
       <h2>Select Power Cards for {hero.name}</h2>
@@ -293,44 +285,34 @@
 <style>
   .power-card-selection {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     z-index: 1000;
     display: flex;
     pointer-events: none;
   }
 
-  /* Position modal at the appropriate edge based on player position */
+  /* Position panel at the appropriate edge based on player position */
   .power-card-selection[data-edge="bottom"] {
-    justify-content: center;
-    align-items: flex-end;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .power-card-selection[data-edge="top"] {
-    justify-content: center;
-    align-items: flex-start;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .power-card-selection[data-edge="left"] {
-    justify-content: flex-start;
-    align-items: center;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .power-card-selection[data-edge="right"] {
-    justify-content: flex-end;
-    align-items: center;
-  }
-
-  .modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
     right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    pointer-events: auto;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .modal-content {
@@ -346,23 +328,6 @@
     flex-direction: column;
     pointer-events: auto;
     margin: 0.5rem;
-  }
-
-  /* Edge-specific spacing to keep modal away from edge zone */
-  .power-card-selection[data-edge="bottom"] .modal-content {
-    margin-bottom: 1rem;
-  }
-
-  .power-card-selection[data-edge="top"] .modal-content {
-    margin-top: 1rem;
-  }
-
-  .power-card-selection[data-edge="left"] .modal-content {
-    margin-left: 1rem;
-  }
-
-  .power-card-selection[data-edge="right"] .modal-content {
-    margin-right: 1rem;
   }
 
   .modal-header {
