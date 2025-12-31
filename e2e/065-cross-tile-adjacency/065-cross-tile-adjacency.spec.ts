@@ -146,10 +146,6 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         
         // Verify hero position
         expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
-        
-        console.log('[TEST] Hero at (3, 2) on start tile');
-        console.log('[TEST] Monster at local (0, 2) on east tile = global (4, 2)');
-        console.log('[TEST] Distance: |3-4| = 1, |2-2| = 0 -> Adjacent!');
       }
     });
 
@@ -160,7 +156,6 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
         const panelVisible = await attackPanel.isVisible();
         
-        console.log('[TEST] Attack panel visible:', panelVisible);
         expect(panelVisible).toBe(true);
         
         // Verify attack cards are shown
@@ -168,12 +163,10 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         await expect(attackCardList).toBeVisible();
         
         const attackCards = await attackCardList.locator('button[data-testid^="attack-card-"]').count();
-        console.log('[TEST] Attack cards in panel:', attackCards);
         expect(attackCards).toBeGreaterThan(0);
         
         // Verify the monster shows up in the targetable list
         const monsterTargets = await attackPanel.locator('[data-testid^="monster-target-"]').count();
-        console.log('[TEST] Targetable monsters:', monsterTargets);
         expect(monsterTargets).toBeGreaterThan(0);
       }
     });
@@ -237,8 +230,6 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         // Verify attack panel still visible
         const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
         await expect(attackPanel).toBeVisible();
-        
-        console.log('[TEST] Cross-tile adjacency working for north tile too!');
       }
     });
   });

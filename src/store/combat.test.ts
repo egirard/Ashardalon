@@ -476,10 +476,8 @@ describe('getAdjacentMonsters', () => {
 
       const monstersOnEdge: MonsterState[] = [
         // Monster on north tile at local position (2, 3), which is global (2, -1)
-        // North tile bounds: minX=0, maxX=3, minY=-4, maxY=-1
-        // Local (2, 3) means: globalX = -4 + 2 = -2? No wait...
-        // North tile at row=-1, col=0: minX=0, minY=-4
-        // Local (2, 3) means: global (0+2, -4+3) = (2, -1)
+        // North tile (row=-1, col=0) bounds: minX=0, maxX=3, minY=-4, maxY=-1
+        // Global position = (minX + localX, minY + localY) = (0+2, -4+3) = (2, -1)
         { monsterId: 'kobold', instanceId: 'kobold-north', position: { x: 2, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'north-tile' },
       ];
 
@@ -514,7 +512,9 @@ describe('getAdjacentMonsters', () => {
 
       const monstersOnEdge: MonsterState[] = [
         // Monster on east tile at local position (2, 2), which is global (6, 2)
-        // Hero is at (1, 2), so distance is |1-6|=5, not adjacent
+        // East tile (col=1, row=0) bounds: minX=4, maxX=7, minY=0, maxY=3
+        // Global position = (minX + localX, minY + localY) = (4+2, 0+2) = (6, 2)
+        // Hero is at (1, 2), so distance is |1-6|=5 squares (not adjacent)
         { monsterId: 'kobold', instanceId: 'kobold-far', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'east-tile' },
       ];
 
