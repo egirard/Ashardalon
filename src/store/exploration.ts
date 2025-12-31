@@ -184,18 +184,26 @@ export function calculateTileRotation(explorationDirection: Direction, tileDef: 
     east: 270,
   };
   
-  const rotation = arrowRotationMap[connectingEdge];
+  const preferredRotation = arrowRotationMap[connectingEdge];
   
   // Verify that this rotation places an opening at the connecting edge
-  const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+  const rotatedEdges = rotateEdges(tileDef.defaultEdges, preferredRotation);
   if (rotatedEdges[connectingEdge] === 'open') {
-    return rotation;
+    return preferredRotation;
   }
   
-  // If the preferred rotation doesn't work, fall back to finding any rotation that works
-  // This shouldn't happen with properly configured tiles, but provides safety
+  // If the preferred rotation doesn't work, try rotations in order of preference
+  // (minimizing angular distance from preferred rotation)
   const rotations = [0, 90, 180, 270];
-  for (const fallbackRotation of rotations) {
+  
+  // Sort rotations by angular distance from preferred rotation
+  const sortedRotations = rotations.sort((a, b) => {
+    const distA = Math.min(Math.abs(a - preferredRotation), 360 - Math.abs(a - preferredRotation));
+    const distB = Math.min(Math.abs(b - preferredRotation), 360 - Math.abs(b - preferredRotation));
+    return distA - distB;
+  });
+  
+  for (const fallbackRotation of sortedRotations) {
     const rotatedEdges = rotateEdges(tileDef.defaultEdges, fallbackRotation);
     if (rotatedEdges[connectingEdge] === 'open') {
       return fallbackRotation;
