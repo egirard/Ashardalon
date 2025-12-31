@@ -8,11 +8,12 @@
   interface Props {
     message: string;
     onDismiss: () => void;
+    initialRotation?: 0 | 90 | 180 | 270;
   }
   
-  let { message, onDismiss }: Props = $props();
+  let { message, onDismiss, initialRotation = 0 }: Props = $props();
   
-  let rotation = $state<0 | 90 | 180 | 270>(0);
+  let rotation = $state<0 | 90 | 180 | 270>(initialRotation);
   let isRotating = $state(false);
   
   function handleRotate(newRotation: 0 | 90 | 180 | 270) {

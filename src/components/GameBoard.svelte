@@ -865,6 +865,23 @@
     }
   }
 
+  // Convert edge position to dialog rotation (0, 90, 180, 270)
+  // Used for dialog components that need to face the current player
+  function getDialogRotationFromEdge(edge: string): 0 | 90 | 180 | 270 {
+    switch (edge) {
+      case "bottom":
+        return 0;
+      case "left":
+        return 90;
+      case "top":
+        return 180;
+      case "right":
+        return 270;
+      default:
+        return 0;
+    }
+  }
+
   // Handle tile click to show movement options
   function handleTileClick(event: MouseEvent) {
     // Only respond to clicks during hero phase
@@ -2319,9 +2336,12 @@
 
   <!-- Encounter Effect Notification (shown after special encounter card effects) -->
   {#if encounterEffectMessage}
+    {@const activeEdge = getActivePlayerEdge()}
+    {@const initialRotation = getDialogRotationFromEdge(activeEdge)}
     <EncounterEffectNotification
       message={encounterEffectMessage}
       onDismiss={handleDismissEncounterEffectMessage}
+      initialRotation={initialRotation}
     />
   {/if}
 
