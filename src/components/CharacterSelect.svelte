@@ -181,7 +181,7 @@
       <h1>Select Your Heroes</h1>
       <p class="instructions">Choose 1-5 heroes for your adventure</p>
       <p class="instructions">Tap a hero from your edge of the table</p>
-      <p class="instructions">Then tap the power icon (⚡) to select powers</p>
+      <p class="instructions">Optionally tap the power icon (⚡) to customize powers</p>
       
       <div class="selection-info">
         <span data-testid="selected-count">{selectedHeroes.length} heroes selected</span>
