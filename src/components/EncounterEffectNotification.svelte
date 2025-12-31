@@ -1,5 +1,9 @@
 <script lang="ts">
   import { LightningIcon } from './icons';
+  import RotationControls from './RotationControls.svelte';
+  
+  // Rotation animation duration (must match CSS transition)
+  const ROTATION_DURATION = 300; // milliseconds
   
   interface Props {
     message: string;
@@ -7,27 +11,51 @@
   }
   
   let { message, onDismiss }: Props = $props();
+  
+  let rotation = $state<0 | 90 | 180 | 270>(0);
+  let isRotating = $state(false);
+  
+  function handleRotate(newRotation: 0 | 90 | 180 | 270) {
+    if (newRotation !== rotation) {
+      isRotating = true;
+      rotation = newRotation;
+      
+      // Reset rotation animation flag after animation completes
+      setTimeout(() => {
+        isRotating = false;
+      }, ROTATION_DURATION);
+    }
+  }
 </script>
 
 <div class="notification-overlay" data-testid="encounter-effect-notification">
-  <div class="notification-card">
-    <h2 class="notification-title" data-testid="notification-title">Encounter Effect</h2>
+  <div class="dialog-wrapper">
+    <RotationControls currentRotation={rotation} onRotate={handleRotate} />
     
-    <div class="icon-section">
-      <LightningIcon size={48} ariaLabel="Effect" />
-    </div>
-    
-    <div class="message-section" data-testid="effect-message">
-      {message}
-    </div>
-    
-    <button 
-      class="continue-button"
-      data-testid="dismiss-effect-notification"
-      onclick={onDismiss}
+    <div 
+      class="notification-card"
+      class:rotating={isRotating}
+      style="transform: rotate({rotation}deg);"
+      data-testid="notification-card"
     >
-      Continue
-    </button>
+      <h2 class="notification-title" data-testid="notification-title">Encounter Effect</h2>
+      
+      <div class="icon-section">
+        <LightningIcon size={48} ariaLabel="Effect" />
+      </div>
+      
+      <div class="message-section" data-testid="effect-message">
+        {message}
+      </div>
+      
+      <button 
+        class="continue-button"
+        data-testid="dismiss-effect-notification"
+        onclick={onDismiss}
+      >
+        Continue
+      </button>
+    </div>
   </div>
 </div>
 
@@ -51,6 +79,11 @@
     to { opacity: 1; }
   }
   
+  .dialog-wrapper {
+    position: relative;
+    overflow: visible; /* Ensure rotation controls are not clipped */
+  }
+  
   .notification-card {
     background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%);
     border: 3px solid #8b5cf6;
@@ -61,6 +94,12 @@
     max-width: 400px;
     box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
     animation: slideIn 0.3s ease-out;
+    transition: transform 0.3s ease-out;
+    position: relative;
+  }
+  
+  .notification-card.rotating {
+    transition: transform 0.3s ease-out;
   }
   
   @keyframes slideIn {
