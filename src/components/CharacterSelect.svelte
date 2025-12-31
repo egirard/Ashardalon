@@ -105,8 +105,9 @@
               class:open={openPowerSelectionHeroes.has(hero.id)}
               onclick={() => togglePowerCardSelection(hero)}
               data-testid="select-powers-{hero.id}"
+              aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
             >
-              Select Powers
+              {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
             </button>
           {/if}
           
@@ -144,8 +145,9 @@
                 class:open={openPowerSelectionHeroes.has(hero.id)}
                 onclick={() => togglePowerCardSelection(hero)}
                 data-testid="select-powers-{hero.id}"
+                aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
               >
-                Select Powers
+                {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
               </button>
             {/if}
             
@@ -202,8 +204,9 @@
                 class:open={openPowerSelectionHeroes.has(hero.id)}
                 onclick={() => togglePowerCardSelection(hero)}
                 data-testid="select-powers-{hero.id}"
+                aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
               >
-                Select Powers
+                {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
               </button>
             {/if}
             
@@ -240,8 +243,9 @@
               class:open={openPowerSelectionHeroes.has(hero.id)}
               onclick={() => togglePowerCardSelection(hero)}
               data-testid="select-powers-{hero.id}"
+              aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
             >
-              Select Powers
+              {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
             </button>
           {/if}
           
@@ -249,7 +253,7 @@
             class="hero-card"
             class:selected={isSelectedOnEdge(hero.id, 'bottom')}
             class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom')}
-            data-testid="hero-{hero.id}"
+            data-testid="hero-{hero.id}-bottom"
             onclick={() => handleHeroClick(hero.id, 'bottom')}
             disabled={isSelectedOnOtherEdge(hero.id, 'bottom')}
           >
@@ -429,7 +433,7 @@
     font-size: 0.75rem;
     font-weight: bold;
     background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-    color: #1a1a2e;
+    color: #000;
     border: 2px solid rgba(255, 165, 0, 0.5);
     border-radius: 6px;
     cursor: pointer;
@@ -446,7 +450,7 @@
   .power-select-button-above.complete {
     border-color: #4caf50;
     background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-    color: white;
+    color: #fff;
   }
   
   .power-select-button-above.complete:hover {
