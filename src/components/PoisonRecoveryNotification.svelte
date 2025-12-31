@@ -1,16 +1,20 @@
 <script lang="ts">
+  import type { EdgePosition } from '../store/heroesSlice';
+  import { getEdgeRotation } from '../utils';
+  
   interface Props {
     heroName: string;
     roll: number;
     recovered: boolean;
     onDismiss: () => void;
+    edge?: EdgePosition;
   }
   
-  let { heroName, roll, recovered, onDismiss }: Props = $props();
+  let { heroName, roll, recovered, onDismiss, edge = 'bottom' }: Props = $props();
 </script>
 
 <div class="notification-overlay" data-testid="poison-recovery-notification">
-  <div class="notification-card" class:success={recovered} class:failure={!recovered}>
+  <div class="notification-card" class:success={recovered} class:failure={!recovered} style="transform: rotate({getEdgeRotation(edge)}deg);">
     <h2 class="notification-title" data-testid="notification-title">
       {recovered ? 'Poison Recovered!' : 'Still Poisoned'}
     </h2>

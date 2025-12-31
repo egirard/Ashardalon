@@ -2312,11 +2312,13 @@
   <!-- Poisoned Damage Notification (shown at start of turn if poisoned) -->
   {#if poisonedDamageNotification}
     {@const hero = AVAILABLE_HEROES.find(h => h.id === poisonedDamageNotification.heroId)}
+    {@const heroEdge = heroEdgeMap[poisonedDamageNotification.heroId] || 'bottom'}
     {#if hero}
       <PoisonedDamageNotification
         heroName={hero.name}
         damage={poisonedDamageNotification.damage}
         onDismiss={handleDismissPoisonedDamageNotification}
+        edge={heroEdge}
       />
     {/if}
   {/if}
@@ -2324,12 +2326,14 @@
   <!-- Poison Recovery Notification (shown at end of turn for poisoned heroes) -->
   {#if poisonRecoveryNotification}
     {@const hero = AVAILABLE_HEROES.find(h => h.id === poisonRecoveryNotification.heroId)}
+    {@const heroEdge = heroEdgeMap[poisonRecoveryNotification.heroId] || 'bottom'}
     {#if hero}
       <PoisonRecoveryNotification
         heroName={hero.name}
         roll={poisonRecoveryNotification.roll}
         recovered={poisonRecoveryNotification.recovered}
         onDismiss={handleDismissPoisonRecoveryNotification}
+        edge={heroEdge}
       />
     {/if}
   {/if}
