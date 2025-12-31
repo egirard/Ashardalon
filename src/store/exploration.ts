@@ -156,34 +156,53 @@ export function getNewTilePosition(
 
 /**
  * Calculate the rotation needed for a new tile so that one of its openings
- * aligns with the connecting edge.
+ * aligns with the connecting edge AND the arrow points towards the hero.
+ * 
+ * The arrow on a tile (black triangle) points south in the default orientation (0 degrees).
+ * When a hero explores, the arrow should point back towards the hero, which means
+ * it should point towards the connecting edge.
  * 
  * @param explorationDirection - The direction the hero explored from (on the existing tile)
  * @param tileDef - The tile definition with default edge configuration
- * @returns The rotation in degrees (0, 90, 180, or 270) needed to align an opening with the connecting edge
+ * @returns The rotation in degrees (0, 90, 180, or 270) needed to align the arrow with the connecting edge
  */
 export function calculateTileRotation(explorationDirection: Direction, tileDef: TileDefinition): number {
   // The connecting edge on the new tile is opposite to the exploration direction
   const connectingEdge = getOppositeDirection(explorationDirection);
   
-  // Find which edges have openings in the default orientation
-  const openEdges: Direction[] = [];
-  if (tileDef.defaultEdges.north === 'open') openEdges.push('north');
-  if (tileDef.defaultEdges.south === 'open') openEdges.push('south');
-  if (tileDef.defaultEdges.east === 'open') openEdges.push('east');
-  if (tileDef.defaultEdges.west === 'open') openEdges.push('west');
+  // Arrow points south by default (0 degrees)
+  // We need to rotate the tile so the arrow points towards the connecting edge
+  // Rotation is clockwise:
+  // - 0°: arrow points south
+  // - 90°: arrow points west
+  // - 180°: arrow points north
+  // - 270°: arrow points east
+  const arrowRotationMap: Record<Direction, number> = {
+    south: 0,
+    west: 90,
+    north: 180,
+    east: 270,
+  };
   
-  // For each possible rotation, check if it would place an opening at the connecting edge
+  const rotation = arrowRotationMap[connectingEdge];
+  
+  // Verify that this rotation places an opening at the connecting edge
+  const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+  if (rotatedEdges[connectingEdge] === 'open') {
+    return rotation;
+  }
+  
+  // If the preferred rotation doesn't work, fall back to finding any rotation that works
+  // This shouldn't happen with properly configured tiles, but provides safety
   const rotations = [0, 90, 180, 270];
-  
-  for (const rotation of rotations) {
-    const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+  for (const fallbackRotation of rotations) {
+    const rotatedEdges = rotateEdges(tileDef.defaultEdges, fallbackRotation);
     if (rotatedEdges[connectingEdge] === 'open') {
-      return rotation;
+      return fallbackRotation;
     }
   }
   
-  // Fallback: if no opening can be aligned (shouldn't happen), return 0
+  // Final fallback: if no opening can be aligned (shouldn't happen), return 0
   return 0;
 }
 

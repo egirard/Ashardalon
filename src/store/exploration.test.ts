@@ -107,6 +107,39 @@ describe("exploration", () => {
       const rotatedEdges = rotateEdges(testTileDef.defaultEdges, rotation);
       expect(rotatedEdges.east).toBe('open');
     });
+
+    describe("arrow direction", () => {
+      // Arrow points south by default (0 degrees)
+      // Arrow should point towards the connecting edge (towards the hero)
+      
+      it("should rotate arrow to point south when exploring north (0 degrees)", () => {
+        // Hero explores north, new tile connects via south edge
+        // Arrow should point south (towards hero) - no rotation needed
+        const rotation = calculateTileRotation("north", testTileDef);
+        expect(rotation).toBe(0);
+      });
+
+      it("should rotate arrow to point north when exploring south (180 degrees)", () => {
+        // Hero explores south, new tile connects via north edge
+        // Arrow should point north (towards hero) - 180 degree rotation
+        const rotation = calculateTileRotation("south", testTileDef);
+        expect(rotation).toBe(180);
+      });
+
+      it("should rotate arrow to point west when exploring east (90 degrees)", () => {
+        // Hero explores east, new tile connects via west edge
+        // Arrow should point west (towards hero) - 90 degree clockwise rotation
+        const rotation = calculateTileRotation("east", testTileDef);
+        expect(rotation).toBe(90);
+      });
+
+      it("should rotate arrow to point east when exploring west (270 degrees)", () => {
+        // Hero explores west, new tile connects via east edge
+        // Arrow should point east (towards hero) - 270 degree clockwise rotation
+        const rotation = calculateTileRotation("west", testTileDef);
+        expect(rotation).toBe(270);
+      });
+    });
   });
 
   describe("checkExploration", () => {
