@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () => {
   test('player selects hero from bottom edge and starts game', async ({ page }) => {
@@ -40,11 +40,14 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
         // Verify Quinn is selected on bottom edge (has 'selected' class)
         await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
         
-        // Verify start button is still disabled (powers not selected yet)
-        await expect(page.locator('[data-testid="start-game-button"]')).toBeDisabled();
+        // Verify start button is enabled (powers are pre-selected by default)
+        await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
         
         // Verify selected count shows 1
         await expect(page.locator('[data-testid="selected-count"]')).toContainText('1 heroes selected');
+        
+        // Verify power selection button appeared at the bottom edge
+        await expect(page.locator('[data-testid="select-powers-quinn"]')).toBeVisible();
         
         // Verify Redux store state
         const storeState = await page.evaluate(() => {
@@ -52,22 +55,13 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
         });
         expect(storeState.heroes.selectedHeroes).toHaveLength(1);
         expect(storeState.heroes.selectedHeroes[0].id).toBe('quinn');
+        // Verify powers are pre-selected
+        expect(storeState.heroes.powerCardSelections['quinn']).toBeDefined();
+        expect(storeState.heroes.powerCardSelections['quinn'].utility).not.toBeNull();
+        expect(storeState.heroes.powerCardSelections['quinn'].atWills).toHaveLength(2);
+        expect(storeState.heroes.powerCardSelections['quinn'].daily).not.toBeNull();
       }
     });
-
-    // STEP 2b: Select power cards for Quinn (required before starting)
-    await page.locator('[data-testid="select-powers-quinn"]').click();
-    await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
-    
-    // Select utility, 2 at-wills, and daily
-    await page.locator('[data-testid="utility-card-8"]').click();
-    await page.locator('[data-testid="atwill-card-2"]').click();
-    await page.locator('[data-testid="atwill-card-3"]').click();
-    await page.locator('[data-testid="daily-card-5"]').click();
-    
-    // Close the modal
-    await page.locator('[data-testid="done-power-selection"]').click();
-    await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     // STEP 3: Start the game
     await page.locator('[data-testid="start-game-button"]').click();

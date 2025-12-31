@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('022 - Multi-Player UI Orientation', () => {
   test('players from different edges see their dashboards at their edges', async ({ page }) => {
