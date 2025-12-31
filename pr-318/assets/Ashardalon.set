@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TileSet xmlns="tileset" version="1" 
+   basetilesets="Ashardalon\gui.set,
+                 Ashardalon\NormalTiles.set,
+                 Ashardalon\ChamberTiles.set,
+                 Ashardalon\NamedTiles.set,
+                 Ashardalon\Tokens.set,
+                 Ashardalon\Monsters.set,
+                 Ashardalon\Villains.set,
+                 Ashardalon\Heroes.set">
+</TileSet>
