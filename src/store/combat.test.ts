@@ -412,6 +412,120 @@ describe('getAdjacentMonsters', () => {
     
     expect(adjacent).toHaveLength(0);
   });
+
+  describe('cross-tile adjacency with dungeon', () => {
+    it('should find monsters on adjacent tile when adjacent in global coordinates', () => {
+      // Hero at position (3, 2) on start tile (global coords)
+      // Monster at position (0, 2) on east tile (local coords), which is (4, 2) in global coords
+      // These positions are adjacent: distance is 1 square (|3-4|=1, |2-2|=0)
+      const dungeon: DungeonState = {
+        tiles: [
+          {
+            id: 'start-tile',
+            tileType: 'start',
+            position: { col: 0, row: 0 },
+            rotation: 0,
+          },
+          {
+            id: 'east-tile',
+            tileType: 'black-1',
+            position: { col: 1, row: 0 },
+            rotation: 0,
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const monstersOnEdge: MonsterState[] = [
+        // Monster on east tile at local position (0, 2), which is global (4, 2)
+        { monsterId: 'kobold', instanceId: 'kobold-edge', position: { x: 0, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'east-tile' },
+      ];
+
+      const heroGlobalPos = { x: 3, y: 2 }; // On start tile, at eastern edge
+
+      const adjacent = getAdjacentMonsters(heroGlobalPos, monstersOnEdge, 'start-tile', dungeon);
+      
+      // Should find the monster on the adjacent tile since it's adjacent in global coordinates
+      expect(adjacent).toHaveLength(1);
+      expect(adjacent[0].instanceId).toBe('kobold-edge');
+    });
+
+    it('should find monsters on north tile when adjacent in global coordinates', () => {
+      // Hero at position (2, 0) on start tile (global coords)
+      // Monster at position (2, 3) on north tile (local coords), which is (2, -1) in global coords
+      // These positions are adjacent: distance is 1 square (|2-2|=0, |0-(-1)|=1)
+      const dungeon: DungeonState = {
+        tiles: [
+          {
+            id: 'start-tile',
+            tileType: 'start',
+            position: { col: 0, row: 0 },
+            rotation: 0,
+          },
+          {
+            id: 'north-tile',
+            tileType: 'black-1',
+            position: { col: 0, row: -1 },
+            rotation: 0,
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const monstersOnEdge: MonsterState[] = [
+        // Monster on north tile at local position (2, 3), which is global (2, -1)
+        // North tile bounds: minX=0, maxX=3, minY=-4, maxY=-1
+        // Local (2, 3) means: globalX = -4 + 2 = -2? No wait...
+        // North tile at row=-1, col=0: minX=0, minY=-4
+        // Local (2, 3) means: global (0+2, -4+3) = (2, -1)
+        { monsterId: 'kobold', instanceId: 'kobold-north', position: { x: 2, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'north-tile' },
+      ];
+
+      const heroGlobalPos = { x: 2, y: 0 }; // On start tile, at northern edge
+
+      const adjacent = getAdjacentMonsters(heroGlobalPos, monstersOnEdge, 'start-tile', dungeon);
+      
+      // Should find the monster on the adjacent tile since it's adjacent in global coordinates
+      expect(adjacent).toHaveLength(1);
+      expect(adjacent[0].instanceId).toBe('kobold-north');
+    });
+
+    it('should not find monsters that are not adjacent', () => {
+      const dungeon: DungeonState = {
+        tiles: [
+          {
+            id: 'start-tile',
+            tileType: 'start',
+            position: { col: 0, row: 0 },
+            rotation: 0,
+          },
+          {
+            id: 'east-tile',
+            tileType: 'black-1',
+            position: { col: 1, row: 0 },
+            rotation: 0,
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const monstersOnEdge: MonsterState[] = [
+        // Monster on east tile at local position (2, 2), which is global (6, 2)
+        // Hero is at (1, 2), so distance is |1-6|=5, not adjacent
+        { monsterId: 'kobold', instanceId: 'kobold-far', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'east-tile' },
+      ];
+
+      const heroGlobalPos = { x: 1, y: 2 }; // On start tile
+
+      const adjacent = getAdjacentMonsters(heroGlobalPos, monstersOnEdge, 'start-tile', dungeon);
+      
+      // Should NOT find the monster since it's not adjacent
+      expect(adjacent).toHaveLength(0);
+    });
+  });
 });
 
 describe('checkHealingSurgeNeeded', () => {
