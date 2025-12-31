@@ -1,0 +1,83 @@
+Number,Name,Type,Extra information,Rule,Gold Price
+134,+1 Magic Sword,Item,The razor-sharp edge of this sword cuts with just the slightest amount of pressure.,Play this item immediately.,"1,000"
+,,,,You gain a +1 bonus to attack rolls against adjacent Monsters while this item is in play.,
+135,+2 Magic Sword,Item,This weapon is forged using ancient dwarven secrets.,Play this item immediately.,"1,500"
+,,,,You gain a +2 bonus to attack rolls against adjacent Monsters while this item is in play.,
+136,Amulet of Protection,Item,This magic amulet deflects attacks.,Play this item immediately.,"1,000"
+,,,,You gain a +1 bonus to AC while this item is in play.,
+137,Blessed Shield,Item,The blessing of Bahamut protects you and your allies.,Play this item immediately.,"2,000"
+,,,,You and all Heroes on your tile gain a +2 bonus to AC while this item is in play.,
+138,Boots of Striding,Item,These simple leather boots make you feel light on your feet.,Play this item immediately.,"1,000"
+,,,,You gain a +1 bonus to Speed while this item is in play.,
+139,Box of Caltrops,Item,This wooden box contains metal caltrops with razor-sharp tips.,Use during your Hero Phase.,"1,000"
+,,,,Place three Caltrop tokens on any three squares on your tile.,
+,,,,"When a Monster is placed on a square with a Caltrop token, remove that token and deal 1 damage to the Monster.",
+,,,,Discard this card after using it.,
+140,Bracers of Defense,Item,These enchanted armbands absorb damage.,Use when you take damage.,"1,000"
+,,,,Reduce the damage from the attack by 1.,
+,,,,Flip this card over after using the item.,
+141,Crossbow of Speed,Item,The ability to rapidly reload this crossbow makes it an incredibly deadly weapon.,Use during your Hero Phase.,"2,000"
+,,,,"Instead of moving, you can attack a Monster within 1 tile with a rapidly fired bolt.",
+,,,,Attack: +4 / Damage: 1,
+142,Dragontooth Pick,Item,This weapon punches through even the thickest armor.,Play this item immediately.,"1,500"
+,,,,"You gain a +1 bonus to attack rolls against adjacent Monsters while this item is in play.
+If you roll a natural 19 or 20 on an attack, you deal +1 damage with that attack.",
+143,Dwarven Hammer,Item,This hammer is deadly in the hands of a proficient duelist.,Play this item immediately.,"1,500"
+,,,,"You gain a +1 bonus to attack rolls against adjacent Monsters while this item is in play.
+If you choose not to move during your Hero Phase, this bonus increases to +3 until the end of your Hero Phase.",
+144,Elven Cloak,Item,"This ornate cloak blends with your surroundings, giving you the element of surprise.",Use before drawing a Monster Card during your Exploration Phase.,600
+,,,,The player to your left places that Monster instead.,
+145,Flying Carpet,Item,This ten-foot square carpet is woven with intricate stitching and strange runes.,Use during your Hero Phase.,"1,000"
+,,,,"Place the Flying Carpet marker on any tile without a marker.
+Instead of moving, you can move the Flying Carpet marker to any tile within 1 tile of it. Any Hero standing on the Flying Carpet moves with the carpet. ",
+146,Gauntlets of Ogre Power,Item,These metal gauntlets grant the wielder incredible strength.,Play this item immediately.,"2,000"
+,,,,You deal +1 damage when you hit an adjacent Monster with an attack while this item is in play.,
+147,Lucky Charm,Item,A little luck goes a long way.,Use this item after any die roll.,600
+148,,,,Reroll the die.,
+,,,,Discard this card after using it.,
+149,Pearl of Power,Item,This pearl pulsates with raw power.,Use during your Hero Phase.,"2,000"
+,,,,Flip up one of your used powers or items.,
+,,,,Flip this card over after you use the item.,
+150,Potion of Healing,Item,A grievous wound fades as you drink this potion.,Use this item during your Hero Phase.,600
+151,,,,You or an adjacent Hero regains 2 Hit Points.,
+152,,,,Discard this card after using it.,
+153,Potion of Recovery,Item,This elixir clears the mind and purifies the body.,Use at any time.,300
+154,,,,End one condition on your Hero or an adjacent Hero.,
+,,,,Discard this card after using it.,
+155,Potion of Rejuvenation,Item,You feel relaxed and refreshed after drinking this potion.,Use this item during your Hero Phase.,"1,000"
+,,,,Flip up one of your used powers.,
+,,,,Discard this card after using it.,
+156,Potion of Speed,Item,Arcane energy provides you with unnatural swiftness.,Use during your Hero Phase.,300
+,,,,Move up to your speed.,
+,,,,Discard this card after using it.,
+157,Ring of Shooting Stars,Item,Bolts of energy fly from this enchanted ring.,Use during your Hero Phase.,"2,000"
+,,,,Attack 1 Monster within 2 tiles of you. This attack does not count as an attack action.,
+,,,,Attack: +8 / Damage: 1,
+,,,,Flip this card over after you use the item.,
+158,Scroll of Monster Control,Item,You temporarily take control of your foe.,Use during your Villain Phase when choosing a Monster's action.,"2,000"
+,,,,"The Monster does not act normally. Instead, place the Monster in any square within 1 tile of it. If it is adjacent to another Monster, attack that Monster.",
+,,,,Attack: +9 / Damage: 1,
+,,,,Discard this card after using it.,
+159,Shield of Protection,Item,This enchanted shield grants magical protection.,Play this item immediately.,"1,000"
+,,,,You gain a +1 bonus to AC while this item is in play.,
+160,Staff of the Elements,Item,This ebony staff is topped with a crystal ball that flickers with elemental power.,Play this item immediately.,"1,500"
+,,,,You gain a +2 bonus to attack rolls when attacking Monsters within 1 tile of you while this item is in play.,
+161, Thieves' Tools,Item,"Small pins, wrenches, and picks are organized in a leather pouch.",Play this item immediately.,600
+,,,,You gain a +4 bonus to rolls to disable Traps while this item is in play.,
+162,Throwing Shield,Item,"You throw your shield at a nearby enemy, after which the shield returns in a graceful arc.",Play this item immediately.,"2,000"
+,,,,"You gain a +2 bonus to AC while this item is in play.
+Attack 1 Monster within 2 tiles of you. This action does not count as an attack action.",
+,,,,Attack: +6 / Damage: 1,
+163,Tome of Experience,Item,Studying this tome teaches skills and techniques you never imagined possible.,Use while your Hero is level 1.,"1,500"
+,,,,Your Hero becomes level 2.,
+,,,,(Flip over your Hero Card.),
+164,Vorpal Sword,Item,There is nothing as sharp as the bite of a vorpal blade.,Play this item immediately.,"2,000"
+,,,,"You gain a +2 bonus to attack rolls against adjacent Monsters while this item is in play.
+If you roll a natural 18, 19, or 20 on an attack, you deal +1 damage with that attack.",
+165,Wand of Fear,Item,"A pale amber ray strikes your foes, driving them away.",Use instead of an attack.,"1,500"
+,,,,Choose a tile within 1 tile of you. Place each Monster on that tile up to 2 tiles away from you.,
+,,,,Flip this card over after you use the item.,
+166,Wand of Polymorph,Item,"This wand envelops your target in green light, transforming your foe into a new creature.",Use instead of an attack.,"1,500"
+,,,,Choose a Monster within 2 tiles of you. Draw a Monster Card and replace the original Monster. ,
+,,,,,
+,,,,Flip this card over after you use the item.,
