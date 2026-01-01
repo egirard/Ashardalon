@@ -1,19 +1,19 @@
-# E2E Test 067: Blade Barrier UI Activation
+# E2E Test 067: Blade Barrier UI Activation with On-Map Selection
 
 ## Test Purpose
 
-This E2E test demonstrates the complete user interaction flow for activating the Blade Barrier power card through UI clicks, without any programmatic workarounds. It validates that users can:
+This E2E test demonstrates the complete user interaction flow for activating the Blade Barrier power card through UI clicks with on-map tile and square selection. It validates that users can:
 
 1. Select a hero with Blade Barrier
 2. Access and click the power card
 3. Activate the power through a button click
-4. Select a tile via modal UI
-5. Select token placement squares via modal UI
+4. Select a tile directly on the map (no modal)
+5. Select 5 token placement squares directly on the map (no modal)
 6. Confirm placement and see results
 
 ## Test Story
 
-**User Story:** As a player controlling Quinn the Cleric, I want to activate my Blade Barrier daily power by clicking through the UI, selecting a tile within range, and choosing 5 squares for token placement.
+**User Story:** As a player controlling Quinn the Cleric, I want to activate my Blade Barrier daily power by clicking through the UI, selecting a tile within range by clicking directly on the map, and choosing 5 squares for token placement by clicking directly on the tile.
 
 ## Test Steps & Screenshots
 
@@ -29,7 +29,7 @@ This E2E test demonstrates the complete user interaction flow for activating the
 - Hero has "selected" class
 - Start button is enabled
 
-###Step 2: Game Started
+### Step 2: Game Started
 ![Screenshot 001](067-blade-barrier-ui-activation.spec.ts-snapshots/001-game-started-chromium-linux.png)
 
 **What's verified:**
@@ -55,89 +55,106 @@ This E2E test demonstrates the complete user interaction flow for activating the
 - Rule text contains "Blade Barrier"
 - Activate button is present and enabled
 
-### Step 4: Tile Selection Modal
-![Screenshot 003](067-blade-barrier-ui-activation.spec.ts-snapshots/003-tile-selection-modal-open-chromium-linux.png)
+### Step 4: Tile Selection On-Map
+![Screenshot 003](067-blade-barrier-ui-activation.spec.ts-snapshots/003-tile-selection-on-map-chromium-linux.png)
 
 **What's verified:**
-- Clicking "Activate Power" opens the tile selection modal
-- Modal shows tiles within range (2 tiles of player position)
-- Start tile is available for selection
-- Purple theme matches daily card type
+- Clicking "Activate Power" highlights tiles on the map with purple overlay
+- Floating instruction panel shows "Blade Barrier: Select Tile"
+- Start tile has purple border and is clickable
+- Full map visibility maintained (no modal blocking view)
+- Cancel button available
 
 **Programmatic checks:**
-- Modal is visible
-- At least 1 selectable tile is available
+- Instruction text is visible
+- Start tile has `selectable-tile` class
+- Cancel button is present
 
-### Step 5: Token Placement Modal
-![Screenshot 004](067-blade-barrier-ui-activation.spec.ts-snapshots/004-token-placement-modal-open-chromium-linux.png)
+### Step 5: Square Selection On-Map
+![Screenshot 004](067-blade-barrier-ui-activation.spec.ts-snapshots/004-square-selection-on-map-chromium-linux.png)
 
 **What's verified:**
-- Selecting a tile opens the token placement modal
-- Modal shows all valid squares on the selected tile
+- After clicking tile, squares become clickable directly on the map
+- Instruction panel updates to "Blade Barrier: Select 5 Squares"
 - Progress counter shows "0 / 5"
-- Instructions are clear
+- Squares have visual overlays
+- Full map visibility maintained
 
 **Programmatic checks:**
-- Token placement modal is visible
+- Instruction text updated
+- Selectable squares are visible
 - Progress shows "0 / 5"
 
-### Step 6: Five Squares Selected
-![Screenshot 005](067-blade-barrier-ui-activation.spec.ts-snapshots/005-five-squares-selected-chromium-linux.png)
+### Step 6: Five Squares Selected On-Map
+![Screenshot 005](067-blade-barrier-ui-activation.spec.ts-snapshots/005-five-squares-selected-on-map-chromium-linux.png)
 
 **What's verified:**
-- User can click 5 different squares
-- Each selected square shows a selection number (1-5)
+- User can click 5 different squares directly on the map
+- Each selected square shows a numbered indicator (1-5)
 - Progress counter updates to "5 / 5"
-- "Place Tokens" button becomes enabled
+- "Confirm Placement" button appears in instruction panel
+- Selected squares remain visible with their numbers
 
 **Programmatic checks:**
 - Progress shows "5 / 5"
-- Confirm button is enabled
+- Confirm button is visible
+- 5 selection number indicators are present
 
-### Step 7: Tokens Placed, Card Used (In Progress)
-**Expected:**
-- Modal closes after clicking "Place Tokens"
-- 5 Blade Barrier tokens appear on the board
-- Blade Barrier card shows as "Used" (disabled state)
+### Step 7: Tokens Placed, Card Used
+![Screenshot 006](067-blade-barrier-ui-activation.spec.ts-snapshots/006-tokens-placed-card-used-chromium-linux.png)
 
-**Current Status:** ⚠️ Modal not closing - investigating
+**What's verified:**
+- Instruction panel disappears after confirming placement
+- 5 Blade Barrier tokens appear on the selected squares
+- Blade Barrier card shows as "Used" (disabled/flipped state)
+- Tokens are visible on the game board
+
+**Programmatic checks:**
+- Instruction panel is gone
+- 5 board tokens exist
+- Power card has disabled/flipped class
 
 ## UI Interaction Method
 
-This test uses **ONLY UI events** (clicks) to drive the application:
+This test uses **ONLY UI events** (clicks) to drive the application with on-map selection:
 - ✅ Hero selection: `click()`
 - ✅ Power selection: `click()`
 - ✅ Card activation: `click()` on card then `click()` on "Activate Power" button
-- ✅ Tile selection: `click()` on tile then `click()` on "Select Tile" button
-- ✅ Square selection: `click()` on 5 squares then `click()` on "Place Tokens" button
+- ✅ Tile selection: `click()` directly on tile on the map (no modal)
+- ✅ Square selection: `click()` directly on 5 squares on the map (no modal)
+- ✅ Confirm placement: `click()` on "Confirm Placement" button
 
 **No programmatic workarounds** are used for the core functionality being demonstrated.
+
+## On-Map Selection Benefits
+
+- **Full Map Visibility:** No modals blocking the game board
+- **Direct Interaction:** Click tiles and squares directly where they appear
+- **Visual Feedback:** Purple overlays, numbered indicators, pulsing borders
+- **Integrated Experience:** Selection feels part of the game, not separate dialog
+- **Cancelable:** Cancel button in floating panel at any step
 
 ## Test Metadata
 
 - **Test ID:** 067
 - **Category:** Power Card Activation
-- **Complexity:** High (multi-step modal flow)
+- **Complexity:** High (multi-step on-map selection flow)
 - **User Actions:** 10+ clicks
-- **Screenshots:** 7 (6 captured, 1 in progress)
-
-## Known Issues
-
-1. **Modal Close Timing:** Token placement modal doesn't close immediately after placement. Investigating whether this is a test timing issue or actual bug in the modal dismissal logic.
+- **Screenshots:** 7
+- **Selection Method:** On-map (no modals)
 
 ## Future Enhancements
 
 - Test Blade Barrier tokens triggering damage when monsters move onto them
 - Test canceling at each step (tile selection, token placement)
-- Test edge cases (selecting same square twice, selecting more than 5)
+- Test edge cases (selecting same square twice, deselecting squares)
 - Test with multiple tiles in range
+- Test pointer-events handling for instruction panel
 
 ## Related Files
 
 - Test: `e2e/067-blade-barrier-ui-activation/067-blade-barrier-ui-activation.spec.ts`
 - Components:
-  - `src/components/CardDetailView.svelte`
-  - `src/components/PlayerPowerCards.svelte`
-  - `src/components/TileSelectionModal.svelte`
-  - `src/components/TokenPlacementModal.svelte`
-  - `src/components/GameBoard.svelte`
+  - `src/components/CardDetailView.svelte` (Activate button)
+  - `src/components/PlayerPowerCards.svelte` (Card display)
+  - `src/components/GameBoard.svelte` (On-map selection logic)

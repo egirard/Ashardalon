@@ -1982,11 +1982,13 @@
             ? getBladeBarrierSelectableTiles(currentHero.position) 
             : []}
           {@const isTileSelectable = selectableTiles.some(t => t.id === tile.id)}
+          {@const hasSelectableSquares = pendingBladeBarrier && pendingBladeBarrier.step === 'square-selection' && pendingBladeBarrier.selectedTileId === tile.id}
           <div
             class="placed-tile"
             class:start-tile={tile.tileType === "start"}
             class:newly-placed={tile.id === recentlyPlacedTileId}
             class:selectable-tile={isTileSelectable}
+            class:has-selectable-squares={hasSelectableSquares}
             data-testid={tile.tileType === "start"
               ? "start-tile"
               : "dungeon-tile"}
@@ -2025,7 +2027,8 @@
 
         <!-- Movement overlay (only on start tile for now) -->
         <!-- Disabled during map control mode to prevent hero movement while editing -->
-        {#if showingMovement && validMoveSquares.length > 0 && !mapControlMode}
+        <!-- Disabled during Blade Barrier selection to prevent interference -->
+        {#if showingMovement && validMoveSquares.length > 0 && !mapControlMode && !pendingBladeBarrier}
           {@const startTile = dungeon.tiles.find((t) => t.tileType === "start")}
           {#if startTile}
             {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
@@ -2817,6 +2820,16 @@
     animation: tileAppear 2s ease-out;
   }
 
+  /* Disable pointer events on tile when squares are being selected */
+  .placed-tile.has-selectable-squares {
+    pointer-events: none;
+  }
+
+  /* But re-enable on the selectable squares themselves */
+  .placed-tile.has-selectable-squares .selectable-square {
+    pointer-events: all;
+  }
+
   @keyframes tileAppear {
     from {
       opacity: 0;
@@ -2831,6 +2844,11 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  /* Disable pointer events on tile image when squares are being selected */
+  .has-selectable-squares .tile-image {
+    pointer-events: none;
   }
 
   .movement-overlay-container {
