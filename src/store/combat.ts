@@ -261,11 +261,9 @@ export function getAdjacentMonsters(
     );
   }
   
-  // Find which tile the hero is on
-  const heroTile = findTileAtPosition(position, dungeon);
-  if (!heroTile) return [];
-  
   // Find monsters that are adjacent in global coordinates
+  // We don't need to check which tile the hero is on - adjacency is based solely on
+  // global coordinate distance, which works across tile boundaries
   return monsters.filter(monster => {
     // Convert monster's local position to global coordinates
     const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
