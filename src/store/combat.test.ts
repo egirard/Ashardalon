@@ -525,6 +525,98 @@ describe('getAdjacentMonsters', () => {
       // Should NOT find the monster since it's not adjacent
       expect(adjacent).toHaveLength(0);
     });
+
+    it('should find monster on east tile edge adjacent to hero on start tile east edge', () => {
+      // Reproduce issue #314/#319 scenario:
+      // Hero at the eastern edge of start tile: (3, 2) in global coords
+      // Monster at the western edge of east tile: local (0, 2) = global (4, 2)
+      // These should be adjacent (distance = 1)
+      const dungeon: DungeonState = {
+        tiles: [
+          {
+            id: 'start-tile',
+            tileType: 'start',
+            position: { col: 0, row: 0 },
+            rotation: 0,
+          },
+          {
+            id: 'east-tile',
+            tileType: 'black-1',
+            position: { col: 1, row: 0 },
+            rotation: 0,
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const monstersOnEdge: MonsterState[] = [
+        {
+          monsterId: 'kobold-dragonshield',
+          instanceId: 'kobold-1',
+          position: { x: 0, y: 2 }, // Local coords on east tile
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'east-tile',
+        },
+      ];
+
+      // Hero at eastern edge of start tile
+      const heroGlobalPos = { x: 3, y: 2 };
+
+      const adjacent = getAdjacentMonsters(heroGlobalPos, monstersOnEdge, 'start-tile', dungeon);
+
+      // Should find the monster since it's adjacent across tile boundary
+      expect(adjacent).toHaveLength(1);
+      expect(adjacent[0].instanceId).toBe('kobold-1');
+    });
+
+    it('should find monster on diagonal adjacent tile', () => {
+      // Test diagonal adjacency across tiles
+      // Hero at northeast corner of start tile: (3, 0) in global coords  
+      // Monster at southwest corner of northeast tile: local (0, 3) on tile at col=1, row=-1
+      // Northeast tile bounds: minX=4, maxX=7, minY=-4, maxY=-1
+      // Monster global position: (4 + 0, -4 + 3) = (4, -1)
+      // Distance from (3, 0) to (4, -1): dx=1, dy=1 -> adjacent diagonally
+      const dungeon: DungeonState = {
+        tiles: [
+          {
+            id: 'start-tile',
+            tileType: 'start',
+            position: { col: 0, row: 0 },
+            rotation: 0,
+          },
+          {
+            id: 'northeast-tile',
+            tileType: 'black-1',
+            position: { col: 1, row: -1 },
+            rotation: 0,
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const monstersOnEdge: MonsterState[] = [
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-diagonal',
+          position: { x: 0, y: 3 }, // Local coords on northeast tile
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'northeast-tile',
+        },
+      ];
+
+      // Hero at northeast corner of start tile
+      const heroGlobalPos = { x: 3, y: 0 };
+
+      const adjacent = getAdjacentMonsters(heroGlobalPos, monstersOnEdge, 'start-tile', dungeon);
+
+      // Should find the monster since it's diagonally adjacent across tile boundary
+      expect(adjacent).toHaveLength(1);
+      expect(adjacent[0].instanceId).toBe('kobold-diagonal');
+    });
   });
 });
 
