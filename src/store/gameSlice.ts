@@ -1701,6 +1701,24 @@ export const gameSlice = createSlice({
                       monsterToMove.position = localPos;
                       monsterToMove.tileId = newTileId;
                       state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} moved closer`;
+                      
+                      // Check for Blade Barrier tokens at destination
+                      const bladeBarrierCheck = checkBladeBarrierDamage(
+                        result.destination,
+                        state.boardTokens || []
+                      );
+                      
+                      if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+                        // Deal 1 damage to the monster
+                        monsterToMove.currentHp = Math.max(0, monsterToMove.currentHp - 1);
+                        
+                        // Remove the blade barrier token
+                        state.boardTokens = state.boardTokens.filter(
+                          token => token.id !== bladeBarrierCheck.tokenToRemove
+                        );
+                        
+                        state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} moved closer and hit Blade Barrier (1 damage)`;
+                      }
                     }
                   }
                 }
@@ -2537,6 +2555,22 @@ export const gameSlice = createSlice({
             if (localPos) {
               monsterToMove.position = localPos;
               monsterToMove.tileId = newTileId;
+              
+              // Check for Blade Barrier tokens at destination
+              const bladeBarrierCheck = checkBladeBarrierDamage(
+                result.destination,
+                state.boardTokens || []
+              );
+              
+              if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+                // Deal 1 damage to the monster
+                monsterToMove.currentHp = Math.max(0, monsterToMove.currentHp - 1);
+                
+                // Remove the blade barrier token
+                state.boardTokens = state.boardTokens.filter(
+                  token => token.id !== bladeBarrierCheck.tokenToRemove
+                );
+              }
             }
           }
         }
@@ -2577,6 +2611,22 @@ export const gameSlice = createSlice({
             if (localPos) {
               monsterToMove.position = localPos;
               monsterToMove.tileId = newTileId;
+              
+              // Check for Blade Barrier tokens at destination
+              const bladeBarrierCheck = checkBladeBarrierDamage(
+                result.destination,
+                state.boardTokens || []
+              );
+              
+              if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+                // Deal 1 damage to the monster
+                monsterToMove.currentHp = Math.max(0, monsterToMove.currentHp - 1);
+                
+                // Remove the blade barrier token
+                state.boardTokens = state.boardTokens.filter(
+                  token => token.id !== bladeBarrierCheck.tokenToRemove
+                );
+              }
             }
           }
         }
