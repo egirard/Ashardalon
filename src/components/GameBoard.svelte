@@ -2599,6 +2599,9 @@
     gap: 0.5rem;
     backdrop-filter: blur(4px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    max-width: calc(100vw - 1.5rem); /* Prevent horizontal overflow */
+    max-height: calc(100vh - 1.5rem); /* Prevent vertical overflow */
+    overflow: visible; /* Allow child components to handle their own overflow */
   }
 
   /* Top edge - at top center */

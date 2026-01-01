@@ -354,8 +354,32 @@
     border: 2px solid rgba(100, 100, 130, 0.5);
     min-width: 140px;
     max-width: 200px;
+    max-height: 400px; /* Prevent vertical overflow */
+    overflow-y: auto; /* Enable scrolling when content exceeds max height */
     transition: all 0.3s ease-out;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    /* Improve scrollbar appearance */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 100, 130, 0.8) rgba(30, 30, 50, 0.5);
+  }
+
+  /* Webkit scrollbar styling for Chrome/Safari */
+  .player-power-cards::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .player-power-cards::-webkit-scrollbar-track {
+    background: rgba(30, 30, 50, 0.5);
+    border-radius: 3px;
+  }
+
+  .player-power-cards::-webkit-scrollbar-thumb {
+    background: rgba(100, 100, 130, 0.8);
+    border-radius: 3px;
+  }
+
+  .player-power-cards::-webkit-scrollbar-thumb:hover {
+    background: rgba(120, 120, 150, 0.9);
   }
 
   /* Orientation is now handled by the parent container in GameBoard */
