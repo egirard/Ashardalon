@@ -19,9 +19,10 @@
   interface Props {
     detail: CardDetail | null;
     onDismiss?: () => void;
+    onActivate?: () => void;
   }
 
-  let { detail, onDismiss }: Props = $props();
+  let { detail, onDismiss, onActivate }: Props = $props();
 
   // Get icon component based on treasure effect type
   function getTreasureIconComponent(effectType: string) {
@@ -47,6 +48,12 @@
   function handleDismiss() {
     if (onDismiss) {
       onDismiss();
+    }
+  }
+
+  function handleActivate() {
+    if (onActivate) {
+      onActivate();
     }
   }
 </script>
@@ -115,6 +122,15 @@
             <div class="status-badge clickable">
               ✓ Available to use
             </div>
+            {#if onActivate && !detail.isFlipped}
+              <button 
+                class="activate-button"
+                onclick={handleActivate}
+                data-testid="activate-power-button"
+              >
+                Activate Power
+              </button>
+            {/if}
           {:else if detail.ineligibilityReason}
             <div class="status-badge not-clickable">
               ✗ {detail.ineligibilityReason}
@@ -382,6 +398,34 @@
     background: rgba(244, 67, 54, 0.3);
     border: 1px solid #f44336;
     color: #ff8a80;
+  }
+
+  .activate-button {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.5rem;
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    border: 2px solid #66bb6a;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+  }
+
+  .activate-button:hover {
+    background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+    border-color: #81c784;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.6);
+  }
+
+  .activate-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
   }
 
   /* Respect user's reduced motion preference */
