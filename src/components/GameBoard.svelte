@@ -111,8 +111,6 @@
   import TreasureCard from "./TreasureCard.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
   import HeroPlacementModal from "./HeroPlacementModal.svelte";
-  import TileSelectionModal from "./TileSelectionModal.svelte";
-  import TokenPlacementModal from "./TokenPlacementModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import TurnProgressCard from "./TurnProgressCard.svelte";
@@ -245,8 +243,9 @@
   let pendingBladeBarrier: { 
     heroId: string; 
     cardId: number; 
-    step: 'tile-selection' | 'token-placement'; 
+    step: 'tile-selection' | 'square-selection'; 
     selectedTileId?: string;
+    selectedSquares?: Position[]; // For square selection mode
   } | null = $state(null);
   
   // Track which power card is selected for attacking (so map clicks can trigger attacks)
@@ -1562,6 +1561,73 @@
     store.dispatch(useTreasureItem({ heroId, cardId }));
   }
 
+  // Helper function to get tiles in range for Blade Barrier
+  function getBladeBarrierSelectableTiles(heroPosition: Position): PlacedTile[] {
+    const TILE_WIDTH = 4;
+    const NORMAL_TILE_HEIGHT = 4;
+    const START_TILE_HEIGHT = 8;
+    const MAX_RANGE = 2; // Blade Barrier range is 2 tiles
+
+    // Get hero's tile position
+    const heroTileX = Math.floor(heroPosition.x / TILE_WIDTH);
+    const heroTileY = heroPosition.y < START_TILE_HEIGHT 
+      ? 0 
+      : Math.floor((heroPosition.y - START_TILE_HEIGHT) / NORMAL_TILE_HEIGHT) + 1;
+
+    return dungeon.tiles.filter(tile => {
+      const tilePosX = tile.position.col;
+      const tilePosY = tile.position.row;
+      
+      // Calculate tile distance (Manhattan distance)
+      const distance = Math.abs(tilePosX - heroTileX) + Math.abs(tilePosY - heroTileY);
+      
+      return distance <= MAX_RANGE;
+    });
+  }
+
+  // Helper function to get valid squares on a tile
+  function getBladeBarrierSelectableSquares(tileId: string): Position[] {
+    const tile = dungeon.tiles.find(t => t.id === tileId);
+    if (!tile) return [];
+
+    const squares: Position[] = [];
+    const TILE_WIDTH = 4;
+    const NORMAL_TILE_HEIGHT = 4;
+    const START_TILE_HEIGHT = 8;
+
+    if (tile.tileType === 'start') {
+      // Start tile spans 2 sub-tiles
+      for (let subY = 0; subY < 2; subY++) {
+        for (let x = 0; x < TILE_WIDTH; x++) {
+          for (let y = 0; y < NORMAL_TILE_HEIGHT; y++) {
+            squares.push({ 
+              x: tile.position.col * TILE_WIDTH + x, 
+              y: subY * NORMAL_TILE_HEIGHT + y 
+            });
+          }
+        }
+      }
+    } else {
+      // Regular tile
+      const baseY = tile.position.row < 0
+        ? tile.position.row * NORMAL_TILE_HEIGHT
+        : tile.position.row === 0
+          ? 0
+          : START_TILE_HEIGHT + (tile.position.row - 1) * NORMAL_TILE_HEIGHT;
+
+      for (let x = 0; x < TILE_WIDTH; x++) {
+        for (let y = 0; y < NORMAL_TILE_HEIGHT; y++) {
+          squares.push({ 
+            x: tile.position.col * TILE_WIDTH + x, 
+            y: baseY + y 
+          });
+        }
+      }
+    }
+
+    return squares;
+  }
+
   // Handle activating a power card from the player dashboard
   function handleActivatePowerCard(heroId: string, cardId: number) {
     // Get the power card details
@@ -1656,12 +1722,43 @@
   function handleBladeBarrierTileSelected(tileId: string) {
     if (!pendingBladeBarrier) return;
     
-    // Move to token placement step
+    // Move to square selection step
     pendingBladeBarrier = {
       ...pendingBladeBarrier,
       selectedTileId: tileId,
-      step: 'token-placement'
+      step: 'square-selection',
+      selectedSquares: []
     };
+  }
+
+  function handleBladeBarrierSquareClicked(position: Position) {
+    if (!pendingBladeBarrier || pendingBladeBarrier.step !== 'square-selection') return;
+    if (!pendingBladeBarrier.selectedSquares) return;
+    
+    const key = `${position.x},${position.y}`;
+    const selectedKeys = pendingBladeBarrier.selectedSquares.map(s => `${s.x},${s.y}`);
+    
+    // Toggle selection
+    if (selectedKeys.includes(key)) {
+      // Deselect
+      pendingBladeBarrier = {
+        ...pendingBladeBarrier,
+        selectedSquares: pendingBladeBarrier.selectedSquares.filter(s => `${s.x},${s.y}` !== key)
+      };
+    } else if (pendingBladeBarrier.selectedSquares.length < 5) {
+      // Select if under limit
+      pendingBladeBarrier = {
+        ...pendingBladeBarrier,
+        selectedSquares: [...pendingBladeBarrier.selectedSquares, position]
+      };
+    }
+  }
+
+  function handleBladeBarrierConfirm() {
+    if (!pendingBladeBarrier || !pendingBladeBarrier.selectedTileId || !pendingBladeBarrier.selectedSquares) return;
+    if (pendingBladeBarrier.selectedSquares.length !== 5) return;
+    
+    handleBladeBarrierTokensPlaced(pendingBladeBarrier.selectedSquares);
   }
 
   function handleBladeBarrierTokensPlaced(positions: Position[]) {
@@ -1880,15 +1977,24 @@
         {#each dungeon.tiles as tile (tile.id)}
           {@const tilePos = getTilePixelPosition(tile, mapBounds)}
           {@const tileDims = getTileDimensions(tile)}
+          {@const currentHero = pendingBladeBarrier ? heroTokens.find(t => t.heroId === pendingBladeBarrier.heroId) : null}
+          {@const selectableTiles = pendingBladeBarrier && pendingBladeBarrier.step === 'tile-selection' && currentHero 
+            ? getBladeBarrierSelectableTiles(currentHero.position) 
+            : []}
+          {@const isTileSelectable = selectableTiles.some(t => t.id === tile.id)}
           <div
             class="placed-tile"
             class:start-tile={tile.tileType === "start"}
             class:newly-placed={tile.id === recentlyPlacedTileId}
+            class:selectable-tile={isTileSelectable}
             data-testid={tile.tileType === "start"
               ? "start-tile"
               : "dungeon-tile"}
             data-tile-id={tile.id}
             style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;"
+            onclick={() => isTileSelectable && handleBladeBarrierTileSelected(tile.id)}
+            role={isTileSelectable ? "button" : undefined}
+            tabindex={isTileSelectable ? 0 : undefined}
           >
             <img
               src={assetPath(getTileImagePath(tile))}
@@ -1898,6 +2004,11 @@
                 ? `transform: rotate(${tile.rotation}deg);`
                 : ""}
             />
+
+            <!-- Tile selection overlay -->
+            {#if isTileSelectable}
+              <div class="tile-selection-overlay"></div>
+            {/if}
 
             <!-- Unexplored edge indicators for this tile -->
             {#each dungeon.unexploredEdges.filter((e) => e.tileId === tile.id) as edge (`${edge.direction}-${edge.subTileId || 'default'}`)}
@@ -1930,6 +2041,39 @@
                 cellSize={TILE_CELL_SIZE}
                 onSquareClick={handleMoveSquareClick}
               />
+            </div>
+          {/if}
+        {/if}
+
+        <!-- Blade Barrier Square Selection Overlay -->
+        {#if pendingBladeBarrier && pendingBladeBarrier.step === 'square-selection' && pendingBladeBarrier.selectedTileId}
+          {@const selectedTile = dungeon.tiles.find(t => t.id === pendingBladeBarrier.selectedTileId)}
+          {#if selectedTile}
+            {@const tilePos = getTilePixelPosition(selectedTile, mapBounds)}
+            {@const tileDims = getTileDimensions(selectedTile)}
+            {@const selectableSquares = getBladeBarrierSelectableSquares(selectedTile.id)}
+            {@const selectedSquares = pendingBladeBarrier.selectedSquares || []}
+            <div
+              class="square-selection-overlay-container"
+              style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;"
+            >
+              {#each selectableSquares as square (square.x + '-' + square.y)}
+                {@const isSelected = selectedSquares.some(s => s.x === square.x && s.y === square.y)}
+                {@const selectionIndex = selectedSquares.findIndex(s => s.x === square.x && s.y === square.y)}
+                {@const relX = square.x - (selectedTile.position.col * 4)}
+                {@const relY = selectedTile.tileType === 'start' ? square.y : (square.y - (selectedTile.position.row < 0 ? selectedTile.position.row * 4 : selectedTile.position.row === 0 ? 0 : 8 + (selectedTile.position.row - 1) * 4))}
+                <button
+                  class="selectable-square"
+                  class:selected={isSelected}
+                  data-testid="selectable-square-{square.x}-{square.y}"
+                  style="left: {TOKEN_OFFSET_X + relX * TILE_CELL_SIZE}px; top: {TOKEN_OFFSET_Y + relY * TILE_CELL_SIZE}px; width: {TILE_CELL_SIZE}px; height: {TILE_CELL_SIZE}px;"
+                  onclick={() => handleBladeBarrierSquareClicked(square)}
+                >
+                  {#if isSelected}
+                    <span class="selection-number">{selectionIndex + 1}</span>
+                  {/if}
+                </button>
+              {/each}
             </div>
           {/if}
         {/if}
@@ -2508,31 +2652,28 @@
     {/if}
   {/if}
 
-  <!-- Blade Barrier Tile Selection -->
-  {#if pendingBladeBarrier && pendingBladeBarrier.step === 'tile-selection'}
+  <!-- Blade Barrier Selection UI (On-Map) -->
+  {#if pendingBladeBarrier}
     {@const currentHero = heroTokens.find(t => t.heroId === pendingBladeBarrier.heroId)}
     {#if currentHero}
-      <TileSelectionModal
-        cardId={pendingBladeBarrier.cardId}
-        heroPosition={currentHero.position}
-        dungeon={dungeon}
-        maxRange={2}
-        onSelect={handleBladeBarrierTileSelected}
-        onCancel={handleBladeBarrierCancel}
-      />
+      <!-- Selection Instructions Overlay -->
+      <div class="blade-barrier-instructions">
+        {#if pendingBladeBarrier.step === 'tile-selection'}
+          <h3>Blade Barrier: Select Tile</h3>
+          <p>Click a highlighted tile within 2 tiles of your position</p>
+        {:else if pendingBladeBarrier.step === 'square-selection'}
+          {@const selected = pendingBladeBarrier.selectedSquares?.length || 0}
+          <h3>Blade Barrier: Select Squares</h3>
+          <p>Click 5 different squares on the tile ({selected}/5 selected)</p>
+          {#if selected === 5}
+            <button class="confirm-placement-btn" onclick={handleBladeBarrierConfirm}>
+              Confirm Placement
+            </button>
+          {/if}
+        {/if}
+        <button class="cancel-btn" onclick={handleBladeBarrierCancel}>Cancel</button>
+      </div>
     {/if}
-  {/if}
-
-  <!-- Blade Barrier Token Placement -->
-  {#if pendingBladeBarrier && pendingBladeBarrier.step === 'token-placement' && pendingBladeBarrier.selectedTileId}
-    <TokenPlacementModal
-      cardId={pendingBladeBarrier.cardId}
-      tileId={pendingBladeBarrier.selectedTileId}
-      dungeon={dungeon}
-      requiredTokens={5}
-      onConfirm={handleBladeBarrierTokensPlaced}
-      onCancel={handleBladeBarrierCancel}
-    />
   {/if}
 
   <!-- Scenario Introduction (shown when map is first displayed or when clicking objective panel) -->
@@ -3153,5 +3294,142 @@
     font-weight: bold;
     color: #fff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Blade Barrier Selection Styles */
+  .blade-barrier-instructions {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%);
+    border: 3px solid #7b1fa2;
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 300px;
+    box-shadow: 0 10px 40px rgba(123, 31, 162, 0.6);
+    text-align: center;
+  }
+
+  .blade-barrier-instructions h3 {
+    margin: 0 0 12px 0;
+    color: #bb86fc;
+    font-size: 1.2rem;
+  }
+
+  .blade-barrier-instructions p {
+    margin: 0 0 16px 0;
+    color: #ddd;
+    font-size: 0.9rem;
+  }
+
+  .confirm-placement-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+    border: 2px solid #bb86fc;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+
+  .confirm-placement-btn:hover {
+    background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(123, 31, 162, 0.6);
+  }
+
+  .cancel-btn {
+    padding: 8px 16px;
+    background: rgba(100, 100, 100, 0.3);
+    border: 2px solid #666;
+    border-radius: 6px;
+    color: #999;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+  }
+
+  .cancel-btn:hover {
+    background: rgba(150, 150, 150, 0.3);
+    border-color: #888;
+    color: #bbb;
+  }
+
+  .selectable-tile {
+    cursor: pointer;
+  }
+
+  .selectable-tile .tile-selection-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(123, 31, 162, 0.4);
+    border: 3px solid #bb86fc;
+    pointer-events: none;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% {
+      border-color: #bb86fc;
+      box-shadow: 0 0 20px rgba(123, 31, 162, 0.6);
+    }
+    50% {
+      border-color: #9c27b0;
+      box-shadow: 0 0 40px rgba(123, 31, 162, 0.9);
+    }
+  }
+
+  .square-selection-overlay-container {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .selectable-square {
+    position: absolute;
+    background: rgba(123, 31, 162, 0.3);
+    border: 2px solid #bb86fc;
+    cursor: pointer;
+    pointer-events: all;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  .selectable-square:hover {
+    background: rgba(123, 31, 162, 0.5);
+    border-color: #ce93d8;
+    transform: scale(1.1);
+  }
+
+  .selectable-square.selected {
+    background: rgba(123, 31, 162, 0.7);
+    border-color: #7b1fa2;
+    border-width: 3px;
+  }
+
+  .selection-number {
+    background: #7b1fa2;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   }
 </style>
