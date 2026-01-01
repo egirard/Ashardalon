@@ -1671,7 +1671,7 @@
     
     // Get current board token counter
     const state = store.getState();
-    const currentTokens = state.game.boardTokens;
+    const currentTokens = state.game.boardTokens || [];
     // Generate unique IDs using timestamp and index to avoid parsing fragility
     const timestamp = Date.now();
     
