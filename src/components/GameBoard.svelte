@@ -2589,8 +2589,6 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    border: 3px solid #444;
-    border-radius: 8px;
   }
 
   .movement-overlay-container {
