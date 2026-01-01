@@ -18,6 +18,7 @@
 
   // Calculate which tiles are within range
   const tilesInRange = $derived.by(() => {
+    // TODO: Import these constants from powerCardEffects.ts to avoid duplication
     const TILE_WIDTH = 4;
     const NORMAL_TILE_HEIGHT = 4;
     const START_TILE_HEIGHT = 8;

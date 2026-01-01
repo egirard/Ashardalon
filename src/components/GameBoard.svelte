@@ -1575,6 +1575,7 @@
     if (!heroToken) return;
     
     // Blade Barrier (card ID 5) - Special UI for token placement
+    // TODO: Import POWER_CARD_IDS and use POWER_CARD_IDS.BLADE_BARRIER constant
     if (cardId === 5) {
       // Start the tile selection process
       pendingBladeBarrier = {
@@ -1671,13 +1672,12 @@
     // Get current board token counter
     const state = store.getState();
     const currentTokens = state.game.boardTokens;
-    const startingCounter = currentTokens.length > 0 
-      ? Math.max(...currentTokens.map(t => parseInt(t.id.split('-').pop() || '0'))) + 1
-      : 1;
+    // Generate unique IDs using timestamp and index to avoid parsing fragility
+    const timestamp = Date.now();
     
     // Create board tokens for each selected position
     const newTokens = positions.map((position, index) => ({
-      id: `token-blade-barrier-${startingCounter + index}`,
+      id: `token-blade-barrier-${timestamp}-${index}`,
       type: 'blade-barrier' as const,
       powerCardId: cardId,
       ownerId: heroId,

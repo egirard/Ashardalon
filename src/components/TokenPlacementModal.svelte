@@ -20,19 +20,30 @@
   // Get power card details
   const powerCard = getPowerCardById(cardId);
 
-  // Track selected squares
+  // Track selected squares using Set for O(1) lookups
   let selectedSquares: Position[] = $state([]);
+  let selectedSquaresSet = $derived(new Set(selectedSquares.map(s => `${s.x},${s.y}`)));
 
   function handleSquareClick(square: Position) {
-    const index = selectedSquares.findIndex(s => s.x === square.x && s.y === square.y);
+    const key = `${square.x},${square.y}`;
     
-    if (index >= 0) {
+    if (selectedSquaresSet.has(key)) {
       // Deselect
-      selectedSquares = selectedSquares.filter((_, i) => i !== index);
+      selectedSquares = selectedSquares.filter(s => `${s.x},${s.y}` !== key);
     } else if (selectedSquares.length < requiredTokens) {
       // Select if under limit
       selectedSquares = [...selectedSquares, square];
     }
+  }
+
+  function isSquareSelected(square: Position): boolean {
+    return selectedSquaresSet.has(`${square.x},${square.y}`);
+  }
+
+  function getSelectionNumber(square: Position): number | null {
+    const key = `${square.x},${square.y}`;
+    const index = selectedSquares.findIndex(s => `${s.x},${s.y}` === key);
+    return index >= 0 ? index + 1 : null;
   }
 
   function handleConfirm() {
@@ -43,15 +54,6 @@
 
   function handleCancel() {
     onCancel();
-  }
-
-  function isSquareSelected(square: Position): boolean {
-    return selectedSquares.some(s => s.x === square.x && s.y === square.y);
-  }
-
-  function getSelectionNumber(square: Position): number | null {
-    const index = selectedSquares.findIndex(s => s.x === square.x && s.y === square.y);
-    return index >= 0 ? index + 1 : null;
   }
 </script>
 
