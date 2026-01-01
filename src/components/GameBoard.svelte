@@ -2073,7 +2073,10 @@
                   onclick={() => handleBladeBarrierSquareClicked(square)}
                 >
                   {#if isSelected}
-                    <span class="selection-number">{selectionIndex + 1}</span>
+                    <div class="token-preview">
+                      <span class="token-emoji">⚔️</span>
+                      <span class="selection-number">{selectionIndex + 1}</span>
+                    </div>
                   {/if}
                 </button>
               {/each}
@@ -3417,8 +3420,8 @@
 
   .selectable-square {
     position: absolute;
-    background: rgba(123, 31, 162, 0.3);
-    border: 2px solid #bb86fc;
+    background: rgba(123, 31, 162, 0.4);
+    border: 3px solid #bb86fc;
     cursor: pointer;
     pointer-events: all;
     transition: all 0.2s ease;
@@ -3428,22 +3431,56 @@
     color: #fff;
     font-weight: bold;
     font-size: 1.2rem;
+    animation: pulseHighlight 2s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(187, 134, 252, 0.6), inset 0 0 10px rgba(123, 31, 162, 0.3);
+  }
+
+  @keyframes pulseHighlight {
+    0%, 100% {
+      border-color: #bb86fc;
+      box-shadow: 0 0 15px rgba(187, 134, 252, 0.6), inset 0 0 10px rgba(123, 31, 162, 0.3);
+    }
+    50% {
+      border-color: #ce93d8;
+      box-shadow: 0 0 25px rgba(206, 147, 216, 0.9), inset 0 0 15px rgba(123, 31, 162, 0.5);
+    }
   }
 
   .selectable-square:hover {
-    background: rgba(123, 31, 162, 0.5);
+    background: rgba(123, 31, 162, 0.6);
     border-color: #ce93d8;
-    transform: scale(1.1);
+    transform: scale(1.05);
+    animation: none;
+    box-shadow: 0 0 25px rgba(206, 147, 216, 1), inset 0 0 15px rgba(123, 31, 162, 0.6);
   }
 
   .selectable-square.selected {
-    background: rgba(123, 31, 162, 0.7);
+    background: rgba(123, 31, 162, 0.85);
     border-color: #7b1fa2;
-    border-width: 3px;
+    border-width: 4px;
+    animation: none;
+    box-shadow: 0 0 20px rgba(123, 31, 162, 1), inset 0 0 10px rgba(0, 0, 0, 0.5);
+  }
+
+  .token-preview {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .token-preview .token-emoji {
+    font-size: 2.5rem;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.9));
+    user-select: none;
+    position: absolute;
   }
 
   .selection-number {
     background: #7b1fa2;
+    border: 2px solid white;
     border-radius: 50%;
     width: 28px;
     height: 28px;
@@ -3451,6 +3488,10 @@
     align-items: center;
     justify-content: center;
     font-size: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    position: absolute;
+    bottom: 5%;
+    right: 5%;
+    z-index: 2;
   }
 </style>
