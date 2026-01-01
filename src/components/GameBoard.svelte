@@ -2073,8 +2073,8 @@
                   onclick={() => handleBladeBarrierSquareClicked(square)}
                 >
                   {#if isSelected}
-                    <div class="token-preview">
-                      <span class="token-emoji">⚔️</span>
+                    <div class="token-preview" aria-label="Blade Barrier token {selectionIndex + 1}">
+                      <span class="token-emoji" aria-hidden="true">⚔️</span>
                       <span class="selection-number">{selectionIndex + 1}</span>
                     </div>
                   {/if}
@@ -3446,6 +3446,13 @@
     }
   }
 
+  /* Respect user's motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .selectable-square {
+      animation: none;
+    }
+  }
+
   .selectable-square:hover {
     background: rgba(123, 31, 162, 0.6);
     border-color: #ce93d8;
@@ -3476,6 +3483,7 @@
     filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.9));
     user-select: none;
     position: absolute;
+    aria-hidden: true;
   }
 
   .selection-number {
