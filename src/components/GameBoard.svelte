@@ -111,6 +111,8 @@
   import TreasureCard from "./TreasureCard.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
   import HeroPlacementModal from "./HeroPlacementModal.svelte";
+  import TileSelectionModal from "./TileSelectionModal.svelte";
+  import TokenPlacementModal from "./TokenPlacementModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import TurnProgressCard from "./TurnProgressCard.svelte";
@@ -238,6 +240,14 @@
   let pendingMonsterChoice: PendingMonsterChoiceState | null = $state(null);
   let selectedTargetId: string | null = $state(null);
   let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
+  
+  // Blade Barrier token placement state
+  let pendingBladeBarrier: { 
+    heroId: string; 
+    cardId: number; 
+    step: 'tile-selection' | 'token-placement'; 
+    selectedTileId?: string;
+  } | null = $state(null);
   
   // Track which power card is selected for attacking (so map clicks can trigger attacks)
   let selectedAttackCardId: number | null = $state(null);
@@ -1564,6 +1574,17 @@
     const heroToken = state.game.heroTokens.find(t => t.heroId === heroId);
     if (!heroToken) return;
     
+    // Blade Barrier (card ID 5) - Special UI for token placement
+    if (cardId === 5) {
+      // Start the tile selection process
+      pendingBladeBarrier = {
+        heroId,
+        cardId,
+        step: 'tile-selection'
+      };
+      return;
+    }
+    
     // Implement healing power cards
     switch (cardId) {
       case 1: // Healing Hymn - Heal self and one ally on tile 2 HP
@@ -1628,6 +1649,56 @@
         store.dispatch(usePowerCard({ heroId, cardId }));
         break;
     }
+  }
+
+  // Blade Barrier modal handlers
+  function handleBladeBarrierTileSelected(tileId: string) {
+    if (!pendingBladeBarrier) return;
+    
+    // Move to token placement step
+    pendingBladeBarrier = {
+      ...pendingBladeBarrier,
+      selectedTileId: tileId,
+      step: 'token-placement'
+    };
+  }
+
+  function handleBladeBarrierTokensPlaced(positions: Position[]) {
+    if (!pendingBladeBarrier || !pendingBladeBarrier.selectedTileId) return;
+    
+    const { heroId, cardId } = pendingBladeBarrier;
+    
+    // Get current board token counter
+    const state = store.getState();
+    const currentTokens = state.game.boardTokens;
+    const startingCounter = currentTokens.length > 0 
+      ? Math.max(...currentTokens.map(t => parseInt(t.id.split('-').pop() || '0'))) + 1
+      : 1;
+    
+    // Create board tokens for each selected position
+    const newTokens = positions.map((position, index) => ({
+      id: `token-blade-barrier-${startingCounter + index}`,
+      type: 'blade-barrier' as const,
+      powerCardId: cardId,
+      ownerId: heroId,
+      position
+    }));
+    
+    // Dispatch action to add tokens to the board
+    store.dispatch({
+      type: 'game/setBoardTokens',
+      payload: [...currentTokens, ...newTokens]
+    });
+    
+    // Mark the power card as used
+    store.dispatch(usePowerCard({ heroId, cardId }));
+    
+    // Clear the pending state
+    pendingBladeBarrier = null;
+  }
+
+  function handleBladeBarrierCancel() {
+    pendingBladeBarrier = null;
   }
 
   // Get hero inventory item count for display
@@ -2435,6 +2506,33 @@
         onCancel={handleCancelHeroPlacement}
       />
     {/if}
+  {/if}
+
+  <!-- Blade Barrier Tile Selection -->
+  {#if pendingBladeBarrier && pendingBladeBarrier.step === 'tile-selection'}
+    {@const currentHero = heroTokens.find(t => t.heroId === pendingBladeBarrier.heroId)}
+    {#if currentHero}
+      <TileSelectionModal
+        cardId={pendingBladeBarrier.cardId}
+        heroPosition={currentHero.position}
+        dungeon={dungeon}
+        maxRange={2}
+        onSelect={handleBladeBarrierTileSelected}
+        onCancel={handleBladeBarrierCancel}
+      />
+    {/if}
+  {/if}
+
+  <!-- Blade Barrier Token Placement -->
+  {#if pendingBladeBarrier && pendingBladeBarrier.step === 'token-placement' && pendingBladeBarrier.selectedTileId}
+    <TokenPlacementModal
+      cardId={pendingBladeBarrier.cardId}
+      tileId={pendingBladeBarrier.selectedTileId}
+      dungeon={dungeon}
+      requiredTokens={5}
+      onConfirm={handleBladeBarrierTokensPlaced}
+      onCancel={handleBladeBarrierCancel}
+    />
   {/if}
 
   <!-- Scenario Introduction (shown when map is first displayed or when clicking objective panel) -->
