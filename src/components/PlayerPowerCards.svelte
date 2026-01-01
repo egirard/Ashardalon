@@ -337,6 +337,9 @@
       <CardDetailView 
         detail={selectedCardDetail}
         onDismiss={handleDismissDetail}
+        onActivate={selectedCardDetail.type === 'power' && selectedCardDetail.isClickable 
+          ? () => handleActivatePowerCard((selectedCardDetail.card as PowerCard).id)
+          : undefined}
       />
     {/if}
   </div>
