@@ -120,8 +120,11 @@ test.describe('067 - Blade Barrier UI Activation', () => {
     // STEP 7: Confirm token placement
     await page.locator('[data-testid="confirm-token-placement"]').click();
     
-    // Wait for modal to close
-    await page.locator('[data-testid="token-placement-modal"]').waitFor({ state: 'hidden' });
+    // Wait a moment for the action to process
+    await page.waitForTimeout(500);
+    
+    // Verify modal is no longer visible (checking count instead of waitFor)
+    await expect(page.locator('[data-testid="token-placement-modal"]')).toHaveCount(0);
 
     await screenshots.capture(page, 'tokens-placed-card-used', {
       programmaticCheck: async () => {
