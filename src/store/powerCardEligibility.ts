@@ -17,6 +17,9 @@ const POWER_CARD_IDS = {
   FURIOUS_ASSAULT: 31,
   HURLED_BREATH: 41,
   
+  // Daily cards that can be activated proactively
+  BLADE_BARRIER: 5,
+  
   // Utility cards - proactive (can be activated during hero phase)
   COMMAND: 9,
   DISTANT_DIVERSION: 38,
@@ -130,6 +133,7 @@ function isCardEligibleByRule(
   
   // Specific utility cards that can be activated during hero phase
   switch (card.id) {
+    case POWER_CARD_IDS.BLADE_BARRIER:
     case POWER_CARD_IDS.COMMAND:
     case POWER_CARD_IDS.DISTANT_DIVERSION:
     case POWER_CARD_IDS.INVISIBILITY:
