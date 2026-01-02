@@ -3329,9 +3329,10 @@
     border-radius: 12px;
     padding: 24px;
     min-width: 300px;
+    max-width: 400px;
     box-shadow: 0 10px 40px rgba(123, 31, 162, 0.6);
     text-align: center;
-    pointer-events: none; /* Don't block clicks on map */
+    /* Panel itself is clickable, buttons inside handle their own events */
   }
 
   .blade-barrier-instructions h3 {
@@ -3358,7 +3359,6 @@
     transition: all 0.2s ease;
     margin-bottom: 8px;
     width: 100%;
-    pointer-events: all; /* Re-enable for buttons */
   }
 
   .confirm-placement-btn:hover {
@@ -3377,7 +3377,6 @@
     cursor: pointer;
     transition: all 0.2s ease;
     width: 100%;
-    pointer-events: all; /* Re-enable for buttons */
   }
 
   .cancel-btn:hover {
