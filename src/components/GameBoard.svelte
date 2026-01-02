@@ -96,6 +96,7 @@
   import HazardMarker from "./HazardMarker.svelte";
   import BoardTokenMarker from "./BoardTokenMarker.svelte";
   import PowerCardAttackPanel from "./PowerCardAttackPanel.svelte";
+  import AttackCardDetailPanel from "./AttackCardDetailPanel.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
   import XPCounter from "./XPCounter.svelte";
@@ -1333,6 +1334,11 @@
     selectedAttackCardId = cardId;
   }
   
+  // Handle dismissing the attack card detail panel
+  function handleDismissAttackCardDetail() {
+    selectedAttackCardId = null;
+  }
+  
   // Clear selected attack card when we're not in an attack-ready state
   $effect(() => {
     // Clear selected card if not in hero phase, can't attack, or in map control mode
@@ -2378,6 +2384,16 @@
               canMove={heroTurnActions.canMove}
               onSelectedCardChange={handleSelectedAttackCardChange}
             />
+            
+            <!-- Attack Card Detail Panel - shown when a card is selected (but not during multi-attack or move-attack) -->
+            {#if selectedAttackCardId !== null && !multiAttackState && !pendingMoveAttack}
+              <AttackCardDetailPanel
+                cardId={selectedAttackCardId}
+                availableTargets={targetableMonsters}
+                onAttackWithCard={handleAttackWithCard}
+                onDismiss={handleDismissAttackCardDetail}
+              />
+            {/if}
           {/if}
         {/if}
       </div>
