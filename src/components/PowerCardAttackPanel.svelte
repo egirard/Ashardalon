@@ -333,54 +333,7 @@
       </div>
     {/if}
     
-    <!-- Target Selection (only for multi-attack and move-attack sequences) -->
-    {#if multiAttackState || (pendingMoveAttack && adjacentMonsters.length > 0)}
-      {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack ? pendingMoveAttack.cardId : null)}
-      {@const selectedCard = activeCardId ? getPowerCardById(activeCardId) : null}
-      {@const parsed = selectedCard ? parseActionCard(selectedCard) : null}
-      {@const validTargets = activeCardId ? getValidTargetsForCard(activeCardId) : adjacentMonsters}
-      <div class="target-selection" data-testid="target-selection">
-        <div class="target-header">
-          {#if multiAttackState}
-            <span>Attack {multiAttackState.attacksCompleted + 1}/{multiAttackState.totalAttacks} with {selectedCard?.name}</span>
-          {:else}
-            <span>Attack with {selectedCard?.name}</span>
-          {/if}
-        </div>
-        <div class="target-list">
-          {#each validTargets as monster (monster.instanceId)}
-            {@const isValidTarget = !multiAttackState?.sameTarget || 
-                                    multiAttackState.targetInstanceId === monster.instanceId ||
-                                    multiAttackState.attacksCompleted === 0}
-            {#if isValidTarget}
-              <button 
-                class="attack-button"
-                onclick={() => handleAttack(monster.instanceId)}
-                data-testid="attack-target-{monster.instanceId}"
-                aria-label="Attack {getMonsterName(monster.monsterId)} with {selectedCard?.name}"
-              >
-                Attack {getMonsterName(monster.monsterId)}
-                {#if parsed?.attack?.attackCount && parsed.attack.attackCount > 1 && parsed.attack.sameTarget}
-                  <span class="attack-multiplier">×{parsed.attack.attackCount}</span>
-                {/if}
-              </button>
-            {/if}
-          {/each}
-          {#if multiAttackState && onCancelMultiAttack}
-            <button 
-              class="cancel-attack-button"
-              onclick={onCancelMultiAttack}
-              data-testid="cancel-multi-attack"
-              aria-label="Cancel remaining attacks"
-            >
-              Cancel Remaining Attacks
-            </button>
-          {/if}
-        </div>
-      </div>
-    {/if}
-    
-    <!-- Hint text when no card is selected and not in multi-attack -->
+    <!-- Hint text when no card is selected -->
     {#if !multiAttackState && !pendingMoveAttack && selectedCardId === null}
       <div class="select-card-hint" data-testid="select-card-hint">
         Select a power card above to attack
