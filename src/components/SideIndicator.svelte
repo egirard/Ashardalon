@@ -25,6 +25,8 @@
         class="side-square"
         class:selected={currentSide === 'left'}
         data-testid="side-square-left"
+        role="status"
+        aria-label={currentSide === 'left' ? 'Left side position (selected)' : 'Left side position'}
       >
         {#if currentSide === 'left'}
           <div class="glow"></div>
@@ -37,7 +39,7 @@
         class:selected={currentSide === 'right'}
         onclick={onSwap}
         data-testid="side-square-right"
-        aria-label="Swap sides"
+        aria-label={currentSide === 'right' ? 'Right side position (selected)' : 'Swap to right side'}
       >
         {#if currentSide === 'right'}
           <div class="glow"></div>
