@@ -101,20 +101,23 @@ data-testid="hero-{hero.id}-bottom"
 
 ## Affected Tests
 
-A search of all E2E test files reveals the following tests are using the incorrect test ID format:
+A comprehensive search of all E2E test files reveals **at least 50 tests** are using the incorrect test ID format without the edge suffix. Some examples include:
 
-1. **Test 001 - Character Selection** - Uses `hero-quinn` (incorrect)
-2. **Test 044 - Multi-Target Attacks** - Uses `hero-keyleth` and `hero-haskan` (incorrect)
-3. **Test 048 - Attack Then Move** - Uses `hero-quinn` and `hero-vistra` (incorrect)
-4. **Test 052 - Clerics Shield** - Uses `hero-quinn` and `hero-vistra` (incorrect)
-5. **Test 062 - Card Detail View** - Uses `hero-vistra` (incorrect)
+- **Test 001 - Character Selection** - Uses `hero-quinn` (incorrect)
+- **Test 044 - Multi-Target Attacks** - Uses `hero-keyleth` and `hero-haskan` (incorrect)
+- **Test 048 - Attack Then Move** - Uses `hero-quinn` and `hero-vistra` (incorrect)
+- **Test 052 - Clerics Shield** - Uses `hero-quinn` and `hero-vistra` (incorrect)
+- **Test 062 - Card Detail View** - Uses `hero-vistra` (incorrect)
+- Tests 006, 007, 008, 009, 010, 012, 013, 014, 015, 016, 018, 019, 020, 022, 023, 024, 025, 026, 027, 028, 029, 030, 033, 034, 035, 038, 039, 040, 041, 042, 045, 046, 049, 050, 053, 054, 055, 057, 058, 059, 060, 061, 063, 064, 065, and more...
 
-**Correct example from Test 056:**
+**Examples of tests using the correct format:**
+
+Test 011, 031, 032, 036, 037, and 056 use the correct format with edge positions:
 ```typescript
 await page.locator('[data-testid="hero-quinn-top"]').click();
 ```
 
-This test works because it includes the edge position (`-top`).
+These tests work because they include the edge position suffix (`-top`, `-bottom`, `-left`, or `-right`).
 
 ## Pattern of Failures
 
