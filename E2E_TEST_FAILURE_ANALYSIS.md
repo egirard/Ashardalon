@@ -6,11 +6,11 @@ PR #330 claimed that E2E test failures were due to environmental issues. However
 
 ## Root Cause
 
-The CharacterSelect component uses test IDs that include an edge position: `hero-{heroId}-{edge}` where edge can be `top`, `bottom`, `left`, or `right`.
+The CharacterSelect component (in `src/components/CharacterSelect.svelte`) uses test IDs that include an edge position: `hero-{heroId}-{edge}` where edge can be `top`, `bottom`, `left`, or `right`.
 
-**Example:** `data-testid="hero-vistra-bottom"`, `data-testid="hero-quinn-top"`
+**Example:** `data-testid="hero-vistra-bottom"`, `data-testid="hero-quinn-top"` (defined at lines 140, 190, 259, 308 in CharacterSelect.svelte)
 
-However, many E2E tests are looking for test IDs without the edge suffix: `data-testid="hero-vistra"`, which doesn't exist in the DOM.
+However, the majority of E2E tests (60+ tests) are looking for test IDs without the edge suffix: `data-testid="hero-vistra"`, which doesn't exist in the DOM.
 
 ## Evidence
 
@@ -70,9 +70,9 @@ Both failures have the same root cause - the test IDs don't include the edge pos
 
 ## Source Code Evidence
 
-From `src/components/CharacterSelect.svelte` (lines 140, 190, 246, 292):
+From `src/components/CharacterSelect.svelte`:
 
-**Top edge:**
+**Top edge (line 140):**
 ```html
 <button
   class="hero-card"
@@ -84,35 +84,35 @@ From `src/components/CharacterSelect.svelte` (lines 140, 190, 246, 292):
 >
 ```
 
-**Left edge:**
+**Left edge (line 190):**
 ```html
 data-testid="hero-{hero.id}-left"
 ```
 
-**Right edge:**
+**Right edge (line 259):**
 ```html
 data-testid="hero-{hero.id}-right"
 ```
 
-**Bottom edge:**
+**Bottom edge (line 308):**
 ```html
 data-testid="hero-{hero.id}-bottom"
 ```
 
 ## Affected Tests
 
-A comprehensive search of all E2E test files reveals **at least 50 tests** are using the incorrect test ID format without the edge suffix. Some examples include:
+A comprehensive search of all E2E test files reveals **at least 60+ tests** (the majority of the test suite) are using the incorrect test ID format without the edge suffix. Some examples include:
 
 - **Test 001 - Character Selection** - Uses `hero-quinn` (incorrect)
 - **Test 044 - Multi-Target Attacks** - Uses `hero-keyleth` and `hero-haskan` (incorrect)
 - **Test 048 - Attack Then Move** - Uses `hero-quinn` and `hero-vistra` (incorrect)
 - **Test 052 - Clerics Shield** - Uses `hero-quinn` and `hero-vistra` (incorrect)
 - **Test 062 - Card Detail View** - Uses `hero-vistra` (incorrect)
-- Tests 006, 007, 008, 009, 010, 012, 013, 014, 015, 016, 018, 019, 020, 022, 023, 024, 025, 026, 027, 028, 029, 030, 033, 034, 035, 038, 039, 040, 041, 042, 045, 046, 049, 050, 053, 054, 055, 057, 058, 059, 060, 061, 063, 064, 065, and more...
+- Tests 006, 007, 008, 009, 010, 012, 013, 014, 015, 016, 018, 019, 020, 022, 023, 024, 025, 026, 027, 028, 029, 030, 033, 034, 035, 038, 039, 040, 041, 042, 045, 046, 049, 050, 053, 054, 055, 057, 058, 059, 060, 061, 063, 064, 065, and many more...
 
 **Examples of tests using the correct format:**
 
-Test 011, 031, 032, 036, 037, and 056 use the correct format with edge positions:
+Tests 011, 031, 032, 036, 037, 043, 047, 056, 066, 067, and 068 use the correct format with edge positions:
 ```typescript
 await page.locator('[data-testid="hero-quinn-top"]').click();
 ```
