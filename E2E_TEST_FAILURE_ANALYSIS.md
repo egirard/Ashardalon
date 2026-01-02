@@ -39,7 +39,7 @@ The page snapshot shows hero cards with the format:
     - generic [ref=e18]: Fighter
 ```
 
-**Note:** No `data-testid="hero-vistra"` exists. The actual test IDs in the source code are `data-testid="hero-{hero.id}-{edge}"`.
+**Note:** No `data-testid="hero-vistra"` exists. The actual test IDs in the source code are in the format `data-testid="hero-{hero.id}-{edge}"`, such as `data-testid="hero-vistra-bottom"` or `data-testid="hero-vistra-top"`.
 
 ### Failure Point 2: Test 044 - Multi-Target Attacks
 
@@ -108,7 +108,7 @@ A comprehensive search of all E2E test files reveals **at least 60+ tests** (the
 - **Test 048 - Attack Then Move** - Uses `hero-quinn` and `hero-vistra` (incorrect)
 - **Test 052 - Clerics Shield** - Uses `hero-quinn` and `hero-vistra` (incorrect)
 - **Test 062 - Card Detail View** - Uses `hero-vistra` (incorrect)
-- Tests 006, 007, 008, 009, 010, 012, 013, 014, 015, 016, 018, 019, 020, 022, 023, 024, 025, 026, 027, 028, 029, 030, 033, 034, 035, 038, 039, 040, 041, 042, 045, 046, 049, 050, 053, 054, 055, 057, 058, 059, 060, 061, 063, 064, 065, and many more...
+- Tests 006-010, 012-016, 018-020, 022-030, 033-035, 038-042, 045, 046, 049, 050, 053-055, 057-065 (verified through grep search of test files)
 
 **Examples of tests using the correct format:**
 
@@ -162,5 +162,4 @@ The E2E test failures in PR #330 are **NOT due to environmental issues**. They a
 ---
 
 **Analysis Date:** 2026-01-02  
-**Analyzed By:** GitHub Copilot Coding Agent  
-**Tests Run:** E2E tests 044, 062 (failed as predicted), test 056 (used for comparison)
+**Tests Run:** E2E tests 044, 062 (failed as predicted), tests 011, 056 (used for comparison)
