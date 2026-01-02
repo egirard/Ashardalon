@@ -2,6 +2,7 @@
   import type { PowerCard } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
   import type { MonsterState } from '../store/types';
+  import type { MultiAttackState, PendingMoveAttackState } from '../store/gameSlice';
   import { MONSTERS } from '../store/types';
   import { parseActionCard } from '../store/actionCardParser';
   import { XIcon } from './icons';
@@ -11,9 +12,12 @@
     availableTargets: MonsterState[];
     onAttackWithCard: (cardId: number, targetInstanceId: string) => void;
     onDismiss: () => void;
+    multiAttackState?: MultiAttackState | null;
+    pendingMoveAttack?: PendingMoveAttackState | null;
+    onCancelMultiAttack?: () => void;
   }
 
-  let { cardId, availableTargets, onAttackWithCard, onDismiss }: Props = $props();
+  let { cardId, availableTargets, onAttackWithCard, onDismiss, multiAttackState, pendingMoveAttack, onCancelMultiAttack }: Props = $props();
 
   const card = $derived(getPowerCardById(cardId));
   const parsed = $derived(card ? parseActionCard(card) : null);
@@ -29,6 +33,12 @@
 
   function handleDismiss() {
     onDismiss();
+  }
+  
+  function handleCancelMultiAttack() {
+    if (onCancelMultiAttack) {
+      onCancelMultiAttack();
+    }
   }
 </script>
 
@@ -72,25 +82,52 @@
         <strong>Rule:</strong> {card.rule}
       </div>
 
+      {#if multiAttackState}
+        <div class="multi-attack-progress" data-testid="multi-attack-progress">
+          <strong>Multi-Attack Progress:</strong> Attack {multiAttackState.attacksCompleted + 1} of {multiAttackState.totalAttacks}
+        </div>
+      {/if}
+
       {#if availableTargets.length > 0}
         <div class="target-selection" data-testid="target-selection">
           <div class="target-header">
-            Select a target to attack:
+            {#if multiAttackState}
+              Attack {multiAttackState.attacksCompleted + 1}/{multiAttackState.totalAttacks}:
+            {:else if pendingMoveAttack}
+              Charging attack - Select target:
+            {:else}
+              Select a target to attack:
+            {/if}
           </div>
           <div class="target-list">
             {#each availableTargets as monster (monster.instanceId)}
-              <button 
-                class="attack-button"
-                onclick={() => handleAttack(monster.instanceId)}
-                data-testid="attack-target-{monster.instanceId}"
-                aria-label="Attack {getMonsterName(monster.monsterId)} with {card.name}"
-              >
-                Attack {getMonsterName(monster.monsterId)}
-                {#if parsed?.attack?.attackCount && parsed.attack.attackCount > 1 && parsed.attack.sameTarget}
-                  <span class="attack-multiplier">×{parsed.attack.attackCount}</span>
-                {/if}
-              </button>
+              {@const isValidTarget = !multiAttackState?.sameTarget || 
+                                      multiAttackState.targetInstanceId === monster.instanceId ||
+                                      multiAttackState.attacksCompleted === 0}
+              {#if isValidTarget}
+                <button 
+                  class="attack-button"
+                  onclick={() => handleAttack(monster.instanceId)}
+                  data-testid="attack-target-{monster.instanceId}"
+                  aria-label="Attack {getMonsterName(monster.monsterId)} with {card.name}"
+                >
+                  Attack {getMonsterName(monster.monsterId)}
+                  {#if parsed?.attack?.attackCount && parsed.attack.attackCount > 1 && parsed.attack.sameTarget}
+                    <span class="attack-multiplier">×{parsed.attack.attackCount}</span>
+                  {/if}
+                </button>
+              {/if}
             {/each}
+            {#if multiAttackState && onCancelMultiAttack}
+              <button 
+                class="cancel-button"
+                onclick={handleCancelMultiAttack}
+                data-testid="cancel-multi-attack"
+                aria-label="Cancel remaining attacks"
+              >
+                Cancel Remaining Attacks
+              </button>
+            {/if}
           </div>
         </div>
       {:else}
@@ -222,6 +259,20 @@
     color: #ffd700;
   }
 
+  .multi-attack-progress {
+    padding: 0.5rem;
+    background: rgba(255, 152, 0, 0.2);
+    border: 1px solid #ff9800;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #ff9800;
+    margin-top: 0.5rem;
+  }
+
+  .multi-attack-progress strong {
+    color: #ffcc80;
+  }
+
   .target-selection {
     margin-top: 0.5rem;
     padding: 0.5rem;
@@ -275,6 +326,31 @@
     padding: 0.1rem 0.3rem;
     border-radius: 3px;
     margin-left: 0.5rem;
+  }
+
+  .cancel-button {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+    background: linear-gradient(145deg, #5a5a5a 0%, #3a3a3a 100%);
+    color: #fff;
+    border: 2px solid #888;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    text-align: center;
+  }
+
+  .cancel-button:hover {
+    background: linear-gradient(145deg, #6a6a6a 0%, #4a4a4a 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .cancel-button:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
 
   .no-targets-message {

@@ -2385,14 +2385,20 @@
               onSelectedCardChange={handleSelectedAttackCardChange}
             />
             
-            <!-- Attack Card Detail Panel - shown when a card is selected (but not during multi-attack or move-attack) -->
-            {#if selectedAttackCardId !== null && !multiAttackState && !pendingMoveAttack}
-              <AttackCardDetailPanel
-                cardId={selectedAttackCardId}
-                availableTargets={targetableMonsters}
-                onAttackWithCard={handleAttackWithCard}
-                onDismiss={handleDismissAttackCardDetail}
-              />
+            <!-- Attack Card Detail Panel - shown when a card is selected OR during multi-attack or move-attack -->
+            {#if selectedAttackCardId !== null || multiAttackState || pendingMoveAttack}
+              {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack ? pendingMoveAttack.cardId : selectedAttackCardId)}
+              {#if activeCardId !== null}
+                <AttackCardDetailPanel
+                  cardId={activeCardId}
+                  availableTargets={targetableMonsters}
+                  onAttackWithCard={handleAttackWithCard}
+                  onDismiss={handleDismissAttackCardDetail}
+                  {multiAttackState}
+                  {pendingMoveAttack}
+                  onCancelMultiAttack={handleCancelMultiAttack}
+                />
+              {/if}
             {/if}
           {/if}
         {/if}
