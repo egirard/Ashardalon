@@ -333,9 +333,9 @@
       </div>
     {/if}
     
-    <!-- Target Selection -->
-    {#if selectedCardId !== null || multiAttackState || (pendingMoveAttack && adjacentMonsters.length > 0)}
-      {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack ? pendingMoveAttack.cardId : selectedCardId)}
+    <!-- Target Selection (only for multi-attack and move-attack sequences) -->
+    {#if multiAttackState || (pendingMoveAttack && adjacentMonsters.length > 0)}
+      {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack ? pendingMoveAttack.cardId : null)}
       {@const selectedCard = activeCardId ? getPowerCardById(activeCardId) : null}
       {@const parsed = selectedCard ? parseActionCard(selectedCard) : null}
       {@const validTargets = activeCardId ? getValidTargetsForCard(activeCardId) : adjacentMonsters}
@@ -378,7 +378,10 @@
           {/if}
         </div>
       </div>
-    {:else if !multiAttackState}
+    {/if}
+    
+    <!-- Hint text when no card is selected and not in multi-attack -->
+    {#if !multiAttackState && !pendingMoveAttack && selectedCardId === null}
       <div class="select-card-hint" data-testid="select-card-hint">
         Select a power card above to attack
       </div>
