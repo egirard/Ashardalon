@@ -2667,22 +2667,24 @@
   {#if pendingBladeBarrier}
     {@const currentHero = heroTokens.find(t => t.heroId === pendingBladeBarrier.heroId)}
     {#if currentHero}
-      <!-- Selection Instructions Overlay -->
-      <div class="blade-barrier-instructions">
-        {#if pendingBladeBarrier.step === 'tile-selection'}
-          <h3>Blade Barrier: Select Tile</h3>
-          <p>Click a highlighted tile within 2 tiles of your position</p>
-        {:else if pendingBladeBarrier.step === 'square-selection'}
-          {@const selected = pendingBladeBarrier.selectedSquares?.length || 0}
-          <h3>Blade Barrier: Select Squares</h3>
-          <p>Click 5 different squares on the tile ({selected}/5 selected)</p>
-          {#if selected === 5}
-            <button class="confirm-placement-btn" onclick={handleBladeBarrierConfirm}>
-              Confirm Placement
-            </button>
+      <!-- Selection Instructions Overlay with Backdrop -->
+      <div class="blade-barrier-overlay" data-testid="blade-barrier-overlay">
+        <div class="blade-barrier-instructions">
+          {#if pendingBladeBarrier.step === 'tile-selection'}
+            <h3>Blade Barrier: Select Tile</h3>
+            <p>Click a highlighted tile within 2 tiles of your position</p>
+          {:else if pendingBladeBarrier.step === 'square-selection'}
+            {@const selected = pendingBladeBarrier.selectedSquares?.length || 0}
+            <h3>Blade Barrier: Select Squares</h3>
+            <p>Click 5 different squares on the tile ({selected}/5 selected)</p>
+            {#if selected === 5}
+              <button class="confirm-placement-btn" onclick={handleBladeBarrierConfirm}>
+                Confirm Placement
+              </button>
+            {/if}
           {/if}
-        {/if}
-        <button class="cancel-btn" onclick={handleBladeBarrierCancel}>Cancel</button>
+          <button class="cancel-btn" onclick={handleBladeBarrierCancel}>Cancel</button>
+        </div>
       </div>
     {/if}
   {/if}
@@ -3373,12 +3375,20 @@
   }
 
   /* Blade Barrier Selection Styles */
-  .blade-barrier-instructions {
+  .blade-barrier-overlay {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     z-index: 1000;
+  }
+
+  .blade-barrier-instructions {
     background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%);
     border: 3px solid #7b1fa2;
     border-radius: 12px;
