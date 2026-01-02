@@ -12,6 +12,7 @@ import {
 } from './powerCards';
 
 export type EdgePosition = 'top' | 'bottom' | 'left' | 'right';
+export type SidePreference = 'left' | 'right';
 
 export interface HeroSelection {
   hero: Hero;
@@ -32,6 +33,7 @@ export interface HeroesState {
   availableHeroes: Hero[];
   selectedHeroes: Hero[];
   heroEdgeMap: Record<string, EdgePosition>; // Maps hero ID to the edge that selected it
+  heroSidePreferences: Record<string, SidePreference>; // Maps hero ID to left or right side preference
   /** Power card selections during character setup (before game starts) */
   powerCardSelections: Record<string, HeroPowerCardSelection>;
   /** Finalized power cards for each hero (after game starts) */
@@ -42,6 +44,7 @@ const initialState: HeroesState = {
   availableHeroes: AVAILABLE_HEROES,
   selectedHeroes: [],
   heroEdgeMap: {},
+  heroSidePreferences: {},
   powerCardSelections: {},
   heroPowerCards: {},
 };
@@ -89,6 +92,7 @@ export const heroesSlice = createSlice({
         if (state.heroEdgeMap[heroId] === edge) {
           state.selectedHeroes.splice(existingIndex, 1);
           delete state.heroEdgeMap[heroId];
+          delete state.heroSidePreferences[heroId];
           delete state.powerCardSelections[heroId];
         }
       } else {
@@ -98,6 +102,16 @@ export const heroesSlice = createSlice({
           if (hero) {
             state.selectedHeroes.push(hero);
             state.heroEdgeMap[heroId] = edge;
+            
+            // Determine default side preference based on how many heroes are already on this edge
+            const heroesOnSameEdge = state.selectedHeroes.filter(
+              h => h.id !== heroId && state.heroEdgeMap[h.id] === edge
+            );
+            
+            // Default to 'left', unless there's already a hero on 'left' side of this edge
+            const leftTaken = heroesOnSameEdge.some(h => state.heroSidePreferences[h.id] === 'left');
+            state.heroSidePreferences[heroId] = leftTaken ? 'right' : 'left';
+            
             // Initialize power card selection with random cards for this hero
             const shuffledUtilityCards = getShuffledUtilityCards(hero.heroClass, hero.id);
             const shuffledAtWillCards = getShuffledAtWillCards(hero.heroClass, hero.id);
@@ -116,8 +130,27 @@ export const heroesSlice = createSlice({
     clearSelection: (state) => {
       state.selectedHeroes = [];
       state.heroEdgeMap = {};
+      state.heroSidePreferences = {};
       state.powerCardSelections = {};
       state.heroPowerCards = {};
+    },
+    /**
+     * Swap the side preferences for all heroes on the same edge.
+     * When two heroes are on the same edge, this swaps their left/right positions.
+     */
+    swapSidesOnEdge: (state, action: PayloadAction<{ edge: EdgePosition }>) => {
+      const { edge } = action.payload;
+      
+      // Find all heroes on this edge
+      const heroesOnEdge = state.selectedHeroes.filter(
+        h => state.heroEdgeMap[h.id] === edge
+      );
+      
+      // Swap the side preferences for all heroes on this edge
+      for (const hero of heroesOnEdge) {
+        const currentSide = state.heroSidePreferences[hero.id];
+        state.heroSidePreferences[hero.id] = currentSide === 'left' ? 'right' : 'left';
+      }
     },
     /**
      * Select a utility power card for a hero
@@ -211,6 +244,7 @@ export const {
   toggleHeroSelection,
   selectHeroFromEdge,
   clearSelection,
+  swapSidesOnEdge,
   selectUtilityCard,
   toggleAtWillCard,
   selectDailyCard,

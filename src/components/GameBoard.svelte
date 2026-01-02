@@ -178,6 +178,7 @@
   let heroTokens: HeroToken[] = $state([]);
   let selectedHeroes: Hero[] = $state([]);
   let heroEdgeMap: Record<string, EdgePosition> = $state({});
+  let heroSidePreferences: Record<string, 'left' | 'right'> = $state({});
   let turnState: TurnState = $state({
     currentHeroIndex: 0,
     currentPhase: "hero-phase",
@@ -270,6 +271,7 @@
       heroTokens = state.game.heroTokens;
       selectedHeroes = state.heroes.selectedHeroes;
       heroEdgeMap = state.heroes.heroEdgeMap;
+      heroSidePreferences = state.heroes.heroSidePreferences;
       turnState = state.game.turnState;
       validMoveSquares = state.game.validMoveSquares;
       showingMovement = state.game.showingMovement;
@@ -327,6 +329,7 @@
     heroTokens = state.game.heroTokens;
     selectedHeroes = state.heroes.selectedHeroes;
     heroEdgeMap = state.heroes.heroEdgeMap;
+    heroSidePreferences = state.heroes.heroSidePreferences;
     turnState = state.game.turnState;
     validMoveSquares = state.game.validMoveSquares;
     showingMovement = state.game.showingMovement;
@@ -2386,11 +2389,13 @@
     {@const controlledMonsters = getMonstersForHero(hero.id)}
     {@const isHeroActive = isActiveHero(hero.id)}
     {@const edge = heroEdgeMap[hero.id] || 'bottom'}
+    {@const sidePreference = heroSidePreferences[hero.id] || 'left'}
     {#if heroHpState}
       <div 
-        class="player-panel-overlay player-panel-{edge}" 
+        class="player-panel-overlay player-panel-{edge} player-panel-side-{sidePreference}" 
         data-testid="player-panel-{edge}"
         data-hero-id={hero.id}
+        data-side-preference={sidePreference}
       >
         <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
           <!-- Monster cards to the left of player card -->
@@ -2785,6 +2790,56 @@
     bottom: 0;
     margin: auto 0;
     height: fit-content;
+  }
+  
+  /* Side-by-side positioning for top/bottom edges */
+  .player-panel-top.player-panel-side-left {
+    left: 0.75rem;
+    right: auto;
+    margin: 0;
+  }
+  
+  .player-panel-top.player-panel-side-right {
+    left: auto;
+    right: 0.75rem;
+    margin: 0;
+  }
+  
+  .player-panel-bottom.player-panel-side-left {
+    left: 0.75rem;
+    right: auto;
+    margin: 0;
+  }
+  
+  .player-panel-bottom.player-panel-side-right {
+    left: auto;
+    right: 0.75rem;
+    margin: 0;
+  }
+  
+  /* Side-by-side positioning for left/right edges */
+  .player-panel-left.player-panel-side-left {
+    top: 0.75rem;
+    bottom: auto;
+    margin: 0;
+  }
+  
+  .player-panel-left.player-panel-side-right {
+    top: auto;
+    bottom: 0.75rem;
+    margin: 0;
+  }
+  
+  .player-panel-right.player-panel-side-left {
+    top: 0.75rem;
+    bottom: auto;
+    margin: 0;
+  }
+  
+  .player-panel-right.player-panel-side-right {
+    top: auto;
+    bottom: 0.75rem;
+    margin: 0;
   }
 
   /* Board container - fullscreen, map fills entire viewport */

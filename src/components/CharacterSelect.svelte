@@ -1,15 +1,17 @@
 <script lang="ts">
   import { store } from '../store';
-  import { selectHeroFromEdge, finalizePowerCardSelections, type EdgePosition, type HeroPowerCardSelection } from '../store/heroesSlice';
+  import { selectHeroFromEdge, finalizePowerCardSelections, swapSidesOnEdge, type EdgePosition, type SidePreference, type HeroPowerCardSelection } from '../store/heroesSlice';
   import { startGame } from '../store/gameSlice';
   import type { Hero } from '../store/types';
   import { assetPath } from '../utils';
   import PowerCardSelection from './PowerCardSelection.svelte';
+  import SideIndicator from './SideIndicator.svelte';
   import { CheckIcon } from './icons';
   
   let selectedHeroes: Hero[] = $state([]);
   let availableHeroes: Hero[] = $state([]);
   let heroEdgeMap: Record<string, EdgePosition> = $state({});
+  let heroSidePreferences: Record<string, SidePreference> = $state({});
   let powerCardSelections: Record<string, HeroPowerCardSelection> = $state({});
   
   // Track which heroes have open power card selection panels
@@ -22,6 +24,7 @@
       selectedHeroes = state.heroes.selectedHeroes;
       availableHeroes = state.heroes.availableHeroes;
       heroEdgeMap = state.heroes.heroEdgeMap;
+      heroSidePreferences = state.heroes.heroSidePreferences;
       powerCardSelections = state.heroes.powerCardSelections;
     });
     
@@ -30,6 +33,7 @@
     selectedHeroes = state.heroes.selectedHeroes;
     availableHeroes = state.heroes.availableHeroes;
     heroEdgeMap = state.heroes.heroEdgeMap;
+    heroSidePreferences = state.heroes.heroSidePreferences;
     powerCardSelections = state.heroes.powerCardSelections;
     
     return unsubscribe;
@@ -89,6 +93,14 @@
     openPowerSelectionHeroes.delete(heroId);
     openPowerSelectionHeroes = new Set(openPowerSelectionHeroes);
   }
+  
+  function getHeroesOnEdge(edge: EdgePosition): Hero[] {
+    return selectedHeroes.filter(h => heroEdgeMap[h.id] === edge);
+  }
+  
+  function handleSwapSides(edge: EdgePosition) {
+    store.dispatch(swapSidesOnEdge({ edge }));
+  }
 </script>
 
 <div class="character-select" data-testid="character-select">
@@ -97,6 +109,16 @@
     <div class="hero-row" data-testid="hero-grid">
       {#each availableHeroes as hero (hero.id)}
         <div class="hero-with-power-button">
+          <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+          {#if isSelectedOnEdge(hero.id, 'top')}
+            <SideIndicator
+              edge="top"
+              currentSide={heroSidePreferences[hero.id]}
+              heroesOnSameEdge={getHeroesOnEdge('top').length}
+              onSwap={() => handleSwapSides('top')}
+            />
+          {/if}
+          
           <!-- Power selection button above selected hero -->
           {#if isSelectedOnEdge(hero.id, 'top')}
             <button
@@ -137,6 +159,16 @@
       <div class="hero-column">
         {#each availableHeroes as hero (hero.id)}
           <div class="hero-with-power-button">
+            <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+            {#if isSelectedOnEdge(hero.id, 'left')}
+              <SideIndicator
+                edge="left"
+                currentSide={heroSidePreferences[hero.id]}
+                heroesOnSameEdge={getHeroesOnEdge('left').length}
+                onSwap={() => handleSwapSides('left')}
+              />
+            {/if}
+            
             <!-- Power selection button above selected hero -->
             {#if isSelectedOnEdge(hero.id, 'left')}
               <button
@@ -196,6 +228,16 @@
       <div class="hero-column">
         {#each availableHeroes as hero (hero.id)}
           <div class="hero-with-power-button">
+            <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+            {#if isSelectedOnEdge(hero.id, 'right')}
+              <SideIndicator
+                edge="right"
+                currentSide={heroSidePreferences[hero.id]}
+                heroesOnSameEdge={getHeroesOnEdge('right').length}
+                onSwap={() => handleSwapSides('right')}
+              />
+            {/if}
+            
             <!-- Power selection button above selected hero -->
             {#if isSelectedOnEdge(hero.id, 'right')}
               <button
@@ -235,6 +277,16 @@
     <div class="hero-row">
       {#each availableHeroes as hero (hero.id)}
         <div class="hero-with-power-button">
+          <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+          {#if isSelectedOnEdge(hero.id, 'bottom')}
+            <SideIndicator
+              edge="bottom"
+              currentSide={heroSidePreferences[hero.id]}
+              heroesOnSameEdge={getHeroesOnEdge('bottom').length}
+              onSwap={() => handleSwapSides('bottom')}
+            />
+          {/if}
+          
           <!-- Power selection button above selected hero -->
           {#if isSelectedOnEdge(hero.id, 'bottom')}
             <button
