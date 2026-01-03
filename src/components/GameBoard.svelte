@@ -3414,6 +3414,7 @@
   .square-selection-overlay-container {
     position: absolute;
     pointer-events: none;
+    z-index: 5; /* Same as movement overlay to ensure visibility above tiles */
   }
 
   .selectable-square {
