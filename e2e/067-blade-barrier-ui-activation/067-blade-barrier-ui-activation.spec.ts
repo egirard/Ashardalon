@@ -47,34 +47,42 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
       }
     });
 
-    // STEP 3: Double-click the Blade Barrier card to activate it
-    await page.locator('[data-testid="power-card-5"]').dblclick();
+    // STEP 3: Click the Blade Barrier card to see detail view
+    await page.locator('[data-testid="power-card-5"]').click();
+    
+    // Wait for card detail view to appear
+    await page.waitForTimeout(300); // Brief wait for UI state to update
+    
+    // Verify card detail view is visible
+    await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
+
+    await screenshots.capture(page, 'blade-barrier-detail-view', {
+      programmaticCheck: async () => {
+        // Verify card detail view is visible
+        await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
+        
+        // Verify Blade Barrier heading is in detail view
+        const heading = page.locator('[data-testid="card-detail-view"] h3:has-text("Blade Barrier")');
+        await expect(heading).toBeVisible();
+        
+        // Verify activate button exists in detail view
+        await expect(page.locator('[data-testid="activate-power-button"]')).toBeVisible();
+      }
+    });
+    
+    // STEP 4: Activate Blade Barrier from detail view
+    await page.locator('[data-testid="activate-power-button"]').click();
     
     // Wait for tile to become selectable (purple overlay appears)
-    await page.waitForTimeout(300); // Brief wait for UI state to update
+    await page.waitForTimeout(300);
     
     // Verify the start tile has the selectable-tile class
     await expect(page.locator('[data-testid="start-tile"]')).toHaveClass(/selectable-tile/);
 
-    await screenshots.capture(page, 'blade-barrier-detail-view', {
-      programmaticCheck: async () => {
-        // Verify blade barrier expansion is visible in power card panel
-        await expect(page.locator('[data-testid="blade-barrier-expanded"]')).toBeVisible();
-        const instructions = page.locator('text=Select Tile');
-        await expect(instructions).toBeVisible();
-        
-        // Verify start tile is selectable
-        await expect(page.locator('[data-testid="start-tile"]')).toHaveClass(/selectable-tile/);
-        
-        // Verify cancel button exists in expanded view
-        await expect(page.locator('[data-testid="cancel-selection-button"]')).toBeVisible();
-      }
-    });
-
     await screenshots.capture(page, 'tile-selection-on-map', {
       programmaticCheck: async () => {
-        // Verify blade barrier selection UI is displayed in expanded card
-        await expect(page.locator('[data-testid="blade-barrier-expanded"]')).toBeVisible();
+        // Verify card detail view shows tile selection instructions
+        await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
         const instructions = page.locator('text=Select Tile');
         await expect(instructions).toBeVisible();
         
@@ -98,8 +106,8 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'square-selection-on-map', {
       programmaticCheck: async () => {
-        // Verify blade barrier selection UI shows square selection in expanded card
-        await expect(page.locator('[data-testid="blade-barrier-expanded"]')).toBeVisible();
+        // Verify card detail view shows square selection instructions
+        await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
         const instructions = page.locator('text=Select Squares');
         await expect(instructions).toBeVisible();
         
@@ -108,11 +116,9 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
         const count = await squares.count();
         expect(count).toBeGreaterThan(0);
         
-        // Verify progress shows 0/5 in expanded card using data-testid
-        const progressCounter = page.locator('[data-testid="progress-counter"]');
-        await expect(progressCounter).toBeVisible();
-        await expect(progressCounter).toContainText('0');
-        await expect(progressCounter).toContainText('5');
+        // Verify progress shows 0/5 in card detail view
+        const progressText = page.locator('[data-testid="card-detail-view"] >> text=/0.*5/');
+        await expect(progressText).toBeVisible();
       }
     });
 
@@ -129,12 +135,11 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'five-squares-selected-on-map', {
       programmaticCheck: async () => {
-        // Verify progress shows 5/5 in expanded card using data-testid
-        const progressCounter = page.locator('[data-testid="progress-counter"]');
-        await expect(progressCounter).toBeVisible();
-        await expect(progressCounter).toContainText('5 / 5');
+        // Verify progress shows 5/5 in card detail view
+        const progressText = page.locator('[data-testid="card-detail-view"] >> text=/5.*5/');
+        await expect(progressText).toBeVisible();
         
-        // Verify confirm button is visible in expanded card
+        // Verify confirm button is visible in card detail view
         await expect(page.locator('[data-testid="confirm-placement-button"]')).toBeVisible();
         
         // Verify selected squares show numbers 1-5

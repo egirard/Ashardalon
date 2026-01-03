@@ -247,8 +247,11 @@
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // Dismiss detail view for all cards since Blade Barrier doesn't use it
-      selectedCardDetail = null;
+      // Keep detail view open for Blade Barrier (ID 5) to show selection UI
+      // For other cards, dismiss the detail view
+      if (cardId !== BLADE_BARRIER_CARD_ID) {
+        selectedCardDetail = null;
+      }
     }
   }
 
