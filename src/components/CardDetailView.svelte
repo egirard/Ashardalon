@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PowerCard } from '../store/powerCards';
   import type { TreasureCard } from '../store/treasure';
-  import type { HeroCondition } from '../store/types';
+  import type { HeroCondition, Position } from '../store/types';
   import { SwordIcon, ShieldIcon, HeartIcon, DiceIcon, TargetIcon, StarIcon, XIcon } from './icons';
 
   // Treasure usage type constants
@@ -295,7 +295,7 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.4);
     z-index: 100;
     animation: slide-in 0.2s ease-out;
-    /* Improve scrollbar appearance */
+    /* Custom scrollbar styling - thin width with gold theme matching UI */
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.6) rgba(20, 20, 35, 0.5);
   }
