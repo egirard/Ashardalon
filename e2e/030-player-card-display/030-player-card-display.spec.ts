@@ -10,7 +10,7 @@ test.describe('030 - Player Card Display', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
 
     // STEP 2: Select Vistra from bottom edge and set up power cards via Redux
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     
     // Bypass power card selection UI (has pre-existing issues) by setting state directly
     await page.evaluate(() => {

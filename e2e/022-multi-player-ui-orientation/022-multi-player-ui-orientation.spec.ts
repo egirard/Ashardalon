@@ -10,7 +10,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
 
     // STEP 2: Select Quinn from bottom edge (standard orientation)
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Open power card selection for Quinn and take screenshot
     await page.locator('[data-testid="select-powers-quinn"]').click();

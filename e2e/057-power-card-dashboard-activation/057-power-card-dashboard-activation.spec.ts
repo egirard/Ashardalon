@@ -9,14 +9,14 @@ test.describe('057 - Power Card Dashboard Activation', () => {
     // Quinn has "Healing Hymn" and "Command" as utility cards that can be activated from dashboard
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
 
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
 
     await screenshots.capture(page, 'hero-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
@@ -220,7 +220,7 @@ test.describe('057 - Power Card Dashboard Activation', () => {
     // Test with Vistra (Fighter) who has "Dwarven Resilience" as a custom ability
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
 
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();

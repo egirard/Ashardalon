@@ -19,7 +19,7 @@ test.describe('038 - Encounter Cards Comprehensive System Test', () => {
     });
 
     // Select Quinn from bottom edge (unrotated view)
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
 
     // Start game

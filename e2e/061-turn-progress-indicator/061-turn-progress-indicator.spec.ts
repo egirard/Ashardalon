@@ -10,7 +10,7 @@ test.describe('061 - Turn Progress Indicator', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Quinn from bottom edge
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');

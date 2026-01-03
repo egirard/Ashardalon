@@ -10,7 +10,7 @@ test.describe('040 - Monster Card Display', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
 
     // STEP 2: Select Quinn from bottom edge
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Open power card selection for Quinn
     await page.locator('[data-testid="select-powers-quinn"]').click();

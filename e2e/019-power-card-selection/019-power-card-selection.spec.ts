@@ -20,12 +20,12 @@ test.describe('019 - Power Card Selection', () => {
     });
 
     // STEP 2: Select hero Quinn from the bottom edge
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     await screenshots.capture(page, 'hero-selected', {
       programmaticCheck: async () => {
         // Verify Quinn is selected
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         
         // Verify selected heroes list appears
         await expect(page.locator('[data-testid="selected-heroes-list"]')).toBeVisible();

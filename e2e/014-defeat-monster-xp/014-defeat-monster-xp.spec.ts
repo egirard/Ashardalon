@@ -8,7 +8,7 @@ test.describe('014 - Defeat Monster and Gain XP', () => {
     // STEP 1: Start the game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
@@ -180,7 +180,7 @@ test.describe('014 - Defeat Monster and Gain XP', () => {
     // Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
@@ -277,7 +277,7 @@ test.describe('014 - Defeat Monster and Gain XP', () => {
     // Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();

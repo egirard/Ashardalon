@@ -11,13 +11,13 @@ test.describe('039 - Ranged Attacks', () => {
     
     await screenshots.capture(page, 'character-select-screen', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-haskan"]')).toBeVisible();
+        await expect(page.locator('[data-testid="hero-haskan-bottom"]')).toBeVisible();
         await expect(page.locator('[data-testid="start-game-button"]')).toBeDisabled();
       }
     });
     
     // Select Haskan (Wizard) - he has ranged attacks like Ray of Frost (2 tiles) and Arc Lightning (1 tile)
-    await page.locator('[data-testid="hero-haskan"]').click();
+    await page.locator('[data-testid="hero-haskan-bottom"]').click();
     
     // Select power cards for Haskan
     // Haskan will have Ray of Frost (id: 44, within 2 tiles) and Arc Lightning (id: 42, within 1 tile)
@@ -28,7 +28,7 @@ test.describe('039 - Ranged Attacks', () => {
     
     await screenshots.capture(page, 'haskan-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-haskan"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-haskan-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
@@ -273,7 +273,7 @@ test.describe('039 - Ranged Attacks', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Haskan (Wizard) who has ranged attacks
-    await page.locator('[data-testid="hero-haskan"]').click();
+    await page.locator('[data-testid="hero-haskan-bottom"]').click();
     await selectDefaultPowerCards(page, 'haskan');
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
     await page.locator('[data-testid="start-game-button"]').click();

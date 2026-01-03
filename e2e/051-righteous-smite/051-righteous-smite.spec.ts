@@ -10,17 +10,17 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Keyleth (Paladin with Righteous Smite)
-    await page.locator('[data-testid="hero-keyleth"]').click();
+    await page.locator('[data-testid="hero-keyleth-bottom"]').click();
     await selectDefaultPowerCards(page, 'keyleth');
     
     // Select Quinn as second hero
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
     await screenshots.capture(page, 'two-heroes-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-keyleth"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-keyleth-bottom"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
       }
     });
 
@@ -145,10 +145,10 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
-    await page.locator('[data-testid="hero-keyleth"]').click();
+    await page.locator('[data-testid="hero-keyleth-bottom"]').click();
     await selectDefaultPowerCards(page, 'keyleth');
     
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
     await page.locator('[data-testid="start-game-button"]').click();
@@ -260,13 +260,13 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
-    await page.locator('[data-testid="hero-keyleth"]').click();
+    await page.locator('[data-testid="hero-keyleth-bottom"]').click();
     await selectDefaultPowerCards(page, 'keyleth');
     
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
     
     await page.locator('[data-testid="start-game-button"]').click();

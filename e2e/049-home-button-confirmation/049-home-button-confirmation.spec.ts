@@ -10,7 +10,7 @@ test.describe('049 - Home Button Confirmation Dialog', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Quinn
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Select power cards
     await selectDefaultPowerCards(page, 'quinn');
@@ -114,7 +114,7 @@ test.describe('049 - Home Button Confirmation Dialog', () => {
     // Start a game
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
@@ -151,7 +151,7 @@ test.describe('049 - Home Button Confirmation Dialog', () => {
     // Start a game
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });

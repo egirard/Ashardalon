@@ -8,7 +8,7 @@ test.describe('020 - Power Card Use', () => {
     // STEP 1: Navigate to character selection and select Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
 
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
@@ -16,7 +16,7 @@ test.describe('020 - Power Card Use', () => {
     await screenshots.capture(page, 'hero-with-powers-selected', {
       programmaticCheck: async () => {
         // Verify Quinn is selected with powers
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
@@ -165,7 +165,7 @@ test.describe('020 - Power Card Use', () => {
     // Setup: Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
