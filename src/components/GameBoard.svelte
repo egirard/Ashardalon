@@ -2763,8 +2763,9 @@
     pointer-events: none;
   }
 
-  /* But keep the card detail view clickable */
-  .player-panel-overlay.blade-barrier-selection-active :global(.card-detail-view) {
+  /* But keep the card detail view and blade barrier expanded UI clickable */
+  .player-panel-overlay.blade-barrier-selection-active :global(.card-detail-view),
+  .player-panel-overlay.blade-barrier-selection-active :global(.blade-barrier-expanded) {
     pointer-events: auto;
   }
 
