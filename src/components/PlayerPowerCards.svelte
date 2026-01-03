@@ -195,9 +195,9 @@
   /**
    * Handle power card click
    * 
-   * Shows the card detail view on click for most cards.
+   * Shows the card detail view on click for all cards.
    * Attack cards expand inline to show monster selection.
-   * Blade Barrier can be activated with double-click (shows no detail view).
+   * Blade Barrier shows detail view initially, then switches to inline selection UI when activated.
    * 
    * @param cardId - The ID of the power card
    * @param highlightState - Current state: 'eligible', 'ineligible', or 'disabled'
@@ -212,8 +212,11 @@
     isFlipped: boolean,
     ineligibilityReason: string
   ) {
-    // Blade Barrier activates via double-click, no detail view
+    // If Blade Barrier is in selection mode, don't toggle detail view
     const isBladeBarrier = cardId === BLADE_BARRIER_CARD_ID;
+    if (isBladeBarrier && bladeBarrierState) {
+      return;
+    }
     
     // If clicking the same card, dismiss the detail view
     if (selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === cardId) {
@@ -222,11 +225,6 @@
       if (expandedAttackCardId === cardId) {
         expandedAttackCardId = null;
       }
-      return;
-    }
-    
-    // Blade Barrier doesn't use detail view - activate via double-click
-    if (isBladeBarrier) {
       return;
     }
     
@@ -247,12 +245,12 @@
   
   /**
    * Handle activating a non-attack power card (utility, custom ability)
-   * This is called on double-click or from a button in the detail view
+   * This is called from a button in the detail view
    */
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // Dismiss detail view for all cards since Blade Barrier doesn't use it
+      // Dismiss detail view after activating (Blade Barrier will show inline UI)
       selectedCardDetail = null;
     }
   }
@@ -315,7 +313,6 @@
           title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
           style="border-color: {getPowerCardColor(card.type)};"
           onclick={() => handlePowerCardClick(card.id, highlightState, card, isFlipped, ineligibilityReason)}
-          ondblclick={highlightState === 'eligible' && !isAttackCard ? () => handleActivatePowerCard(card.id) : undefined}
           data-testid="power-card-{card.id}"
           aria-label={getAriaLabel(card, highlightState, ineligibilityReason)}
         >

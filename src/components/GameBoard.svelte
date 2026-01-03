@@ -247,6 +247,7 @@
     cardId: number; 
     step: 'tile-selection' | 'square-selection'; 
     selectedTileId?: string;
+    selectedSubTileId?: string; // For start tile, which half: 'top' or 'bottom'
     selectedSquares?: Position[]; // For square selection mode
   } | null = $state(null);
   
@@ -1595,7 +1596,7 @@
   }
 
   // Helper function to get valid squares on a tile
-  function getBladeBarrierSelectableSquares(tileId: string): Position[] {
+  function getBladeBarrierSelectableSquares(tileId: string, subTileId?: string): Position[] {
     const tile = dungeon.tiles.find(t => t.id === tileId);
     if (!tile) return [];
 
@@ -1605,15 +1606,14 @@
     const START_TILE_HEIGHT = 8;
 
     if (tile.tileType === 'start') {
-      // Start tile spans 2 sub-tiles
-      for (let subY = 0; subY < 2; subY++) {
-        for (let x = 0; x < TILE_WIDTH; x++) {
-          for (let y = 0; y < NORMAL_TILE_HEIGHT; y++) {
-            squares.push({ 
-              x: tile.position.col * TILE_WIDTH + x, 
-              y: subY * NORMAL_TILE_HEIGHT + y 
-            });
-          }
+      // Start tile spans 2 sub-tiles - only show squares for the selected sub-tile
+      const subY = subTileId === '1' ? 1 : 0; // Default to top (0) if not specified
+      for (let x = 0; x < TILE_WIDTH; x++) {
+        for (let y = 0; y < NORMAL_TILE_HEIGHT; y++) {
+          squares.push({ 
+            x: tile.position.col * TILE_WIDTH + x, 
+            y: subY * NORMAL_TILE_HEIGHT + y 
+          });
         }
       }
     } else {
@@ -1728,13 +1728,30 @@
   }
 
   // Blade Barrier modal handlers
-  function handleBladeBarrierTileSelected(tileId: string) {
+  function handleBladeBarrierTileSelected(tileId: string, event: MouseEvent) {
     if (!pendingBladeBarrier) return;
+    
+    const tile = dungeon.tiles.find(t => t.id === tileId);
+    if (!tile) return;
+    
+    let subTileId: string | undefined;
+    
+    // For start tile, determine which half was clicked
+    if (tile.tileType === 'start') {
+      const target = event.currentTarget as HTMLElement;
+      const rect = target.getBoundingClientRect();
+      const clickY = event.clientY - rect.top;
+      const halfHeight = rect.height / 2;
+      
+      // Top half is subtile 0, bottom half is subtile 1
+      subTileId = clickY < halfHeight ? '0' : '1';
+    }
     
     // Move to square selection step
     pendingBladeBarrier = {
       ...pendingBladeBarrier,
       selectedTileId: tileId,
+      selectedSubTileId: subTileId,
       step: 'square-selection',
       selectedSquares: []
     };
@@ -2003,7 +2020,7 @@
               : "dungeon-tile"}
             data-tile-id={tile.id}
             style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;"
-            onclick={() => isTileSelectable && handleBladeBarrierTileSelected(tile.id)}
+            onclick={(e) => isTileSelectable && handleBladeBarrierTileSelected(tile.id, e)}
             role={isTileSelectable ? "button" : undefined}
             tabindex={isTileSelectable ? 0 : undefined}
           >
@@ -2063,7 +2080,7 @@
           {#if selectedTile}
             {@const tilePos = getTilePixelPosition(selectedTile, mapBounds)}
             {@const tileDims = getTileDimensions(selectedTile)}
-            {@const selectableSquares = getBladeBarrierSelectableSquares(selectedTile.id)}
+            {@const selectableSquares = getBladeBarrierSelectableSquares(selectedTile.id, pendingBladeBarrier.selectedSubTileId)}
             {@const selectedSquares = pendingBladeBarrier.selectedSquares || []}
             <div
               class="square-selection-overlay-container"
