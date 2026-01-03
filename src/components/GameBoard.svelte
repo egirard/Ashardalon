@@ -1756,9 +1756,9 @@
       selectedSquares: []
     };
     
-    // Expose for testing
+    // Expose for testing - clone to avoid Svelte state descriptor issues
     if (typeof window !== 'undefined') {
-      (window as any).__PENDING_BLADE_BARRIER__ = pendingBladeBarrier;
+      (window as any).__PENDING_BLADE_BARRIER__ = JSON.parse(JSON.stringify(pendingBladeBarrier));
     }
   }
 
@@ -1784,9 +1784,9 @@
       };
     }
     
-    // Expose for testing
+    // Expose for testing - clone to avoid Svelte state descriptor issues
     if (typeof window !== 'undefined') {
-      (window as any).__PENDING_BLADE_BARRIER__ = pendingBladeBarrier;
+      (window as any).__PENDING_BLADE_BARRIER__ = JSON.parse(JSON.stringify(pendingBladeBarrier));
     }
   }
 
@@ -1809,12 +1809,13 @@
     const timestamp = Date.now();
     
     // Create board tokens for each selected position
+    // Clone positions to avoid Svelte state descriptor issues
     const newTokens = positions.map((position, index) => ({
       id: `token-blade-barrier-${timestamp}-${index}`,
       type: 'blade-barrier' as const,
       powerCardId: cardId,
       ownerId: heroId,
-      position
+      position: { x: position.x, y: position.y }
     }));
     
     // Dispatch action to add tokens to the board
