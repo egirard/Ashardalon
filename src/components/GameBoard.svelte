@@ -2415,6 +2415,7 @@
     {#if heroHpState}
       <div 
         class="player-panel-overlay player-panel-{edge} player-panel-side-{sidePreference}" 
+        class:blade-barrier-selection-active={pendingBladeBarrier?.heroId === hero.id}
         data-testid="player-panel-{edge}"
         data-hero-id={hero.id}
         data-side-preference={sidePreference}
@@ -2755,6 +2756,16 @@
     max-width: calc(100vw - 1.5rem); /* Prevent horizontal overflow */
     max-height: calc(100vh - 1.5rem); /* Prevent vertical overflow */
     overflow: visible; /* Allow child components to handle their own overflow */
+  }
+
+  /* When blade barrier selection is active, allow clicks to pass through to the board */
+  .player-panel-overlay.blade-barrier-selection-active {
+    pointer-events: none;
+  }
+
+  /* But keep the card detail view clickable */
+  .player-panel-overlay.blade-barrier-selection-active :global(.card-detail-view) {
+    pointer-events: auto;
   }
 
   /* Top edge - at top center */
