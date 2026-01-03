@@ -286,6 +286,8 @@
     left: calc(100% + 0.5rem);
     width: 250px;
     max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
     background: rgba(20, 20, 35, 0.98);
     border: 2px solid #ffd700;
     border-radius: 8px;
@@ -293,6 +295,28 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.4);
     z-index: 100;
     animation: slide-in 0.2s ease-out;
+    /* Improve scrollbar appearance */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 215, 0, 0.6) rgba(20, 20, 35, 0.5);
+  }
+
+  /* Webkit scrollbar styling for Chrome/Safari */
+  .card-detail-view::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .card-detail-view::-webkit-scrollbar-track {
+    background: rgba(20, 20, 35, 0.5);
+    border-radius: 3px;
+  }
+
+  .card-detail-view::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.6);
+    border-radius: 3px;
+  }
+
+  .card-detail-view::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 215, 0, 0.8);
   }
 
   @keyframes slide-in {
