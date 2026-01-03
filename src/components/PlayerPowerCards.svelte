@@ -6,7 +6,14 @@
   import type { MonsterState, Position } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
-  import CardDetailView, { type CardDetail, type BladeBarrierSelectionState, type PendingBladeBarrierState } from './CardDetailView.svelte';
+  import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
+
+  export interface PendingBladeBarrierState {
+    heroId: string;
+    cardId: number;
+    step: 'tile-selection' | 'square-selection';
+    selectedSquares?: Position[];
+  }
 
   interface Props {
     heroPowerCards?: HeroPowerCards;
@@ -185,9 +192,9 @@
   /**
    * Handle power card click
    * 
-   * Shows the card detail view on click.
-   * Attack cards also expand inline to show monster selection.
-   * Utility and custom ability cards can be activated from the detail view or double-click.
+   * Shows the card detail view on click for most cards.
+   * Attack cards expand inline to show monster selection.
+   * Blade Barrier can be activated with double-click (shows no detail view).
    * 
    * @param cardId - The ID of the power card
    * @param highlightState - Current state: 'eligible', 'ineligible', or 'disabled'
@@ -202,6 +209,9 @@
     isFlipped: boolean,
     ineligibilityReason: string
   ) {
+    // Blade Barrier (card ID 5) activates via double-click, no detail view
+    const isBladeBarrier = cardId === 5;
+    
     // If clicking the same card, dismiss the detail view
     if (selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === cardId) {
       selectedCardDetail = null;
@@ -209,6 +219,11 @@
       if (expandedAttackCardId === cardId) {
         expandedAttackCardId = null;
       }
+      return;
+    }
+    
+    // Blade Barrier doesn't use detail view - activate via double-click
+    if (isBladeBarrier) {
       return;
     }
     
@@ -234,11 +249,8 @@
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // Keep detail view open for Blade Barrier (card ID 5) since it needs selection UI
-      // For other cards, dismiss the detail view immediately
-      if (cardId !== 5) {
-        selectedCardDetail = null;
-      }
+      // Dismiss detail view for all cards since Blade Barrier doesn't use it
+      selectedCardDetail = null;
     }
   }
 
@@ -258,38 +270,18 @@
     // Keep attack card expansion if it was expanded
   }
 
-  // Compute the blade barrier state for the currently selected card
-  let bladeBarrierSelectionState = $derived.by(() => {
-    if (!bladeBarrierState) return null;
-    if (!selectedCardDetail || selectedCardDetail.type !== 'power') return null;
-    
-    const selectedCard = selectedCardDetail.card as PowerCard;
-    if (selectedCard.id !== bladeBarrierState.cardId) return null;
-    
-    // This card is the active Blade Barrier card
-    return {
-      step: bladeBarrierState.step,
-      selectedSquaresCount: bladeBarrierState.selectedSquares?.length || 0,
-      totalSquaresNeeded: 5
-    } as BladeBarrierSelectionState;
-  });
-
-  // Handle cancel - dismiss detail view and call parent handler
+  // Handle cancel - call parent handler
   function handleCancelBladeBarrier() {
     if (onCancelBladeBarrier) {
       onCancelBladeBarrier();
     }
-    // Dismiss the detail view when canceling
-    selectedCardDetail = null;
   }
 
-  // Handle confirm - call parent handler and dismiss detail view
+  // Handle confirm - call parent handler
   function handleConfirmBladeBarrier() {
     if (onConfirmBladeBarrier) {
       onConfirmBladeBarrier();
     }
-    // Dismiss the detail view when confirming
-    selectedCardDetail = null;
   }
 
 </script>
@@ -378,6 +370,61 @@
             {/if}
           </div>
         {/if}
+        
+        <!-- Expanded Blade Barrier card view -->
+        {#if bladeBarrierState && bladeBarrierState.cardId === card.id}
+          <div class="blade-barrier-expanded" data-testid="blade-barrier-expanded">
+            <div class="blade-barrier-rule">
+              {card.rule}
+            </div>
+            
+            {#if bladeBarrierState.step === 'tile-selection'}
+              <div class="selection-section">
+                <div class="selection-header">
+                  <span>Select Tile</span>
+                </div>
+                <div class="selection-instruction">
+                  Click a highlighted tile within 2 tiles of your position
+                </div>
+                <button 
+                  class="cancel-btn"
+                  onclick={handleCancelBladeBarrier}
+                  data-testid="cancel-selection-button"
+                >
+                  Cancel
+                </button>
+              </div>
+            {:else if bladeBarrierState.step === 'square-selection'}
+              <div class="selection-section">
+                <div class="selection-header">
+                  <span>Select Squares</span>
+                </div>
+                <div class="selection-instruction">
+                  Click 5 different squares on the tile
+                </div>
+                <div class="progress-display" data-testid="progress-counter">
+                  {bladeBarrierState.selectedSquares?.length || 0} / 5
+                </div>
+                {#if (bladeBarrierState.selectedSquares?.length || 0) === 5}
+                  <button 
+                    class="confirm-btn"
+                    onclick={handleConfirmBladeBarrier}
+                    data-testid="confirm-placement-button"
+                  >
+                    Confirm Placement
+                  </button>
+                {/if}
+                <button 
+                  class="cancel-btn"
+                  onclick={handleCancelBladeBarrier}
+                  data-testid="cancel-selection-button"
+                >
+                  Cancel
+                </button>
+              </div>
+            {/if}
+          </div>
+        {/if}
       </div>
     {/each}
     
@@ -389,9 +436,6 @@
         onActivate={selectedCardDetail.type === 'power' && selectedCardDetail.isClickable 
           ? () => handleActivatePowerCard((selectedCardDetail.card as PowerCard).id)
           : undefined}
-        bladeBarrierState={bladeBarrierSelectionState}
-        onCancelBladeBarrier={handleCancelBladeBarrier}
-        onConfirmBladeBarrier={handleConfirmBladeBarrier}
       />
     {/if}
   </div>
@@ -639,6 +683,99 @@
     color: #999;
     font-size: 0.55rem;
     font-style: italic;
+  }
+
+  /* Blade Barrier expanded view styles */
+  .blade-barrier-expanded {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    background: rgba(123, 31, 162, 0.3);
+    border-radius: 4px;
+    font-size: 0.6rem;
+    color: #ddd;
+    border: 1px solid #bb86fc;
+  }
+
+  .blade-barrier-rule {
+    font-size: 0.55rem;
+    color: #bbb;
+    font-style: italic;
+    line-height: 1.3;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(187, 134, 252, 0.3);
+  }
+
+  .selection-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .selection-instruction {
+    font-size: 0.55rem;
+    color: #bbb;
+    line-height: 1.3;
+  }
+
+  .progress-display {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #bb86fc;
+    text-align: center;
+    padding: 0.4rem;
+    background: rgba(123, 31, 162, 0.4);
+    border-radius: 4px;
+  }
+
+  .confirm-btn {
+    padding: 0.5rem;
+    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+    border: 2px solid #bb86fc;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    width: 100%;
+    text-align: center;
+  }
+
+  .confirm-btn:hover {
+    background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
+    border-color: #ce93d8;
+    transform: translateY(-1px);
+  }
+
+  .confirm-btn:active {
+    transform: translateY(0);
+  }
+
+  .cancel-btn {
+    padding: 0.4rem;
+    background: rgba(100, 100, 100, 0.3);
+    border: 1px solid #666;
+    border-radius: 4px;
+    color: #999;
+    font-size: 0.55rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    width: 100%;
+    text-align: center;
+  }
+
+  .cancel-btn:hover {
+    background: rgba(150, 150, 150, 0.3);
+    border-color: #888;
+    color: #ccc;
+  }
+
+  .cancel-btn:active {
+    transform: translateY(0);
   }
 
   /* Pulse animation for eligible cards */
