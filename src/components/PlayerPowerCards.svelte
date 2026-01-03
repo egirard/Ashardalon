@@ -239,8 +239,8 @@
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // Dismiss detail view after activation
-      selectedCardDetail = null;
+      // Don't dismiss detail view yet - it may be needed for blade barrier selection UI
+      // The detail view will be dismissed when the user cancels or completes the action
     }
   }
 
@@ -275,6 +275,24 @@
       totalSquaresNeeded: 5
     } as BladeBarrierSelectionState;
   });
+
+  // Handle cancel - dismiss detail view and call parent handler
+  function handleCancelBladeBarrier() {
+    if (onCancelBladeBarrier) {
+      onCancelBladeBarrier();
+    }
+    // Dismiss the detail view when canceling
+    selectedCardDetail = null;
+  }
+
+  // Handle confirm - call parent handler and dismiss detail view
+  function handleConfirmBladeBarrier() {
+    if (onConfirmBladeBarrier) {
+      onConfirmBladeBarrier();
+    }
+    // Dismiss the detail view when confirming
+    selectedCardDetail = null;
+  }
 
 </script>
 
@@ -374,8 +392,8 @@
           ? () => handleActivatePowerCard((selectedCardDetail.card as PowerCard).id)
           : undefined}
         bladeBarrierState={bladeBarrierSelectionState}
-        onCancelBladeBarrier={onCancelBladeBarrier}
-        onConfirmBladeBarrier={onConfirmBladeBarrier}
+        onCancelBladeBarrier={handleCancelBladeBarrier}
+        onConfirmBladeBarrier={handleConfirmBladeBarrier}
       />
     {/if}
   </div>
