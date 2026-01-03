@@ -47,29 +47,33 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
       }
     });
 
-    // STEP 3: Double-click the Blade Barrier card to activate it
-    await page.locator('[data-testid="power-card-5"]').dblclick();
+    // STEP 3: Click the Blade Barrier card to show detail view
+    await page.locator('[data-testid="power-card-5"]').click();
     
-    // Wait for tile to become selectable (purple overlay appears)
-    await page.waitForTimeout(300); // Brief wait for UI state to update
+    // Wait for detail view to appear
+    await page.waitForTimeout(300);
     
-    // Verify the start tile has the selectable-tile class
-    await expect(page.locator('[data-testid="start-tile"]')).toHaveClass(/selectable-tile/);
+    // Verify card detail view is shown
+    await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
 
     await screenshots.capture(page, 'blade-barrier-detail-view', {
       programmaticCheck: async () => {
-        // Verify blade barrier expansion is visible in power card panel
-        await expect(page.locator('[data-testid="blade-barrier-expanded"]')).toBeVisible();
-        const instructions = page.locator('text=Select Tile');
-        await expect(instructions).toBeVisible();
+        // Verify card detail view shows the card
+        await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
         
-        // Verify start tile is selectable
-        await expect(page.locator('[data-testid="start-tile"]')).toHaveClass(/selectable-tile/);
-        
-        // Verify cancel button exists in expanded view
-        await expect(page.locator('[data-testid="cancel-selection-button"]')).toBeVisible();
+        // Verify activate button is visible
+        await expect(page.locator('[data-testid="activate-power-button"]')).toBeVisible();
       }
     });
+    
+    // STEP 4: Click the "Activate Power" button to start blade barrier selection
+    await page.locator('[data-testid="activate-power-button"]').click();
+    
+    // Wait for tile to become selectable (purple overlay appears)
+    await page.waitForTimeout(300);
+    
+    // Verify the start tile has the selectable-tile class
+    await expect(page.locator('[data-testid="start-tile"]')).toHaveClass(/selectable-tile/);
 
     await screenshots.capture(page, 'tile-selection-on-map', {
       programmaticCheck: async () => {
