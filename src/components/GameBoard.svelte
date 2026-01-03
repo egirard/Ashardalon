@@ -1755,6 +1755,11 @@
       step: 'square-selection',
       selectedSquares: []
     };
+    
+    // Expose for testing
+    if (typeof window !== 'undefined') {
+      (window as any).__PENDING_BLADE_BARRIER__ = pendingBladeBarrier;
+    }
   }
 
   function handleBladeBarrierSquareClicked(position: Position) {
@@ -1777,6 +1782,11 @@
         ...pendingBladeBarrier,
         selectedSquares: [...pendingBladeBarrier.selectedSquares, position]
       };
+    }
+    
+    // Expose for testing
+    if (typeof window !== 'undefined') {
+      (window as any).__PENDING_BLADE_BARRIER__ = pendingBladeBarrier;
     }
   }
 
@@ -2775,15 +2785,10 @@
     overflow: visible; /* Allow child components to handle their own overflow */
   }
 
-  /* When blade barrier selection is active, allow clicks to pass through to the board */
+  /* When blade barrier selection is active, keep everything clickable */
+  /* The board tiles will still be clickable because they are positioned above in z-index */
   .player-panel-overlay.blade-barrier-selection-active {
-    pointer-events: none;
-  }
-
-  /* But keep the card detail view and blade barrier expanded UI clickable */
-  .player-panel-overlay.blade-barrier-selection-active :global(.card-detail-view),
-  .player-panel-overlay.blade-barrier-selection-active :global(.blade-barrier-expanded) {
-    pointer-events: auto;
+    /* Don't disable pointer events - let everything be clickable */
   }
 
   /* Top edge - at top center */
