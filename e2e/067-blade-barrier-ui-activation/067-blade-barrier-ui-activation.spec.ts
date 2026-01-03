@@ -73,15 +73,16 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'tile-selection-on-map', {
       programmaticCheck: async () => {
-        // Verify instruction panel is displayed
-        const instructions = page.locator('text=Blade Barrier: Select Tile');
+        // Verify blade barrier selection UI is displayed in card detail view
+        await expect(page.locator('[data-testid="blade-barrier-selection"]')).toBeVisible();
+        const instructions = page.locator('text=Select Tile');
         await expect(instructions).toBeVisible();
         
         // Verify start tile is selectable
         await expect(page.locator('[data-testid="start-tile"]')).toHaveClass(/selectable-tile/);
         
-        // Verify cancel button exists
-        await expect(page.locator('button', { hasText: 'Cancel' })).toBeVisible();
+        // Verify cancel button exists in card detail
+        await expect(page.locator('[data-testid="cancel-selection-button"]')).toBeVisible();
       }
     });
 
@@ -97,8 +98,9 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'square-selection-on-map', {
       programmaticCheck: async () => {
-        // Verify instruction panel updated
-        const instructions = page.locator('text=Blade Barrier: Select Squares');
+        // Verify blade barrier selection UI shows square selection in card detail view
+        await expect(page.locator('[data-testid="blade-barrier-selection"]')).toBeVisible();
+        const instructions = page.locator('text=Select Squares');
         await expect(instructions).toBeVisible();
         
         // Verify selectable squares exist
@@ -106,8 +108,8 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
         const count = await squares.count();
         expect(count).toBeGreaterThan(0);
         
-        // Verify progress shows 0/5
-        await expect(page.locator('text=/0\\/5/')).toBeVisible();
+        // Verify progress shows 0/5 in card detail
+        await expect(page.locator('text=/0.*5/')).toBeVisible();
       }
     });
 
@@ -124,11 +126,11 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'five-squares-selected-on-map', {
       programmaticCheck: async () => {
-        // Verify progress shows 5/5
-        await expect(page.locator('text=/5\\/5/')).toBeVisible();
+        // Verify progress shows 5/5 in card detail
+        await expect(page.locator('text=/5.*5/')).toBeVisible();
         
-        // Verify confirm button is visible
-        await expect(page.locator('button', { hasText: 'Confirm Placement' })).toBeVisible();
+        // Verify confirm button is visible in card detail
+        await expect(page.locator('[data-testid="confirm-placement-button"]')).toBeVisible();
         
         // Verify selected squares show numbers 1-5
         const selectedSquares = page.locator('.selectable-square.selected .selection-number');
@@ -137,14 +139,10 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     });
 
     // STEP 7: Click confirm button to place tokens
-    // NOTE: There's currently a bug where the confirm button click doesn't trigger token placement
-    // As a workaround, we use programmatic placement to complete the test
-    // TODO: Debug why handleBladeBarrierConfirm isn't adding tokens to store
-    
-    // Try clicking confirm button (currently not working)
-    const confirmButton = page.locator('button.confirm-placement-btn', { hasText: 'Confirm Placement' });
+    // The confirm button is now in the card detail view
+    const confirmButton = page.locator('[data-testid="confirm-placement-button"]');
     await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
-    await confirmButton.click({ force: true }); // Force click since parent has pointer-events: none
+    await confirmButton.click();
     
     // Wait to see if it works
     await page.waitForTimeout(500);
