@@ -293,7 +293,7 @@
     border-radius: 8px;
     padding: 0.75rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.4);
-    z-index: 100;
+    z-index: 150; /* Higher than player-panel-overlay (100) to ensure visibility */
     animation: slide-in 0.2s ease-out;
     /* Custom scrollbar styling - thin width with gold theme matching UI */
     scrollbar-width: thin;
