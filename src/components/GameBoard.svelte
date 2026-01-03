@@ -2463,6 +2463,9 @@
             onActivatePowerCard={(cardId) => handleActivatePowerCard(hero.id, cardId)}
             targetableMonsters={isHeroActive ? getTargetableMonstersForCurrentHero() : []}
             onAttackWithCard={isHeroActive ? handleAttackWithCard : undefined}
+            bladeBarrierState={pendingBladeBarrier?.heroId === hero.id ? pendingBladeBarrier : null}
+            onCancelBladeBarrier={handleBladeBarrierCancel}
+            onConfirmBladeBarrier={handleBladeBarrierConfirm}
           />
         </div>
       </div>
@@ -2682,32 +2685,6 @@
         onSelect={handleHeroPlacementSelect}
         onCancel={handleCancelHeroPlacement}
       />
-    {/if}
-  {/if}
-
-  <!-- Blade Barrier Selection UI (On-Map) -->
-  {#if pendingBladeBarrier}
-    {@const currentHero = heroTokens.find(t => t.heroId === pendingBladeBarrier.heroId)}
-    {#if currentHero}
-      <!-- Selection Instructions Overlay with Backdrop -->
-      <div class="blade-barrier-overlay" data-testid="blade-barrier-overlay">
-        <div class="blade-barrier-instructions">
-          {#if pendingBladeBarrier.step === 'tile-selection'}
-            <h3>Blade Barrier: Select Tile</h3>
-            <p>Click a highlighted tile within 2 tiles of your position</p>
-          {:else if pendingBladeBarrier.step === 'square-selection'}
-            {@const selected = pendingBladeBarrier.selectedSquares?.length || 0}
-            <h3>Blade Barrier: Select Squares</h3>
-            <p>Click 5 different squares on the tile ({selected}/5 selected)</p>
-            {#if selected === 5}
-              <button class="confirm-placement-btn" onclick={handleBladeBarrierConfirm}>
-                Confirm Placement
-              </button>
-            {/if}
-          {/if}
-          <button class="cancel-btn" onclick={handleBladeBarrierCancel}>Cancel</button>
-        </div>
-      </div>
     {/if}
   {/if}
 
@@ -3394,82 +3371,6 @@
     font-weight: bold;
     color: #fff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Blade Barrier Selection Styles */
-  .blade-barrier-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-
-  .blade-barrier-instructions {
-    background: linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%);
-    border: 3px solid #7b1fa2;
-    border-radius: 12px;
-    padding: 24px;
-    min-width: 300px;
-    max-width: 400px;
-    box-shadow: 0 10px 40px rgba(123, 31, 162, 0.6);
-    text-align: center;
-    /* Panel itself is clickable, buttons inside handle their own events */
-  }
-
-  .blade-barrier-instructions h3 {
-    margin: 0 0 12px 0;
-    color: #bb86fc;
-    font-size: 1.2rem;
-  }
-
-  .blade-barrier-instructions p {
-    margin: 0 0 16px 0;
-    color: #ddd;
-    font-size: 0.9rem;
-  }
-
-  .confirm-placement-btn {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
-    border: 2px solid #bb86fc;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 8px;
-    width: 100%;
-  }
-
-  .confirm-placement-btn:hover {
-    background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(123, 31, 162, 0.6);
-  }
-
-  .cancel-btn {
-    padding: 8px 16px;
-    background: rgba(100, 100, 100, 0.3);
-    border: 2px solid #666;
-    border-radius: 6px;
-    color: #999;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-  }
-
-  .cancel-btn:hover {
-    background: rgba(150, 150, 150, 0.3);
-    border-color: #888;
-    color: #bbb;
   }
 
   .selectable-tile {

@@ -3,10 +3,10 @@
   import { getPowerCardById } from '../store/powerCards';
   import { XIcon, TargetIcon } from './icons';
   import type { GameState } from '../store/gameSlice';
-  import type { MonsterState } from '../store/types';
+  import type { MonsterState, Position } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
-  import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
+  import CardDetailView, { type CardDetail, type BladeBarrierSelectionState } from './CardDetailView.svelte';
 
   interface Props {
     heroPowerCards?: HeroPowerCards;
@@ -28,6 +28,20 @@
      * Integrates with existing handleAttackWithCard flow in GameBoard.
      */
     onAttackWithCard?: (cardId: number, targetInstanceId: string) => void;
+    /**
+     * Blade Barrier selection state (if active)
+     */
+    bladeBarrierState?: {
+      heroId: string;
+      cardId: number;
+      step: 'tile-selection' | 'square-selection';
+      selectedSquares?: Position[];
+    } | null;
+    /**
+     * Callbacks for Blade Barrier actions
+     */
+    onCancelBladeBarrier?: () => void;
+    onConfirmBladeBarrier?: () => void;
   }
 
   let { 
@@ -36,7 +50,10 @@
     gameState, 
     onActivatePowerCard,
     targetableMonsters = [],
-    onAttackWithCard
+    onAttackWithCard,
+    bladeBarrierState = null,
+    onCancelBladeBarrier,
+    onConfirmBladeBarrier
   }: Props = $props();
 
   // State for expanded attack card
@@ -243,6 +260,22 @@
     // Keep attack card expansion if it was expanded
   }
 
+  // Compute the blade barrier state for the currently selected card
+  let bladeBarrierSelectionState = $derived.by(() => {
+    if (!bladeBarrierState) return null;
+    if (!selectedCardDetail || selectedCardDetail.type !== 'power') return null;
+    
+    const selectedCard = selectedCardDetail.card as PowerCard;
+    if (selectedCard.id !== bladeBarrierState.cardId) return null;
+    
+    // This card is the active Blade Barrier card
+    return {
+      step: bladeBarrierState.step,
+      selectedSquaresCount: bladeBarrierState.selectedSquares?.length || 0,
+      totalSquaresNeeded: 5
+    } as BladeBarrierSelectionState;
+  });
+
 </script>
 
 {#if powerCards.length > 0}
@@ -340,6 +373,9 @@
         onActivate={selectedCardDetail.type === 'power' && selectedCardDetail.isClickable 
           ? () => handleActivatePowerCard((selectedCardDetail.card as PowerCard).id)
           : undefined}
+        bladeBarrierState={bladeBarrierSelectionState}
+        onCancelBladeBarrier={onCancelBladeBarrier}
+        onConfirmBladeBarrier={onConfirmBladeBarrier}
       />
     {/if}
   </div>

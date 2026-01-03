@@ -16,13 +16,29 @@
     ineligibilityReason?: string;
   }
 
+  export interface BladeBarrierSelectionState {
+    step: 'tile-selection' | 'square-selection';
+    selectedSquaresCount?: number;
+    totalSquaresNeeded?: number;
+  }
+
   interface Props {
     detail: CardDetail | null;
     onDismiss?: () => void;
     onActivate?: () => void;
+    bladeBarrierState?: BladeBarrierSelectionState | null;
+    onCancelBladeBarrier?: () => void;
+    onConfirmBladeBarrier?: () => void;
   }
 
-  let { detail, onDismiss, onActivate }: Props = $props();
+  let { 
+    detail, 
+    onDismiss, 
+    onActivate,
+    bladeBarrierState = null,
+    onCancelBladeBarrier,
+    onConfirmBladeBarrier
+  }: Props = $props();
 
   // Get icon component based on treasure effect type
   function getTreasureIconComponent(effectType: string) {
@@ -117,30 +133,66 @@
           </div>
         {/if}
 
-        <div class="clickability-info" data-testid="clickability-info">
-          {#if detail.isClickable}
-            <div class="status-badge clickable">
-              ✓ Available to use
-            </div>
-            {#if onActivate && !detail.isFlipped}
-              <button 
-                class="activate-button"
-                onclick={handleActivate}
-                data-testid="activate-power-button"
-              >
-                Activate Power
-              </button>
+        <!-- Blade Barrier Selection State Display -->
+        {#if bladeBarrierState}
+          <div class="blade-barrier-selection" data-testid="blade-barrier-selection">
+            {#if bladeBarrierState.step === 'tile-selection'}
+              <div class="selection-instructions">
+                <h4>Select Tile</h4>
+                <p>Click a highlighted tile within 2 tiles of your position</p>
+              </div>
+            {:else if bladeBarrierState.step === 'square-selection'}
+              <div class="selection-instructions">
+                <h4>Select Squares</h4>
+                <p>Click 5 different squares on the tile</p>
+                <div class="progress-counter">
+                  {bladeBarrierState.selectedSquaresCount || 0} / {bladeBarrierState.totalSquaresNeeded || 5}
+                </div>
+              </div>
+              {#if bladeBarrierState.selectedSquaresCount === bladeBarrierState.totalSquaresNeeded}
+                <button 
+                  class="confirm-placement-button"
+                  onclick={onConfirmBladeBarrier}
+                  data-testid="confirm-placement-button"
+                >
+                  Confirm Placement
+                </button>
+              {/if}
             {/if}
-          {:else if detail.ineligibilityReason}
-            <div class="status-badge not-clickable">
-              ✗ {detail.ineligibilityReason}
-            </div>
-          {:else}
-            <div class="status-badge not-clickable">
-              ✗ Not currently available
-            </div>
-          {/if}
-        </div>
+            <button 
+              class="cancel-selection-button"
+              onclick={onCancelBladeBarrier}
+              data-testid="cancel-selection-button"
+            >
+              Cancel
+            </button>
+          </div>
+        {:else}
+          <div class="clickability-info" data-testid="clickability-info">
+            {#if detail.isClickable}
+              <div class="status-badge clickable">
+                ✓ Available to use
+              </div>
+              {#if onActivate && !detail.isFlipped}
+                <button 
+                  class="activate-button"
+                  onclick={handleActivate}
+                  data-testid="activate-power-button"
+                >
+                  Activate Power
+                </button>
+              {/if}
+            {:else if detail.ineligibilityReason}
+              <div class="status-badge not-clickable">
+                ✗ {detail.ineligibilityReason}
+              </div>
+            {:else}
+              <div class="status-badge not-clickable">
+                ✗ Not currently available
+              </div>
+            {/if}
+          </div>
+        {/if}
 
       {:else if detail.type === 'treasure'}
         {@const treasureCard = detail.card as TreasureCard}
@@ -426,6 +478,97 @@
   .activate-button:active {
     transform: translateY(0);
     box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
+  }
+
+  /* Blade Barrier Selection Styles */
+  .blade-barrier-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(123, 31, 162, 0.2);
+    border: 2px solid #7b1fa2;
+    border-radius: 6px;
+  }
+
+  .selection-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .selection-instructions h4 {
+    margin: 0;
+    color: #bb86fc;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  .selection-instructions p {
+    margin: 0;
+    color: #ddd;
+    font-size: 0.65rem;
+    line-height: 1.3;
+  }
+
+  .progress-counter {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #bb86fc;
+    text-align: center;
+    padding: 0.3rem;
+    background: rgba(123, 31, 162, 0.3);
+    border-radius: 4px;
+  }
+
+  .confirm-placement-button {
+    width: 100%;
+    padding: 0.6rem;
+    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+    border: 2px solid #bb86fc;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(123, 31, 162, 0.4);
+  }
+
+  .confirm-placement-button:hover {
+    background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
+    border-color: #ce93d8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(123, 31, 162, 0.6);
+  }
+
+  .confirm-placement-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(123, 31, 162, 0.4);
+  }
+
+  .cancel-selection-button {
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(100, 100, 100, 0.3);
+    border: 2px solid #666;
+    border-radius: 6px;
+    color: #999;
+    font-size: 0.7rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cancel-selection-button:hover {
+    background: rgba(150, 150, 150, 0.3);
+    border-color: #888;
+    color: #ccc;
+  }
+
+  .cancel-selection-button:active {
+    transform: translateY(0);
   }
 
   /* Respect user's reduced motion preference */
