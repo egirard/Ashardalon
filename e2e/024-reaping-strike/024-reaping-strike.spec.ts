@@ -25,7 +25,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     // STEP 1: Navigate to character selection and select Vistra (Fighter)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
 
     // Select power cards for Vistra (includes Reaping Strike as at-will #13)
     await selectDefaultPowerCards(page, 'vistra');
@@ -33,7 +33,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     await screenshots.capture(page, 'vistra-with-powers-selected', {
       programmaticCheck: async () => {
         // Verify Vistra is selected with powers
-        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="select-powers-vistra"]')).toContainText('Powers Selected');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
@@ -330,7 +330,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     // Setup: Start game with Vistra
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });

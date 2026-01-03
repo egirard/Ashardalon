@@ -8,8 +8,8 @@ test.describe('015 - Healing Surge', () => {
     // STEP 1: Start the game with Quinn and Vistra
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     // Select power cards for heroes
     await selectDefaultPowerCards(page, 'quinn');
     await selectDefaultPowerCards(page, 'vistra');
@@ -167,7 +167,7 @@ test.describe('015 - Healing Surge', () => {
     // Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
@@ -218,8 +218,8 @@ test.describe('015 - Healing Surge', () => {
     // Start game with two heroes
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     // Select power cards for heroes
     await selectDefaultPowerCards(page, 'quinn');
     await selectDefaultPowerCards(page, 'vistra');

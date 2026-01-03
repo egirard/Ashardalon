@@ -22,7 +22,7 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
     // STEP 1: Start a game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
@@ -141,7 +141,7 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
     // Start a game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
@@ -219,11 +219,11 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Quinn
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
     // Select Vistra
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
     
     await page.locator('[data-testid="start-game-button"]').click();

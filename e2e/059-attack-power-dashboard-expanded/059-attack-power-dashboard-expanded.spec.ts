@@ -8,14 +8,14 @@ test.describe('059 - Attack Power Dashboard Expanded', () => {
     // STEP 1: Navigate to character selection and select Vistra (Fighter with Charge)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
 
     // Select power cards for Vistra
     await selectDefaultPowerCards(page, 'vistra');
 
     await screenshots.capture(page, '000-hero-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });

@@ -33,12 +33,12 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
     });
 
     // STEP 2: Select hero Quinn from the bottom edge (player sitting at bottom)
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
 
     await screenshots.capture(page, 'hero-selected', {
       programmaticCheck: async () => {
         // Verify Quinn is selected on bottom edge (has 'selected' class)
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         
         // Verify start button is enabled (powers are pre-selected by default)
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();

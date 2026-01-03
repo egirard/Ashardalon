@@ -10,7 +10,7 @@ test.describe('044 - Multi-Target Attacks', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Keyleth (Paladin)
-    await page.locator('[data-testid="hero-keyleth"]').click();
+    await page.locator('[data-testid="hero-keyleth-bottom"]').click();
     
     // Use default power cards for Keyleth
     await selectDefaultPowerCards(page, 'keyleth');
@@ -252,7 +252,7 @@ test.describe('044 - Multi-Target Attacks', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Haskan (Wizard/Dragonborn) who has Hurled Breath as custom ability
-    await page.locator('[data-testid="hero-haskan"]').click();
+    await page.locator('[data-testid="hero-haskan-bottom"]').click();
     
     // Select power cards for Haskan
     await selectDefaultPowerCards(page, 'haskan');

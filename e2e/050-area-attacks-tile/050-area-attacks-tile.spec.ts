@@ -10,7 +10,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Haskan (Dragonborn Wizard who has Hurled Breath)
-    await page.locator('[data-testid="hero-haskan"]').click();
+    await page.locator('[data-testid="hero-haskan-bottom"]').click();
     
     // Select power cards for Haskan
     await selectDefaultPowerCards(page, 'haskan');
@@ -239,7 +239,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Haskan (Wizard)
-    await page.locator('[data-testid="hero-haskan"]').click();
+    await page.locator('[data-testid="hero-haskan-bottom"]').click();
     
     // Use default power cards for Haskan
     await selectDefaultPowerCards(page, 'haskan');

@@ -25,14 +25,14 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     // STEP 1: Navigate to character selection and select Vistra (Fighter)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
 
     // Select default power cards for Vistra (includes Comeback Strike as daily)
     await selectDefaultPowerCards(page, 'vistra');
 
     await screenshots.capture(page, 'vistra-with-comeback-strike', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="select-powers-vistra"]')).toContainText('Powers Selected');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
@@ -184,14 +184,14 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     // STEP 1: Navigate to character selection and select Vistra (Fighter)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
 
     // Select default power cards for Vistra (includes Comeback Strike as daily)
     await selectDefaultPowerCards(page, 'vistra');
 
     await screenshots.capture(page, 'vistra-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });

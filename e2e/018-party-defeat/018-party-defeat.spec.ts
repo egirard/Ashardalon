@@ -8,8 +8,8 @@ test.describe('018 - Party Defeat', () => {
     // STEP 1: Start the game with Quinn and Vistra (need 2 heroes to test turn cycle properly)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     // Select power cards for heroes
     await selectDefaultPowerCards(page, 'quinn');
     await selectDefaultPowerCards(page, 'vistra');
@@ -147,8 +147,8 @@ test.describe('018 - Party Defeat', () => {
     // Start game with two heroes
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     // Select power cards for heroes
     await selectDefaultPowerCards(page, 'quinn');
     await selectDefaultPowerCards(page, 'vistra');

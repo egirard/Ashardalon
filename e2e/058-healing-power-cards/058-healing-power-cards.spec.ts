@@ -10,22 +10,22 @@ test.describe('058 - Healing Power Cards (Healing Hymn, Dwarven Resilience, Lay 
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Quinn (Cleric with Healing Hymn)
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
     // Select Vistra (Dwarf with Dwarven Resilience)
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
     
     // Select Keyleth (Paladin with Lay On Hands)
-    await page.locator('[data-testid="hero-keyleth"]').click();
+    await page.locator('[data-testid="hero-keyleth-bottom"]').click();
     await selectDefaultPowerCards(page, 'keyleth');
     
     await screenshots.capture(page, 'three-heroes-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="hero-keyleth"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-keyleth-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });

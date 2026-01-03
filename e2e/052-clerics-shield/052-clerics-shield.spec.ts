@@ -10,12 +10,12 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Quinn (Cleric with Cleric's Shield)
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
     await screenshots.capture(page, 'hero-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
       }
     });
 
@@ -110,7 +110,7 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
     await page.locator('[data-testid="start-game-button"]').click();
@@ -199,16 +199,16 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select two heroes to test different targets
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
     
     await screenshots.capture(page, 'two-heroes-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
       }
     });
 

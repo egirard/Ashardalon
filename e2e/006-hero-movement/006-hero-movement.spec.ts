@@ -8,7 +8,7 @@ test.describe('006 - Move a Hero', () => {
     // STEP 1: Navigate to character selection and select Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
@@ -139,8 +139,8 @@ test.describe('006 - Move a Hero', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
     // Select Quinn and Vistra
-    await page.locator('[data-testid="hero-quinn"]').click();
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     
     // Select power cards for both heroes
     await selectDefaultPowerCards(page, 'quinn');

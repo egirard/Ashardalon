@@ -8,14 +8,14 @@ test.describe('033 - Board Tokens', () => {
     // STEP 1: Navigate to character selection and select Quinn (has Blade Barrier)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Select power cards for Quinn using helper (includes Blade Barrier daily)
     await selectDefaultPowerCards(page, 'quinn');
 
     await screenshots.capture(page, 'hero-with-powers-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }

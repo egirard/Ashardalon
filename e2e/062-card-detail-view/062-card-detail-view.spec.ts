@@ -8,12 +8,12 @@ test.describe('062 - Card Detail View', () => {
     // STEP 1: Navigate and select hero
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
 
     await screenshots.capture(page, '001-hero-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-vistra"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
       }
     });
 

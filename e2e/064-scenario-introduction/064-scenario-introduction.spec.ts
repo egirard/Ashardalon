@@ -10,7 +10,7 @@ test.describe('064 - Scenario Introduction Modal', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
 
     // STEP 2: Select hero Quinn
-    await page.locator('[data-testid="hero-quinn"]').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
 
     // STEP 3: Start the game
@@ -144,7 +144,7 @@ test.describe('064 - Scenario Introduction Modal', () => {
     // Navigate through character selection and start game
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-vistra"]').click();
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
