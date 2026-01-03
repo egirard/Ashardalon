@@ -169,7 +169,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     });
 
     // STEP 7: Click confirm button to place tokens
-    // The confirm button is in the expanded blade barrier view
     const confirmButton = page.locator('[data-testid="confirm-placement-button"]');
     await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
     
@@ -177,42 +176,8 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     await expect(confirmButton).toBeVisible();
     await expect(confirmButton).toBeEnabled();
     
-    // NOTE: There is a known issue where the onclick handler is not being attached properly
-    // For now, we'll work around this by calling the handler programmatically
-    // TODO: Fix the onclick handler attachment issue
-    await confirmButton.click({ force: true });
-    
-    // Workaround: Call the confirm handler programmatically
-    await page.evaluate(() => {
-      // Get the GameBoard component and call the handler
-      const pendingBladeBarrier = (window as any).__PENDING_BLADE_BARRIER__;
-      if (pendingBladeBarrier && pendingBladeBarrier.selectedSquares && pendingBladeBarrier.selectedSquares.length === 5) {
-        const store = (window as any).__REDUX_STORE__;
-        const { heroId, cardId } = pendingBladeBarrier;
-        const selectedSquares = JSON.parse(JSON.stringify(pendingBladeBarrier.selectedSquares));
-        
-        // Create tokens
-        const timestamp = Date.now();
-        const currentTokens = store.getState().game.boardTokens || [];
-        const newTokens = selectedSquares.map((position: any, index: number) => ({
-          id: `token-blade-barrier-${timestamp}-${index}`,
-          type: 'blade-barrier',
-          powerCardId: cardId,
-          ownerId: heroId,
-          position: { x: position.x, y: position.y }
-        }));
-        
-        store.dispatch({
-          type: 'game/setBoardTokens',
-          payload: [...currentTokens, ...newTokens]
-        });
-        
-        store.dispatch({
-          type: 'heroes/usePowerCard',
-          payload: { heroId, cardId }
-        });
-      }
-    });
+    // Click the button - this should now work after fixing the Svelte state descriptor issue
+    await confirmButton.click();
     
     // Wait for tokens to be placed
     await page.waitForTimeout(500);
