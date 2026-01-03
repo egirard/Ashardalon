@@ -410,6 +410,7 @@
                     class="confirm-btn"
                     onclick={handleConfirmBladeBarrier}
                     data-testid="confirm-placement-button"
+                    type="button"
                   >
                     Confirm Placement
                   </button>
