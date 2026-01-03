@@ -6,7 +6,7 @@
   import type { MonsterState, Position } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
-  import CardDetailView, { type CardDetail, type BladeBarrierSelectionState } from './CardDetailView.svelte';
+  import CardDetailView, { type CardDetail, type BladeBarrierSelectionState, type PendingBladeBarrierState } from './CardDetailView.svelte';
 
   interface Props {
     heroPowerCards?: HeroPowerCards;
@@ -31,12 +31,7 @@
     /**
      * Blade Barrier selection state (if active)
      */
-    bladeBarrierState?: {
-      heroId: string;
-      cardId: number;
-      step: 'tile-selection' | 'square-selection';
-      selectedSquares?: Position[];
-    } | null;
+    bladeBarrierState?: PendingBladeBarrierState | null;
     /**
      * Callbacks for Blade Barrier actions
      */

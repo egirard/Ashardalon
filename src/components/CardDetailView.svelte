@@ -22,6 +22,13 @@
     totalSquaresNeeded?: number;
   }
 
+  export interface PendingBladeBarrierState {
+    heroId: string;
+    cardId: number;
+    step: 'tile-selection' | 'square-selection';
+    selectedSquares?: Position[];
+  }
+
   interface Props {
     detail: CardDetail | null;
     onDismiss?: () => void;
@@ -145,11 +152,11 @@
               <div class="selection-instructions">
                 <h4>Select Squares</h4>
                 <p>Click 5 different squares on the tile</p>
-                <div class="progress-counter">
+                <div class="progress-counter" data-testid="progress-counter">
                   {bladeBarrierState.selectedSquaresCount || 0} / {bladeBarrierState.totalSquaresNeeded || 5}
                 </div>
               </div>
-              {#if bladeBarrierState.selectedSquaresCount === bladeBarrierState.totalSquaresNeeded}
+              {#if (bladeBarrierState.selectedSquaresCount || 0) === (bladeBarrierState.totalSquaresNeeded || 5)}
                 <button 
                   class="confirm-placement-button"
                   onclick={onConfirmBladeBarrier}

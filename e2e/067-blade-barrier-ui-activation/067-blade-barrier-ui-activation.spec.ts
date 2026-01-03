@@ -108,8 +108,11 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
         const count = await squares.count();
         expect(count).toBeGreaterThan(0);
         
-        // Verify progress shows 0/5 in card detail
-        await expect(page.locator('text=/0.*5/')).toBeVisible();
+        // Verify progress shows 0/5 in card detail using data-testid
+        const progressCounter = page.locator('[data-testid="progress-counter"]');
+        await expect(progressCounter).toBeVisible();
+        await expect(progressCounter).toContainText('0');
+        await expect(progressCounter).toContainText('5');
       }
     });
 
@@ -126,8 +129,10 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'five-squares-selected-on-map', {
       programmaticCheck: async () => {
-        // Verify progress shows 5/5 in card detail
-        await expect(page.locator('text=/5.*5/')).toBeVisible();
+        // Verify progress shows 5/5 in card detail using data-testid
+        const progressCounter = page.locator('[data-testid="progress-counter"]');
+        await expect(progressCounter).toBeVisible();
+        await expect(progressCounter).toContainText('5 / 5');
         
         // Verify confirm button is visible in card detail
         await expect(page.locator('[data-testid="confirm-placement-button"]')).toBeVisible();
