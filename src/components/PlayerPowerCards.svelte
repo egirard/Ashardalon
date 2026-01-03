@@ -8,6 +8,9 @@
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
   import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
 
+  // Blade Barrier card ID constant
+  const BLADE_BARRIER_CARD_ID = 5;
+
   export interface PendingBladeBarrierState {
     heroId: string;
     cardId: number;
@@ -209,8 +212,8 @@
     isFlipped: boolean,
     ineligibilityReason: string
   ) {
-    // Blade Barrier (card ID 5) activates via double-click, no detail view
-    const isBladeBarrier = cardId === 5;
+    // Blade Barrier activates via double-click, no detail view
+    const isBladeBarrier = cardId === BLADE_BARRIER_CARD_ID;
     
     // If clicking the same card, dismiss the detail view
     if (selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === cardId) {
@@ -372,7 +375,7 @@
         {/if}
         
         <!-- Expanded Blade Barrier card view -->
-        {#if bladeBarrierState && bladeBarrierState.cardId === card.id}
+        {#if bladeBarrierState && bladeBarrierState.cardId === card.id && card.id === BLADE_BARRIER_CARD_ID}
           <div class="blade-barrier-expanded" data-testid="blade-barrier-expanded">
             <div class="blade-barrier-rule">
               {card.rule}
