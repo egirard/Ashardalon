@@ -10,6 +10,7 @@
 
   // Blade Barrier card ID constant
   const BLADE_BARRIER_CARD_ID = 5;
+  const BLADE_BARRIER_SQUARES_NEEDED = 5;
 
   export interface PendingBladeBarrierState {
     heroId: string;
@@ -372,17 +373,17 @@
     
     <!-- Card Detail View (shows enlarged card details) -->
     {#if selectedCardDetail}
-      {@const isBladeBarrierActive = bladeBarrierState && selectedCardDetail.type === 'power' && (selectedCardDetail.card as PowerCard).id === BLADE_BARRIER_CARD_ID}
+      {@const isBladeBarrierActive = bladeBarrierState && selectedCardDetail.type === 'power' && selectedCardDetail.card && (selectedCardDetail.card as PowerCard).id === BLADE_BARRIER_CARD_ID}
       <CardDetailView 
         detail={selectedCardDetail}
         onDismiss={handleDismissDetail}
-        onActivate={selectedCardDetail.type === 'power' && selectedCardDetail.isClickable 
+        onActivate={selectedCardDetail.type === 'power' && selectedCardDetail.isClickable && selectedCardDetail.card
           ? () => handleActivatePowerCard((selectedCardDetail.card as PowerCard).id)
           : undefined}
         bladeBarrierState={isBladeBarrierActive ? {
           step: bladeBarrierState.step,
           selectedSquaresCount: bladeBarrierState.selectedSquares?.length || 0,
-          totalSquaresNeeded: 5
+          totalSquaresNeeded: BLADE_BARRIER_SQUARES_NEEDED
         } : null}
         onCancelBladeBarrier={isBladeBarrierActive ? handleCancelBladeBarrier : undefined}
         onConfirmBladeBarrier={isBladeBarrierActive ? handleConfirmBladeBarrier : undefined}
