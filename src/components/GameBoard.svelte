@@ -3418,8 +3418,9 @@
 
   .selectable-square {
     position: absolute;
-    background: rgba(123, 31, 162, 0.4);
-    border: 3px solid #bb86fc;
+    background: rgba(30, 144, 255, 0.5);
+    border: 3px solid rgba(30, 144, 255, 0.9);
+    border-radius: 4px;
     cursor: pointer;
     pointer-events: all;
     transition: all 0.2s ease;
@@ -3430,17 +3431,17 @@
     font-weight: bold;
     font-size: 1.2rem;
     animation: pulseHighlight 2s ease-in-out infinite;
-    box-shadow: 0 0 15px rgba(187, 134, 252, 0.6), inset 0 0 10px rgba(123, 31, 162, 0.3);
+    box-shadow: 0 0 15px rgba(30, 144, 255, 0.7), inset 0 0 10px rgba(30, 144, 255, 0.3);
   }
 
   @keyframes pulseHighlight {
     0%, 100% {
-      border-color: #bb86fc;
-      box-shadow: 0 0 15px rgba(187, 134, 252, 0.6), inset 0 0 10px rgba(123, 31, 162, 0.3);
+      border-color: rgba(30, 144, 255, 0.9);
+      box-shadow: 0 0 15px rgba(30, 144, 255, 0.7), inset 0 0 10px rgba(30, 144, 255, 0.3);
     }
     50% {
-      border-color: #ce93d8;
-      box-shadow: 0 0 25px rgba(206, 147, 216, 0.9), inset 0 0 15px rgba(123, 31, 162, 0.5);
+      border-color: rgba(30, 144, 255, 1);
+      box-shadow: 0 0 25px rgba(30, 144, 255, 1), inset 0 0 15px rgba(30, 144, 255, 0.5);
     }
   }
 
@@ -3452,19 +3453,19 @@
   }
 
   .selectable-square:hover {
-    background: rgba(123, 31, 162, 0.6);
-    border-color: #ce93d8;
+    background: rgba(30, 144, 255, 0.7);
+    border-color: rgba(30, 144, 255, 1);
     transform: scale(1.05);
     animation: none;
-    box-shadow: 0 0 25px rgba(206, 147, 216, 1), inset 0 0 15px rgba(123, 31, 162, 0.6);
+    box-shadow: 0 0 25px rgba(30, 144, 255, 1), inset 0 0 15px rgba(30, 144, 255, 0.6);
   }
 
   .selectable-square.selected {
-    background: rgba(123, 31, 162, 0.85);
-    border-color: #7b1fa2;
+    background: rgba(30, 144, 255, 0.85);
+    border-color: rgba(30, 144, 255, 1);
     border-width: 4px;
     animation: none;
-    box-shadow: 0 0 20px rgba(123, 31, 162, 1), inset 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 20px rgba(30, 144, 255, 1), inset 0 0 10px rgba(0, 0, 0, 0.5);
   }
 
   .token-preview {
