@@ -636,6 +636,37 @@ Several card/overlay types appear during gameplay:
 
 ## Combat Interface
 
+### Power Card Panel and Power Card Details Panel
+
+**Power Card Panel** (Left Side):
+- Shows mini-cards for all available power cards
+- Visual states indicate card availability:
+  - **Green highlight with pulsing border**: Card is eligible to use
+  - **Greyed out**: Card is ineligible or already used
+  - **Golden border**: Card is currently selected
+- Click a card to show details in the Power Card Details Panel
+
+**Power Card Details Panel** (Right of Power Card Panel):
+- Appears when clicking a power card
+- Shows full card information:
+  - Card name and type (at-will, utility, daily)
+  - Complete description and rule text
+  - Attack bonus and damage (for attack cards)
+  - Activation button (for non-attack cards)
+  - Eligibility status with reasons if not available
+- For **Blade Barrier**: Shows control panel with:
+  - Full description and activation button
+  - Selection instructions during tile/square selection
+  - Progress counter (e.g., "3 / 5" squares selected)
+  - Confirm and Cancel buttons
+- Selected card remains highlighted in Power Card Panel
+- Close button to dismiss the details panel
+
+**Screenshot References** ([E2E Test 067](../e2e/067-blade-barrier-ui-activation/README.md)):
+
+Power Card Details Panel for Blade Barrier:
+<img src="../e2e/067-blade-barrier-ui-activation/067-blade-barrier-ui-activation.spec.ts-snapshots/002-blade-barrier-control-panel-chromium-linux.png" alt="Power Card Details Panel" width="700"/>
+
 ### Hero Attacking
 
 **Step-by-step flow**:
