@@ -68,22 +68,25 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
       }
     });
 
-    // STEP 3: Click the Blade Barrier card to show inline control panel
+    // STEP 3: Click the Blade Barrier card to show Power Card Details Panel
     await page.locator('[data-testid="power-card-5"]').click();
     
-    // Wait for control panel to appear
+    // Wait for details panel to appear
     await page.waitForTimeout(300);
     
-    // Verify inline control panel is shown
-    await expect(page.locator('[data-testid="blade-barrier-control-panel"]')).toBeVisible();
+    // Verify Power Card Details Panel is shown
+    await expect(page.locator('[data-testid="power-card-details-panel"]')).toBeVisible();
 
     await screenshots.capture(page, 'blade-barrier-control-panel', {
       programmaticCheck: async () => {
-        // Verify control panel shows the card description and activate button
-        await expect(page.locator('[data-testid="blade-barrier-control-panel"]')).toBeVisible();
+        // Verify details panel shows the card information and activate button
+        await expect(page.locator('[data-testid="power-card-details-panel"]')).toBeVisible();
         
-        // Verify activate button is visible in the control panel
+        // Verify activate button is visible in the details panel
         await expect(page.locator('[data-testid="activate-blade-barrier-button"]')).toBeVisible();
+        
+        // Verify the card remains selected in the Power Card Panel
+        await expect(page.locator('[data-testid="power-card-5"]')).toHaveClass(/selected/);
       }
     });
     
@@ -98,8 +101,8 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'tile-selection-on-map', {
       programmaticCheck: async () => {
-        // Verify blade barrier selection UI is displayed in expanded card
-        await expect(page.locator('[data-testid="blade-barrier-expanded"]')).toBeVisible();
+        // Verify blade barrier selection UI is displayed in the details panel
+        await expect(page.locator('[data-testid="blade-barrier-selection"]')).toBeVisible();
         const instructions = page.locator('text=Select Tile');
         await expect(instructions).toBeVisible();
         
@@ -123,8 +126,8 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     await screenshots.capture(page, 'square-selection-on-map', {
       programmaticCheck: async () => {
-        // Verify blade barrier selection UI shows square selection in expanded card
-        await expect(page.locator('[data-testid="blade-barrier-expanded"]')).toBeVisible();
+        // Verify blade barrier selection UI shows square selection in the details panel
+        await expect(page.locator('[data-testid="blade-barrier-selection"]')).toBeVisible();
         const instructions = page.locator('text=Select Squares');
         await expect(instructions).toBeVisible();
         
