@@ -115,23 +115,11 @@
     const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
     if (!monsterGlobalPos) return false;
 
-    console.log(`[PowerCardAttackPanel] canTargetMonster check for card "${card.name}" (id:${card.id}):`, {
-      heroPos,
-      monsterId: monster.monsterId,
-      monsterInstanceId: monster.instanceId,
-      monsterTileId: monster.tileId,
-      monsterLocalPos: monster.position,
-      monsterGlobalPos,
-      targetType: parsed.attack.targetType,
-    });
-
     // Check based on target type
     switch (parsed.attack.targetType) {
       case 'adjacent':
         // Adjacent/melee - must be adjacent
-        const isAdjacent = arePositionsAdjacent(heroPos, monsterGlobalPos);
-        console.log(`[PowerCardAttackPanel] Adjacent check result: ${isAdjacent}`);
-        return isAdjacent;
+        return arePositionsAdjacent(heroPos, monsterGlobalPos);
       
       case 'tile':
         // "On your tile" - must be on same tile

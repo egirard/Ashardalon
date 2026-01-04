@@ -261,43 +261,17 @@ export function getAdjacentMonsters(
     );
   }
   
-  console.log('[combat.getAdjacentMonsters] Checking adjacency:', {
-    heroGlobalPos: position,
-    totalMonsters: monsters.length,
-    withDungeon: true
-  });
-  
   // Find monsters that are adjacent in global coordinates
   // We don't need to check which tile the hero is on - adjacency is based solely on
   // global coordinate distance, which works across tile boundaries
-  const adjacentMonsters = monsters.filter(monster => {
+  return monsters.filter(monster => {
     // Convert monster's local position to global coordinates
     const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
-    if (!monsterGlobalPos) {
-      console.log('[combat.getAdjacentMonsters] Could not convert monster position:', {
-        monsterId: monster.monsterId,
-        instanceId: monster.instanceId,
-        tileId: monster.tileId,
-        localPos: monster.position
-      });
-      return false;
-    }
+    if (!monsterGlobalPos) return false;
     
     // Check if the hero and monster are adjacent in global coordinates
-    const isAdjacent = arePositionsAdjacent(position, monsterGlobalPos);
-    console.log('[combat.getAdjacentMonsters] Monster check:', {
-      monsterId: monster.monsterId,
-      instanceId: monster.instanceId,
-      tileId: monster.tileId,
-      localPos: monster.position,
-      globalPos: monsterGlobalPos,
-      isAdjacent
-    });
-    return isAdjacent;
+    return arePositionsAdjacent(position, monsterGlobalPos);
   });
-  
-  console.log('[combat.getAdjacentMonsters] Found adjacent monsters:', adjacentMonsters.length);
-  return adjacentMonsters;
 }
 
 /**

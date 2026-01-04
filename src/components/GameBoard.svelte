@@ -127,6 +127,8 @@
     getMonstersWithinRange,
     getMonstersOnSameTile,
     getMonsterGlobalPosition,
+    arePositionsAdjacent,
+    isWithinTileRange,
   } from "../store/combat";
   import { findTileAtPosition, getTileOrSubTileId } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards, POWER_CARDS } from "../store/powerCards";
@@ -1191,14 +1193,63 @@
       // If we have non-movement attack cards, fall through to check for adjacent/ranged monsters
     }
 
-    // If maxRange is 0, only return adjacent monsters (melee only)
-    if (maxRange === 0) {
-      const tileId = getCurrentHeroTileId();
-      return getAdjacentMonsters(currentToken.position, monsters, tileId, dungeon);
+    // Instead of returning all monsters within max range, return only monsters
+    // that can be targeted by at least one available attack card.
+    // This prevents cards like "Righteous Advance" (adjacent only) from being
+    // shown as available when the only monsters are within ranged attack range
+    // but not adjacent.
+    const targetableMonsters: MonsterState[] = [];
+    
+    for (const monster of monsters) {
+      const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
+      if (!monsterGlobalPos) continue;
+      
+      // Check if this monster can be targeted by at least one attack card
+      let canBeTargeted = false;
+      
+      for (const cardState of currentHeroPowerCards.cardStates) {
+        if (cardState.isFlipped) continue;
+        
+        const card = getPowerCardById(cardState.cardId);
+        if (!card || card.attackBonus === undefined) continue;
+        
+        const parsed = parseActionCard(card);
+        if (!parsed.attack) continue;
+        
+        // Skip movement-before-attack cards (they're handled separately above)
+        if (requiresMovementFirst(parsed)) continue;
+        
+        // Check if this card can target this monster
+        let cardCanTarget = false;
+        
+        switch (parsed.attack.targetType) {
+          case 'adjacent':
+            cardCanTarget = arePositionsAdjacent(currentToken.position, monsterGlobalPos);
+            break;
+          case 'tile':
+            const heroTile = findTileAtPosition(currentToken.position, dungeon);
+            cardCanTarget = heroTile !== null && monster.tileId === heroTile.id;
+            break;
+          case 'within-tiles':
+            cardCanTarget = isWithinTileRange(currentToken.position, monsterGlobalPos, parsed.attack.range);
+            break;
+          default:
+            // Default to adjacent
+            cardCanTarget = arePositionsAdjacent(currentToken.position, monsterGlobalPos);
+        }
+        
+        if (cardCanTarget) {
+          canBeTargeted = true;
+          break; // No need to check other cards for this monster
+        }
+      }
+      
+      if (canBeTargeted) {
+        targetableMonsters.push(monster);
+      }
     }
-
-    // Return monsters within the maximum range
-    return getMonstersWithinRange(currentToken.position, monsters, maxRange, dungeon);
+    
+    return targetableMonsters;
   }
 
   // Get the full hero object from AVAILABLE_HEROES by ID
