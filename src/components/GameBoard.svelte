@@ -1099,7 +1099,6 @@
       // Check if this is a movement-before-attack card
       if (requiresMovementFirst(parsed)) {
         hasMovementBeforeAttackCard = true;
-        console.log('[DEBUG] Found movement-before-attack card:', card.name, 'id:', card.id);
       } else if (parsed.attack) {
         // This is a regular attack card (not movement-before-attack)
         hasNonMovementAttackCard = true;
