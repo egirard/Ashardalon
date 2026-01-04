@@ -360,7 +360,7 @@
         </button>
         
         <!-- Blade Barrier Control Panel (shown on first click, before activation) -->
-        {#if isBladeBarrierExpanded && isBladeBarrier && !bladeBarrierState}
+        {#if isBladeBarrierExpanded && !bladeBarrierState}
           <div class="blade-barrier-control-panel" data-testid="blade-barrier-control-panel">
             <div class="blade-barrier-description">
               {card.description}
