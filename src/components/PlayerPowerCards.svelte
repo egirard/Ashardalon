@@ -288,14 +288,15 @@
 </script>
 
 {#if powerCards.length > 0}
-  <div 
-    class="player-power-cards"
-    class:position-top={boardPosition === 'top'}
-    class:position-left={boardPosition === 'left'}
-    class:position-right={boardPosition === 'right'}
-    data-testid="player-power-cards"
-  >
-    {#each powerCards as { card, isFlipped, highlightState, ineligibilityReason } (card.id)}
+  <div class="power-cards-container">
+    <div 
+      class="player-power-cards"
+      class:position-top={boardPosition === 'top'}
+      class:position-left={boardPosition === 'left'}
+      class:position-right={boardPosition === 'right'}
+      data-testid="player-power-cards"
+    >
+      {#each powerCards as { card, isFlipped, highlightState, ineligibilityReason } (card.id)}
       {@const isExpanded = expandedAttackCardId === card.id}
       {@const isAttackCard = card.attackBonus !== undefined}
       {@const isBladeBarrier = card.id === BLADE_BARRIER_CARD_ID}
@@ -375,6 +376,7 @@
         {/if}
       </div>
     {/each}
+    </div>
     
     <!-- Power Card Details Panel (shows full card details to the right) -->
     {#if selectedCardForDetailsPanel}
@@ -402,6 +404,13 @@
 {/if}
 
 <style>
+  /* Container that holds both the power cards list and the details panel */
+  .power-cards-container {
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+  }
+
   .player-power-cards {
     position: relative;
     display: flex;
