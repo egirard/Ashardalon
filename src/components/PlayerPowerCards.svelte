@@ -64,6 +64,9 @@
   // State for expanded attack card
   let expandedAttackCardId: number | null = $state(null);
   
+  // State for expanded Blade Barrier card (shows control panel before activation)
+  let expandedBladeBarrierCardId: number | null = $state(null);
+  
   // State for selected card to show in detail view
   let selectedCardDetail: CardDetail | null = $state(null);
 
@@ -195,9 +198,9 @@
   /**
    * Handle power card click
    * 
-   * Shows the card detail view on click for all cards.
-   * Attack cards expand inline to show monster selection.
-   * Blade Barrier shows detail view initially, then switches to inline selection UI when activated.
+   * For Blade Barrier: Shows the control panel inline on first click with description and "Activate" button.
+   * For attack cards: Shows detail view and expands inline to show monster selection.
+   * For other cards: Shows detail view with activation button.
    * 
    * @param cardId - The ID of the power card
    * @param highlightState - Current state: 'eligible', 'ineligible', or 'disabled'
@@ -212,12 +215,28 @@
     isFlipped: boolean,
     ineligibilityReason: string
   ) {
-    // If Blade Barrier is in selection mode, don't toggle detail view
     const isBladeBarrier = cardId === BLADE_BARRIER_CARD_ID;
+    
+    // If Blade Barrier is already in selection mode, don't toggle anything
     if (isBladeBarrier && bladeBarrierState) {
       return;
     }
     
+    // If Blade Barrier and eligible, show inline control panel instead of detail view
+    if (isBladeBarrier && highlightState === 'eligible') {
+      // Toggle expanded state
+      if (expandedBladeBarrierCardId === cardId) {
+        expandedBladeBarrierCardId = null;
+      } else {
+        expandedBladeBarrierCardId = cardId;
+        // Close detail view and attack expansion if open
+        selectedCardDetail = null;
+        expandedAttackCardId = null;
+      }
+      return;
+    }
+    
+    // For non-Blade Barrier cards, use existing behavior
     // If clicking the same card, dismiss the detail view
     if (selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === cardId) {
       selectedCardDetail = null;
@@ -227,6 +246,9 @@
       }
       return;
     }
+    
+    // Close Blade Barrier expansion if opening detail view
+    expandedBladeBarrierCardId = null;
     
     // Show detail view for this power card
     selectedCardDetail = {
@@ -244,14 +266,21 @@
   }
   
   /**
-   * Handle activating a non-attack power card (utility, custom ability)
-   * This is called from a button in the detail view
+   * Handle activating a non-attack power card (utility, custom ability, Blade Barrier)
+   * This is called from a button in the detail view or inline control panel
    */
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // Dismiss detail view after activating (Blade Barrier will show inline UI)
-      selectedCardDetail = null;
+      // For Blade Barrier, keep the inline panel open (it will show selection UI)
+      // For other cards, dismiss detail view
+      if (cardId !== BLADE_BARRIER_CARD_ID) {
+        selectedCardDetail = null;
+      } else {
+        // Blade Barrier activation - don't close the expansion, just hide the control panel
+        // The selection UI will appear in its place
+        expandedBladeBarrierCardId = null;
+      }
     }
   }
 
@@ -298,17 +327,20 @@
     {#each powerCards as { card, isFlipped, highlightState, ineligibilityReason } (card.id)}
       {@const isExpanded = expandedAttackCardId === card.id}
       {@const isAttackCard = card.attackBonus !== undefined}
+      {@const isBladeBarrier = card.id === BLADE_BARRIER_CARD_ID}
+      {@const isBladeBarrierExpanded = expandedBladeBarrierCardId === card.id}
+      {@const isBladeBarrierInSelection = bladeBarrierState && bladeBarrierState.cardId === card.id}
       
       <div 
         class="power-card-wrapper"
-        class:expanded={isExpanded}
+        class:expanded={isExpanded || isBladeBarrierExpanded || isBladeBarrierInSelection}
       >
         <button 
           class="power-card-mini"
           class:eligible={highlightState === 'eligible'}
           class:ineligible={highlightState === 'ineligible'}
           class:disabled={highlightState === 'disabled'}
-          class:expanded={isExpanded}
+          class:expanded={isExpanded || isBladeBarrierExpanded || isBladeBarrierInSelection}
           class:selected={selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === card.id}
           title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
           style="border-color: {getPowerCardColor(card.type)};"
@@ -326,6 +358,25 @@
             </span>
           {/if}
         </button>
+        
+        <!-- Blade Barrier Control Panel (shown on first click, before activation) -->
+        {#if isBladeBarrierExpanded && isBladeBarrier && !bladeBarrierState}
+          <div class="blade-barrier-control-panel" data-testid="blade-barrier-control-panel">
+            <div class="blade-barrier-description">
+              {card.description}
+            </div>
+            <div class="blade-barrier-rule">
+              {card.rule}
+            </div>
+            <button 
+              class="activate-blade-barrier-btn"
+              onclick={() => handleActivatePowerCard(card.id)}
+              data-testid="activate-blade-barrier-button"
+            >
+              Activate
+            </button>
+          </div>
+        {/if}
         
         <!-- Expanded attack card view -->
         {#if isExpanded && isAttackCard}
@@ -686,7 +737,55 @@
     font-style: italic;
   }
 
-  /* Blade Barrier expanded view styles */
+  /* Blade Barrier Control Panel styles (shown before activation) */
+  .blade-barrier-control-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    background: rgba(123, 31, 162, 0.3);
+    border-radius: 4px;
+    font-size: 0.6rem;
+    color: #ddd;
+    border: 1px solid #bb86fc;
+  }
+
+  .blade-barrier-description {
+    font-size: 0.55rem;
+    color: #ddd;
+    line-height: 1.3;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(187, 134, 252, 0.3);
+  }
+
+  .activate-blade-barrier-btn {
+    padding: 0.6rem;
+    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+    border: 2px solid #bb86fc;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    width: 100%;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .activate-blade-barrier-btn:hover {
+    background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
+    border-color: #ce93d8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(123, 31, 162, 0.6);
+  }
+
+  .activate-blade-barrier-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Blade Barrier expanded view styles (shown during selection) */
   .blade-barrier-expanded {
     display: flex;
     flex-direction: column;
