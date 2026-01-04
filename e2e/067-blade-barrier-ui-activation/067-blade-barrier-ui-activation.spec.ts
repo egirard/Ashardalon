@@ -68,27 +68,27 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
       }
     });
 
-    // STEP 3: Click the Blade Barrier card to show detail view
+    // STEP 3: Click the Blade Barrier card to show inline control panel
     await page.locator('[data-testid="power-card-5"]').click();
     
-    // Wait for detail view to appear
+    // Wait for control panel to appear
     await page.waitForTimeout(300);
     
-    // Verify card detail view is shown
-    await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
+    // Verify inline control panel is shown
+    await expect(page.locator('[data-testid="blade-barrier-control-panel"]')).toBeVisible();
 
-    await screenshots.capture(page, 'blade-barrier-detail-view', {
+    await screenshots.capture(page, 'blade-barrier-control-panel', {
       programmaticCheck: async () => {
-        // Verify card detail view shows the card
-        await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
+        // Verify control panel shows the card description and activate button
+        await expect(page.locator('[data-testid="blade-barrier-control-panel"]')).toBeVisible();
         
-        // Verify activate button is visible
-        await expect(page.locator('[data-testid="activate-power-button"]')).toBeVisible();
+        // Verify activate button is visible in the control panel
+        await expect(page.locator('[data-testid="activate-blade-barrier-button"]')).toBeVisible();
       }
     });
     
-    // STEP 4: Click the "Activate Power" button to start blade barrier selection
-    await page.locator('[data-testid="activate-power-button"]').click();
+    // STEP 4: Click the "Activate" button to start blade barrier selection
+    await page.locator('[data-testid="activate-blade-barrier-button"]').click();
     
     // Wait for tile to become selectable (purple overlay appears)
     await page.waitForTimeout(300);

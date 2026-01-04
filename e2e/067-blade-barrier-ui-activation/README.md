@@ -1,21 +1,21 @@
-# E2E Test 067: Blade Barrier UI Activation with Integrated Card UI
+# E2E Test 067: Blade Barrier UI Activation with Inline Control Panel
 
 ## Test Purpose
 
-This E2E test demonstrates the complete user interaction flow for activating the Blade Barrier power card with an integrated, non-blocking selection UI. It validates that users can:
+This E2E test demonstrates the complete user interaction flow for activating the Blade Barrier power card with an inline control panel. It validates that users can:
 
 1. Select a hero with Blade Barrier
-2. Access and click the power card
-3. Activate the power through a button click
-4. Select a tile directly on the map with instructions shown in the power card panel
-5. Select 5 token placement squares on the map with progress shown in the power card panel
+2. Click the power card to see an inline control panel with description and "Activate" button
+3. Activate the power through the inline "Activate" button
+4. Select a tile directly on the map with instructions shown in the inline power card panel
+5. Select 5 token placement squares on the map with progress shown in the inline power card panel
 6. Confirm placement and see results
 
-**Key Feature**: Selection instructions, progress counter, and action buttons are displayed in the active power card's detail panel, ensuring full game board visibility throughout the entire flow.
+**Key Feature**: When clicking Blade Barrier, it expands inline to show a control panel with the card description and an "Activate" button. After activation, selection instructions, progress counter, and action buttons are displayed inline in the same panel, ensuring full game board visibility throughout the entire flow. No separate detail view modal or popup is shown.
 
 ## Test Story
 
-**User Story:** As a player controlling Quinn the Cleric, I want to activate my Blade Barrier daily power by clicking through the UI, with all selection instructions and controls integrated into the power card panel, maintaining full visibility of the game board throughout the entire selection process.
+**User Story:** As a player controlling Quinn the Cleric, I want to activate my Blade Barrier daily power by clicking the card to see an inline control panel with the description and an "Activate" button, maintaining full visibility of the game board throughout the entire selection process.
 
 ## Test Steps & Screenshots
 
@@ -43,38 +43,40 @@ This E2E test demonstrates the complete user interaction flow for activating the
 - `[data-testid="player-power-cards"]` is visible
 - `[data-testid="power-card-5"]` is visible
 
-### Step 3: Blade Barrier Detail View
-![Screenshot 002](067-blade-barrier-ui-activation.spec.ts-snapshots/002-blade-barrier-detail-view-chromium-linux.png)
+### Step 3: Blade Barrier Control Panel
+![Screenshot 002](067-blade-barrier-ui-activation.spec.ts-snapshots/002-blade-barrier-control-panel-chromium-linux.png)
 
 **What's verified:**
-- Clicking the Blade Barrier card opens the detail view
-- Card details are displayed (name, type, description, rule)
-- "Activate Power" button is visible and enabled
+- Clicking the Blade Barrier card shows an inline control panel
+- Control panel displays the card description and rule text
+- "Activate" button is visible and enabled in the control panel
 - Card shows as eligible (green highlight)
+- **No separate detail view modal** - everything is inline
 
 **Programmatic checks:**
-- Card detail view is visible
-- Rule text contains "Blade Barrier"
-- Activate button is present and enabled
+- Blade Barrier control panel is visible
+- Activate button is present in the control panel
+
+**UX Improvement**: Instead of opening a separate detail view popup, the Blade Barrier card now expands inline to show a control panel with the description and an "Activate" button, as requested in the issue.
 
 ### Step 4: Tile Selection with Integrated UI
 ![Screenshot 003](067-blade-barrier-ui-activation.spec.ts-snapshots/003-tile-selection-on-map-chromium-linux.png)
 
 **What's verified:**
-- Clicking "Activate Power" highlights tiles on the map with purple overlay
-- Selection instructions appear **in the power card detail panel** (not a blocking modal)
+- Clicking "Activate" highlights tiles on the map with purple overlay
+- Selection instructions appear **in the power card inline panel** (not a blocking modal)
 - Instructions show "Select Tile" with helpful text
 - Start tile has purple border and is clickable
 - **Full map visibility maintained** - no modal blocking the game board
 - Cancel button available in the card panel
 
 **Programmatic checks:**
-- Blade Barrier selection UI is visible in card detail view
+- Blade Barrier selection UI is visible inline in the expanded card area
 - Instruction text "Select Tile" is present
 - Start tile has `selectable-tile` class
-- Cancel button is present in card detail
+- Cancel button is present in the inline panel
 
-**UX Improvement**: The selection UI is now part of the active power card's detail panel on the left, not a centered modal overlay. This keeps the entire game board visible and clickable.
+**UX Improvement**: The selection UI is part of the inline power card panel on the left, not a centered modal overlay. This keeps the entire game board visible and clickable.
 
 ### Step 5: Square Selection with Progress Display
 ![Screenshot 004](067-blade-barrier-ui-activation.spec.ts-snapshots/004-square-selection-on-map-chromium-linux.png)
@@ -129,37 +131,39 @@ This E2E test demonstrates the complete user interaction flow for activating the
 
 ## UI Interaction Method
 
-This test uses **ONLY UI events** (clicks) to drive the application with **integrated card panel selection**:
+This test uses **ONLY UI events** (clicks) to drive the application with **inline card panel control**:
 - ✅ Hero selection: `click()`
 - ✅ Power selection: `click()`
-- ✅ Card activation: `click()` on card then `click()` on "Activate Power" button
-- ✅ Tile selection: `click()` directly on tile on the map (instructions shown in card panel)
-- ✅ Square selection: `click()` directly on 5 squares on the map (progress shown in card panel)
-- ✅ Confirm placement: `click()` on "Confirm Placement" button (in card panel)
+- ✅ Card expansion: `click()` on Blade Barrier card shows inline control panel with description and "Activate" button
+- ✅ Card activation: `click()` on "Activate" button in the inline control panel
+- ✅ Tile selection: `click()` directly on tile on the map (instructions shown in inline card panel)
+- ✅ Square selection: `click()` directly on 5 squares on the map (progress shown in inline card panel)
+- ✅ Confirm placement: `click()` on "Confirm Placement" button (in inline card panel)
 
 **No programmatic workarounds** are used for the core functionality being demonstrated.
 
-## Integrated Card Panel Benefits
+## Inline Card Panel Benefits
 
-- **Full Map Visibility:** No modals blocking the game board at any point
-- **Contextual Instructions:** Selection guidance appears in the active power card's detail panel
-- **Progress Tracking:** Real-time counter (e.g., "3 / 5") shows selection progress in the card panel
-- **Consistent Location:** All controls (instructions, progress, cancel, confirm) in one panel location
+- **Full Map Visibility:** No modals or separate popups blocking the game board at any point
+- **Inline Control Panel:** Clicking Blade Barrier expands it inline to show description and "Activate" button
+- **Contextual Instructions:** Selection guidance appears in the expanded card panel inline with other power cards
+- **Progress Tracking:** Real-time counter (e.g., "3 / 5") shows selection progress in the inline card panel
+- **Consistent Location:** All controls (description, activate button, instructions, progress, cancel, confirm) in the same inline panel location
 - **Direct Interaction:** Click tiles and squares directly where they appear on the board
 - **Visual Feedback:** Purple overlays, yellow highlights, numbered indicators on the map
-- **Integrated Experience:** Selection feels part of the power card activation, not a separate dialog
-- **Always Cancelable:** Cancel button accessible in the card panel at every step
+- **Integrated Experience:** Everything happens inline - no separate modal or detail view popup
+- **Always Cancelable:** Cancel button accessible in the inline card panel at every step
 - **Immersive Gameplay:** Maintains focus on the game board while providing clear guidance
 
 ## Test Metadata
 
 - **Test ID:** 067
 - **Category:** Power Card Activation
-- **Complexity:** High (multi-step selection flow with integrated UI)
+- **Complexity:** High (multi-step selection flow with inline control panel)
 - **User Actions:** 10+ clicks
 - **Screenshots:** 7
-- **Selection Method:** Integrated card panel (no blocking modals)
-- **UI Pattern:** Contextual power card detail panel with embedded selection controls
+- **Selection Method:** Inline control panel (no separate detail view modal or popup)
+- **UI Pattern:** Inline power card expansion with control panel and embedded selection controls
 
 ## Future Enhancements
 
@@ -167,12 +171,12 @@ This test uses **ONLY UI events** (clicks) to drive the application with **integ
 - Test canceling at each step (tile selection, token placement)
 - Test edge cases (selecting same square twice, deselecting squares)
 - Test with multiple tiles in range
-- Test pointer-events handling for instruction panel
+- Test toggling the control panel (clicking card again to collapse)
 
 ## Related Files
 
 - Test: `e2e/067-blade-barrier-ui-activation/067-blade-barrier-ui-activation.spec.ts`
 - Components:
-  - `src/components/CardDetailView.svelte` (Integrated selection UI display)
+  - `src/components/PlayerPowerCards.svelte` (Inline control panel and selection UI)
   - `src/components/PlayerPowerCards.svelte` (Card panel and state management)
   - `src/components/GameBoard.svelte` (On-map selection logic, removed modal overlay)
