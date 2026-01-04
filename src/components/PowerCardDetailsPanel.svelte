@@ -193,9 +193,7 @@
 
 <style>
   .power-card-details-panel {
-    position: absolute;
-    top: 0;
-    left: calc(100% + 0.5rem);
+    position: relative;
     width: 280px;
     max-width: 90vw;
     max-height: 80vh;
@@ -207,6 +205,7 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.4);
     z-index: 150;
     animation: slide-in 0.2s ease-out;
+    flex-shrink: 0; /* Prevent shrinking when in flex container */
     /* Custom scrollbar styling */
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.6) rgba(20, 20, 35, 0.5);
