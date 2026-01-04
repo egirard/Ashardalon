@@ -25,7 +25,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     // STEP 1: Navigate to character selection and select Tarak (Rogue)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="hero-tarak"]').click();
+    await page.locator('[data-testid="hero-tarak-bottom"]').click();
 
     // Select power cards for Tarak - select Tornado Strike (daily #37) instead of default
     await page.locator('[data-testid="select-powers-tarak"]').click();
@@ -48,7 +48,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     await screenshots.capture(page, 'tarak-with-tornado-strike-selected', {
       programmaticCheck: async () => {
         // Verify Tarak is selected with powers
-        await expect(page.locator('[data-testid="hero-tarak"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-tarak-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="select-powers-tarak"]')).toContainText('Powers Selected');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
