@@ -6,7 +6,7 @@
   import type { MonsterState, Position } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
-  import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
+  import PowerCardDetailsPanel from './PowerCardDetailsPanel.svelte';
 
   // Blade Barrier card ID constant
   const BLADE_BARRIER_CARD_ID = 5;
@@ -64,11 +64,8 @@
   // State for expanded attack card
   let expandedAttackCardId: number | null = $state(null);
   
-  // State for expanded Blade Barrier card (shows control panel before activation)
-  let expandedBladeBarrierCardId: number | null = $state(null);
-  
-  // State for selected card to show in detail view
-  let selectedCardDetail: CardDetail | null = $state(null);
+  // State for selected card to show in details panel (replaces inline expansion and CardDetailView)
+  let selectedCardForDetailsPanel: PowerCard | null = $state(null);
 
   // Get power cards for display with highlight state
   let powerCards = $derived.by(() => {
@@ -198,9 +195,8 @@
   /**
    * Handle power card click
    * 
-   * For Blade Barrier: Shows the control panel inline on first click with description and "Activate" button.
-   * For attack cards: Shows detail view and expands inline to show monster selection.
-   * For other cards: Shows detail view with activation button.
+   * Shows the Power Card Details Panel to the right of the Power Card Panel.
+   * The clicked card remains selected/highlighted in the Power Card Panel.
    * 
    * @param cardId - The ID of the power card
    * @param highlightState - Current state: 'eligible', 'ineligible', or 'disabled'
@@ -222,24 +218,9 @@
       return;
     }
     
-    // If Blade Barrier and eligible, show inline control panel instead of detail view
-    if (isBladeBarrier && highlightState === 'eligible') {
-      // Toggle expanded state
-      if (expandedBladeBarrierCardId === cardId) {
-        expandedBladeBarrierCardId = null;
-      } else {
-        expandedBladeBarrierCardId = cardId;
-        // Close detail view and attack expansion if open
-        selectedCardDetail = null;
-        expandedAttackCardId = null;
-      }
-      return;
-    }
-    
-    // For non-Blade Barrier cards, use existing behavior
-    // If clicking the same card, dismiss the detail view
-    if (selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === cardId) {
-      selectedCardDetail = null;
+    // If clicking the same card, dismiss the details panel
+    if (selectedCardForDetailsPanel && selectedCardForDetailsPanel.id === cardId) {
+      selectedCardForDetailsPanel = null;
       // Also collapse attack card expansion if expanded
       if (expandedAttackCardId === cardId) {
         expandedAttackCardId = null;
@@ -247,39 +228,29 @@
       return;
     }
     
-    // Close Blade Barrier expansion if opening detail view
-    expandedBladeBarrierCardId = null;
-    
-    // Show detail view for this power card
-    selectedCardDetail = {
-      type: 'power',
-      card: card,
-      isFlipped: isFlipped,
-      isClickable: highlightState === 'eligible',
-      ineligibilityReason: highlightState !== 'eligible' ? ineligibilityReason : undefined
-    };
+    // Show details panel for this power card
+    selectedCardForDetailsPanel = card;
     
     // For attack cards, also expand to show monster selection if eligible
     if (card.attackBonus !== undefined && highlightState === 'eligible') {
       expandedAttackCardId = cardId;
+    } else {
+      // Close attack expansion for non-attack cards
+      expandedAttackCardId = null;
     }
   }
   
   /**
    * Handle activating a non-attack power card (utility, custom ability, Blade Barrier)
-   * This is called from a button in the detail view or inline control panel
+   * This is called from a button in the details panel
    */
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // For Blade Barrier, keep the inline panel open (it will show selection UI)
-      // For other cards, dismiss detail view
+      // For Blade Barrier, keep the details panel open (it will show selection UI)
+      // For other cards, dismiss details panel
       if (cardId !== BLADE_BARRIER_CARD_ID) {
-        selectedCardDetail = null;
-      } else {
-        // Blade Barrier activation - don't close the expansion, just hide the control panel
-        // The selection UI will appear in its place
-        expandedBladeBarrierCardId = null;
+        selectedCardForDetailsPanel = null;
       }
     }
   }
@@ -288,16 +259,16 @@
   function handleSelectMonsterTarget(cardId: number, targetInstanceId: string) {
     if (onAttackWithCard) {
       onAttackWithCard(cardId, targetInstanceId);
-      // Collapse after attacking and dismiss detail view
+      // Collapse after attacking and dismiss details panel
       expandedAttackCardId = null;
-      selectedCardDetail = null;
+      selectedCardForDetailsPanel = null;
     }
   }
 
-  // Handle dismissing the card detail view
-  function handleDismissDetail() {
-    selectedCardDetail = null;
-    // Keep attack card expansion if it was expanded
+  // Handle dismissing the details panel
+  function handleDismissDetailsPanel() {
+    selectedCardForDetailsPanel = null;
+    expandedAttackCardId = null;
   }
 
   // Handle cancel - call parent handler
@@ -328,20 +299,20 @@
       {@const isExpanded = expandedAttackCardId === card.id}
       {@const isAttackCard = card.attackBonus !== undefined}
       {@const isBladeBarrier = card.id === BLADE_BARRIER_CARD_ID}
-      {@const isBladeBarrierExpanded = expandedBladeBarrierCardId === card.id}
       {@const isBladeBarrierInSelection = bladeBarrierState && bladeBarrierState.cardId === card.id}
+      {@const isSelected = selectedCardForDetailsPanel && selectedCardForDetailsPanel.id === card.id}
       
       <div 
         class="power-card-wrapper"
-        class:expanded={isExpanded || isBladeBarrierExpanded || isBladeBarrierInSelection}
+        class:expanded={isExpanded || isBladeBarrierInSelection}
       >
         <button 
           class="power-card-mini"
           class:eligible={highlightState === 'eligible'}
           class:ineligible={highlightState === 'ineligible'}
           class:disabled={highlightState === 'disabled'}
-          class:expanded={isExpanded || isBladeBarrierExpanded || isBladeBarrierInSelection}
-          class:selected={selectedCardDetail?.type === 'power' && (selectedCardDetail.card as PowerCard).id === card.id}
+          class:expanded={isExpanded || isBladeBarrierInSelection}
+          class:selected={isSelected}
           title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
           style="border-color: {getPowerCardColor(card.type)};"
           onclick={() => handlePowerCardClick(card.id, highlightState, card, isFlipped, ineligibilityReason)}
@@ -358,25 +329,6 @@
             </span>
           {/if}
         </button>
-        
-        <!-- Blade Barrier Control Panel (shown on first click, before activation) -->
-        {#if isBladeBarrierExpanded && !bladeBarrierState}
-          <div class="blade-barrier-control-panel" data-testid="blade-barrier-control-panel">
-            <div class="blade-barrier-description">
-              {card.description}
-            </div>
-            <div class="blade-barrier-rule">
-              {card.rule}
-            </div>
-            <button 
-              class="activate-blade-barrier-btn"
-              onclick={() => handleActivatePowerCard(card.id)}
-              data-testid="activate-blade-barrier-button"
-            >
-              Activate
-            </button>
-          </div>
-        {/if}
         
         <!-- Expanded attack card view -->
         {#if isExpanded && isAttackCard}
@@ -421,73 +373,29 @@
             {/if}
           </div>
         {/if}
-        
-        <!-- Expanded Blade Barrier card view -->
-        {#if bladeBarrierState && bladeBarrierState.cardId === card.id && card.id === BLADE_BARRIER_CARD_ID}
-          <div class="blade-barrier-expanded" data-testid="blade-barrier-expanded">
-            <div class="blade-barrier-rule">
-              {card.rule}
-            </div>
-            
-            {#if bladeBarrierState.step === 'tile-selection'}
-              <div class="selection-section">
-                <div class="selection-header">
-                  <span>Select Tile</span>
-                </div>
-                <div class="selection-instruction">
-                  Click a highlighted tile within 2 tiles of your position
-                </div>
-                <button 
-                  class="cancel-btn"
-                  onclick={handleCancelBladeBarrier}
-                  data-testid="cancel-selection-button"
-                >
-                  Cancel
-                </button>
-              </div>
-            {:else if bladeBarrierState.step === 'square-selection'}
-              <div class="selection-section">
-                <div class="selection-header">
-                  <span>Select Squares</span>
-                </div>
-                <div class="selection-instruction">
-                  Click 5 different squares on the tile
-                </div>
-                <div class="progress-display" data-testid="progress-counter">
-                  {bladeBarrierState.selectedSquares?.length || 0} / 5
-                </div>
-                {#if (bladeBarrierState.selectedSquares?.length || 0) === 5}
-                  <button 
-                    class="confirm-btn"
-                    onclick={handleConfirmBladeBarrier}
-                    data-testid="confirm-placement-button"
-                    type="button"
-                  >
-                    Confirm Placement
-                  </button>
-                {/if}
-                <button 
-                  class="cancel-btn"
-                  onclick={handleCancelBladeBarrier}
-                  data-testid="cancel-selection-button"
-                >
-                  Cancel
-                </button>
-              </div>
-            {/if}
-          </div>
-        {/if}
       </div>
     {/each}
     
-    <!-- Card Detail View (shows enlarged card details) -->
-    {#if selectedCardDetail}
-      <CardDetailView 
-        detail={selectedCardDetail}
-        onDismiss={handleDismissDetail}
-        onActivate={selectedCardDetail.type === 'power' && selectedCardDetail.isClickable 
-          ? () => handleActivatePowerCard((selectedCardDetail.card as PowerCard).id)
-          : undefined}
+    <!-- Power Card Details Panel (shows full card details to the right) -->
+    {#if selectedCardForDetailsPanel}
+      {@const selectedCardState = heroPowerCards?.cardStates.find(s => s.cardId === selectedCardForDetailsPanel.id)}
+      {@const isFlipped = selectedCardState?.isFlipped ?? false}
+      {@const highlightState = gameState 
+        ? getPowerCardHighlightState(selectedCardForDetailsPanel, isFlipped, gameState, heroPowerCards?.heroId || '', targetableMonsters)
+        : 'ineligible'}
+      {@const ineligibilityReason = gameState && highlightState !== 'eligible'
+        ? getPowerCardIneligibilityReason(selectedCardForDetailsPanel, isFlipped, gameState, heroPowerCards?.heroId || '', targetableMonsters)
+        : ''}
+      <PowerCardDetailsPanel
+        card={selectedCardForDetailsPanel}
+        isFlipped={isFlipped}
+        isClickable={highlightState === 'eligible'}
+        ineligibilityReason={ineligibilityReason}
+        bladeBarrierState={bladeBarrierState}
+        onDismiss={handleDismissDetailsPanel}
+        onActivate={() => handleActivatePowerCard(selectedCardForDetailsPanel.id)}
+        onCancelBladeBarrier={onCancelBladeBarrier}
+        onConfirmBladeBarrier={onConfirmBladeBarrier}
       />
     {/if}
   </div>
@@ -735,147 +643,6 @@
     color: #999;
     font-size: 0.55rem;
     font-style: italic;
-  }
-
-  /* Blade Barrier Control Panel styles (shown before activation) */
-  .blade-barrier-control-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    padding: 0.4rem;
-    background: rgba(123, 31, 162, 0.3);
-    border-radius: 4px;
-    font-size: 0.6rem;
-    color: #ddd;
-    border: 1px solid #bb86fc;
-  }
-
-  .blade-barrier-description {
-    font-size: 0.55rem;
-    color: #ddd;
-    line-height: 1.3;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid rgba(187, 134, 252, 0.3);
-  }
-
-  .activate-blade-barrier-btn {
-    padding: 0.6rem;
-    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
-    border: 2px solid #bb86fc;
-    border-radius: 4px;
-    color: #fff;
-    font-size: 0.65rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-    width: 100%;
-    text-align: center;
-    text-transform: uppercase;
-  }
-
-  .activate-blade-barrier-btn:hover {
-    background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
-    border-color: #ce93d8;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(123, 31, 162, 0.6);
-  }
-
-  .activate-blade-barrier-btn:active {
-    transform: translateY(0);
-  }
-
-  /* Blade Barrier expanded view styles (shown during selection) */
-  .blade-barrier-expanded {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    padding: 0.4rem;
-    background: rgba(123, 31, 162, 0.3);
-    border-radius: 4px;
-    font-size: 0.6rem;
-    color: #ddd;
-    border: 1px solid #bb86fc;
-  }
-
-  .blade-barrier-rule {
-    font-size: 0.55rem;
-    color: #bbb;
-    font-style: italic;
-    line-height: 1.3;
-    padding-bottom: 0.3rem;
-    border-bottom: 1px solid rgba(187, 134, 252, 0.3);
-  }
-
-  .selection-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .selection-instruction {
-    font-size: 0.55rem;
-    color: #bbb;
-    line-height: 1.3;
-  }
-
-  .progress-display {
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: #bb86fc;
-    text-align: center;
-    padding: 0.4rem;
-    background: rgba(123, 31, 162, 0.4);
-    border-radius: 4px;
-  }
-
-  .confirm-btn {
-    padding: 0.5rem;
-    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
-    border: 2px solid #bb86fc;
-    border-radius: 4px;
-    color: #fff;
-    font-size: 0.6rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-    width: 100%;
-    text-align: center;
-  }
-
-  .confirm-btn:hover {
-    background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
-    border-color: #ce93d8;
-    transform: translateY(-1px);
-  }
-
-  .confirm-btn:active {
-    transform: translateY(0);
-  }
-
-  .cancel-btn {
-    padding: 0.4rem;
-    background: rgba(100, 100, 100, 0.3);
-    border: 1px solid #666;
-    border-radius: 4px;
-    color: #999;
-    font-size: 0.55rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-    width: 100%;
-    text-align: center;
-  }
-
-  .cancel-btn:hover {
-    background: rgba(150, 150, 150, 0.3);
-    border-color: #888;
-    color: #ccc;
-  }
-
-  .cancel-btn:active {
-    transform: translateY(0);
   }
 
   /* Pulse animation for eligible cards */
