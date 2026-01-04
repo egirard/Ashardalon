@@ -1116,14 +1116,6 @@
         }
       }
     }
-    
-    console.log('[DEBUG] getTargetableMonstersForCurrentHero:', {
-      hasMovementBeforeAttackCard,
-      hasNonMovementAttackCard,
-      canMove: heroTurnActions.canMove,
-      heroSpeed,
-      monstersCount: monsters.length
-    });
 
     // If there's an "on your tile" attack available, include all monsters on the same tile
     if (hasOnTileAttack) {
@@ -1138,12 +1130,6 @@
       const movementPlusAttackRange = heroSpeed + 1;
       const reachableMonsters: MonsterState[] = [];
       
-      console.log('[DEBUG] Checking movement-before-attack range:', {
-        heroPos: currentToken.position,
-        movementPlusAttackRange,
-        totalMonsters: monsters.length
-      });
-      
       for (const monster of monsters) {
         const monsterGlobalPos = getMonsterGlobalPosition(monster, dungeon);
         if (!monsterGlobalPos) continue;
@@ -1152,19 +1138,10 @@
         const distance = Math.abs(currentToken.position.x - monsterGlobalPos.x) + 
                         Math.abs(currentToken.position.y - monsterGlobalPos.y);
         
-        console.log('[DEBUG] Monster distance check:', {
-          monsterId: monster.monsterId,
-          monsterPos: monsterGlobalPos,
-          distance,
-          withinRange: distance <= movementPlusAttackRange
-        });
-        
         if (distance <= movementPlusAttackRange) {
           reachableMonsters.push(monster);
         }
       }
-      
-      console.log('[DEBUG] Reachable monsters:', reachableMonsters.length);
       
       // If we found reachable monsters via movement, return them
       // But ONLY if there are no adjacent monsters for regular attacks
@@ -1176,12 +1153,10 @@
         // If there are adjacent monsters AND we have regular attack cards, show only adjacent
         // Otherwise show the reachable monsters for movement-before-attack cards
         if (adjacentMonsters.length > 0 && hasNonMovementAttackCard) {
-          console.log('[DEBUG] Adjacent monsters found, using normal attack logic');
           return adjacentMonsters;
         }
         
         // No adjacent monsters, show reachable monsters for Charge
-        console.log('[DEBUG] No adjacent monsters, showing reachable for movement-before-attack');
         return reachableMonsters;
       }
       
