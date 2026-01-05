@@ -18,6 +18,11 @@
     ineligibilityReason?: string;
     bladeBarrierState?: PendingBladeBarrierState | null;
     flamingSphereState?: PendingFlamingSphereState | null;
+    // Flaming Sphere action handlers
+    flamingSphereToken?: { id: string; charges: number; position: { x: number; y: number } } | null;
+    heroHasMoved?: boolean;
+    onMoveFlamingSphere?: () => void;
+    onActivateFlamingSphereDamage?: () => void;
     onDismiss?: () => void;
     onActivate?: () => void;
     onCancelBladeBarrier?: () => void;
@@ -33,6 +38,10 @@
     ineligibilityReason,
     bladeBarrierState = null,
     flamingSphereState = null,
+    flamingSphereToken = null,
+    heroHasMoved = false,
+    onMoveFlamingSphere,
+    onActivateFlamingSphereDamage,
     onDismiss,
     onActivate,
     onCancelBladeBarrier,
@@ -224,6 +233,35 @@
               Activate Power
             </button>
           {/if}
+        {:else if isFlamingSphere && isFlipped && flamingSphereToken}
+          <!-- Flaming Sphere is active - show action buttons -->
+          <div class="flaming-sphere-actions" data-testid="flaming-sphere-actions">
+            <div class="actions-header">
+              <span class="fire-emoji">🔥</span>
+              <span class="header-text">Flaming Sphere Active</span>
+              <span class="charge-badge">{flamingSphereToken.charges} {flamingSphereToken.charges === 1 ? 'charge' : 'charges'}</span>
+            </div>
+            <div class="action-buttons">
+              <button
+                class="sphere-action-button"
+                onclick={onMoveFlamingSphere}
+                disabled={!onMoveFlamingSphere || heroHasMoved}
+                data-testid="move-flaming-sphere-button"
+                title="Move the Flaming Sphere 1 tile (forfeits hero movement)"
+              >
+                Move Sphere
+              </button>
+              <button
+                class="sphere-action-button damage"
+                onclick={onActivateFlamingSphereDamage}
+                disabled={!onActivateFlamingSphereDamage}
+                data-testid="activate-flaming-sphere-damage-button"
+                title="Deal 1 damage to all monsters on sphere's tile (consumes 1 charge)"
+              >
+                Activate Damage
+              </button>
+            </div>
+          </div>
         {:else if isFlipped}
           <button 
             class="activate-button compact" 
@@ -509,6 +547,95 @@
 
   .cancel-selection-button:active {
     transform: translateY(0);
+  }
+
+  /* Flaming Sphere Actions */
+  .flaming-sphere-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 102, 0, 0.1);
+    border: 2px solid rgba(255, 102, 0, 0.5);
+    border-radius: 6px;
+  }
+
+  .actions-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(255, 102, 0, 0.3);
+  }
+
+  .fire-emoji {
+    font-size: 1rem;
+  }
+
+  .header-text {
+    flex: 1;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #ff6600;
+  }
+
+  .charge-badge {
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: #fff;
+    background: rgba(255, 102, 0, 0.7);
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .sphere-action-button {
+    width: 100%;
+    padding: 0.5rem;
+    background: linear-gradient(135deg, #ff6600 0%, #ff8c00 100%);
+    border: 2px solid #ffa500;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
+  }
+
+  .sphere-action-button:not(:disabled):hover {
+    background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
+    border-color: #ffb732;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(255, 102, 0, 0.5);
+  }
+
+  .sphere-action-button:not(:disabled):active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
+  }
+
+  .sphere-action-button:disabled {
+    background: rgba(100, 100, 100, 0.3);
+    border-color: #666;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .sphere-action-button.damage {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    border-color: #f87171;
+  }
+
+  .sphere-action-button.damage:not(:disabled):hover {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    border-color: #fca5a5;
   }
 
   /* Respect user's reduced motion preference */

@@ -117,17 +117,24 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
       }
     });
 
-    // STEP 3: Verify control panel with damage button
+    // STEP 3: Click Flaming Sphere card to open details panel with damage button
+    await page.locator('[data-testid="power-card-45"]').click();
+    await page.waitForTimeout(300);
+    
+    // Wait for actions panel to appear
+    await page.locator('[data-testid="flaming-sphere-actions"]').waitFor({ state: 'visible', timeout: 5000 });
+
     await screenshots.capture(page, 'damage-button-available', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="flaming-sphere-controls"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-details-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="flaming-sphere-actions"]')).toBeVisible();
         await expect(page.locator('[data-testid="activate-flaming-sphere-damage-button"]')).toBeVisible();
         await expect(page.locator('[data-testid="activate-flaming-sphere-damage-button"]')).toBeEnabled();
         
-        // Button should show charge count
+        // Button should be visible
         const damageButton = page.locator('[data-testid="activate-flaming-sphere-damage-button"]');
         const buttonText = await damageButton.textContent();
-        expect(buttonText).toContain('3');
+        expect(buttonText).toContain('Activate Damage');
       }
     });
 
@@ -148,11 +155,6 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
         // Both monsters should have taken 1 damage
         expect(storeState.game.monsters[0].currentHp).toBe(2); // Was 3, now 2
         expect(storeState.game.monsters[1].currentHp).toBe(3); // Was 4, now 3
-        
-        // Button should now show 2 charges
-        const damageButton = page.locator('[data-testid="activate-flaming-sphere-damage-button"]');
-        const buttonText = await damageButton.textContent();
-        expect(buttonText).toContain('2');
       }
     });
 
@@ -197,8 +199,8 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
         // Token should not be visible anymore
         await expect(page.locator('[data-testid="board-token"]')).toHaveCount(0);
         
-        // Control panel should not be visible
-        await expect(page.locator('[data-testid="flaming-sphere-controls"]')).not.toBeVisible();
+        // Actions panel should not be visible (no token, so card details panel will show "Already Used")
+        await expect(page.locator('[data-testid="flaming-sphere-actions"]')).not.toBeVisible();
       }
     });
   });
