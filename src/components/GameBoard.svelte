@@ -1980,18 +1980,17 @@
     pendingFlamingSphere = null;
   }
   
-  // Helper function to get squares in range for Flaming Sphere placement
-  function getFlamingSphereSelectableSquares(heroPosition: Position): Position[] {
+  // Helper function to get squares within N tiles of a position (excluding wall borders)
+  function getSquaresWithinRange(position: Position, maxRange: number): Position[] {
     const TILE_WIDTH = 4;
     const NORMAL_TILE_HEIGHT = 4;
     const START_TILE_HEIGHT = 8;
-    const MAX_RANGE = 1; // Flaming Sphere range is 1 tile
     
-    // Get hero's tile position
-    const heroTileX = Math.floor(heroPosition.x / TILE_WIDTH);
-    const heroTileY = heroPosition.y < START_TILE_HEIGHT 
+    // Get position's tile
+    const posTileX = Math.floor(position.x / TILE_WIDTH);
+    const posTileY = position.y < START_TILE_HEIGHT 
       ? 0 
-      : Math.floor((heroPosition.y - START_TILE_HEIGHT) / NORMAL_TILE_HEIGHT) + 1;
+      : Math.floor((position.y - START_TILE_HEIGHT) / NORMAL_TILE_HEIGHT) + 1;
     
     // Get all tiles within range
     const tilesInRange = dungeon.tiles.filter(tile => {
@@ -1999,9 +1998,9 @@
       const tilePosY = tile.position.row;
       
       // Calculate tile distance (Manhattan distance)
-      const distance = Math.abs(tilePosX - heroTileX) + Math.abs(tilePosY - heroTileY);
+      const distance = Math.abs(tilePosX - posTileX) + Math.abs(tilePosY - posTileY);
       
-      return distance <= MAX_RANGE;
+      return distance <= maxRange;
     });
     
     // Get all valid squares from these tiles (excluding wall borders)
@@ -2036,60 +2035,14 @@
     return allSquares;
   }
   
+  // Helper function to get squares in range for Flaming Sphere placement
+  function getFlamingSphereSelectableSquares(heroPosition: Position): Position[] {
+    return getSquaresWithinRange(heroPosition, 1); // Flaming Sphere range is 1 tile
+  }
+  
   // Helper function to get squares for moving an existing Flaming Sphere token
   function getFlamingSphereMovementSquares(currentPosition: Position): Position[] {
-    const TILE_WIDTH = 4;
-    const NORMAL_TILE_HEIGHT = 4;
-    const START_TILE_HEIGHT = 8;
-    const MAX_RANGE = 1; // Can move 1 tile
-    
-    // Get current tile position
-    const currentTileX = Math.floor(currentPosition.x / TILE_WIDTH);
-    const currentTileY = currentPosition.y < START_TILE_HEIGHT 
-      ? 0 
-      : Math.floor((currentPosition.y - START_TILE_HEIGHT) / NORMAL_TILE_HEIGHT) + 1;
-    
-    // Get all tiles within range
-    const tilesInRange = dungeon.tiles.filter(tile => {
-      const tilePosX = tile.position.col;
-      const tilePosY = tile.position.row;
-      
-      // Calculate tile distance (Manhattan distance)
-      const distance = Math.abs(tilePosX - currentTileX) + Math.abs(tilePosY - currentTileY);
-      
-      return distance <= MAX_RANGE;
-    });
-    
-    // Get all valid squares from these tiles
-    const allSquares: Position[] = [];
-    for (const tile of tilesInRange) {
-      const tileWidth = TILE_WIDTH;
-      const tileHeight = tile.id === 'start-tile' ? START_TILE_HEIGHT : NORMAL_TILE_HEIGHT;
-      
-      const minX = tile.position.col * tileWidth;
-      const maxX = minX + tileWidth - 1;
-      const minY = tile.position.row < 0 
-        ? tile.position.row * tileHeight
-        : tile.position.row === 0 
-          ? 0 
-          : START_TILE_HEIGHT + (tile.position.row - 1) * tileHeight;
-      const maxY = minY + tileHeight - 1;
-      
-      // Add interior squares (excluding borders)
-      for (let x = minX; x <= maxX; x++) {
-        for (let y = minY; y <= maxY; y++) {
-          const localX = x - minX;
-          const localY = y - minY;
-          
-          // Exclude wall squares (outer border)
-          if (localX >= 1 && localX < tileWidth - 1 && localY >= 1 && localY < tileHeight - 1) {
-            allSquares.push({ x, y });
-          }
-        }
-      }
-    }
-    
-    return allSquares;
+    return getSquaresWithinRange(currentPosition, 1); // Can move 1 tile
   }
 
   // Handle clicking on a board token (for Flaming Sphere movement/activation)
@@ -2183,7 +2136,10 @@
       token.id === flamingSphereToken.id
         ? { ...token, charges: (token.charges || 1) - 1 }
         : token
-    ).filter(token => token.charges === undefined || token.charges > 0);
+    ).filter(token => 
+      // Only keep tokens that either don't have charges, or have charges > 0
+      !token.charges || token.charges > 0
+    );
     
     store.dispatch({
       type: 'game/setBoardTokens',
