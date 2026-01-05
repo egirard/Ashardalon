@@ -193,7 +193,7 @@ function parseAttackPattern(rule: string): ParsedAttack | undefined {
 
   // Check for range patterns
   // First check if the attack explicitly mentions "adjacent" after "attack"
-  const attackAdjacentMatch = rule.match(/attack\s+(?:one|up to \w+|\w+)\s+adjacent/i);
+  const attackAdjacentMatch = rule.match(/attack\s+(?:one|up to (?:two|three|four)|two|three|four)\s+adjacent/i);
   
   if (attackAdjacentMatch) {
     // Explicit "attack ... adjacent" - keep default adjacent targeting
