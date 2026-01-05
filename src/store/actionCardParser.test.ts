@@ -147,6 +147,22 @@ describe('actionCardParser', () => {
       });
     });
 
+    describe('Divine Challenge (placement then adjacent attack)', () => {
+      it('should parse as adjacent attack despite "within 1 tile" in placement action', () => {
+        const card = getPowerCardById(22); // Divine Challenge
+        expect(card).toBeDefined();
+        // Rule: "Choose one Monster within 1 tile of you. Place that Monster adjacent to your Hero.\nAttack one adjacent Monster."
+        
+        const parsed = parseActionCard(card!);
+        
+        expect(parsed.attack).toBeDefined();
+        expect(parsed.attack?.targetType).toBe('adjacent');
+        expect(parsed.attack?.range).toBe(0);
+        expect(parsed.attack?.attackCount).toBe(1);
+        expect(parsed.attack?.maxTargets).toBe(1);
+      });
+    });
+
     describe('Ray of Frost (ranged attack)', () => {
       it('should parse range correctly', () => {
         const card = getPowerCardById(44); // Ray of Frost
