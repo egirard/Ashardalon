@@ -617,6 +617,53 @@ describe('getAdjacentMonsters', () => {
       expect(adjacent).toHaveLength(1);
       expect(adjacent[0].instanceId).toBe('kobold-diagonal');
     });
+
+    it('should find monster diagonally adjacent across southeast tile (row=1, col=1)', () => {
+      // Test diagonal adjacency with special row=1, col=1 tile positioning
+      // Hero at position (3, 3) on start tile (southeast area of north sub-tile)
+      // Monster at position (0, 0) on southeast tile (col=1, row=1)
+      // Southeast tile at (col=1, row=1) has special positioning: minY=4 (aligns with south sub-tile)
+      // So monster global position: (4 + 0, 4 + 0) = (4, 4)
+      // Distance from (3, 3) to (4, 4): dx=1, dy=1 -> adjacent diagonally
+      const dungeon: DungeonState = {
+        tiles: [
+          {
+            id: 'start-tile',
+            tileType: 'start',
+            position: { col: 0, row: 0 },
+            rotation: 0,
+          },
+          {
+            id: 'southeast-tile',
+            tileType: 'blue-1',
+            position: { col: 1, row: 1 },
+            rotation: 0,
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const monstersOnEdge: MonsterState[] = [
+        {
+          monsterId: 'snake',
+          instanceId: 'snake-diagonal',
+          position: { x: 0, y: 0 }, // Local coords on southeast tile
+          currentHp: 1,
+          controllerId: 'keyleth',
+          tileId: 'southeast-tile',
+        },
+      ];
+
+      // Hero at position (3, 3) on start tile
+      const heroGlobalPos = { x: 3, y: 3 };
+
+      const adjacent = getAdjacentMonsters(heroGlobalPos, monstersOnEdge, 'start-tile', dungeon);
+
+      // Should find the monster since it's diagonally adjacent across tile boundary
+      expect(adjacent).toHaveLength(1);
+      expect(adjacent[0].instanceId).toBe('snake-diagonal');
+    });
   });
 });
 
