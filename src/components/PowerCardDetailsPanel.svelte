@@ -142,6 +142,7 @@
               class="activate-button compact"
               onclick={handleActivate}
               data-testid="activate-blade-barrier-button"
+              aria-label="Activate Blade Barrier power"
             >
               ACTIVATE
             </button>
@@ -150,20 +151,36 @@
               class="activate-button compact"
               onclick={handleActivate}
               data-testid="activate-power-button"
+              aria-label="Activate {card.name} power"
             >
               Activate Power
             </button>
           {/if}
         {:else if isFlipped}
-          <button class="activate-button compact" disabled data-testid="disabled-reason">
+          <button 
+            class="activate-button compact" 
+            disabled 
+            data-testid="disabled-reason"
+            aria-label="Card cannot be activated: Card has been used"
+          >
             Card has been used
           </button>
         {:else if ineligibilityReason}
-          <button class="activate-button compact" disabled data-testid="disabled-reason">
+          <button 
+            class="activate-button compact" 
+            disabled 
+            data-testid="disabled-reason"
+            aria-label="Card cannot be activated: {ineligibilityReason}"
+          >
             {ineligibilityReason}
           </button>
         {:else}
-          <button class="activate-button compact" disabled data-testid="disabled-reason">
+          <button 
+            class="activate-button compact" 
+            disabled 
+            data-testid="disabled-reason"
+            aria-label="Card cannot be activated: Not currently available"
+          >
             Not currently available
           </button>
         {/if}
