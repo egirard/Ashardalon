@@ -1018,6 +1018,21 @@ export const gameSlice = createSlice({
       state.undoSnapshot = null;
     },
     /**
+     * Record Flaming Sphere movement as the hero's movement action
+     * This is used when moving the Flaming Sphere token instead of the hero
+     */
+    recordFlamingSphereMovement: (
+      state,
+      action: PayloadAction<{ heroId: string }>
+    ) => {
+      if (state.turnState.currentPhase !== "hero-phase") return;
+      if (!state.heroTurnActions.canMove) return;
+      
+      // Record the move action
+      const heroStatuses = getHeroStatuses(state, action.payload.heroId);
+      state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move', heroStatuses);
+    },
+    /**
      * Undo the last reversible action (movement only, not attacks or die rolls)
      * Restores hero position and movement state to before the last move
      */

@@ -1896,6 +1896,12 @@
     if (typeof window !== 'undefined') {
       (window as any).__PENDING_FLAMING_SPHERE__ = JSON.parse(JSON.stringify(pendingFlamingSphere));
     }
+    
+    // For movement action (initiated from control panel), auto-confirm the selection
+    // For placement action (initiated from power card), wait for explicit confirm button click
+    if (pendingFlamingSphere.action === 'movement') {
+      handleFlamingSphereConfirm();
+    }
   }
   
   function handleFlamingSphereConfirm() {
@@ -1970,7 +1976,11 @@
     });
     
     // Movement counts as the hero's movement action
-    store.dispatch(recordHeroAction({ action: 'move' }));
+    // We need to dispatch a custom action to record this
+    store.dispatch({
+      type: 'game/recordFlamingSphereMovement',
+      payload: { heroId: pendingFlamingSphere.heroId }
+    });
     
     // Clear the pending state
     pendingFlamingSphere = null;
@@ -2078,8 +2088,8 @@
     if (!flamingSphereToken) return;
     
     // Check if hero has already moved
-    const heroTurnActions = state.game.heroTurnActions[currentHeroId];
-    if (heroTurnActions?.actionsTaken.includes('move')) {
+    const heroTurnActions = state.game.heroTurnActions;
+    if (heroTurnActions.actionsTaken.includes('move')) {
       // Already moved, can't move sphere
       return;
     }
@@ -2105,7 +2115,7 @@
     if (!flamingSphereToken || !flamingSphereToken.charges) return;
     
     // Find all monsters on the same tile as the token
-    const tileMonsters = state.game.monsterTokens.filter(monster => {
+    const tileMonsters = state.game.monsters.filter(monster => {
       // Get the tile for both token and monster
       const tokenTileX = Math.floor(flamingSphereToken.position.x / 4);
       const tokenTileY = flamingSphereToken.position.y < 8 
@@ -2120,26 +2130,35 @@
       return tokenTileX === monsterTileX && tokenTileY === monsterTileY;
     });
     
-    // Apply 1 damage to each monster
-    for (const monster of tileMonsters) {
-      store.dispatch({
-        type: 'game/updateMonsterHp',
-        payload: {
-          instanceId: monster.instanceId,
-          newHp: Math.max(0, monster.hp - 1)
-        }
-      });
-    }
+    // Apply 1 damage to each monster by updating the entire monsters array
+    const updatedMonsters = state.game.monsters.map(monster => {
+      const isOnTile = tileMonsters.some(m => m.instanceId === monster.instanceId);
+      if (isOnTile) {
+        return {
+          ...monster,
+          currentHp: Math.max(0, monster.currentHp - 1)
+        };
+      }
+      return monster;
+    }).filter(monster => monster.currentHp > 0); // Remove defeated monsters
+    
+    store.dispatch({
+      type: 'game/setMonsters',
+      payload: updatedMonsters
+    });
     
     // Decrement the charge
     const updatedTokens = state.game.boardTokens.map(token =>
       token.id === flamingSphereToken.id
         ? { ...token, charges: (token.charges || 1) - 1 }
         : token
-    ).filter(token => 
-      // Only keep tokens that either don't have charges, or have charges > 0
-      !token.charges || token.charges > 0
-    );
+    ).filter(token => {
+      // Remove tokens with 0 charges
+      if (token.charges !== undefined && token.charges <= 0) {
+        return false;
+      }
+      return true;
+    });
     
     store.dispatch({
       type: 'game/setBoardTokens',
