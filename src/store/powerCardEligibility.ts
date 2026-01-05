@@ -19,6 +19,7 @@ const POWER_CARD_IDS = {
   
   // Daily cards that can be activated proactively
   BLADE_BARRIER: 5,
+  FLAMING_SPHERE: 45,
   
   // Utility cards - proactive (can be activated during hero phase)
   COMMAND: 9,
@@ -134,6 +135,7 @@ function isCardEligibleByRule(
   // Specific utility cards that can be activated during hero phase
   switch (card.id) {
     case POWER_CARD_IDS.BLADE_BARRIER:
+    case POWER_CARD_IDS.FLAMING_SPHERE:
     case POWER_CARD_IDS.COMMAND:
     case POWER_CARD_IDS.DISTANT_DIVERSION:
     case POWER_CARD_IDS.INVISIBILITY:
