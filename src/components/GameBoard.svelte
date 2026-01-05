@@ -253,6 +253,15 @@
     selectedSquares?: Position[]; // For square selection mode
   } | null = $state(null);
   
+  // Flaming Sphere token placement/movement state
+  let pendingFlamingSphere: {
+    heroId: string;
+    cardId: number;
+    action: 'placement' | 'movement' | 'damage';
+    step: 'square-selection';
+    selectedSquare?: Position;
+  } | null = $state(null);
+  
   // Track which power card is selected for attacking (so map clicks can trigger attacks)
   let selectedAttackCardId: number | null = $state(null);
 
@@ -1686,6 +1695,18 @@
       return;
     }
     
+    // Flaming Sphere (card ID 45) - Special UI for token placement
+    if (cardId === 45) {
+      // Start the square selection process (within 1 tile of hero)
+      pendingFlamingSphere = {
+        heroId,
+        cardId,
+        action: 'placement',
+        step: 'square-selection'
+      };
+      return;
+    }
+    
     // Implement healing power cards
     switch (cardId) {
       case 1: // Healing Hymn - Heal self and one ally on tile 2 HP
@@ -1858,6 +1879,217 @@
 
   function handleBladeBarrierCancel() {
     pendingBladeBarrier = null;
+  }
+
+  // ========== Flaming Sphere Handlers ==========
+  
+  function handleFlamingSphereSquareClicked(position: Position) {
+    if (!pendingFlamingSphere || pendingFlamingSphere.step !== 'square-selection') return;
+    
+    // Set the selected square
+    pendingFlamingSphere = {
+      ...pendingFlamingSphere,
+      selectedSquare: position
+    };
+    
+    // Expose for testing - clone to avoid Svelte state descriptor issues
+    if (typeof window !== 'undefined') {
+      (window as any).__PENDING_FLAMING_SPHERE__ = JSON.parse(JSON.stringify(pendingFlamingSphere));
+    }
+  }
+  
+  function handleFlamingSphereConfirm() {
+    if (!pendingFlamingSphere || !pendingFlamingSphere.selectedSquare) return;
+    
+    if (pendingFlamingSphere.action === 'placement') {
+      handleFlamingSphereTokenPlaced(pendingFlamingSphere.selectedSquare);
+    } else if (pendingFlamingSphere.action === 'movement') {
+      handleFlamingSphereTokenMoved(pendingFlamingSphere.selectedSquare);
+    }
+  }
+  
+  function handleFlamingSphereTokenPlaced(position: Position) {
+    if (!pendingFlamingSphere) return;
+    
+    const { heroId, cardId } = pendingFlamingSphere;
+    
+    // Get current board token state
+    const state = store.getState();
+    const currentTokens = state.game.boardTokens || [];
+    const timestamp = Date.now();
+    
+    // Create Flaming Sphere token with 3 charges
+    const newToken = {
+      id: `token-flaming-sphere-${timestamp}`,
+      type: 'flaming-sphere' as const,
+      powerCardId: cardId,
+      ownerId: heroId,
+      position: { x: position.x, y: position.y },
+      charges: 3,
+      canMove: true
+    };
+    
+    // Dispatch action to add token to the board
+    store.dispatch({
+      type: 'game/setBoardTokens',
+      payload: [...currentTokens, newToken]
+    });
+    
+    // Mark the power card as used
+    store.dispatch(usePowerCard({ heroId, cardId }));
+    
+    // Clear the pending state
+    pendingFlamingSphere = null;
+  }
+  
+  function handleFlamingSphereTokenMoved(newPosition: Position) {
+    if (!pendingFlamingSphere) return;
+    
+    // Find the Flaming Sphere token owned by this hero
+    const state = store.getState();
+    const currentTokens = state.game.boardTokens || [];
+    const flamingSphereToken = currentTokens.find(
+      token => token.type === 'flaming-sphere' && token.ownerId === pendingFlamingSphere!.heroId
+    );
+    
+    if (!flamingSphereToken) {
+      pendingFlamingSphere = null;
+      return;
+    }
+    
+    // Update token position
+    const updatedTokens = currentTokens.map(token =>
+      token.id === flamingSphereToken.id
+        ? { ...token, position: { x: newPosition.x, y: newPosition.y } }
+        : token
+    );
+    
+    store.dispatch({
+      type: 'game/setBoardTokens',
+      payload: updatedTokens
+    });
+    
+    // Movement counts as the hero's movement action
+    store.dispatch(recordHeroAction({ action: 'move' }));
+    
+    // Clear the pending state
+    pendingFlamingSphere = null;
+  }
+  
+  function handleFlamingSphereCancel() {
+    pendingFlamingSphere = null;
+  }
+  
+  // Helper function to get squares in range for Flaming Sphere placement
+  function getFlamingSphereSelectableSquares(heroPosition: Position): Position[] {
+    const TILE_WIDTH = 4;
+    const NORMAL_TILE_HEIGHT = 4;
+    const START_TILE_HEIGHT = 8;
+    const MAX_RANGE = 1; // Flaming Sphere range is 1 tile
+    
+    // Get hero's tile position
+    const heroTileX = Math.floor(heroPosition.x / TILE_WIDTH);
+    const heroTileY = heroPosition.y < START_TILE_HEIGHT 
+      ? 0 
+      : Math.floor((heroPosition.y - START_TILE_HEIGHT) / NORMAL_TILE_HEIGHT) + 1;
+    
+    // Get all tiles within range
+    const tilesInRange = dungeon.tiles.filter(tile => {
+      const tilePosX = tile.position.col;
+      const tilePosY = tile.position.row;
+      
+      // Calculate tile distance (Manhattan distance)
+      const distance = Math.abs(tilePosX - heroTileX) + Math.abs(tilePosY - heroTileY);
+      
+      return distance <= MAX_RANGE;
+    });
+    
+    // Get all valid squares from these tiles (excluding wall borders)
+    const allSquares: Position[] = [];
+    for (const tile of tilesInRange) {
+      const tileWidth = TILE_WIDTH;
+      const tileHeight = tile.id === 'start-tile' ? START_TILE_HEIGHT : NORMAL_TILE_HEIGHT;
+      
+      const minX = tile.position.col * tileWidth;
+      const maxX = minX + tileWidth - 1;
+      const minY = tile.position.row < 0 
+        ? tile.position.row * tileHeight
+        : tile.position.row === 0 
+          ? 0 
+          : START_TILE_HEIGHT + (tile.position.row - 1) * tileHeight;
+      const maxY = minY + tileHeight - 1;
+      
+      // Add interior squares (excluding borders)
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          const localX = x - minX;
+          const localY = y - minY;
+          
+          // Exclude wall squares (outer border)
+          if (localX >= 1 && localX < tileWidth - 1 && localY >= 1 && localY < tileHeight - 1) {
+            allSquares.push({ x, y });
+          }
+        }
+      }
+    }
+    
+    return allSquares;
+  }
+  
+  // Helper function to get squares for moving an existing Flaming Sphere token
+  function getFlamingSphereMovementSquares(currentPosition: Position): Position[] {
+    const TILE_WIDTH = 4;
+    const NORMAL_TILE_HEIGHT = 4;
+    const START_TILE_HEIGHT = 8;
+    const MAX_RANGE = 1; // Can move 1 tile
+    
+    // Get current tile position
+    const currentTileX = Math.floor(currentPosition.x / TILE_WIDTH);
+    const currentTileY = currentPosition.y < START_TILE_HEIGHT 
+      ? 0 
+      : Math.floor((currentPosition.y - START_TILE_HEIGHT) / NORMAL_TILE_HEIGHT) + 1;
+    
+    // Get all tiles within range
+    const tilesInRange = dungeon.tiles.filter(tile => {
+      const tilePosX = tile.position.col;
+      const tilePosY = tile.position.row;
+      
+      // Calculate tile distance (Manhattan distance)
+      const distance = Math.abs(tilePosX - currentTileX) + Math.abs(tilePosY - currentTileY);
+      
+      return distance <= MAX_RANGE;
+    });
+    
+    // Get all valid squares from these tiles
+    const allSquares: Position[] = [];
+    for (const tile of tilesInRange) {
+      const tileWidth = TILE_WIDTH;
+      const tileHeight = tile.id === 'start-tile' ? START_TILE_HEIGHT : NORMAL_TILE_HEIGHT;
+      
+      const minX = tile.position.col * tileWidth;
+      const maxX = minX + tileWidth - 1;
+      const minY = tile.position.row < 0 
+        ? tile.position.row * tileHeight
+        : tile.position.row === 0 
+          ? 0 
+          : START_TILE_HEIGHT + (tile.position.row - 1) * tileHeight;
+      const maxY = minY + tileHeight - 1;
+      
+      // Add interior squares (excluding borders)
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          const localX = x - minX;
+          const localY = y - minY;
+          
+          // Exclude wall squares (outer border)
+          if (localX >= 1 && localX < tileWidth - 1 && localY >= 1 && localY < tileHeight - 1) {
+            allSquares.push({ x, y });
+          }
+        }
+      }
+    }
+    
+    return allSquares;
   }
 
   // Get hero inventory item count for display
@@ -2143,6 +2375,44 @@
                 </button>
               {/each}
             </div>
+          {/if}
+        {/if}
+
+        <!-- Flaming Sphere Square Selection Overlay -->
+        {#if pendingFlamingSphere && pendingFlamingSphere.step === 'square-selection'}
+          {@const currentHero = heroTokens.find(t => t.heroId === pendingFlamingSphere.heroId)}
+          {#if currentHero}
+            {@const selectableSquares = pendingFlamingSphere.action === 'placement' 
+              ? getFlamingSphereSelectableSquares(currentHero.position)
+              : getFlamingSphereMovementSquares(currentHero.position)}
+            {@const selectedSquare = pendingFlamingSphere.selectedSquare}
+            {@const startTile = dungeon.tiles.find(t => t.tileType === 'start')}
+            {#if startTile}
+              {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
+              <div
+                class="square-selection-overlay-container"
+                style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 15;"
+              >
+                {#each selectableSquares as square (square.x + '-' + square.y)}
+                  {@const isSelected = selectedSquare && selectedSquare.x === square.x && selectedSquare.y === square.y}
+                  {@const relX = square.x}
+                  {@const relY = square.y}
+                  <button
+                    class="selectable-square flaming-sphere-square"
+                    class:selected={isSelected}
+                    data-testid="selectable-square-{square.x}-{square.y}"
+                    style="left: {startTilePos.x + TOKEN_OFFSET_X + relX * TILE_CELL_SIZE}px; top: {startTilePos.y + TOKEN_OFFSET_Y + relY * TILE_CELL_SIZE}px; width: {TILE_CELL_SIZE}px; height: {TILE_CELL_SIZE}px;"
+                    onclick={() => handleFlamingSphereSquareClicked(square)}
+                  >
+                    {#if isSelected}
+                      <div class="token-preview" aria-label="Flaming Sphere position">
+                        <span class="token-emoji" aria-hidden="true">🔥</span>
+                      </div>
+                    {/if}
+                  </button>
+                {/each}
+              </div>
+            {/if}
           {/if}
         {/if}
 
@@ -2520,6 +2790,9 @@
             bladeBarrierState={pendingBladeBarrier?.heroId === hero.id ? pendingBladeBarrier : null}
             onCancelBladeBarrier={handleBladeBarrierCancel}
             onConfirmBladeBarrier={handleBladeBarrierConfirm}
+            flamingSphereState={pendingFlamingSphere?.heroId === hero.id ? pendingFlamingSphere : null}
+            onCancelFlamingSphere={handleFlamingSphereCancel}
+            onConfirmFlamingSphere={handleFlamingSphereConfirm}
           />
         </div>
       </div>
@@ -3516,6 +3789,39 @@
     border-width: 4px;
     animation: none;
     box-shadow: 0 0 20px rgba(30, 144, 255, 1), inset 0 0 10px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Flaming Sphere specific square styling */
+  .selectable-square.flaming-sphere-square {
+    background: rgba(255, 102, 0, 0.5);
+    border-color: rgba(255, 102, 0, 0.9);
+    animation: flaming-sphere-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes flaming-sphere-pulse {
+    0%, 100% {
+      border-color: rgba(255, 102, 0, 0.9);
+      box-shadow: 0 0 15px rgba(255, 102, 0, 0.7), inset 0 0 10px rgba(255, 102, 0, 0.3);
+    }
+    50% {
+      border-color: rgba(255, 102, 0, 1);
+      box-shadow: 0 0 25px rgba(255, 102, 0, 1), inset 0 0 15px rgba(255, 102, 0, 0.5);
+    }
+  }
+
+  .selectable-square.flaming-sphere-square:hover {
+    background: rgba(255, 102, 0, 0.7);
+    border-color: rgba(255, 102, 0, 1);
+    animation: none;
+    box-shadow: 0 0 25px rgba(255, 102, 0, 1), inset 0 0 15px rgba(255, 102, 0, 0.6);
+  }
+
+  .selectable-square.flaming-sphere-square.selected {
+    background: rgba(255, 102, 0, 0.85);
+    border-color: rgba(255, 102, 0, 1);
+    border-width: 4px;
+    animation: none;
+    box-shadow: 0 0 20px rgba(255, 102, 0, 1), inset 0 0 10px rgba(0, 0, 0, 0.5);
   }
 
   .token-preview {

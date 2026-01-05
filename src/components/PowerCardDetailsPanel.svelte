@@ -3,16 +3,27 @@
   import type { PendingBladeBarrierState } from './PlayerPowerCards.svelte';
   import { XIcon } from './icons';
 
+  export interface PendingFlamingSphereState {
+    heroId: string;
+    cardId: number;
+    action: 'placement' | 'movement' | 'damage';
+    step: 'square-selection';
+    selectedSquare?: { x: number; y: number };
+  }
+
   interface Props {
     card: PowerCard;
     isFlipped?: boolean;
     isClickable?: boolean;
     ineligibilityReason?: string;
     bladeBarrierState?: PendingBladeBarrierState | null;
+    flamingSphereState?: PendingFlamingSphereState | null;
     onDismiss?: () => void;
     onActivate?: () => void;
     onCancelBladeBarrier?: () => void;
     onConfirmBladeBarrier?: () => void;
+    onCancelFlamingSphere?: () => void;
+    onConfirmFlamingSphere?: () => void;
   }
 
   let {
@@ -21,15 +32,20 @@
     isClickable = false,
     ineligibilityReason,
     bladeBarrierState = null,
+    flamingSphereState = null,
     onDismiss,
     onActivate,
     onCancelBladeBarrier,
-    onConfirmBladeBarrier
+    onConfirmBladeBarrier,
+    onCancelFlamingSphere,
+    onConfirmFlamingSphere
   }: Props = $props();
 
-  // Blade Barrier card ID constant
+  // Power card ID constants
   const BLADE_BARRIER_CARD_ID = 5;
+  const FLAMING_SPHERE_CARD_ID = 45;
   const isBladeBarrier = $derived(card.id === BLADE_BARRIER_CARD_ID);
+  const isFlamingSphere = $derived(card.id === FLAMING_SPHERE_CARD_ID);
 
   // Power card type colors
   function getPowerCardColor(type: string): string {
@@ -62,6 +78,18 @@
   function handleConfirmBladeBarrier() {
     if (onConfirmBladeBarrier) {
       onConfirmBladeBarrier();
+    }
+  }
+
+  function handleCancelFlamingSphere() {
+    if (onCancelFlamingSphere) {
+      onCancelFlamingSphere();
+    }
+  }
+
+  function handleConfirmFlamingSphere() {
+    if (onConfirmFlamingSphere) {
+      onConfirmFlamingSphere();
     }
   }
 </script>
@@ -134,6 +162,37 @@
           Cancel
         </button>
       </div>
+    {:else if isFlamingSphere && flamingSphereState}
+      <!-- Flaming Sphere Selection State Display -->
+      <div class="flaming-sphere-selection" data-testid="flaming-sphere-selection">
+        {#if flamingSphereState.step === 'square-selection'}
+          <div class="selection-instructions">
+            {#if flamingSphereState.action === 'placement'}
+              <h4>Place Flaming Sphere</h4>
+              <p>Click a square within 1 tile of your position</p>
+            {:else if flamingSphereState.action === 'movement'}
+              <h4>Move Flaming Sphere</h4>
+              <p>Click a square to move the sphere to (1 tile range)</p>
+            {/if}
+          </div>
+          {#if flamingSphereState.selectedSquare}
+            <button 
+              class="confirm-placement-button"
+              onclick={handleConfirmFlamingSphere}
+              data-testid="confirm-placement-button"
+            >
+              {flamingSphereState.action === 'placement' ? 'Confirm Placement' : 'Confirm Movement'}
+            </button>
+          {/if}
+        {/if}
+        <button 
+          class="cancel-selection-button"
+          onclick={handleCancelFlamingSphere}
+          data-testid="cancel-selection-button"
+        >
+          Cancel
+        </button>
+      </div>
     {:else}
       <div class="clickability-info" data-testid="clickability-info">
         {#if isClickable && onActivate && !isFlipped}
@@ -143,6 +202,15 @@
               onclick={handleActivate}
               data-testid="activate-blade-barrier-button"
               aria-label="Activate Blade Barrier power"
+            >
+              ACTIVATE
+            </button>
+          {:else if isFlamingSphere}
+            <button 
+              class="activate-button compact"
+              onclick={handleActivate}
+              data-testid="activate-flaming-sphere-button"
+              aria-label="Activate Flaming Sphere power"
             >
               ACTIVATE
             </button>
@@ -349,6 +417,17 @@
     padding: 0.5rem;
     background: rgba(123, 31, 162, 0.2);
     border: 2px solid #7b1fa2;
+    border-radius: 6px;
+  }
+
+  /* Flaming Sphere Selection Styles */
+  .flaming-sphere-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 102, 0, 0.2);
+    border: 2px solid #ff6600;
     border-radius: 6px;
   }
 

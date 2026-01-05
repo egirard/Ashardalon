@@ -7,9 +7,11 @@
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
   import PowerCardDetailsPanel from './PowerCardDetailsPanel.svelte';
+  import type { PendingFlamingSphereState } from './PowerCardDetailsPanel.svelte';
 
-  // Blade Barrier card ID constant
+  // Card ID constants
   const BLADE_BARRIER_CARD_ID = 5;
+  const FLAMING_SPHERE_CARD_ID = 45;
 
   export interface PendingBladeBarrierState {
     heroId: string;
@@ -47,6 +49,15 @@
      */
     onCancelBladeBarrier?: () => void;
     onConfirmBladeBarrier?: () => void;
+    /**
+     * Flaming Sphere selection state (if active)
+     */
+    flamingSphereState?: PendingFlamingSphereState | null;
+    /**
+     * Callbacks for Flaming Sphere actions
+     */
+    onCancelFlamingSphere?: () => void;
+    onConfirmFlamingSphere?: () => void;
   }
 
   let { 
@@ -58,7 +69,10 @@
     onAttackWithCard,
     bladeBarrierState = null,
     onCancelBladeBarrier,
-    onConfirmBladeBarrier
+    onConfirmBladeBarrier,
+    flamingSphereState = null,
+    onCancelFlamingSphere,
+    onConfirmFlamingSphere
   }: Props = $props();
 
   // State for expanded attack card
@@ -212,9 +226,15 @@
     ineligibilityReason: string
   ) {
     const isBladeBarrier = cardId === BLADE_BARRIER_CARD_ID;
+    const isFlamingSphere = cardId === FLAMING_SPHERE_CARD_ID;
     
     // If Blade Barrier is already in selection mode, don't toggle anything
     if (isBladeBarrier && bladeBarrierState) {
+      return;
+    }
+    
+    // If Flaming Sphere is already in selection mode, don't toggle anything
+    if (isFlamingSphere && flamingSphereState) {
       return;
     }
     
@@ -241,15 +261,15 @@
   }
   
   /**
-   * Handle activating a non-attack power card (utility, custom ability, Blade Barrier)
+   * Handle activating a non-attack power card (utility, custom ability, Blade Barrier, Flaming Sphere)
    * This is called from a button in the details panel
    */
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // For Blade Barrier, keep the details panel open (it will show selection UI)
+      // For Blade Barrier and Flaming Sphere, keep the details panel open (it will show selection UI)
       // For other cards, dismiss details panel
-      if (cardId !== BLADE_BARRIER_CARD_ID) {
+      if (cardId !== BLADE_BARRIER_CARD_ID && cardId !== FLAMING_SPHERE_CARD_ID) {
         selectedCardForDetailsPanel = null;
       }
     }
@@ -285,6 +305,20 @@
     }
   }
 
+  // Handle Flaming Sphere cancel - call parent handler
+  function handleCancelFlamingSphere() {
+    if (onCancelFlamingSphere) {
+      onCancelFlamingSphere();
+    }
+  }
+
+  // Handle Flaming Sphere confirm - call parent handler
+  function handleConfirmFlamingSphere() {
+    if (onConfirmFlamingSphere) {
+      onConfirmFlamingSphere();
+    }
+  }
+
 </script>
 
 {#if powerCards.length > 0}
@@ -300,19 +334,21 @@
       {@const isExpanded = expandedAttackCardId === card.id}
       {@const isAttackCard = card.attackBonus !== undefined}
       {@const isBladeBarrier = card.id === BLADE_BARRIER_CARD_ID}
+      {@const isFlamingSphere = card.id === FLAMING_SPHERE_CARD_ID}
       {@const isBladeBarrierInSelection = bladeBarrierState && bladeBarrierState.cardId === card.id}
+      {@const isFlamingSphereInSelection = flamingSphereState && flamingSphereState.cardId === card.id}
       {@const isSelected = selectedCardForDetailsPanel && selectedCardForDetailsPanel.id === card.id}
       
       <div 
         class="power-card-wrapper"
-        class:expanded={isExpanded || isBladeBarrierInSelection}
+        class:expanded={isExpanded || isBladeBarrierInSelection || isFlamingSphereInSelection}
       >
         <button 
           class="power-card-mini"
           class:eligible={highlightState === 'eligible'}
           class:ineligible={highlightState === 'ineligible'}
           class:disabled={highlightState === 'disabled'}
-          class:expanded={isExpanded || isBladeBarrierInSelection}
+          class:expanded={isExpanded || isBladeBarrierInSelection || isFlamingSphereInSelection}
           class:selected={isSelected}
           title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
           style="border-color: {getPowerCardColor(card.type)};"
@@ -394,10 +430,13 @@
         isClickable={highlightState === 'eligible'}
         ineligibilityReason={ineligibilityReason}
         bladeBarrierState={bladeBarrierState}
+        flamingSphereState={flamingSphereState}
         onDismiss={handleDismissDetailsPanel}
         onActivate={() => handleActivatePowerCard(selectedCardForDetailsPanel.id)}
         onCancelBladeBarrier={onCancelBladeBarrier}
         onConfirmBladeBarrier={onConfirmBladeBarrier}
+        onCancelFlamingSphere={onCancelFlamingSphere}
+        onConfirmFlamingSphere={onConfirmFlamingSphere}
       />
     {/if}
   </div>
