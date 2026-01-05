@@ -2092,6 +2092,105 @@
     return allSquares;
   }
 
+  // Handle clicking on a board token (for Flaming Sphere movement/activation)
+  function handleBoardTokenClick(token: BoardTokenState) {
+    // Only handle Flaming Sphere tokens
+    if (token.type !== 'flaming-sphere') return;
+    
+    // Only allow interaction during hero phase
+    if (turnState.currentPhase !== 'hero-phase') return;
+    
+    // Only allow interaction if it's the owner's turn
+    const currentHeroId = getCurrentHeroId();
+    if (token.ownerId !== currentHeroId) return;
+    
+    // Check if we're already in a selection mode
+    if (pendingFlamingSphere) return;
+    
+    // Show a simple context menu or dialog with options
+    // For now, let's start the movement mode directly
+    // TODO: In the future, add a context menu with "Move" and "Activate Damage" options
+    handleMoveFlamingSphere();
+  }
+  
+  // Start movement mode for Flaming Sphere
+  function handleMoveFlamingSphere() {
+    // Find the current hero's Flaming Sphere token
+    const state = store.getState();
+    const currentHeroId = getCurrentHeroId();
+    const flamingSphereToken = state.game.boardTokens.find(
+      token => token.type === 'flaming-sphere' && token.ownerId === currentHeroId
+    );
+    
+    if (!flamingSphereToken) return;
+    
+    // Check if hero has already moved
+    const heroTurnActions = state.game.heroTurnActions[currentHeroId];
+    if (heroTurnActions?.actionsTaken.includes('move')) {
+      // Already moved, can't move sphere
+      return;
+    }
+    
+    // Start movement selection
+    pendingFlamingSphere = {
+      heroId: currentHeroId,
+      cardId: 45, // Flaming Sphere card ID
+      action: 'movement',
+      step: 'square-selection'
+    };
+  }
+  
+  // Activate Flaming Sphere damage
+  function handleActivateFlamingSphereDamage() {
+    // Find the current hero's Flaming Sphere token
+    const state = store.getState();
+    const currentHeroId = getCurrentHeroId();
+    const flamingSphereToken = state.game.boardTokens.find(
+      token => token.type === 'flaming-sphere' && token.ownerId === currentHeroId
+    );
+    
+    if (!flamingSphereToken || !flamingSphereToken.charges) return;
+    
+    // Find all monsters on the same tile as the token
+    const tileMonsters = state.game.monsterTokens.filter(monster => {
+      // Get the tile for both token and monster
+      const tokenTileX = Math.floor(flamingSphereToken.position.x / 4);
+      const tokenTileY = flamingSphereToken.position.y < 8 
+        ? 0 
+        : Math.floor((flamingSphereToken.position.y - 8) / 4) + 1;
+      
+      const monsterTileX = Math.floor(monster.position.x / 4);
+      const monsterTileY = monster.position.y < 8 
+        ? 0 
+        : Math.floor((monster.position.y - 8) / 4) + 1;
+      
+      return tokenTileX === monsterTileX && tokenTileY === monsterTileY;
+    });
+    
+    // Apply 1 damage to each monster
+    for (const monster of tileMonsters) {
+      store.dispatch({
+        type: 'game/updateMonsterHp',
+        payload: {
+          instanceId: monster.instanceId,
+          newHp: Math.max(0, monster.hp - 1)
+        }
+      });
+    }
+    
+    // Decrement the charge
+    const updatedTokens = state.game.boardTokens.map(token =>
+      token.id === flamingSphereToken.id
+        ? { ...token, charges: (token.charges || 1) - 1 }
+        : token
+    ).filter(token => token.charges === undefined || token.charges > 0);
+    
+    store.dispatch({
+      type: 'game/setBoardTokens',
+      payload: updatedTokens
+    });
+  }
+
   // Get hero inventory item count for display
   function getHeroInventoryCount(heroId: string): number {
     const inventory = heroInventories[heroId];
@@ -2382,9 +2481,13 @@
         {#if pendingFlamingSphere && pendingFlamingSphere.step === 'square-selection'}
           {@const currentHero = heroTokens.find(t => t.heroId === pendingFlamingSphere.heroId)}
           {#if currentHero}
+            {@const state = store.getState()}
+            {@const flamingSphereToken = state.game.boardTokens.find(t => t.type === 'flaming-sphere' && t.ownerId === pendingFlamingSphere.heroId)}
             {@const selectableSquares = pendingFlamingSphere.action === 'placement' 
               ? getFlamingSphereSelectableSquares(currentHero.position)
-              : getFlamingSphereMovementSquares(currentHero.position)}
+              : flamingSphereToken 
+                ? getFlamingSphereMovementSquares(flamingSphereToken.position)
+                : []}
             {@const selectedSquare = pendingFlamingSphere.selectedSquare}
             {@const startTile = dungeon.tiles.find(t => t.tileType === 'start')}
             {#if startTile}
@@ -2489,6 +2592,9 @@
             tileOffsetX={TOKEN_OFFSET_X}
             tileOffsetY={TOKEN_OFFSET_Y}
             tilePixelOffset={{ x: 0, y: 0 }}
+            onClick={token.type === 'flaming-sphere' && token.ownerId === getCurrentHeroId() && turnState.currentPhase === 'hero-phase' 
+              ? handleBoardTokenClick 
+              : undefined}
           />
         {/each}
       </div>
@@ -2529,6 +2635,35 @@
         </div>
         
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
+
+        <!-- Flaming Sphere Controls (shown when active hero has a flaming sphere) -->
+        {#if turnState.currentPhase === 'hero-phase'}
+          {@const currentHeroId = getCurrentHeroId()}
+          {@const flamingSphereToken = boardTokens.find(t => t.type === 'flaming-sphere' && t.ownerId === currentHeroId)}
+          {#if flamingSphereToken && flamingSphereToken.charges && flamingSphereToken.charges > 0}
+            <div class="flaming-sphere-controls" data-testid="flaming-sphere-controls">
+              <div class="controls-header">🔥 Flaming Sphere</div>
+              <button
+                class="sphere-action-button"
+                onclick={handleMoveFlamingSphere}
+                disabled={pendingFlamingSphere !== null || heroTurnActions?.actionsTaken.includes('move')}
+                data-testid="move-flaming-sphere-button"
+                title="Move the Flaming Sphere 1 tile (forfeits hero movement)"
+              >
+                Move Sphere
+              </button>
+              <button
+                class="sphere-action-button damage"
+                onclick={handleActivateFlamingSphereDamage}
+                disabled={pendingFlamingSphere !== null}
+                data-testid="activate-flaming-sphere-damage-button"
+                title="Deal 1 damage to all monsters on sphere's tile (consumes 1 charge)"
+              >
+                Activate Damage ({flamingSphereToken.charges} charges)
+              </button>
+            </div>
+          {/if}
+        {/if}
 
         <!-- Zoom Controls (only shown when in map control mode) -->
         {#if mapControlMode}
@@ -3343,6 +3478,73 @@
     align-items: center;
     gap: 0.5rem;
   }
+
+  /* Flaming Sphere controls */
+  .flaming-sphere-controls {
+    background: rgba(255, 102, 0, 0.15);
+    border: 2px solid #ff6600;
+    border-radius: 8px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 160px;
+    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3);
+  }
+
+  .controls-header {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #ff6600;
+    text-align: center;
+    padding-bottom: 0.2rem;
+    border-bottom: 1px solid rgba(255, 102, 0, 0.3);
+  }
+
+  .sphere-action-button {
+    padding: 0.4rem 0.6rem;
+    background: linear-gradient(135deg, #ff6600 0%, #ff8c00 100%);
+    border: 2px solid #ffa500;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
+    font-family: inherit;
+  }
+
+  .sphere-action-button:not(:disabled):hover {
+    background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
+    border-color: #ffb732;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(255, 102, 0, 0.5);
+  }
+
+  .sphere-action-button:not(:disabled):active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
+  }
+
+  .sphere-action-button:disabled {
+    background: rgba(100, 100, 100, 0.3);
+    border-color: #666;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .sphere-action-button.damage {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    border-color: #f87171;
+  }
+
+  .sphere-action-button.damage:not(:disabled):hover {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    border-color: #fca5a5;
+  }
+
 
   /* Map control styles */
   .dungeon-map.map-control-active {
