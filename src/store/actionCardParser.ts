@@ -192,7 +192,14 @@ function parseAttackPattern(rule: string): ParsedAttack | undefined {
   }
 
   // Check for range patterns
-  if (rule.includes('within 1 tile')) {
+  // First check if the attack explicitly mentions "adjacent" after "attack"
+  const attackAdjacentMatch = rule.match(/attack\s+(?:one|up to \w+|\w+)\s+adjacent/i);
+  
+  if (attackAdjacentMatch) {
+    // Explicit "attack ... adjacent" - keep default adjacent targeting
+    targetType = 'adjacent';
+    range = 0;
+  } else if (rule.includes('within 1 tile')) {
     targetType = 'within-tiles';
     range = 1;
   } else if (rule.includes('within 2 tiles')) {
