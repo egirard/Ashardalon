@@ -72,18 +72,6 @@
   role="dialog"
   aria-label="Power card details"
 >
-  <div class="detail-header">
-    <h3 class="detail-title">{card.name}</h3>
-    <button 
-      class="close-button" 
-      onclick={handleDismiss}
-      aria-label="Close details"
-      data-testid="close-details-button"
-    >
-      <XIcon size={16} ariaLabel="Close" />
-    </button>
-  </div>
-
   <div class="detail-content">
     <div 
       class="card-type-badge" 
@@ -111,13 +99,6 @@
     <div class="rule" data-testid="card-rule">
       <strong>Rule:</strong> {card.rule}
     </div>
-
-    {#if isFlipped}
-      <div class="status-badge flipped">
-        <XIcon size={14} ariaLabel="Used" />
-        Card has been used
-      </div>
-    {/if}
 
     <!-- Blade Barrier Selection State Display -->
     {#if isBladeBarrier && bladeBarrierState}
@@ -155,36 +136,36 @@
       </div>
     {:else}
       <div class="clickability-info" data-testid="clickability-info">
-        {#if isClickable}
-          <div class="status-badge clickable">
-            ✓ Available to use
-          </div>
-          {#if onActivate && !isFlipped && !isBladeBarrier}
+        {#if isClickable && onActivate && !isFlipped}
+          {#if isBladeBarrier}
             <button 
-              class="activate-button"
+              class="activate-button compact"
+              onclick={handleActivate}
+              data-testid="activate-blade-barrier-button"
+            >
+              ACTIVATE
+            </button>
+          {:else}
+            <button 
+              class="activate-button compact"
               onclick={handleActivate}
               data-testid="activate-power-button"
             >
               Activate Power
             </button>
           {/if}
-          {#if isBladeBarrier && onActivate && !isFlipped}
-            <button 
-              class="activate-blade-barrier-btn"
-              onclick={handleActivate}
-              data-testid="activate-blade-barrier-button"
-            >
-              ACTIVATE
-            </button>
-          {/if}
+        {:else if isFlipped}
+          <button class="activate-button compact" disabled data-testid="disabled-reason">
+            Card has been used
+          </button>
         {:else if ineligibilityReason}
-          <div class="status-badge not-clickable">
-            ✗ {ineligibilityReason}
-          </div>
+          <button class="activate-button compact" disabled data-testid="disabled-reason">
+            {ineligibilityReason}
+          </button>
         {:else}
-          <div class="status-badge not-clickable">
-            ✗ Not currently available
-          </div>
+          <button class="activate-button compact" disabled data-testid="disabled-reason">
+            Not currently available
+          </button>
         {/if}
       </div>
     {/if}
@@ -239,38 +220,6 @@
       opacity: 1;
       transform: translateX(0);
     }
-  }
-
-  .detail-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
-  }
-
-  .detail-title {
-    font-size: 1rem;
-    color: #ffd700;
-    margin: 0;
-    font-weight: bold;
-  }
-
-  .close-button {
-    background: none;
-    border: none;
-    color: #aaa;
-    cursor: pointer;
-    padding: 0.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s ease;
-  }
-
-  .close-button:hover {
-    color: #fff;
   }
 
   .detail-content {
@@ -331,89 +280,48 @@
     margin-top: 0.3rem;
   }
 
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.3rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.65rem;
-    font-weight: bold;
-    width: 100%;
-  }
-
-  .status-badge.clickable {
-    background: rgba(46, 125, 50, 0.3);
-    border: 1px solid #4caf50;
-    color: #66bb6a;
-  }
-
-  .status-badge.not-clickable {
-    background: rgba(100, 100, 100, 0.3);
-    border: 1px solid #666;
-    color: #999;
-  }
-
-  .status-badge.flipped {
-    background: rgba(244, 67, 54, 0.3);
-    border: 1px solid #f44336;
-    color: #ff8a80;
-  }
-
   .activate-button {
     width: 100%;
-    padding: 0.6rem;
-    margin-top: 0.5rem;
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-    border: 2px solid #66bb6a;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
-  }
-
-  .activate-button:hover {
-    background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
-    border-color: #81c784;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.6);
-  }
-
-  .activate-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
-  }
-
-  .activate-blade-barrier-btn {
-    width: 100%;
-    padding: 0.6rem;
-    margin-top: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    margin-top: 0;
     background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
     border: 2px solid #bb86fc;
-    border-radius: 6px;
+    border-radius: 4px;
     color: #fff;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(123, 31, 162, 0.4);
+    box-shadow: 0 2px 6px rgba(123, 31, 162, 0.3);
+    font-family: inherit;
   }
 
-  .activate-blade-barrier-btn:hover {
+  .activate-button:not(:disabled):hover {
     background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%);
     border-color: #ce93d8;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(123, 31, 162, 0.6);
+    box-shadow: 0 3px 8px rgba(123, 31, 162, 0.5);
   }
 
-  .activate-blade-barrier-btn:active {
+  .activate-button:not(:disabled):active {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(123, 31, 162, 0.4);
+    box-shadow: 0 2px 4px rgba(123, 31, 162, 0.3);
+  }
+
+  .activate-button:disabled {
+    background: rgba(100, 100, 100, 0.3);
+    border: 1px solid #666;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+    text-transform: none;
+    font-weight: normal;
+  }
+
+  .activate-button.compact {
+    font-size: 0.65rem;
+    padding: 0.4rem 0.6rem;
   }
 
   /* Blade Barrier Selection Styles */
@@ -519,10 +427,6 @@
     .power-card-details-panel {
       width: 240px;
       font-size: 0.7rem;
-    }
-
-    .detail-title {
-      font-size: 0.9rem;
     }
   }
 </style>
