@@ -58,6 +58,19 @@
      */
     onCancelFlamingSphere?: () => void;
     onConfirmFlamingSphere?: () => void;
+    /**
+     * Flaming Sphere token info (if active)
+     */
+    flamingSphereToken?: { id: string; charges: number; position: { x: number; y: number } } | null;
+    /**
+     * Whether the hero has already moved this turn
+     */
+    heroHasMoved?: boolean;
+    /**
+     * Callbacks for Flaming Sphere movement and damage
+     */
+    onMoveFlamingSphere?: () => void;
+    onActivateFlamingSphereDamage?: () => void;
   }
 
   let { 
@@ -72,7 +85,11 @@
     onConfirmBladeBarrier,
     flamingSphereState = null,
     onCancelFlamingSphere,
-    onConfirmFlamingSphere
+    onConfirmFlamingSphere,
+    flamingSphereToken = null,
+    heroHasMoved = false,
+    onMoveFlamingSphere,
+    onActivateFlamingSphereDamage
   }: Props = $props();
 
   // State for expanded attack card
@@ -80,6 +97,34 @@
   
   // State for selected card to show in details panel (replaces inline expansion and CardDetailView)
   let selectedCardForDetailsPanel: PowerCard | null = $state(null);
+
+  // Determine if Flaming Sphere card should be auto-selected
+  let shouldAutoSelectFlamingSphere = $derived.by(() => {
+    if (!heroPowerCards || !flamingSphereToken) return false;
+    
+    // Check if Flaming Sphere card is flipped (placed)
+    const flamingSphereCardState = heroPowerCards.cardStates.find(s => s.cardId === FLAMING_SPHERE_CARD_ID);
+    if (!flamingSphereCardState?.isFlipped) return false;
+    
+    // Only auto-select if not already showing another card or if showing Flaming Sphere
+    if (selectedCardForDetailsPanel && selectedCardForDetailsPanel.id !== FLAMING_SPHERE_CARD_ID) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  // Auto-open Flaming Sphere card details when token is active
+  $effect(() => {
+    if (!shouldAutoSelectFlamingSphere || !heroPowerCards) return;
+    
+    // Find the Flaming Sphere card
+    const flamingSphereCard = heroPowerCards.powerCards.find(c => c.id === FLAMING_SPHERE_CARD_ID);
+    if (!flamingSphereCard) return;
+    
+    // Auto-select the Flaming Sphere card
+    selectedCardForDetailsPanel = flamingSphereCard;
+  });
 
   // Get power cards for display with highlight state
   let powerCards = $derived.by(() => {
@@ -431,6 +476,10 @@
         ineligibilityReason={ineligibilityReason}
         bladeBarrierState={bladeBarrierState}
         flamingSphereState={flamingSphereState}
+        flamingSphereToken={flamingSphereToken}
+        heroHasMoved={heroHasMoved}
+        onMoveFlamingSphere={onMoveFlamingSphere}
+        onActivateFlamingSphereDamage={onActivateFlamingSphereDamage}
         onDismiss={handleDismissDetailsPanel}
         onActivate={() => handleActivatePowerCard(selectedCardForDetailsPanel.id)}
         onCancelBladeBarrier={onCancelBladeBarrier}

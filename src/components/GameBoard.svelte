@@ -2611,35 +2611,6 @@
         
         <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
-        <!-- Flaming Sphere Controls (shown when active hero has a flaming sphere) -->
-        {#if turnState.currentPhase === 'hero-phase'}
-          {@const currentHeroId = getCurrentHeroId()}
-          {@const flamingSphereToken = boardTokens.find(t => t.type === 'flaming-sphere' && t.ownerId === currentHeroId)}
-          {#if flamingSphereToken && flamingSphereToken.charges && flamingSphereToken.charges > 0}
-            <div class="flaming-sphere-controls" data-testid="flaming-sphere-controls">
-              <div class="controls-header">🔥 Flaming Sphere</div>
-              <button
-                class="sphere-action-button"
-                onclick={handleMoveFlamingSphere}
-                disabled={pendingFlamingSphere !== null || heroTurnActions?.actionsTaken.includes('move')}
-                data-testid="move-flaming-sphere-button"
-                title="Move the Flaming Sphere 1 tile (forfeits hero movement)"
-              >
-                Move Sphere
-              </button>
-              <button
-                class="sphere-action-button damage"
-                onclick={handleActivateFlamingSphereDamage}
-                disabled={pendingFlamingSphere !== null}
-                data-testid="activate-flaming-sphere-damage-button"
-                title="Deal 1 damage to all monsters on sphere's tile (consumes 1 charge)"
-              >
-                Activate Damage ({flamingSphereToken.charges} charges)
-              </button>
-            </div>
-          {/if}
-        {/if}
-
         <!-- Zoom Controls (only shown when in map control mode) -->
         {#if mapControlMode}
           <div class="map-zoom-controls" data-testid="map-zoom-controls">
@@ -2903,6 +2874,10 @@
             flamingSphereState={pendingFlamingSphere?.heroId === hero.id ? pendingFlamingSphere : null}
             onCancelFlamingSphere={handleFlamingSphereCancel}
             onConfirmFlamingSphere={handleFlamingSphereConfirm}
+            flamingSphereToken={isHeroActive ? boardTokens.find(t => t.type === 'flaming-sphere' && t.ownerId === hero.id) : null}
+            heroHasMoved={isHeroActive ? heroTurnActions?.actionsTaken.includes('move') : false}
+            onMoveFlamingSphere={isHeroActive ? handleMoveFlamingSphere : undefined}
+            onActivateFlamingSphereDamage={isHeroActive ? handleActivateFlamingSphereDamage : undefined}
           />
         </div>
       </div>
@@ -3452,72 +3427,6 @@
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  /* Flaming Sphere controls */
-  .flaming-sphere-controls {
-    background: rgba(255, 102, 0, 0.15);
-    border: 2px solid #ff6600;
-    border-radius: 8px;
-    padding: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    min-width: 160px;
-    box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3);
-  }
-
-  .controls-header {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #ff6600;
-    text-align: center;
-    padding-bottom: 0.2rem;
-    border-bottom: 1px solid rgba(255, 102, 0, 0.3);
-  }
-
-  .sphere-action-button {
-    padding: 0.4rem 0.6rem;
-    background: linear-gradient(135deg, #ff6600 0%, #ff8c00 100%);
-    border: 2px solid #ffa500;
-    border-radius: 4px;
-    color: #fff;
-    font-size: 0.7rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
-    font-family: inherit;
-  }
-
-  .sphere-action-button:not(:disabled):hover {
-    background: linear-gradient(135deg, #ff8c00 0%, #ffa500 100%);
-    border-color: #ffb732;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(255, 102, 0, 0.5);
-  }
-
-  .sphere-action-button:not(:disabled):active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
-  }
-
-  .sphere-action-button:disabled {
-    background: rgba(100, 100, 100, 0.3);
-    border-color: #666;
-    color: #999;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  .sphere-action-button.damage {
-    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-    border-color: #f87171;
-  }
-
-  .sphere-action-button.damage:not(:disabled):hover {
-    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
-    border-color: #fca5a5;
   }
 
 

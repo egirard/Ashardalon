@@ -88,11 +88,18 @@ test.describe('070 - Flaming Sphere Movement UI', () => {
       }
     });
 
-    // STEP 3: Verify control panel appears with Move Sphere button
+    // STEP 3: Click Flaming Sphere card to open details panel with action buttons
+    await page.locator('[data-testid="power-card-45"]').click();
+    await page.waitForTimeout(300);
+    
+    // Wait for actions panel to appear
+    await page.locator('[data-testid="flaming-sphere-actions"]').waitFor({ state: 'visible', timeout: 5000 });
+
     await screenshots.capture(page, 'control-panel-visible', {
       programmaticCheck: async () => {
-        // Control panel should be visible during hero phase
-        await expect(page.locator('[data-testid="flaming-sphere-controls"]')).toBeVisible();
+        // Flaming Sphere card details panel should be open
+        await expect(page.locator('[data-testid="power-card-details-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="flaming-sphere-actions"]')).toBeVisible();
         await expect(page.locator('[data-testid="move-flaming-sphere-button"]')).toBeVisible();
         await expect(page.locator('[data-testid="move-flaming-sphere-button"]')).toBeEnabled();
         
@@ -168,8 +175,8 @@ test.describe('070 - Flaming Sphere Movement UI', () => {
     // STEP 6: Verify Move button is now disabled (hero already moved)
     await screenshots.capture(page, 'move-button-disabled', {
       programmaticCheck: async () => {
-        // Control panel should still be visible
-        await expect(page.locator('[data-testid="flaming-sphere-controls"]')).toBeVisible();
+        // Actions panel should still be visible
+        await expect(page.locator('[data-testid="flaming-sphere-actions"]')).toBeVisible();
         
         // Move button should now be disabled
         const moveButton = page.locator('[data-testid="move-flaming-sphere-button"]');
