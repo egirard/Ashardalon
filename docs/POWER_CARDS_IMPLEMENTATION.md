@@ -70,6 +70,28 @@ These healing utility cards are now implemented and can be activated during hero
 - Dwarven Resilience heals only the hero using it
 - Lay On Hands heals one adjacent ally (not self)
 
+### ✅ Monster Relocation Utility Cards (Implemented)
+
+These utility cards allow heroes to move monsters as a strategic action:
+
+| ID | Name | Class | Type | Implementation Status |
+|----|------|-------|------|----------------------|
+| 9 | Command | Cleric | utility | ✅ Implemented - Move monster on your tile within 2 tiles |
+| 38 | Distant Diversion | Rogue | utility | ✅ Implemented - Move monster within 3 tiles to adjacent tile |
+
+**Implementation Details:**
+- Two-step UI flow: (1) Select monster by tapping on map, (2) Select destination tile
+- PowerCardDetailsPanel displays selection instructions for each step
+- Monsters are highlighted when selectable, tiles are highlighted when valid destinations
+- Full map visibility maintained throughout selection (no modal overlays)
+- Cancel button available at any step
+- Eligibility checks ensure cards only activate when valid monsters are in range
+- Card is marked as used only after successful relocation
+
+**Card Rules:**
+- Command: Choose one Monster on your tile. Place that Monster on a tile within 2 tiles of you.
+- Distant Diversion: Choose one Monster within 3 tiles of you. Place that Monster onto an adjacent tile.
+
 ### 🔨 Simple Utility Cards (No Hooks Needed) - Remaining
 
 These cards can be implemented as simple hero-phase actions without event hooks:
@@ -77,16 +99,13 @@ These cards can be implemented as simple hero-phase actions without event hooks:
 | ID | Name | Class | Type | Notes |
 |----|------|-------|------|-------|
 | 8 | Astral Refuge | Cleric | utility | Remove ally from board temporarily |
-| 9 | Command | Cleric | utility | Move monster to tile within 2 tiles |
 | 29 | Noble Shield | Paladin | utility | Complex - redirect multi-target attack |
 | 30 | Virtue's Touch | Paladin | utility | Remove condition from adjacent ally |
-| 38 | Distant Diversion | Rogue | utility | Move monster to adjacent tile |
 | 48 | Invisibility | Wizard | utility | Passive - modify monster targeting |
 | 50 | Wizard Eye | Wizard | utility | Place token, remote exploration |
 
 **Implementation Priority:**
-1. Monster relocation (9, 38) - move monsters during hero phase
-2. Complex utilities (29, 30, 48, 50) - require additional game state
+1. Complex utilities (29, 30, 48, 50) - require additional game state
 
 ### ✅ Attack Powers on Player Dashboard
 
