@@ -322,9 +322,14 @@
   function handleActivatePowerCard(cardId: number) {
     if (onActivatePowerCard) {
       onActivatePowerCard(cardId);
-      // For Blade Barrier and Flaming Sphere, keep the details panel open (it will show selection UI)
+      // For Blade Barrier, Flaming Sphere, and Monster Relocation cards, keep the details panel open (it will show selection UI)
       // For other cards, dismiss details panel
-      if (cardId !== BLADE_BARRIER_CARD_ID && cardId !== FLAMING_SPHERE_CARD_ID) {
+      const COMMAND_CARD_ID = 9;
+      const DISTANT_DIVERSION_CARD_ID = 38;
+      if (cardId !== BLADE_BARRIER_CARD_ID && 
+          cardId !== FLAMING_SPHERE_CARD_ID &&
+          cardId !== COMMAND_CARD_ID &&
+          cardId !== DISTANT_DIVERSION_CARD_ID) {
         selectedCardForDetailsPanel = null;
       }
     }

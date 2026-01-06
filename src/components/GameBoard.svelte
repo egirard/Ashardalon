@@ -1724,6 +1724,11 @@
         step: 'monster-selection',
         maxTileRange: 2
       };
+      
+      // Expose for testing - clone to avoid Svelte state descriptor issues
+      if (typeof window !== 'undefined') {
+        (window as any).__PENDING_MONSTER_RELOCATION__ = JSON.parse(JSON.stringify(pendingMonsterRelocation));
+      }
       return;
     }
     
@@ -1735,6 +1740,11 @@
         step: 'monster-selection',
         maxTileRange: 1 // Adjacent tiles only (from monster's position)
       };
+      
+      // Expose for testing - clone to avoid Svelte state descriptor issues
+      if (typeof window !== 'undefined') {
+        (window as any).__PENDING_MONSTER_RELOCATION__ = JSON.parse(JSON.stringify(pendingMonsterRelocation));
+      }
       return;
     }
     
@@ -2032,6 +2042,11 @@
       selectedMonsterInstanceId: monsterInstanceId,
       step: 'tile-selection'
     };
+    
+    // Expose for testing - clone to avoid Svelte state descriptor issues
+    if (typeof window !== 'undefined') {
+      (window as any).__PENDING_MONSTER_RELOCATION__ = JSON.parse(JSON.stringify(pendingMonsterRelocation));
+    }
   }
   
   function handleMonsterRelocationTileClicked(tileId: string) {
@@ -2042,6 +2057,7 @@
     const state = store.getState();
     const monster = state.game.monsters.find(m => m.instanceId === pendingMonsterRelocation!.selectedMonsterInstanceId);
     if (!monster) {
+      console.error('Monster not found for relocation:', pendingMonsterRelocation.selectedMonsterInstanceId);
       pendingMonsterRelocation = null;
       return;
     }
@@ -2049,6 +2065,7 @@
     // Find the target tile
     const targetTile = dungeon.tiles.find(t => t.id === tileId);
     if (!targetTile) {
+      console.error('Target tile not found:', tileId);
       pendingMonsterRelocation = null;
       return;
     }
@@ -2056,7 +2073,7 @@
     // Find a valid spawn position on the target tile
     // Use the same logic as monster spawning - find an empty square
     const tileWidth = 4;
-    const tileHeight = targetTile.definition.id === 'start-tile' ? 8 : 4;
+    const tileHeight = targetTile.tileType === 'start' ? 8 : 4;
     const tileBaseX = targetTile.position.col * tileWidth;
     const tileBaseY = targetTile.position.row === 0 
       ? 0 
@@ -2086,9 +2103,12 @@
     
     if (!newPosition) {
       // No valid position found - cancel
+      console.error('No valid position found on tile:', tileId);
       pendingMonsterRelocation = null;
       return;
     }
+    
+    console.log('Relocating monster to:', newPosition, 'on tile:', tileId);
     
     // Update monster position
     const updatedMonsters = state.game.monsters.map(m =>
@@ -2127,10 +2147,15 @@
     const cardId = pendingMonsterRelocation.cardId;
     
     if (cardId === 9) {
-      // Command: Choose one Monster on your tile
-      const heroTileId = getTileOrSubTileId(heroToken.position, state.game.dungeon);
+      // Command: Choose one Monster on your tile (same tile, ignoring sub-tiles)
+      const heroTile = findTileAtPosition(heroToken.position, state.game.dungeon);
+      if (!heroTile) return [];
+      
       return state.game.monsters
-        .filter(m => getTileOrSubTileId(m.position, state.game.dungeon) === heroTileId)
+        .filter(m => {
+          const monsterTile = findTileAtPosition(m.position, state.game.dungeon);
+          return monsterTile && monsterTile.id === heroTile.id;
+        })
         .map(m => m.instanceId);
     } else if (cardId === 38) {
       // Distant Diversion: Choose one Monster within 3 tiles of you
