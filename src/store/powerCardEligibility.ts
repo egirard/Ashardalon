@@ -136,12 +136,50 @@ function isCardEligibleByRule(
   switch (card.id) {
     case POWER_CARD_IDS.BLADE_BARRIER:
     case POWER_CARD_IDS.FLAMING_SPHERE:
-    case POWER_CARD_IDS.COMMAND:
-    case POWER_CARD_IDS.DISTANT_DIVERSION:
     case POWER_CARD_IDS.INVISIBILITY:
     case POWER_CARD_IDS.MIRROR_IMAGE:
     case POWER_CARD_IDS.WIZARD_EYE:
       return true;
+    
+    // Command - requires a monster on your tile
+    case POWER_CARD_IDS.COMMAND:
+      {
+        const heroToken = gameState.heroTokens.find(t => t.heroId === heroId);
+        if (!heroToken) return false;
+        
+        // Import getTileOrSubTileId helper
+        const { getTileOrSubTileId } = require('./movement');
+        const heroTileId = getTileOrSubTileId(heroToken.position, gameState.dungeon);
+        
+        // Check if any monster is on the same tile
+        return gameState.monsters.some(m => {
+          const monsterTileId = getTileOrSubTileId(m.position, gameState.dungeon);
+          return monsterTileId === heroTileId;
+        });
+      }
+    
+    // Distant Diversion - requires a monster within 3 tiles
+    case POWER_CARD_IDS.DISTANT_DIVERSION:
+      {
+        const heroToken = gameState.heroTokens.find(t => t.heroId === heroId);
+        if (!heroToken) return false;
+        
+        // Import findTileAtPosition helper
+        const { findTileAtPosition } = require('./movement');
+        const heroTile = findTileAtPosition(heroToken.position, gameState.dungeon);
+        if (!heroTile) return false;
+        
+        // Check if any monster is within 3 tiles
+        return gameState.monsters.some(m => {
+          const monsterTile = findTileAtPosition(m.position, gameState.dungeon);
+          if (!monsterTile) return false;
+          
+          const distance = Math.abs(monsterTile.position.col - heroTile.position.col) + 
+                          Math.abs(monsterTile.position.row - heroTile.position.row);
+          
+          return distance <= 3;
+        });
+      }
     
     // Reactive cards (not activatable from dashboard)
     case POWER_CARD_IDS.ASTRAL_REFUGE:
@@ -206,6 +244,45 @@ export function getPowerCardIneligibilityReason(
   
   if (card.id === POWER_CARD_IDS.DWARVEN_RESILIENCE && !gameState.heroTurnActions.canMove) {
     return 'You have already moved this turn';
+  }
+  
+  // Command - needs monster on same tile
+  if (card.id === POWER_CARD_IDS.COMMAND) {
+    const heroToken = gameState.heroTokens.find(t => t.heroId === heroId);
+    if (heroToken) {
+      const { getTileOrSubTileId } = require('./movement');
+      const heroTileId = getTileOrSubTileId(heroToken.position, gameState.dungeon);
+      const hasMonsterOnTile = gameState.monsters.some(m => {
+        const monsterTileId = getTileOrSubTileId(m.position, gameState.dungeon);
+        return monsterTileId === heroTileId;
+      });
+      if (!hasMonsterOnTile) {
+        return 'No monsters on your tile';
+      }
+    }
+  }
+  
+  // Distant Diversion - needs monster within 3 tiles
+  if (card.id === POWER_CARD_IDS.DISTANT_DIVERSION) {
+    const heroToken = gameState.heroTokens.find(t => t.heroId === heroId);
+    if (heroToken) {
+      const { findTileAtPosition } = require('./movement');
+      const heroTile = findTileAtPosition(heroToken.position, gameState.dungeon);
+      if (heroTile) {
+        const hasMonsterInRange = gameState.monsters.some(m => {
+          const monsterTile = findTileAtPosition(m.position, gameState.dungeon);
+          if (!monsterTile) return false;
+          
+          const distance = Math.abs(monsterTile.position.col - heroTile.position.col) + 
+                          Math.abs(monsterTile.position.row - heroTile.position.row);
+          
+          return distance <= 3;
+        });
+        if (!hasMonsterInRange) {
+          return 'No monsters within 3 tiles';
+        }
+      }
+    }
   }
   
   return 'This power cannot be activated right now';
