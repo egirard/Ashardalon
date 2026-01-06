@@ -52,14 +52,19 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // Disable animations for stable screenshots
     await page.addStyleTag({
       content: `
-        * {
+        *, *::before, *::after {
           animation-duration: 0s !important;
           animation-delay: 0s !important;
           transition-duration: 0s !important;
           transition-delay: 0s !important;
+          animation: none !important;
+          transition: none !important;
         }
       `
     });
+    
+    // Also disable animations via Playwright
+    await page.emulateMedia({ reducedMotion: 'reduce' });
 
     // Wait for hero position to be updated in the UI
     await page.waitForFunction(() => {
@@ -70,6 +75,24 @@ test.describe('072 - Command Card Monster Relocation', () => {
 
     // Wait for network to be idle
     await page.waitForLoadState('networkidle');
+    
+    // Give a bit more time for any final renders to complete
+    await page.waitForLoadState('load');
+    
+    // Wait for power cards to be fully rendered
+    await page.locator('[data-testid="power-card-9"]').waitFor({ state: 'visible' });
+    
+    // Wait for the game board grid to be stable
+    await page.locator('[data-testid="game-board"]').evaluate((el) => {
+      return new Promise((resolve) => {
+        // Use requestAnimationFrame to ensure we're past any immediate repaints
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve(true);
+          });
+        });
+      });
+    });
     
     await screenshots.capture(page, 'game-started', {
       programmaticCheck: async () => {
