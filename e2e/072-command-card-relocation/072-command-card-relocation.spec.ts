@@ -5,52 +5,71 @@ test.describe('072 - Command Card Monster Relocation', () => {
   test('User can relocate a monster using the Command power card', async ({ page }) => {
     const screenshots = createScreenshotHelper();
     
-    // STEP 1: Navigate to game and select Quinn (Cleric) with Command card
+    // STEP 1: Navigate to character selection and select Quinn (Cleric)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
-    
-    // Select Quinn
-    await page.locator('[data-testid="hero-quinn"]').click();
-    await page.locator('[data-testid="hero-quinn"]').waitFor({ state: 'visible' });
-    
-    // Select Command as utility power
-    await page.locator('text=Command').click();
-    
-    await screenshots.capture(page, 'quinn-selected-command', {
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+
+    // Quinn has pre-selected power cards - we'll programmatically assign Command (ID 9) after game starts
+    await screenshots.capture(page, 'quinn-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
-    
-    // Start the game
+
+    // STEP 2: Start the game
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     
+    // Dismiss scenario introduction
+    await page.locator('[data-testid="start-scenario-button"]').click();
+    await page.locator('[data-testid="scenario-introduction"]').waitFor({ state: 'hidden' });
+
+    // Set deterministic hero position and assign Command card programmatically
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 3 } }
+      });
+      
+      // Replace utility card with Command (ID 9)
+      store.dispatch({
+        type: 'heroes/selectUtilityCard',
+        payload: { heroId: 'quinn', cardId: 9 }
+      });
+    });
+
+    // Disable animations for stable screenshots
+    await page.addStyleTag({
+      content: `
+        * {
+          animation-duration: 0s !important;
+          animation-delay: 0s !important;
+          transition-duration: 0s !important;
+          transition-delay: 0s !important;
+        }
+      `
+    });
+
     await screenshots.capture(page, 'game-started', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="game-board"]')).toBeVisible();
         await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-9"]')).toBeVisible();
       }
     });
     
-    // STEP 2: Use game state injection to set up test scenario
-    // Place a monster on the same tile as the hero
+    // STEP 3: Set up test scenario - add a monster on the same tile as the hero and adjacent tiles
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       const state = store.getState();
       
-      // Place hero at position (1, 1)
-      store.dispatch({
-        type: 'game/setHeroTokens',
-        payload: [{ heroId: 'quinn', position: { x: 1, y: 1 } }]
-      });
-      
-      // Add a monster on the same tile (position 1, 2)
+      // Add a monster on the same tile as hero (position 2, 4)
       const monsterInstance = {
         monsterId: 'kobold',
         instanceId: 'test-monster-1',
-        position: { x: 1, y: 2 },
+        position: { x: 2, y: 4 },
         currentHp: 1,
         controllerId: 'quinn',
         tileId: 'start-tile'
@@ -61,11 +80,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
         payload: [monsterInstance]
       });
       
-      // Make sure we have tiles to relocate to
-      // The start tile should already be placed, ensure we have adjacent tiles
+      // Make sure we have tiles to relocate to by adding a north tile
       const dungeon = state.game.dungeon;
       if (dungeon.tiles.length === 1) {
-        // Add a tile to the north
         const newTile = {
           id: 'tile-north',
           definition: { id: 'chamber', name: 'Chamber' },
@@ -78,13 +95,15 @@ test.describe('072 - Command Card Monster Relocation', () => {
           type: 'game/setDungeon',
           payload: {
             ...dungeon,
-            tiles: [...dungeon.tiles, newTile]
+            tiles: [...dungeon.tiles, newTile],
+            unexploredEdges: dungeon.unexploredEdges.filter(e => e.direction !== 'north')
           }
         });
       }
     });
     
-    await page.waitForTimeout(500); // Wait for state to update
+    // Wait for state to update
+    await page.locator('[data-testid="monster-token"]').first().waitFor({ state: 'visible' });
     
     await screenshots.capture(page, 'monster-and-hero-on-tile', {
       programmaticCheck: async () => {
@@ -93,12 +112,12 @@ test.describe('072 - Command Card Monster Relocation', () => {
         });
         
         expect(gameState.monsters.length).toBe(1);
-        expect(gameState.heroTokens[0].position).toEqual({ x: 1, y: 1 });
-        expect(gameState.monsters[0].position).toEqual({ x: 1, y: 2 });
+        expect(gameState.heroTokens[0].position).toEqual({ x: 2, y: 3 });
+        expect(gameState.monsters[0].position).toEqual({ x: 2, y: 4 });
       }
     });
     
-    // STEP 3: Click on the Command card
+    // STEP 4: Click on the Command card to show details panel
     await page.locator('[data-testid="power-card-9"]').click();
     await page.locator('[data-testid="power-card-details-panel"]').waitFor({ state: 'visible' });
     
@@ -110,7 +129,7 @@ test.describe('072 - Command Card Monster Relocation', () => {
       }
     });
     
-    // STEP 4: Click Activate button
+    // STEP 5: Click Activate button to start monster selection
     await page.locator('[data-testid="activate-power-button"]').click();
     await page.locator('[data-testid="monster-relocation-selection"]').waitFor({ state: 'visible' });
     
@@ -123,10 +142,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
       }
     });
     
-    // STEP 5: Click on the monster to select it
-    // Find and click the monster token
-    await page.locator('[data-monster-id="test-monster-1"]').first().click();
-    await page.waitForTimeout(300);
+    // STEP 6: Click on the monster to select it
+    await page.locator('[data-testid="monster-token"]').first().click();
+    await page.locator('text=Select Destination').waitFor({ state: 'visible' });
     
     await screenshots.capture(page, 'monster-selected-tile-prompt', {
       programmaticCheck: async () => {
@@ -136,10 +154,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
       }
     });
     
-    // STEP 6: Click on a destination tile (should be highlighted)
-    // Click on the north tile
+    // STEP 7: Click on a destination tile (should be highlighted)
     await page.locator('[data-tile-id="tile-north"]').click();
-    await page.waitForTimeout(500);
+    await page.locator('[data-testid="monster-relocation-selection"]').waitFor({ state: 'hidden' });
     
     await screenshots.capture(page, 'monster-relocated', {
       programmaticCheck: async () => {
@@ -168,23 +185,33 @@ test.describe('072 - Command Card Monster Relocation', () => {
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
-    await page.locator('[data-testid="hero-quinn"]').click();
-    await page.locator('text=Command').click();
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     
-    // Set up test scenario with monster on same tile
+    // Dismiss scenario introduction
+    await page.locator('[data-testid="start-scenario-button"]').click();
+    await page.locator('[data-testid="scenario-introduction"]').waitFor({ state: 'hidden' });
+    
+    // Set up test scenario with monster on same tile and assign Command card
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
-        type: 'game/setHeroTokens',
-        payload: [{ heroId: 'quinn', position: { x: 1, y: 1 } }]
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 3 } }
+      });
+      
+      // Replace utility card with Command (ID 9)
+      store.dispatch({
+        type: 'heroes/selectUtilityCard',
+        payload: { heroId: 'quinn', cardId: 9 }
       });
       
       const monsterInstance = {
         monsterId: 'kobold',
         instanceId: 'test-monster-1',
-        position: { x: 1, y: 2 },
+        position: { x: 2, y: 4 },
         currentHp: 1,
         controllerId: 'quinn',
         tileId: 'start-tile'
@@ -196,7 +223,19 @@ test.describe('072 - Command Card Monster Relocation', () => {
       });
     });
     
-    await page.waitForTimeout(500);
+    // Disable animations
+    await page.addStyleTag({
+      content: `
+        * {
+          animation-duration: 0s !important;
+          animation-delay: 0s !important;
+          transition-duration: 0s !important;
+          transition-delay: 0s !important;
+        }
+      `
+    });
+    
+    await page.locator('[data-testid="monster-token"]').first().waitFor({ state: 'visible' });
     
     // Click on Command card and activate
     await page.locator('[data-testid="power-card-9"]').click();
@@ -212,7 +251,7 @@ test.describe('072 - Command Card Monster Relocation', () => {
     
     // Click cancel button
     await page.locator('[data-testid="cancel-monster-relocation-button"]').click();
-    await page.waitForTimeout(300);
+    await page.locator('[data-testid="monster-relocation-selection"]').waitFor({ state: 'hidden' });
     
     await screenshots.capture(page, 'cancelled-selection-ui-closed', {
       programmaticCheck: async () => {
