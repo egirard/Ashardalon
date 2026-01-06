@@ -2079,11 +2079,27 @@
       ? 0 
       : 8 + (targetTile.position.row - 1) * 4;
     
+    // For start tile, respect walkable bounds and staircase
+    const isStartTile = targetTile.tileType === 'start';
+    const minX = isStartTile ? 1 : 0;
+    const maxX = isStartTile ? 3 : tileWidth - 1;
+    const staircase = isStartTile ? [
+      { x: 1, y: 3 },
+      { x: 2, y: 3 },
+      { x: 1, y: 4 },
+      { x: 2, y: 4 },
+    ] : [];
+    
     // Check all squares on the tile for an empty one
     let newPosition: Position | null = null;
     for (let y = 0; y < tileHeight; y++) {
-      for (let x = 0; x < tileWidth; x++) {
+      for (let x = minX; x <= maxX; x++) {
         const pos = { x: tileBaseX + x, y: tileBaseY + y };
+        
+        // Skip staircase squares
+        if (staircase.some(s => s.x === pos.x && s.y === pos.y)) {
+          continue;
+        }
         
         // Check if square is empty (no hero, no monster)
         const hasHero = state.game.heroTokens.some(h => h.position.x === pos.x && h.position.y === pos.y);
