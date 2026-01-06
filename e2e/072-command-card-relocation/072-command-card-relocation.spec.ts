@@ -79,27 +79,6 @@ test.describe('072 - Command Card Monster Relocation', () => {
         type: 'game/setMonsters',
         payload: [monsterInstance]
       });
-      
-      // Make sure we have tiles to relocate to by adding a north tile
-      const dungeon = state.game.dungeon;
-      if (dungeon.tiles.length === 1) {
-        const newTile = {
-          id: 'tile-north',
-          definition: { id: 'chamber', name: 'Chamber' },
-          position: { row: -1, col: 0 },
-          rotation: 0,
-          tileType: 'dungeon' as const
-        };
-        
-        store.dispatch({
-          type: 'game/setDungeon',
-          payload: {
-            ...dungeon,
-            tiles: [...dungeon.tiles, newTile],
-            unexploredEdges: dungeon.unexploredEdges.filter(e => e.direction !== 'north')
-          }
-        });
-      }
     });
     
     // Wait for state to update
@@ -241,10 +220,26 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // Wait for tiles to become selectable
     await page.locator('.selectable-tile').first().waitFor({ state: 'visible' });
     
-    // Get the tile ID to click
+    // Debug: check what tiles are available
+    const tileInfo = await page.evaluate(() => {
+      const selectableTiles = Array.from(document.querySelectorAll('.selectable-tile'));
+      const state = (window as any).__REDUX_STORE__.getState().game;
+      return {
+        selectableTileIds: selectableTiles.map(t => t.getAttribute('data-tile-id')),
+        allTiles: state.dungeon.tiles.map((t: any) => ({ id: t.id, position: t.position })),
+        heroPosition: state.heroTokens[0].position
+      };
+    });
+    console.log('Tile info:', JSON.stringify(tileInfo, null, 2));
+    
+    // Get a tile that's NOT the start tile (where monster currently is)
     const tileToClick = await page.evaluate(() => {
-      const selectableTile = document.querySelector('.selectable-tile');
-      return selectableTile?.getAttribute('data-tile-id');
+      const selectableTiles = Array.from(document.querySelectorAll('.selectable-tile'));
+      // Find a tile that's not start-tile
+      const nonStartTile = selectableTiles.find(tile => 
+        tile.getAttribute('data-tile-id') !== 'start-tile'
+      );
+      return nonStartTile?.getAttribute('data-tile-id') || selectableTiles[0]?.getAttribute('data-tile-id');
     });
     
     console.log('Clicking tile:', tileToClick);
