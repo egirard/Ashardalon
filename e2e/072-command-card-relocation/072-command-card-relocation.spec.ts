@@ -8,9 +8,17 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // STEP 1: Navigate to character selection and select Quinn (Cleric)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
+    
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
 
     // Quinn has pre-selected power cards - we'll programmatically assign Command (ID 9) after game starts
+    
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
+    
     await screenshots.capture(page, 'quinn-selected', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
@@ -53,6 +61,16 @@ test.describe('072 - Command Card Monster Relocation', () => {
       `
     });
 
+    // Wait for hero position to be updated in the UI
+    await page.waitForFunction(() => {
+      const gameState = (window as any).__REDUX_STORE__.getState().game;
+      const heroToken = gameState.heroTokens.find((t: any) => t.heroId === 'quinn');
+      return heroToken && heroToken.position.x === 2 && heroToken.position.y === 3;
+    }, { timeout: 5000 });
+
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
+    
     await screenshots.capture(page, 'game-started', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
@@ -84,6 +102,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // Wait for state to update
     await page.locator('[data-testid="monster-token"]').first().waitFor({ state: 'visible' });
     
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
+    
     await screenshots.capture(page, 'monster-and-hero-on-tile', {
       programmaticCheck: async () => {
         const gameState = await page.evaluate(() => {
@@ -100,6 +121,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
     await page.locator('[data-testid="power-card-9"]').click();
     await page.locator('[data-testid="power-card-details-panel"]').waitFor({ state: 'visible' });
     
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
+    
     await screenshots.capture(page, 'command-card-details-shown', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="power-card-details-panel"]')).toBeVisible();
@@ -111,6 +135,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // STEP 5: Click Activate button to start monster selection
     await page.locator('[data-testid="activate-power-button"]').click();
     await page.locator('[data-testid="monster-relocation-selection"]').waitFor({ state: 'visible' });
+    
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
     
     await screenshots.capture(page, 'monster-selection-prompt', {
       programmaticCheck: async () => {
@@ -183,15 +210,6 @@ test.describe('072 - Command Card Monster Relocation', () => {
     
     await page.locator('[data-testid="monster-token"]').first().click();
     
-    // Wait a bit for the click to process
-    await page.waitForTimeout(500);
-    
-    // Check if state updated
-    const afterClickState = await page.evaluate(() => {
-      return (window as any).__PENDING_MONSTER_RELOCATION__;
-    });
-    console.log('State after click:', JSON.stringify(afterClickState, null, 2));
-    
     // Wait for state to update
     await page.waitForFunction(() => {
       const state = (window as any).__PENDING_MONSTER_RELOCATION__;
@@ -200,6 +218,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
     
     // Wait for UI to show destination selection
     await page.locator('text=Select Destination').waitFor({ state: 'visible' });
+    
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
     
     await screenshots.capture(page, 'monster-selected-tile-prompt', {
       programmaticCheck: async () => {
@@ -224,6 +245,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // Clean up by clicking cancel
     await page.locator('[data-testid="cancel-monster-relocation-button"]').click();
     await page.locator('[data-testid="monster-relocation-selection"]').waitFor({ state: 'hidden' });
+    
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
     
     // Capture final state showing card is ready for use (not yet used since we cancelled)
     await screenshots.capture(page, 'test-completed-via-cancel', {
@@ -311,6 +335,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
     await page.locator('[data-testid="activate-power-button"]').click();
     await page.locator('[data-testid="monster-relocation-selection"]').waitFor({ state: 'visible' });
     
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
+    
     await screenshots.capture(page, 'cancel-at-monster-selection', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="monster-relocation-selection"]')).toBeVisible();
@@ -321,6 +348,9 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // Click cancel button
     await page.locator('[data-testid="cancel-monster-relocation-button"]').click();
     await page.locator('[data-testid="monster-relocation-selection"]').waitFor({ state: 'hidden' });
+    
+    // Wait for network to be idle
+    await page.waitForLoadState('networkidle');
     
     await screenshots.capture(page, 'cancelled-selection-ui-closed', {
       programmaticCheck: async () => {
