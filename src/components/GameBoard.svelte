@@ -2196,6 +2196,7 @@
   }
   
   // Helper function to get squares within N tiles of a position (excluding wall borders)
+  function getSquaresWithinRange(position: Position, maxRange: number): Position[] {
     const TILE_WIDTH = 4;
     const NORMAL_TILE_HEIGHT = 4;
     const START_TILE_HEIGHT = 8;
