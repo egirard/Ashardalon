@@ -262,6 +262,15 @@
     selectedSquare?: Position;
   } | null = $state(null);
   
+  // Monster relocation state (for Command, Distant Diversion)
+  let pendingMonsterRelocation: {
+    heroId: string;
+    cardId: number;
+    step: 'monster-selection' | 'tile-selection';
+    selectedMonsterInstanceId?: string;
+    maxTileRange: number; // 2 for Command, 1 for Distant Diversion (adjacent tiles only)
+  } | null = $state(null);
+  
   // Track which power card is selected for attacking (so map clicks can trigger attacks)
   let selectedAttackCardId: number | null = $state(null);
 
@@ -1707,6 +1716,28 @@
       return;
     }
     
+    // Command (card ID 9) - Move monster on your tile to a tile within 2 tiles
+    if (cardId === 9) {
+      pendingMonsterRelocation = {
+        heroId,
+        cardId,
+        step: 'monster-selection',
+        maxTileRange: 2
+      };
+      return;
+    }
+    
+    // Distant Diversion (card ID 38) - Move monster within 3 tiles to an adjacent tile
+    if (cardId === 38) {
+      pendingMonsterRelocation = {
+        heroId,
+        cardId,
+        step: 'monster-selection',
+        maxTileRange: 1 // Adjacent tiles only (from monster's position)
+      };
+      return;
+    }
+    
     // Implement healing power cards
     switch (cardId) {
       case 1: // Healing Hymn - Heal self and one ally on tile 2 HP
@@ -1990,8 +2021,181 @@
     pendingFlamingSphere = null;
   }
   
+  // ========== Monster Relocation Handlers ==========
+  
+  function handleMonsterRelocationMonsterClicked(monsterInstanceId: string) {
+    if (!pendingMonsterRelocation || pendingMonsterRelocation.step !== 'monster-selection') return;
+    
+    // Set the selected monster and move to tile selection
+    pendingMonsterRelocation = {
+      ...pendingMonsterRelocation,
+      selectedMonsterInstanceId: monsterInstanceId,
+      step: 'tile-selection'
+    };
+  }
+  
+  function handleMonsterRelocationTileClicked(tileId: string) {
+    if (!pendingMonsterRelocation || pendingMonsterRelocation.step !== 'tile-selection') return;
+    if (!pendingMonsterRelocation.selectedMonsterInstanceId) return;
+    
+    // Get the monster and find a valid spawn position on the target tile
+    const state = store.getState();
+    const monster = state.game.monsters.find(m => m.instanceId === pendingMonsterRelocation!.selectedMonsterInstanceId);
+    if (!monster) {
+      pendingMonsterRelocation = null;
+      return;
+    }
+    
+    // Find the target tile
+    const targetTile = dungeon.tiles.find(t => t.id === tileId);
+    if (!targetTile) {
+      pendingMonsterRelocation = null;
+      return;
+    }
+    
+    // Find a valid spawn position on the target tile
+    // Use the same logic as monster spawning - find an empty square
+    const tileWidth = 4;
+    const tileHeight = targetTile.definition.id === 'start-tile' ? 8 : 4;
+    const tileBaseX = targetTile.position.col * tileWidth;
+    const tileBaseY = targetTile.position.row === 0 
+      ? 0 
+      : 8 + (targetTile.position.row - 1) * 4;
+    
+    // Check all squares on the tile for an empty one
+    let newPosition: Position | null = null;
+    for (let y = 0; y < tileHeight; y++) {
+      for (let x = 0; x < tileWidth; x++) {
+        const pos = { x: tileBaseX + x, y: tileBaseY + y };
+        
+        // Check if square is empty (no hero, no monster)
+        const hasHero = state.game.heroTokens.some(h => h.position.x === pos.x && h.position.y === pos.y);
+        const hasMonster = state.game.monsters.some(m => 
+          m.instanceId !== pendingMonsterRelocation!.selectedMonsterInstanceId && 
+          m.position.x === pos.x && 
+          m.position.y === pos.y
+        );
+        
+        if (!hasHero && !hasMonster) {
+          newPosition = pos;
+          break;
+        }
+      }
+      if (newPosition) break;
+    }
+    
+    if (!newPosition) {
+      // No valid position found - cancel
+      pendingMonsterRelocation = null;
+      return;
+    }
+    
+    // Update monster position
+    const updatedMonsters = state.game.monsters.map(m =>
+      m.instanceId === pendingMonsterRelocation!.selectedMonsterInstanceId
+        ? { ...m, position: newPosition!, tileId }
+        : m
+    );
+    
+    store.dispatch({
+      type: 'game/setMonsters',
+      payload: updatedMonsters
+    });
+    
+    // Mark the power card as used
+    store.dispatch(usePowerCard({ 
+      heroId: pendingMonsterRelocation.heroId, 
+      cardId: pendingMonsterRelocation.cardId 
+    }));
+    
+    // Clear the pending state
+    pendingMonsterRelocation = null;
+  }
+  
+  function handleMonsterRelocationCancel() {
+    pendingMonsterRelocation = null;
+  }
+  
+  // Helper function to get selectable monsters for relocation
+  function getSelectableMonsters(): string[] {
+    if (!pendingMonsterRelocation || pendingMonsterRelocation.step !== 'monster-selection') return [];
+    
+    const state = store.getState();
+    const heroToken = state.game.heroTokens.find(t => t.heroId === pendingMonsterRelocation!.heroId);
+    if (!heroToken) return [];
+    
+    const cardId = pendingMonsterRelocation.cardId;
+    
+    if (cardId === 9) {
+      // Command: Choose one Monster on your tile
+      const heroTileId = getTileOrSubTileId(heroToken.position, state.game.dungeon);
+      return state.game.monsters
+        .filter(m => getTileOrSubTileId(m.position, state.game.dungeon) === heroTileId)
+        .map(m => m.instanceId);
+    } else if (cardId === 38) {
+      // Distant Diversion: Choose one Monster within 3 tiles of you
+      const heroTile = findTileAtPosition(heroToken.position, state.game.dungeon);
+      if (!heroTile) return [];
+      
+      return state.game.monsters
+        .filter(m => {
+          const monsterTile = findTileAtPosition(m.position, state.game.dungeon);
+          if (!monsterTile) return false;
+          
+          // Calculate tile distance (Manhattan distance)
+          const distance = Math.abs(monsterTile.position.col - heroTile.position.col) + 
+                          Math.abs(monsterTile.position.row - heroTile.position.row);
+          
+          return distance <= 3;
+        })
+        .map(m => m.instanceId);
+    }
+    
+    return [];
+  }
+  
+  // Helper function to get selectable tiles for monster relocation destination
+  function getSelectableTilesForRelocation(): string[] {
+    if (!pendingMonsterRelocation || pendingMonsterRelocation.step !== 'tile-selection') return [];
+    if (!pendingMonsterRelocation.selectedMonsterInstanceId) return [];
+    
+    const state = store.getState();
+    const monster = state.game.monsters.find(m => m.instanceId === pendingMonsterRelocation!.selectedMonsterInstanceId);
+    const heroToken = state.game.heroTokens.find(t => t.heroId === pendingMonsterRelocation!.heroId);
+    if (!monster || !heroToken) return [];
+    
+    const cardId = pendingMonsterRelocation.cardId;
+    
+    if (cardId === 9) {
+      // Command: Place that Monster on a tile within 2 tiles of you
+      const heroTile = findTileAtPosition(heroToken.position, state.game.dungeon);
+      if (!heroTile) return [];
+      
+      return dungeon.tiles
+        .filter(tile => {
+          const distance = Math.abs(tile.position.col - heroTile.position.col) + 
+                          Math.abs(tile.position.row - heroTile.position.row);
+          return distance <= 2;
+        })
+        .map(tile => tile.id);
+    } else if (cardId === 38) {
+      // Distant Diversion: Place that Monster onto an adjacent tile
+      const monsterTile = findTileAtPosition(monster.position, state.game.dungeon);
+      if (!monsterTile) return [];
+      
+      return dungeon.tiles
+        .filter(tile => {
+          const distance = Math.abs(tile.position.col - monsterTile.position.col) + 
+                          Math.abs(tile.position.row - monsterTile.position.row);
+          return distance === 1; // Adjacent tiles only
+        })
+        .map(tile => tile.id);
+    }
+    
+    return [];
+  }
+  
   // Helper function to get squares within N tiles of a position (excluding wall borders)
-  function getSquaresWithinRange(position: Position, maxRange: number): Position[] {
     const TILE_WIDTH = 4;
     const NORMAL_TILE_HEIGHT = 4;
     const START_TILE_HEIGHT = 8;
@@ -2349,7 +2553,10 @@
           {@const selectableTiles = pendingBladeBarrier && pendingBladeBarrier.step === 'tile-selection' && currentHero 
             ? getBladeBarrierSelectableTiles(currentHero.position) 
             : []}
-          {@const isTileSelectable = selectableTiles.some(t => t.id === tile.id)}
+          {@const isTileSelectableForBladeBarrier = selectableTiles.some(t => t.id === tile.id)}
+          {@const isTileSelectableForRelocation = pendingMonsterRelocation?.step === 'tile-selection' && 
+                                                   getSelectableTilesForRelocation().includes(tile.id)}
+          {@const isTileSelectable = isTileSelectableForBladeBarrier || isTileSelectableForRelocation}
           {@const hasSelectableSquares = pendingBladeBarrier && pendingBladeBarrier.step === 'square-selection' && pendingBladeBarrier.selectedTileId === tile.id}
           <div
             class="placed-tile"
@@ -2362,7 +2569,13 @@
               : "dungeon-tile"}
             data-tile-id={tile.id}
             style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;"
-            onclick={(e) => isTileSelectable && handleBladeBarrierTileSelected(tile.id, e)}
+            onclick={(e) => {
+              if (isTileSelectableForBladeBarrier) {
+                handleBladeBarrierTileSelected(tile.id, e);
+              } else if (isTileSelectableForRelocation) {
+                handleMonsterRelocationTileClicked(tile.id);
+              }
+            }}
             role={isTileSelectable ? "button" : undefined}
             tabindex={isTileSelectable ? 0 : undefined}
           >
@@ -2525,15 +2738,23 @@
                                  !mapControlMode && 
                                  getTargetableMonstersForCurrentHero().some(m => m.instanceId === monsterState.instanceId)}
           {@const isSelected = selectedTargetId === monsterState.instanceId && selectedTargetType === 'monster'}
+          {@const isSelectableForRelocation = pendingMonsterRelocation?.step === 'monster-selection' && 
+                                               getSelectableMonsters().includes(monsterState.instanceId)}
           <MonsterToken
             monster={monsterState}
             cellSize={TILE_CELL_SIZE}
             tileOffsetX={TOKEN_OFFSET_X}
             tileOffsetY={TOKEN_OFFSET_Y}
             tilePixelOffset={getTilePixelOffsetById(monsterState.tileId)}
-            isTargetable={isTargetable}
-            isSelected={isSelected}
-            onClick={() => handleTargetClick(monsterState.instanceId, 'monster')}
+            isTargetable={isTargetable || isSelectableForRelocation}
+            isSelected={isSelected || (pendingMonsterRelocation?.selectedMonsterInstanceId === monsterState.instanceId)}
+            onClick={() => {
+              if (isSelectableForRelocation) {
+                handleMonsterRelocationMonsterClicked(monsterState.instanceId);
+              } else {
+                handleTargetClick(monsterState.instanceId, 'monster');
+              }
+            }}
           />
         {/each}
         
@@ -2874,6 +3095,8 @@
             flamingSphereState={pendingFlamingSphere?.heroId === hero.id ? pendingFlamingSphere : null}
             onCancelFlamingSphere={handleFlamingSphereCancel}
             onConfirmFlamingSphere={handleFlamingSphereConfirm}
+            monsterRelocationState={pendingMonsterRelocation?.heroId === hero.id ? pendingMonsterRelocation : null}
+            onCancelMonsterRelocation={handleMonsterRelocationCancel}
             flamingSphereToken={isHeroActive ? boardTokens.find(t => t.type === 'flaming-sphere' && t.ownerId === hero.id) : null}
             heroHasMoved={isHeroActive ? heroTurnActions?.actionsTaken.includes('move') : false}
             onMoveFlamingSphere={isHeroActive ? handleMoveFlamingSphere : undefined}

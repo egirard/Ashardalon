@@ -7,7 +7,7 @@
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
   import PowerCardDetailsPanel from './PowerCardDetailsPanel.svelte';
-  import type { PendingFlamingSphereState } from './PowerCardDetailsPanel.svelte';
+  import type { PendingFlamingSphereState, PendingMonsterRelocationState } from './PowerCardDetailsPanel.svelte';
 
   // Card ID constants
   const BLADE_BARRIER_CARD_ID = 5;
@@ -59,6 +59,14 @@
     onCancelFlamingSphere?: () => void;
     onConfirmFlamingSphere?: () => void;
     /**
+     * Monster Relocation selection state (if active)
+     */
+    monsterRelocationState?: PendingMonsterRelocationState | null;
+    /**
+     * Callback for Monster Relocation cancel
+     */
+    onCancelMonsterRelocation?: () => void;
+    /**
      * Flaming Sphere token info (if active)
      */
     flamingSphereToken?: { id: string; charges: number; position: { x: number; y: number } } | null;
@@ -86,6 +94,8 @@
     flamingSphereState = null,
     onCancelFlamingSphere,
     onConfirmFlamingSphere,
+    monsterRelocationState = null,
+    onCancelMonsterRelocation,
     flamingSphereToken = null,
     heroHasMoved = false,
     onMoveFlamingSphere,
@@ -476,6 +486,7 @@
         ineligibilityReason={ineligibilityReason}
         bladeBarrierState={bladeBarrierState}
         flamingSphereState={flamingSphereState}
+        monsterRelocationState={monsterRelocationState}
         flamingSphereToken={flamingSphereToken}
         heroHasMoved={heroHasMoved}
         onMoveFlamingSphere={onMoveFlamingSphere}
@@ -486,6 +497,7 @@
         onConfirmBladeBarrier={onConfirmBladeBarrier}
         onCancelFlamingSphere={onCancelFlamingSphere}
         onConfirmFlamingSphere={onConfirmFlamingSphere}
+        onCancelMonsterRelocation={onCancelMonsterRelocation}
       />
     {/if}
   </div>

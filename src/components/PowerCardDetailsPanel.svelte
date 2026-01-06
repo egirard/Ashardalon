@@ -11,6 +11,14 @@
     selectedSquare?: { x: number; y: number };
   }
 
+  export interface PendingMonsterRelocationState {
+    heroId: string;
+    cardId: number;
+    step: 'monster-selection' | 'tile-selection';
+    selectedMonsterInstanceId?: string;
+    maxTileRange: number;
+  }
+
   interface Props {
     card: PowerCard;
     isFlipped?: boolean;
@@ -18,6 +26,7 @@
     ineligibilityReason?: string;
     bladeBarrierState?: PendingBladeBarrierState | null;
     flamingSphereState?: PendingFlamingSphereState | null;
+    monsterRelocationState?: PendingMonsterRelocationState | null;
     // Flaming Sphere action handlers
     flamingSphereToken?: { id: string; charges: number; position: { x: number; y: number } } | null;
     heroHasMoved?: boolean;
@@ -29,6 +38,7 @@
     onConfirmBladeBarrier?: () => void;
     onCancelFlamingSphere?: () => void;
     onConfirmFlamingSphere?: () => void;
+    onCancelMonsterRelocation?: () => void;
   }
 
   let {
@@ -38,6 +48,7 @@
     ineligibilityReason,
     bladeBarrierState = null,
     flamingSphereState = null,
+    monsterRelocationState = null,
     flamingSphereToken = null,
     heroHasMoved = false,
     onMoveFlamingSphere,
@@ -47,14 +58,18 @@
     onCancelBladeBarrier,
     onConfirmBladeBarrier,
     onCancelFlamingSphere,
-    onConfirmFlamingSphere
+    onConfirmFlamingSphere,
+    onCancelMonsterRelocation
   }: Props = $props();
 
   // Power card ID constants
   const BLADE_BARRIER_CARD_ID = 5;
   const FLAMING_SPHERE_CARD_ID = 45;
+  const COMMAND_CARD_ID = 9;
+  const DISTANT_DIVERSION_CARD_ID = 38;
   const isBladeBarrier = $derived(card.id === BLADE_BARRIER_CARD_ID);
   const isFlamingSphere = $derived(card.id === FLAMING_SPHERE_CARD_ID);
+  const isMonsterRelocation = $derived(card.id === COMMAND_CARD_ID || card.id === DISTANT_DIVERSION_CARD_ID);
 
   // Power card type colors
   function getPowerCardColor(type: string): string {
@@ -99,6 +114,12 @@
   function handleConfirmFlamingSphere() {
     if (onConfirmFlamingSphere) {
       onConfirmFlamingSphere();
+    }
+  }
+  
+  function handleCancelMonsterRelocation() {
+    if (onCancelMonsterRelocation) {
+      onCancelMonsterRelocation();
     }
   }
 </script>
@@ -198,6 +219,36 @@
           class="cancel-selection-button"
           onclick={handleCancelFlamingSphere}
           data-testid="cancel-selection-button"
+        >
+          Cancel
+        </button>
+      </div>
+    {:else if isMonsterRelocation && monsterRelocationState}
+      <!-- Monster Relocation Selection State Display -->
+      <div class="monster-relocation-selection" data-testid="monster-relocation-selection">
+        {#if monsterRelocationState.step === 'monster-selection'}
+          <div class="selection-instructions">
+            <h4>Select Monster</h4>
+            {#if monsterRelocationState.cardId === COMMAND_CARD_ID}
+              <p>Click a monster on your tile</p>
+            {:else if monsterRelocationState.cardId === DISTANT_DIVERSION_CARD_ID}
+              <p>Click a monster within 3 tiles of you</p>
+            {/if}
+          </div>
+        {:else if monsterRelocationState.step === 'tile-selection'}
+          <div class="selection-instructions">
+            <h4>Select Destination</h4>
+            {#if monsterRelocationState.cardId === COMMAND_CARD_ID}
+              <p>Click a tile within 2 tiles of your position</p>
+            {:else if monsterRelocationState.cardId === DISTANT_DIVERSION_CARD_ID}
+              <p>Click an adjacent tile to the monster</p>
+            {/if}
+          </div>
+        {/if}
+        <button 
+          class="cancel-selection-button"
+          onclick={handleCancelMonsterRelocation}
+          data-testid="cancel-monster-relocation-button"
         >
           Cancel
         </button>
@@ -466,6 +517,17 @@
     padding: 0.5rem;
     background: rgba(255, 102, 0, 0.2);
     border: 2px solid #ff6600;
+    border-radius: 6px;
+  }
+
+  /* Monster Relocation Selection Styles */
+  .monster-relocation-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(21, 101, 192, 0.2);
+    border: 2px solid #1565c0;
     border-radius: 6px;
   }
 
