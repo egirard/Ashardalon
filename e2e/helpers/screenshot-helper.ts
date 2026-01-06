@@ -34,6 +34,8 @@ export function createScreenshotHelper(): ScreenshotHelper {
       // Use Playwright's built-in screenshot comparison
       await expect(page).toHaveScreenshot(`${screenshotName}.png`, {
         fullPage: options.fullPage ?? false,
+        animations: "disabled",
+        timeout: 10000,
       });
 
       counter++;
