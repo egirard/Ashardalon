@@ -26,7 +26,15 @@ test.describe('072 - Command Card Monster Relocation', () => {
       }
     });
 
-    // STEP 2: Start the game
+    // STEP 2: Start the game with deterministic seed
+    // Override Date.now() to ensure deterministic game initialization seed
+    await page.evaluate(() => {
+      const originalDateNow = Date.now;
+      Date.now = function() {
+        return 1234567890000; // Fixed timestamp for deterministic seed
+      };
+    });
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     
@@ -297,9 +305,16 @@ test.describe('072 - Command Card Monster Relocation', () => {
   test('User can cancel monster relocation at monster selection step', async ({ page }) => {
     const screenshots = createScreenshotHelper();
     
-    // Similar setup as above
+    // Similar setup as above - seed Date.now() for deterministic behavior
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    
+    // Seed Date.now() before starting game
+    await page.evaluate(() => {
+      Date.now = function() {
+        return 1234567890000; // Fixed timestamp
+      };
+    });
     
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
