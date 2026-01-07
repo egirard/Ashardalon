@@ -2,6 +2,30 @@ import { Page, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Fixed timestamp for deterministic game initialization.
+ * Used to override Date.now() to ensure consistent random seeds.
+ */
+export const DETERMINISTIC_TIMESTAMP = 1234567890000;
+
+/**
+ * Sets up deterministic game initialization by overriding Date.now().
+ * 
+ * CRITICAL: Call this before starting any game to ensure:
+ * - Consistent tile deck shuffling
+ * - Consistent hero position assignments
+ * - Deterministic screenshot comparisons
+ * 
+ * @param page - The Playwright page object
+ */
+export async function setupDeterministicGame(page: Page): Promise<void> {
+  await page.evaluate((timestamp) => {
+    Date.now = function() {
+      return timestamp;
+    };
+  }, DETERMINISTIC_TIMESTAMP);
+}
+
 export interface ScreenshotOptions {
   fullPage?: boolean;
   programmaticCheck?: () => Promise<void>;
