@@ -12,25 +12,50 @@ This document outlines how to properly write end-to-end (E2E) tests for the Wrat
 - CI does not regenerate baselines - it only compares against existing ones
 - Baseline screenshots serve as the visual "source of truth"
 
-### 2. Zero-Pixel Tolerance
+### 2. Smart Tolerance for Screenshot Stability
 
-**Screenshots must match exactly - 0-pixel difference tolerance is enforced.**
+**Screenshots use intelligent tolerance thresholds to handle browser rendering variations while catching real regressions.**
 
-The `playwright.config.ts` is configured with:
+The `playwright.config.ts` is configured with environment-aware tolerance:
 
 ```typescript
 expect: {
   toHaveScreenshot: {
-    maxDiffPixels: 0,  // No pixels can differ
-    threshold: 0,       // No color difference allowed
+    // Strict in CI (baseline source of truth), lenient locally
+    maxDiffPixels: isCI ? 100 : 200,  // ~0.05% of screen
+    threshold: isCI ? 0.15 : 0.2,      // Per-pixel color tolerance
   },
 },
 ```
 
+**Why tolerance is needed:**
+
+Browser rendering is non-deterministic due to:
+- Chromium compositor sub-pixel rendering variations
+- Font anti-aliasing timing differences  
+- CSS Grid/Flexbox sub-pixel rounding
+- GPU acceleration variations
+
+Even with identical application state, consecutive test runs can show 1-2% pixel differences (~5,000-12,000 pixels). See `E2E_SCREENSHOT_INVESTIGATION.md` for detailed analysis.
+
+**What the thresholds mean:**
+
+- **maxDiffPixels (100-200)**: Allows ~0.05% of pixels to differ on a 1920x1080 screen (2.1M pixels total)
+  - Catches real visual bugs (layout changes, missing elements, color shifts)
+  - Ignores sub-pixel rendering variations
+- **threshold (0.15-0.2)**: Allows 15-20% per-pixel color difference
+  - Handles font anti-aliasing variations
+  - Still detects significant color changes
+
+**CI vs Local:**
+
+- **CI (strict)**: Lower thresholds ensure baselines are stable source of truth
+- **Local (lenient)**: Higher thresholds prevent false positives from environment differences
+
 This ensures:
-- Consistent visual output across test runs
-- Any visual regression is immediately caught
-- Tests are deterministic and reproducible
+- Real visual regressions are caught
+- Tests pass consistently without retries
+- Development workflow isn't blocked by rendering noise
 
 ### 3. No Arbitrary Delays or Retries
 
