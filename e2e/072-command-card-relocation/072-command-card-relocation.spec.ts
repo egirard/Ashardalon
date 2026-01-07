@@ -29,7 +29,6 @@ test.describe('072 - Command Card Monster Relocation', () => {
     // STEP 2: Start the game with deterministic seed
     // Override Date.now() to ensure deterministic game initialization seed
     await page.evaluate(() => {
-      const originalDateNow = Date.now;
       Date.now = function() {
         return 1234567890000; // Fixed timestamp for deterministic seed
       };
