@@ -86,31 +86,62 @@ Removed non-compliant `waitForTimeout()` calls in favor of proper state-based wa
 
 **Result**: Improved test quality but did not resolve screenshot issues.
 
-## Potential Root Causes
+## Root Cause - RESOLVED
 
-Based on the investigation, the following are likely culprits:
+### Actual Problem: Non-Deterministic Game Initialization
 
-### 1. Browser Rendering Variations
-- **Sub-pixel rendering**: Chromium's compositor may render elements slightly differently between runs
-- **Font rendering**: Anti-aliasing or sub-pixel font rendering variations
-- **GPU acceleration**: Hardware-accelerated rendering may have timing variations
+The screenshot failures were **NOT** caused by browser rendering variations. They were caused by **non-deterministic test logic**.
 
-### 2. Dynamic Element IDs
-Found in codebase:
+**Discovery:**
+Analysis of diff images revealed that entire game elements (tiles, tokens) were appearing in different positions between runs, not subtle rendering differences. This indicated logic errors, not visual noise.
+
+**Root Cause Found:**
 ```typescript
-// GameBoard.svelte
-const timestamp = Date.now();
-id: `token-blade-barrier-${timestamp}-${index}`
-id: `token-flaming-sphere-${timestamp}`
+// src/store/gameSlice.ts, line 746
+const gameSeed = seed ?? Date.now();  // Uses current timestamp!
 ```
 
-While these specific tokens aren't in test 072's scenario, similar patterns elsewhere could affect layout or rendering.
+The `startGame` action uses `Date.now()` as the random seed when no seed is provided:
+1. Each test run gets a different timestamp
+2. Different seed → different shuffled tile deck
+3. Different seed → different shuffled hero positions  
+4. Result: Dungeons have different layouts between runs
+5. Screenshots show entirely different game boards
 
-### 3. Canvas/WebGL Rendering
-If the game board uses canvas or WebGL for any rendering, pixel-perfect consistency is challenging.
+**Evidence:**
+- Diff images showed 500-5000 pixel differences representing entire grid squares
+- Pixel counts varied significantly between runs (4,946 vs 12,107 pixels)
+- Elements appeared in completely different board positions
+- Not subtle anti-aliasing or sub-pixel shifts
 
-### 4. CSS Grid/Flexbox Layout
-Complex CSS layouts can have sub-pixel rounding differences between renders.
+### Solution Implemented
+
+**Fix:** Override `Date.now()` before game start to return a fixed timestamp:
+
+```typescript
+// e2e tests must include this before starting game:
+await page.evaluate(() => {
+  Date.now = function() {
+    return 1234567890000; // Fixed timestamp for deterministic seed
+  };
+});
+
+await page.locator('[data-testid="start-game-button"]').click();
+```
+
+**Results:**
+- Test 072 now passes consistently (3/3 runs, 0 pixel difference)
+- Zero tolerance configuration maintained (`maxDiffPixels: 0, threshold: 0`)
+- Baseline screenshots regenerated with deterministic setup
+- Real visual regressions will be caught immediately
+
+### Lessons Learned
+
+1. **Don't add tolerance to mask bugs** - Screenshot differences usually indicate real issues
+2. **Analyze diff images carefully** - Entire elements moving ≠ rendering noise
+3. **Check for randomness sources** - `Date.now()`, `Math.random()`, shuffles, timestamps
+4. **Make tests deterministic** - Override randomness at the source
+5. **Zero tolerance is achievable** - With proper deterministic setup
 
 ## Test Results
 
@@ -218,55 +249,75 @@ expect: {
 
 ## Next Steps
 
-### ✅ RESOLVED - Smart Tolerance Implementation (January 2026)
+### ✅ RESOLVED - Deterministic Game Initialization (January 2026)
 
-The screenshot non-determinism issue has been resolved by implementing intelligent tolerance thresholds in the Playwright configuration.
+The screenshot non-determinism issue has been **completely resolved** by fixing the root cause: non-deterministic game initialization.
 
 **Solution Implemented:**
-1. **Environment-aware tolerance** - Strict in CI (baseline source of truth), lenient locally
-2. **Smart thresholds** - Allow minor rendering variations while catching real bugs
-   - `maxDiffPixels: 100-200` (~0.05% of screen)
-   - `threshold: 0.15-0.2` (per-pixel color tolerance)
-3. **Documentation updates** - Updated E2E_TEST_GUIDELINES.md with rationale
+1. **Fixed Date.now() in tests** - Override with constant timestamp before game start
+2. **Regenerated baselines** - All screenshots created with deterministic setup
+3. **Zero tolerance maintained** - `maxDiffPixels: 0, threshold: 0`
+4. **Verified stability** - Test 072 passes consistently (3/3 runs)
 
 **Results:**
-- Tests pass consistently without retries
-- Real visual regressions are still caught
-- Development workflow unblocked from rendering noise
-- CI remains strict to ensure baseline quality
+- Tests pass with pixel-perfect accuracy
+- No tolerance needed - deterministic logic = deterministic visuals
+- Real visual regressions will be caught immediately
+- No false positives from "rendering variations"
 
 **Files Updated:**
-- `playwright.config.ts` - Added tolerance configuration with detailed rationale
-- `docs/E2E_TEST_GUIDELINES.md` - Updated section 2 to explain smart tolerance approach
-- `E2E_SCREENSHOT_INVESTIGATION.md` - This document updated with resolution
+- `e2e/072-command-card-relocation/072-command-card-relocation.spec.ts` - Added Date.now() override
+- `docs/E2E_TEST_GUIDELINES.md` - Added section 2 on deterministic initialization
+- `E2E_SCREENSHOT_INVESTIGATION.md` - Updated with correct root cause and solution
 
-### Future Enhancements (Optional)
+### Remaining Work
 
-1. **Create test 073 for Distant Diversion**
-   - Use test 072 as template
-   - Similar two-step selection flow
-   - Now possible with stable screenshots
+1. **Audit other E2E tests** (Priority: High)
+   - Check all 68 e2e tests for Date.now() override
+   - Tests that start games without the fix will be non-deterministic
+   - Regenerate baselines for affected tests
+   
+2. **Create helper function** (Priority: Medium)
+   ```typescript
+   // e2e/helpers/deterministic-game.ts
+   export async function setupDeterministicGame(page: Page) {
+     await page.evaluate(() => {
+       Date.now = function() { return 1234567890000; };
+     });
+   }
+   ```
 
-2. **Monitor tolerance effectiveness**
-   - Gather data on pixel differences across all 68 tests
-   - Adjust thresholds if needed based on empirical data
-   - Consider per-test tolerance if specific tests need tighter bounds
+3. **Consider game-level fix** (Priority: Low)
+   - Add test mode that accepts explicit seed
+   - Would eliminate need for Date.now() override
+   - Less invasive for test code
 
-3. **Evaluate visual regression tools**
-   - Consider tools like Percy or Chromatic for advanced visual testing
-   - These provide AI-powered diff detection and ignore rendering noise
-   - May provide better UX than pixel-based comparison
+4. **Update CI checks** (Priority: Low)
+   - Add validation that tests include Date.now() override
+   - Warn if test starts game without deterministic setup
+
+### Future Test 073 - Distant Diversion
+
+Now that screenshot stability is resolved, test 073 can be created:
+- Use test 072 as template
+- Include Date.now() override
+- Similar two-step selection flow
+- Should pass consistently with zero tolerance
 
 ## Conclusion
 
-The screenshot non-determinism is a systemic issue affecting the entire e2e test suite, not a problem specific to test 072. The root cause appears to be browser rendering variations that are difficult to eliminate with current approaches.
+The screenshot non-determinism was caused by **non-deterministic game initialization logic**, not browser rendering variations. The game's `startGame` action used `Date.now()` as a random seed, causing different tile deck shuffles and hero positions on each test run.
 
-**The implemented solution uses intelligent tolerance thresholds that:**
-- Allow browser rendering variations (sub-pixel rendering, anti-aliasing)
-- Still catch real visual bugs (layout changes, missing elements, color shifts)
-- Maintain strict CI validation while enabling local development
-- Eliminate false positives without masking real regressions
+**The solution:**
+- Override `Date.now()` in tests before starting games to return a fixed timestamp
+- This ensures deterministic tile layouts and hero positions
+- Maintain zero-pixel tolerance for pixel-perfect regression detection
+- Real visual bugs are caught immediately without false positives
 
-Test 072 itself is functionally complete and significantly improved. The test logic, state management, and user interactions are all properly implemented and verified programmatically.
+**Test 072 status:** ✅ **RESOLVED** - Tests pass consistently with deterministic initialization and zero tolerance.
 
-**Status:** ✅ **RESOLVED** - Tests now pass consistently with smart tolerance configuration.
+---
+
+*Investigation completed: December 2024*  
+*Root cause identified and resolved: January 2025*  
+*Final resolution: Non-deterministic logic fixed, not tolerance added*

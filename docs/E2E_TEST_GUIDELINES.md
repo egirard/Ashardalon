@@ -12,50 +12,68 @@ This document outlines how to properly write end-to-end (E2E) tests for the Wrat
 - CI does not regenerate baselines - it only compares against existing ones
 - Baseline screenshots serve as the visual "source of truth"
 
-### 2. Smart Tolerance for Screenshot Stability
+### 2. Deterministic Game Initialization
 
-**Screenshots use intelligent tolerance thresholds to handle browser rendering variations while catching real regressions.**
+**Tests must use deterministic game initialization to ensure stable screenshot comparisons.**
 
-The `playwright.config.ts` is configured with environment-aware tolerance:
+The game uses `Date.now()` as a random seed for shuffling tile decks and hero positions when not explicitly provided. This causes **non-deterministic game state** where entities appear in different locations between test runs, resulting in screenshot failures.
 
+**Problem Example:**
+```typescript
+// ❌ BAD: Uses current timestamp → different tile layout each run
+await page.locator('[data-testid="start-game-button"]').click();
+```
+
+**Solution: Override Date.now() before game start:**
+```typescript
+// ✅ GOOD: Fixed timestamp → deterministic tile layout
+await page.evaluate(() => {
+  Date.now = function() {
+    return 1234567890000; // Fixed timestamp
+  };
+});
+
+await page.locator('[data-testid="start-game-button"]').click();
+```
+
+**Why this is critical:**
+
+The `startGame` action in `src/store/gameSlice.ts` uses:
+- `seed ?? Date.now()` to generate a random seed
+- This seed shuffles the tile deck using `shuffleArray(INITIAL_TILE_DECK, randomFn)`
+- This seed shuffles hero starting positions
+- Different seeds = different dungeon layouts = screenshot failures
+
+**Implementation in tests:**
+```typescript
+test('my game test', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+  
+  // CRITICAL: Set fixed Date.now() before starting game
+  await page.evaluate(() => {
+    Date.now = function() { return 1234567890000; };
+  });
+  
+  await page.locator('[data-testid="hero-quinn"]').click();
+  await page.locator('[data-testid="start-game-button"]').click();
+  // Game now has deterministic layout
+});
+```
+
+**Zero-pixel tolerance:**
+
+With deterministic initialization, tests use strict pixel-perfect comparison:
 ```typescript
 expect: {
   toHaveScreenshot: {
-    // Strict in CI (baseline source of truth), lenient locally
-    maxDiffPixels: isCI ? 100 : 200,  // ~0.05% of screen
-    threshold: isCI ? 0.15 : 0.2,      // Per-pixel color tolerance
+    maxDiffPixels: 0,  // No pixels can differ
+    threshold: 0,       // No color difference allowed
   },
-},
+}
 ```
 
-**Why tolerance is needed:**
-
-Browser rendering is non-deterministic due to:
-- Chromium compositor sub-pixel rendering variations
-- Font anti-aliasing timing differences  
-- CSS Grid/Flexbox sub-pixel rounding
-- GPU acceleration variations
-
-Even with identical application state, consecutive test runs can show 1-2% pixel differences (~5,000-12,000 pixels). See `E2E_SCREENSHOT_INVESTIGATION.md` for detailed analysis.
-
-**What the thresholds mean:**
-
-- **maxDiffPixels (100-200)**: Allows ~0.05% of pixels to differ on a 1920x1080 screen (2.1M pixels total)
-  - Catches real visual bugs (layout changes, missing elements, color shifts)
-  - Ignores sub-pixel rendering variations
-- **threshold (0.15-0.2)**: Allows 15-20% per-pixel color difference
-  - Handles font anti-aliasing variations
-  - Still detects significant color changes
-
-**CI vs Local:**
-
-- **CI (strict)**: Lower thresholds ensure baselines are stable source of truth
-- **Local (lenient)**: Higher thresholds prevent false positives from environment differences
-
-This ensures:
-- Real visual regressions are caught
-- Tests pass consistently without retries
-- Development workflow isn't blocked by rendering noise
+This ensures any visual regression is caught immediately.
 
 ### 3. No Arbitrary Delays or Retries
 
