@@ -3079,9 +3079,12 @@
     {@const isHeroActive = isActiveHero(hero.id)}
     {@const edge = heroEdgeMap[hero.id] || 'bottom'}
     {@const sidePreference = heroSidePreferences[hero.id] || 'left'}
+    {@const heroesOnSameEdge = selectedHeroes.filter(h => (heroEdgeMap[h.id] || 'bottom') === edge).length}
+    {@const isSinglePlayerOnEdge = heroesOnSameEdge === 1}
     {#if heroHpState}
       <div 
         class="player-panel-overlay player-panel-{edge} player-panel-side-{sidePreference}" 
+        class:single-player-on-edge={isSinglePlayerOnEdge}
         class:blade-barrier-selection-active={pendingBladeBarrier?.heroId === hero.id}
         data-testid="player-panel-{edge}"
         data-hero-id={hero.id}
@@ -3525,6 +3528,24 @@
     bottom: 0.75rem;
     margin: 0;
   }
+  
+  /* Single player positioning - more central with space for sub-panels */
+  /* For single players on left/right edges, position more centrally (not at extremes) */
+  .player-panel-left.single-player-on-edge {
+    top: 15vh;  /* Position away from top edge with room for expansion */
+    bottom: auto;
+    margin: 0;
+  }
+  
+  .player-panel-right.single-player-on-edge {
+    top: 15vh;  /* Position away from top edge with room for expansion */
+    bottom: auto;
+    margin: 0;
+  }
+  
+  /* For single players on top/bottom edges, ensure they stay centered but visible */
+  /* The default centering (margin: 0 auto) works well for top/bottom single players */
+  /* No override needed - they're already well-positioned */
 
   /* Board container - fullscreen, map fills entire viewport */
   .board-container {
