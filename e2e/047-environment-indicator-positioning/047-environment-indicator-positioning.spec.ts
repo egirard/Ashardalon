@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('047 - Environment Indicator Positioning', () => {
   test('environment indicator displays at top of game state panel without overlapping controls', async ({ page }) => {
@@ -20,6 +20,9 @@ test.describe('047 - Environment Indicator Positioning', () => {
     
     // Select power cards
     await selectDefaultPowerCards(page, 'vistra');
+    
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
     
     await page.locator('[data-testid="start-game-button"]').click();
     

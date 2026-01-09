@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('068 - Two Players on Same Side', () => {
   test('two players can select from the same edge and swap their side preferences', async ({ page }) => {
@@ -82,6 +82,9 @@ test.describe('068 - Two Players on Same Side', () => {
     });
 
     // STEP 5: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     
     // Wait for scenario introduction and dismiss it

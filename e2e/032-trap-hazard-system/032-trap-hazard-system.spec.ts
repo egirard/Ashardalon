@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('032 - Trap and Hazard System', () => {
   test('trap and hazard markers display correctly on the game board', async ({ page }) => {
@@ -20,6 +20,9 @@ test.describe('032 - Trap and Hazard System', () => {
     
     // Select power cards
     await selectDefaultPowerCards(page, 'quinn');
+    
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
     
     await page.locator('[data-testid="start-game-button"]').click();
     

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('018 - Party Defeat', () => {
   test('Game ends when hero dies with no surges', async ({ page }) => {
@@ -13,6 +13,9 @@ test.describe('018 - Party Defeat', () => {
     // Select power cards for heroes
     await selectDefaultPowerCards(page, 'quinn');
     await selectDefaultPowerCards(page, 'vistra');
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
@@ -152,6 +155,9 @@ test.describe('018 - Party Defeat', () => {
     // Select power cards for heroes
     await selectDefaultPowerCards(page, 'quinn');
     await selectDefaultPowerCards(page, 'vistra');
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);

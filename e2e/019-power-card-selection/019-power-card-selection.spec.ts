@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('019 - Power Card Selection', () => {
   test('player selects hero and chooses power cards before starting game', async ({ page }) => {
@@ -121,6 +121,9 @@ test.describe('019 - Power Card Selection', () => {
     });
 
     // STEP 6: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);

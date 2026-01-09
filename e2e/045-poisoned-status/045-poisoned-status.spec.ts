@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectDefaultPowerCards, createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { selectDefaultPowerCards, createScreenshotHelper, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('045 - Poisoned Status Effect', () => {
   test('Apply poisoned status, take damage at start of turn, attempt recovery at end of turn', async ({ page }) => {
@@ -10,6 +10,9 @@ test.describe('045 - Poisoned Status Effect', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
