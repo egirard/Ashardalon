@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('058 - Healing Power Cards (Healing Hymn, Dwarven Resilience, Lay On Hands)', () => {
   test('player can use healing power cards to restore HP', async ({ page }) => {
@@ -31,6 +31,9 @@ test.describe('058 - Healing Power Cards (Healing Hymn, Dwarven Resilience, Lay 
     });
 
     // Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);

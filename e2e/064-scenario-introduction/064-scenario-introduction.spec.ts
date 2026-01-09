@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('064 - Scenario Introduction Modal', () => {
   test('scenario introduction is shown when map loads and can be rotated and dismissed', async ({ page }) => {
@@ -14,6 +14,9 @@ test.describe('064 - Scenario Introduction Modal', () => {
     await selectDefaultPowerCards(page, 'quinn');
 
     // STEP 3: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
 
@@ -146,6 +149,9 @@ test.describe('064 - Scenario Introduction Modal', () => {
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'visible' });

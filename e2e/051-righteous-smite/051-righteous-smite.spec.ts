@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('051 - Righteous Smite (ID: 27)', () => {
   test('All heroes on tile regain 1 HP on both hit and miss', async ({ page }) => {
@@ -25,6 +25,9 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     });
 
     // Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
@@ -151,6 +154,9 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
@@ -268,6 +274,9 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
     await selectDefaultPowerCards(page, 'vistra');
+    
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });

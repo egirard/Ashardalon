@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 // Test constants for better readability
 const INITIAL_TILE_DECK_SIZE = 8;
@@ -18,6 +18,9 @@ test.describe('007 - Explore and Place New Tile', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
@@ -164,6 +167,9 @@ test.describe('007 - Explore and Place New Tile', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
@@ -210,6 +216,9 @@ test.describe('007 - Explore and Place New Tile', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);

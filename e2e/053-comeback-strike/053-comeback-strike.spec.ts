@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 // Helper function to seed dice roll for deterministic tests
 async function seedDiceRoll(page: Page, value: number) {
@@ -39,6 +39,9 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     });
 
     // STEP 2: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
@@ -197,6 +200,9 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     });
 
     // STEP 2: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);

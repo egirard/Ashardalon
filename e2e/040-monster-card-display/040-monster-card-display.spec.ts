@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('040 - Monster Card Display', () => {
   test('monster cards display persistently next to player character sheet during gameplay', async ({ page }) => {
@@ -23,6 +23,9 @@ test.describe('040 - Monster Card Display', () => {
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     // STEP 3: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);

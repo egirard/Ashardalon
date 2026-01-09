@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
   test('User can activate Blade Barrier through UI clicks and place tokens on-map', async ({ page }) => {
@@ -31,6 +31,9 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     });
 
     // STEP 2: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('070 - Flaming Sphere Movement UI', () => {
   test('User can move Flaming Sphere token during hero phase', async ({ page }) => {
@@ -18,6 +18,9 @@ test.describe('070 - Flaming Sphere Movement UI', () => {
     await page.locator('[data-testid="done-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);

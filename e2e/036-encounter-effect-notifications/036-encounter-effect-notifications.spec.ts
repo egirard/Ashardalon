@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('036 - Encounter Effect Notifications', () => {
   test('special encounter cards display effect notifications with details', async ({ page }) => {
@@ -20,6 +20,9 @@ test.describe('036 - Encounter Effect Notifications', () => {
     
     // Select power cards
     await selectDefaultPowerCards(page, 'quinn');
+    
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
     
     await page.locator('[data-testid="start-game-button"]').click();
     

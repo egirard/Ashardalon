@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('061 - Turn Progress Indicator', () => {
   test('turn progress card displays and updates through all phases', async ({ page }) => {
@@ -14,6 +14,9 @@ test.describe('061 - Turn Progress Indicator', () => {
     
     // Select power cards for Quinn
     await selectDefaultPowerCards(page, 'quinn');
+    
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
     
     await page.locator('[data-testid="start-game-button"]').click();
     

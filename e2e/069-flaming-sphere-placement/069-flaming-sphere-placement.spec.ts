@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('069 - Flaming Sphere Token Placement UI', () => {
   test('User can activate Flaming Sphere and place it via UI', async ({ page }) => {
@@ -37,6 +37,9 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
     });
 
     // STEP 2: Start the game
+    // CRITICAL: Set deterministic seed before starting game
+    await setupDeterministicGame(page);
+    
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
