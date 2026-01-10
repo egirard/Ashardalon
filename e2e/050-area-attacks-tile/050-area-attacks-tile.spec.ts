@@ -434,8 +434,6 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     
     // STEP 6: Check for additional combat results (area attacks show results sequentially)
     // We spawned 3 monsters, so we expect up to 2 more results after the first
-    // NOTE: Implementation may vary - some area attacks might show results simultaneously or
-    // aggregate them into a single result. We'll be flexible and accept at least the first result.
     const COMBAT_RESULT_TIMEOUT_MS = 3000;
     let additionalResultCount = 0;
     const additionalResults = ['second-monster-result', 'third-monster-result'];
@@ -452,9 +450,8 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       }
     }
     
-    // NOTE: We verified at least one hit. If the implementation doesn't show sequential results
-    // for area attacks yet, that's acceptable - the test validates the card can be used.
-    console.log(`Total combat results shown: ${additionalResultCount + 1} (1 initial + ${additionalResultCount} additional)`);
+    // Verify we got results for all 3 monsters (1 initial + 2 additional)
+    expect(additionalResultCount).toBe(2); // Should have hit 2 additional monsters after the first
     
     // Final check: ensure all results are dismissed
     await expect(page.locator('[data-testid="combat-result"]')).not.toBeVisible();
@@ -473,14 +470,9 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
             expect(shockSphereCard.isFlipped).toBe(true);
           }
         }
-        // Verify at least some monsters were affected by the attack
-        // Note: If area attacks aren't fully implemented yet for sequential results,
-        // we validate that the card was used and at least one monster was affected.
-        const monstersRemaining = state.game.monsters.length;
-        const monstersDefeated = state.game.scenario.monstersDefeated;
-        console.log(`Monsters remaining: ${monstersRemaining}, Monsters defeated: ${monstersDefeated}`);
-        // Either some monsters were defeated OR fewer monsters remain than we started with
-        expect(monstersDefeated >= 1 || monstersRemaining < 3).toBe(true);
+        // Verify all 3 monsters were defeated (Shock Sphere does 2 damage, kobolds have 2 HP)
+        expect(state.game.monsters.length).toBe(0);
+        expect(state.game.scenario.monstersDefeated).toBe(3);
       }
     });
   });

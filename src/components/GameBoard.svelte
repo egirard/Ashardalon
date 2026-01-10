@@ -273,6 +273,9 @@
   
   // Track which power card is selected for attacking (so map clicks can trigger attacks)
   let selectedAttackCardId: number | null = $state(null);
+  
+  // Track remaining targets for area attacks (attacks that hit all monsters on a tile)
+  let pendingAreaAttackTargets: MonsterState[] = $state([]);
 
   // Map control state
   let mapControlMode: boolean = $state(false);
@@ -1271,11 +1274,32 @@
     const monster = monsters.find((m) => m.instanceId === targetInstanceId);
     if (!monster) return;
 
-    const monsterAC = getMonsterAC(monster.monsterId);
+    // Parse the card to check for area attack (maxTargets === -1)
+    const parsedAction = parseActionCard(powerCard);
+    const isAreaAttack = parsedAction.attack?.maxTargets === -1;
+    
+    // For area attacks, find all monsters on the same tile
+    const targetsToAttack = isAreaAttack 
+      ? monsters.filter(m => m.tileId === monster.tileId)
+      : [monster];
+    
+    // If this is an area attack, start a multi-attack sequence
+    if (isAreaAttack && targetsToAttack.length > 1) {
+      store.dispatch(startMultiAttack({ 
+        cardId, 
+        totalAttacks: targetsToAttack.length, 
+        sameTarget: false, 
+        maxTargets: -1,
+        targetInstanceId: undefined 
+      }));
+    }
+    
+    // Attack the first target immediately
+    const firstTarget = targetsToAttack[0];
+    const monsterAC = getMonsterAC(firstTarget.monsterId);
     if (monsterAC === undefined) return;
 
     // Create base attack from power card
-    // TODO: Some power cards like 'Ray of Frost' have range > 1 - implement ranged targeting
     const baseAttack = {
       name: powerCard.name,
       attackBonus: powerCard.attackBonus,
@@ -1287,7 +1311,7 @@
     const attackWithBonuses = applyItemBonusesToAttack(baseAttack, heroInventories[currentHeroId]);
 
     const result = resolveAttack(attackWithBonuses, monsterAC);
-    store.dispatch(setAttackResult({ result, targetInstanceId, attackName: powerCard.name, cardId }));
+    store.dispatch(setAttackResult({ result, targetInstanceId: firstTarget.instanceId, attackName: powerCard.name, cardId }));
     
     // If this was a charge attack, clear the move-attack state and hide movement
     if (pendingMoveAttack && pendingMoveAttack.cardId === cardId) {
@@ -1296,12 +1320,10 @@
     }
     
     // Flip the power card if it's a daily (at-wills can be used repeatedly)
-    // But only flip on the first attack of a multi-attack sequence
-    // Also check for special miss effects that prevent flipping
+    // But only flip on the first attack of a multi-attack sequence or area attack
     const isMultiAttackInProgress = multiAttackState && multiAttackState.attacksCompleted > 0;
-    if (powerCard.type === 'daily' && !isMultiAttackInProgress) {
+    if (powerCard.type === 'daily' && !isMultiAttackInProgress && !isAreaAttack) {
       // Check if this card has special miss behavior (don't flip on miss)
-      const parsedAction = parseActionCard(powerCard);
       const hasMissNoFlip = parsedAction.missEffects?.some(effect => effect.type === 'no-flip');
       
       // Flip the card if attack hit, or if it missed but card doesn't have no-flip behavior
@@ -1311,10 +1333,73 @@
         store.dispatch(usePowerCard({ heroId: currentHeroId, cardId }));
       }
     }
+    
+    // For area attacks, store remaining targets to attack after dismissing first result
+    if (isAreaAttack && targetsToAttack.length > 1) {
+      // Store remaining targets in a variable accessible by handleDismissAttackResult
+      pendingAreaAttackTargets = targetsToAttack.slice(1);
+    }
   }
 
   // Handle dismissing the attack result - also handles multi-attack progression
   function handleDismissAttackResult() {
+    // First dismiss the current attack result
+    store.dispatch(dismissAttackResult());
+    
+    // Check if there are pending area attack targets to process
+    if (pendingAreaAttackTargets.length > 0 && multiAttackState) {
+      const nextTarget = pendingAreaAttackTargets[0];
+      pendingAreaAttackTargets = pendingAreaAttackTargets.slice(1);
+      
+      // Get the power card and current hero
+      const currentHeroId = getCurrentHeroId();
+      if (!currentHeroId) return;
+      
+      const powerCard = getPowerCardById(multiAttackState.cardId);
+      if (!powerCard || powerCard.attackBonus === undefined) return;
+      
+      const monsterAC = getMonsterAC(nextTarget.monsterId);
+      if (monsterAC === undefined) return;
+      
+      // Create base attack from power card
+      const baseAttack = {
+        name: powerCard.name,
+        attackBonus: powerCard.attackBonus,
+        damage: powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE,
+        range: 1,
+      };
+      
+      // Apply item bonuses
+      const attackWithBonuses = applyItemBonusesToAttack(baseAttack, heroInventories[currentHeroId]);
+      
+      // Resolve attack
+      const result = resolveAttack(attackWithBonuses, monsterAC);
+      store.dispatch(setAttackResult({ 
+        result, 
+        targetInstanceId: nextTarget.instanceId, 
+        attackName: powerCard.name, 
+        cardId: multiAttackState.cardId 
+      }));
+      
+      // Record the attack in the multi-attack sequence
+      store.dispatch(recordMultiAttackHit());
+      
+      // If this was the last target, flip the card if it's a daily
+      if (pendingAreaAttackTargets.length === 0) {
+        if (powerCard.type === 'daily') {
+          const parsedAction = parseActionCard(powerCard);
+          const hasMissNoFlip = parsedAction.missEffects?.some(effect => effect.type === 'no-flip');
+          const shouldFlip = result.isHit || !hasMissNoFlip;
+          
+          if (shouldFlip) {
+            store.dispatch(usePowerCard({ heroId: currentHeroId, cardId: multiAttackState.cardId }));
+          }
+        }
+      }
+      
+      return; // Don't run the normal dismiss logic below
+    }
+    
     // Check if we're in a multi-attack sequence
     if (multiAttackState) {
       // Save values we need before dispatching (dispatching may clear multiAttackState)
@@ -1334,8 +1419,6 @@
       // Single attack completed, deselect the target
       store.dispatch(deselectTarget());
     }
-    
-    store.dispatch(dismissAttackResult());
   }
 
   // Handle starting a multi-attack sequence
