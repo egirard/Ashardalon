@@ -60,29 +60,10 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
-    
-    // Dismiss scenario introduction by pressing Enter (which the modal listens for)
-    await page.keyboard.press('Enter');
-    
-    // Wait a moment for the dismissal to process
-    await page.waitForTimeout(1000);
-    
-    // If modal is still visible, try clicking the button
-    const overlay = page.locator('[data-testid="scenario-introduction-overlay"]');
-    if (await overlay.isVisible().catch(() => false)) {
-      const scenarioButton = page.locator('[data-testid="start-scenario-button"]');
-      await scenarioButton.click();
-      await page.waitForTimeout(1000);
-    }
-    
-    // Continue with test even if modal persists (game should still function)
-    // Wait for game to be fully initialized (hero phase should be active)
-    await expect(async () => {
-      const storeState = await page.evaluate(() => {
-        return (window as any).__REDUX_STORE__.getState();
-      });
-      expect(storeState.game.turnState.currentPhase).toBe('hero-phase');
-    }).toPass({ timeout: 5000 });
+    await dismissScenarioIntroduction(page);
+
+    // Continue even if scenario modal is still visible - game should work regardless
+    await page.waitForTimeout(500);
 
     // Set deterministic position for the hero
     await page.evaluate(() => {
@@ -146,7 +127,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
       });
     });
 
-    // Wait for monsters to appear in the store
+    // Wait for monsters to appear
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
@@ -190,37 +171,11 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
 
     // STEP 5: First attack - attack Kobold
     await seedDiceRoll(page, 0.7); // Will give roll = floor(0.7 * 20) + 1 = 15
-    
-    // Click on the kobold monster token on the board directly
-    // The test has set up kobold-test-1 at position (3, 2)
-    const koboldToken = page.locator('[data-testid="monster-token"]').filter({ has: page.locator('[data-instance-id="kobold-test-1"]') }).first();
-    
-    // If the monster token approach doesn't work, try the attack button
-    const useMonsterToken = await koboldToken.isVisible().catch(() => false);
-    
-    if (useMonsterToken) {
-      console.log('Clicking monster token directly');
-      await koboldToken.click();
-    } else {
-      console.log('Clicking attack target button');
-      const attackButton = page.locator('[data-testid="attack-target-kobold-test-1"]');
-      await attackButton.waitFor({ state: 'visible', timeout: 5000 });
-      await attackButton.click();
-    }
-    
+    await page.locator('[data-testid="attack-target-kobold-test-1"]').click();
     await restoreDiceRoll(page);
-    
-    // Wait a moment for the attack to process
-    await page.waitForTimeout(1000);
 
-    // Wait for combat result (first attack) - give it more time
-    try {
-      await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 15000 });
-    } catch (e) {
-      console.log('Combat result did not appear, taking debug screenshot');
-      await page.screenshot({ path: '/tmp/no-combat-result.png', fullPage: true });
-      throw e;
-    }
+    // Wait for combat result (first attack)
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'first-attack-kobold-result', {
       programmaticCheck: async () => {
@@ -413,7 +368,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
       expect(storeState.game.pendingHeroPlacement).toBeTruthy();
     }).toPass();
 
-    await screenshots.capture(page, 'after-fourth-attack-placement-overlay', {
+    await screenshots.capture(page, 'after-fourth-attack-placement-modal', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -439,17 +394,30 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
         const tornadoStrikeState = cardStates.find((s: { cardId: number }) => s.cardId === 37);
         expect(tornadoStrikeState?.isFlipped).toBe(true);
         
-        // Hero placement overlay should be visible (movement overlay showing placement squares)
-        await expect(page.locator('.placement-overlay-container')).toBeVisible();
+        // Hero placement modal should be visible
+        await expect(page.locator('[data-testid="hero-placement-modal"]')).toBeVisible();
       }
     });
 
-    // STEP 9: Click on a placement square to place the hero
-    // Available squares on the start tile - let's click on position (2, 3)
-    // Find the move-square with the correct data attributes
-    const placementSquare = page.locator('.placement-overlay-container [data-position-x="2"][data-position-y="3"]');
-    await placementSquare.waitFor({ state: 'visible' });
-    await placementSquare.click();
+    // STEP 9: Select a new position for the hero
+    // Available squares on the start tile are (1,1) to (2,6)
+    // Let's select (2, 3)
+    await page.locator('[data-testid="square-option-2-3"]').click();
+    
+    // Wait for button to be enabled
+    await page.locator('[data-testid="confirm-hero-placement"]').waitFor({ state: 'visible' });
+    await expect(page.locator('[data-testid="confirm-hero-placement"]')).toBeEnabled();
+    
+    await screenshots.capture(page, 'hero-placement-square-selected', {
+      programmaticCheck: async () => {
+        // Verify the square is selected
+        await expect(page.locator('[data-testid="square-option-2-3"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="confirm-hero-placement"]')).toBeEnabled();
+      }
+    });
+
+    // STEP 10: Confirm the hero placement
+    await page.locator('[data-testid="confirm-hero-placement"]').click();
     
     // Give it a moment to process
     await page.waitForTimeout(500);
@@ -479,8 +447,8 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
         // Attack action should NOW be consumed (after placement completion)
         expect(storeState.game.heroTurnActions.canAttack).toBe(false);
         
-        // Hero placement overlay should be hidden
-        await expect(page.locator('.placement-overlay-container')).not.toBeVisible();
+        // Hero placement modal should be hidden
+        await expect(page.locator('[data-testid="hero-placement-modal"]')).not.toBeVisible();
       }
     });
   });
