@@ -61,14 +61,28 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     
-    // Dismiss scenario introduction directly via Redux store (workaround for test flakiness)
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/dismissScenarioIntroduction' });
-    });
+    // Dismiss scenario introduction by pressing Enter (which the modal listens for)
+    await page.keyboard.press('Enter');
     
-    // Wait a moment for the dismissal to take effect
-    await page.waitForTimeout(500);
+    // Wait a moment for the dismissal to process
+    await page.waitForTimeout(1000);
+    
+    // If modal is still visible, try clicking the button
+    const overlay = page.locator('[data-testid="scenario-introduction-overlay"]');
+    if (await overlay.isVisible().catch(() => false)) {
+      const scenarioButton = page.locator('[data-testid="start-scenario-button"]');
+      await scenarioButton.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    // Continue with test even if modal persists (game should still function)
+    // Wait for game to be fully initialized (hero phase should be active)
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.turnState.currentPhase).toBe('hero-phase');
+    }).toPass({ timeout: 5000 });
 
     // Set deterministic position for the hero
     await page.evaluate(() => {
@@ -132,7 +146,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
       });
     });
 
-    // Wait for monsters to appear
+    // Wait for monsters to appear in the store
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
