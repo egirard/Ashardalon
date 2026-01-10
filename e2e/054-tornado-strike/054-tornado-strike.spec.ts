@@ -62,13 +62,6 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
 
-    // Dismiss scenario introduction modal if it appears
-    const scenarioIntroButton = page.locator('[data-testid="start-scenario-button"]');
-    if (await scenarioIntroButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await scenarioIntroButton.click();
-      await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' });
-    }
-
     // Set deterministic position for the hero
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -372,7 +365,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
       expect(storeState.game.pendingHeroPlacement).toBeTruthy();
     }).toPass();
 
-    await screenshots.capture(page, 'after-fourth-attack-placement-modal', {
+    await screenshots.capture(page, 'after-fourth-attack-placement-overlay', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -398,30 +391,17 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
         const tornadoStrikeState = cardStates.find((s: { cardId: number }) => s.cardId === 37);
         expect(tornadoStrikeState?.isFlipped).toBe(true);
         
-        // Hero placement modal should be visible
-        await expect(page.locator('[data-testid="hero-placement-modal"]')).toBeVisible();
+        // Hero placement overlay should be visible (movement overlay showing placement squares)
+        await expect(page.locator('.placement-overlay-container')).toBeVisible();
       }
     });
 
-    // STEP 9: Select a new position for the hero
-    // Available squares on the start tile are (1,1) to (2,6)
-    // Let's select (2, 3)
-    await page.locator('[data-testid="square-option-2-3"]').click();
-    
-    // Wait for button to be enabled
-    await page.locator('[data-testid="confirm-hero-placement"]').waitFor({ state: 'visible' });
-    await expect(page.locator('[data-testid="confirm-hero-placement"]')).toBeEnabled();
-    
-    await screenshots.capture(page, 'hero-placement-square-selected', {
-      programmaticCheck: async () => {
-        // Verify the square is selected
-        await expect(page.locator('[data-testid="square-option-2-3"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="confirm-hero-placement"]')).toBeEnabled();
-      }
-    });
-
-    // STEP 10: Confirm the hero placement
-    await page.locator('[data-testid="confirm-hero-placement"]').click();
+    // STEP 9: Click on a placement square to place the hero
+    // Available squares on the start tile - let's click on position (2, 3)
+    // Find the move-square with the correct data attributes
+    const placementSquare = page.locator('.placement-overlay-container [data-position-x="2"][data-position-y="3"]');
+    await placementSquare.waitFor({ state: 'visible' });
+    await placementSquare.click();
     
     // Give it a moment to process
     await page.waitForTimeout(500);
@@ -451,8 +431,8 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
         // Attack action should NOW be consumed (after placement completion)
         expect(storeState.game.heroTurnActions.canAttack).toBe(false);
         
-        // Hero placement modal should be hidden
-        await expect(page.locator('[data-testid="hero-placement-modal"]')).not.toBeVisible();
+        // Hero placement overlay should be hidden
+        await expect(page.locator('.placement-overlay-container')).not.toBeVisible();
       }
     });
   });
