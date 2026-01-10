@@ -63,6 +63,7 @@
     type UndoSnapshot,
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
+  import { getTileSquares } from "../store/powerCardEffects";
   import { TargetIcon, CheckIcon } from './icons';
   import type {
     HeroToken,
@@ -111,7 +112,6 @@
   import PoisonRecoveryNotification from "./PoisonRecoveryNotification.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
-  import HeroPlacementModal from "./HeroPlacementModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import TurnProgressCard from "./TurnProgressCard.svelte";
@@ -427,6 +427,15 @@
       dungeon: typeof dungeon;
       monsters: typeof monsters;
     };
+  });
+
+  // Get valid placement squares when hero placement is pending
+  let validPlacementSquares = $derived.by(() => {
+    if (!pendingHeroPlacement) return [];
+    
+    // Get all squares on the tile where hero is being placed
+    const squares = getTileSquares(pendingHeroPlacement.tileId, dungeon);
+    return squares;
   });
 
   // Auto-advance hero phase when valid action sequence is complete
@@ -2755,6 +2764,27 @@
           {/if}
         {/if}
 
+        <!-- Hero Placement Overlay (for cards like Tornado Strike) -->
+        {#if pendingHeroPlacement && validPlacementSquares.length > 0}
+          {@const placementTile = dungeon.tiles.find(t => t.id === pendingHeroPlacement.tileId)}
+          {#if placementTile}
+            {@const placementTilePos = getTilePixelPosition(placementTile, mapBounds)}
+            {@const placementTileDims = getTileDimensions(placementTile)}
+            <div
+              class="placement-overlay-container"
+              style="left: {placementTilePos.x}px; top: {placementTilePos.y}px; width: {placementTileDims.width}px; height: {placementTileDims.height}px;"
+            >
+              <MovementOverlay
+                validMoveSquares={validPlacementSquares}
+                tileOffsetX={TOKEN_OFFSET_X}
+                tileOffsetY={TOKEN_OFFSET_Y}
+                cellSize={TILE_CELL_SIZE}
+                onSquareClick={handleHeroPlacementSelect}
+              />
+            </div>
+          {/if}
+        {/if}
+
         <!-- Blade Barrier Square Selection Overlay -->
         {#if pendingBladeBarrier && pendingBladeBarrier.step === 'square-selection' && pendingBladeBarrier.selectedTileId}
           {@const selectedTile = dungeon.tiles.find(t => t.id === pendingBladeBarrier.selectedTileId)}
@@ -3436,22 +3466,6 @@
     />
   {/if}
 
-  <!-- Hero Placement Selection (for cards like Tornado Strike) -->
-  {#if pendingHeroPlacement}
-    {@const currentHero = heroTokens.find(t => t.heroId === pendingHeroPlacement.heroId)}
-    {#if currentHero}
-      <HeroPlacementModal
-        cardId={pendingHeroPlacement.cardId}
-        heroId={pendingHeroPlacement.heroId}
-        tileId={pendingHeroPlacement.tileId}
-        currentPosition={currentHero.position}
-        dungeon={dungeon}
-        onSelect={handleHeroPlacementSelect}
-        onCancel={handleCancelHeroPlacement}
-      />
-    {/if}
-  {/if}
-
   <!-- Scenario Introduction (shown when map is first displayed or when clicking objective panel) -->
   {#if showScenarioIntroduction}
     <ScenarioIntroduction
@@ -3701,6 +3715,23 @@
   .movement-overlay-container {
     position: absolute;
     z-index: 5;
+  }
+
+  .placement-overlay-container {
+    position: absolute;
+    z-index: 5;
+  }
+
+  /* Override MovementOverlay styling for placement mode */
+  .placement-overlay-container :global(.move-square) {
+    background: rgba(255, 215, 0, 0.4); /* Gold/yellow color for placement */
+    border-color: rgba(255, 215, 0, 0.8);
+  }
+
+  .placement-overlay-container :global(.move-square:hover) {
+    background: rgba(255, 215, 0, 0.6);
+    border-color: rgba(255, 215, 0, 1);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
   }
 
   .hero-token {

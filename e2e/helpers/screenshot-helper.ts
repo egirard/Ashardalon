@@ -125,6 +125,7 @@ export async function dismissScenarioIntroduction(page: Page): Promise<void> {
   // Click the button to dismiss the modal
   await scenarioButton.click();
   
-  // Wait for the modal to be hidden
-  await scenarioButton.waitFor({ state: 'hidden', timeout: 5000 });
+  // Wait for the overlay to be hidden (more reliable than waiting for button)
+  const overlay = page.locator('[data-testid="scenario-introduction-overlay"]');
+  await overlay.waitFor({ state: 'hidden', timeout: 10000 });
 }
