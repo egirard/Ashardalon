@@ -3479,6 +3479,13 @@
 </div>
 
 <style>
+  /* CSS Custom Properties */
+  :root {
+    --placement-color-r: 255;
+    --placement-color-g: 215;
+    --placement-color-b: 0;
+  }
+
   .game-board {
     position: relative;
     height: 100vh;
@@ -3724,14 +3731,14 @@
 
   /* Override MovementOverlay styling for placement mode */
   .placement-overlay-container :global(.move-square) {
-    background: rgba(255, 215, 0, 0.4); /* Gold/yellow color for placement */
-    border-color: rgba(255, 215, 0, 0.8);
+    background: rgba(var(--placement-color-r), var(--placement-color-g), var(--placement-color-b), 0.4);
+    border-color: rgba(var(--placement-color-r), var(--placement-color-g), var(--placement-color-b), 0.8);
   }
 
   .placement-overlay-container :global(.move-square:hover) {
-    background: rgba(255, 215, 0, 0.6);
-    border-color: rgba(255, 215, 0, 1);
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    background: rgba(var(--placement-color-r), var(--placement-color-g), var(--placement-color-b), 0.6);
+    border-color: rgba(var(--placement-color-r), var(--placement-color-g), var(--placement-color-b), 1);
+    box-shadow: 0 0 10px rgba(var(--placement-color-r), var(--placement-color-g), var(--placement-color-b), 0.6);
   }
 
   .hero-token {
