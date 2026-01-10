@@ -1263,6 +1263,17 @@
   // Default damage for power cards without explicit damage value
   const DEFAULT_POWER_CARD_DAMAGE = 1;
 
+  // Helper function to determine if a daily power card should be flipped
+  function shouldFlipDailyCard(powerCard: PowerCard, parsedAction: any, attackResult: any): boolean {
+    if (powerCard.type !== 'daily') return false;
+    
+    // Check if this card has special miss behavior (don't flip on miss)
+    const hasMissNoFlip = parsedAction.missEffects?.some((effect: any) => effect.type === 'no-flip');
+    
+    // Flip the card if attack hit, or if it missed but card doesn't have no-flip behavior
+    return attackResult.isHit || !hasMissNoFlip;
+  }
+
   // Handle attack action using a power card
   function handleAttackWithCard(cardId: number, targetInstanceId: string) {
     const currentHeroId = getCurrentHeroId();
@@ -1274,7 +1285,7 @@
     const monster = monsters.find((m) => m.instanceId === targetInstanceId);
     if (!monster) return;
 
-    // Parse the card to check for area attack (maxTargets === -1)
+    // Parse the card once to avoid redundant parsing
     const parsedAction = parseActionCard(powerCard);
     const isAreaAttack = parsedAction.attack?.maxTargets === -1;
     
@@ -1320,16 +1331,11 @@
     }
     
     // Flip the power card if it's a daily (at-wills can be used repeatedly)
-    // But only flip on the first attack of a multi-attack sequence or area attack
+    // For area attacks, don't flip yet - wait until all targets are attacked
+    // For multi-attacks in progress, don't flip yet - already flipped on first attack
     const isMultiAttackInProgress = multiAttackState && multiAttackState.attacksCompleted > 0;
-    if (powerCard.type === 'daily' && !isMultiAttackInProgress && !isAreaAttack) {
-      // Check if this card has special miss behavior (don't flip on miss)
-      const hasMissNoFlip = parsedAction.missEffects?.some(effect => effect.type === 'no-flip');
-      
-      // Flip the card if attack hit, or if it missed but card doesn't have no-flip behavior
-      const shouldFlip = result.isHit || !hasMissNoFlip;
-      
-      if (shouldFlip) {
+    if (!isMultiAttackInProgress && !isAreaAttack) {
+      if (shouldFlipDailyCard(powerCard, parsedAction, result)) {
         store.dispatch(usePowerCard({ heroId: currentHeroId, cardId }));
       }
     }
@@ -1386,14 +1392,9 @@
       
       // If this was the last target, flip the card if it's a daily
       if (pendingAreaAttackTargets.length === 0) {
-        if (powerCard.type === 'daily') {
-          const parsedAction = parseActionCard(powerCard);
-          const hasMissNoFlip = parsedAction.missEffects?.some(effect => effect.type === 'no-flip');
-          const shouldFlip = result.isHit || !hasMissNoFlip;
-          
-          if (shouldFlip) {
-            store.dispatch(usePowerCard({ heroId: currentHeroId, cardId: multiAttackState.cardId }));
-          }
+        const parsedAction = parseActionCard(powerCard);
+        if (shouldFlipDailyCard(powerCard, parsedAction, result)) {
+          store.dispatch(usePowerCard({ heroId: currentHeroId, cardId: multiAttackState.cardId }));
         }
       }
       
