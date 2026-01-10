@@ -1,5 +1,6 @@
 <script lang="ts">
   import { store } from "../store";
+  import { tick } from 'svelte';
   import {
     resetGame,
     showMovement,
@@ -293,6 +294,8 @@
   $effect(() => {
     const unsubscribe = store.subscribe(() => {
       const state = store.getState();
+      
+      // Batch all state updates
       heroTokens = state.game.heroTokens;
       selectedHeroes = state.heroes.selectedHeroes;
       heroEdgeMap = state.heroes.heroEdgeMap;
@@ -347,9 +350,12 @@
       selectedTargetId = state.game.selectedTargetId;
       selectedTargetType = state.game.selectedTargetType;
       showScenarioIntroduction = state.game.showScenarioIntroduction;
+      
+      // Force Svelte to process pending updates
+      tick();
     });
 
-    // Initialize state
+    // Initialize state immediately
     const state = store.getState();
     heroTokens = state.game.heroTokens;
     selectedHeroes = state.heroes.selectedHeroes;
