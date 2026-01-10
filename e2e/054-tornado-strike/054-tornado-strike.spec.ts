@@ -60,7 +60,15 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
-    await dismissScenarioIntroduction(page);
+    
+    // Dismiss scenario introduction directly via Redux store (workaround for test flakiness)
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/dismissScenarioIntroduction' });
+    });
+    
+    // Wait a moment for the dismissal to take effect
+    await page.waitForTimeout(500);
 
     // Set deterministic position for the hero
     await page.evaluate(() => {
