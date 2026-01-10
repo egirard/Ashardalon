@@ -1304,6 +1304,19 @@
     const parsedAction = parseActionCard(powerCard);
     const isAreaAttack = parsedAction.attack?.maxTargets === -1;
     
+    // Check if this is a multi-attack card AND we're not already in a multi-attack
+    const isMultiHitAttack = parsedAction.attack && parsedAction.attack.attackCount > 1;
+    if (isMultiHitAttack && !multiAttackState) {
+      // Start the multi-attack sequence for multi-hit attacks (e.g., Tornado Strike)
+      store.dispatch(startMultiAttack({ 
+        cardId, 
+        totalAttacks: parsedAction.attack.attackCount, 
+        sameTarget: parsedAction.attack.sameTarget, 
+        maxTargets: parsedAction.attack.maxTargets,
+        targetInstanceId: parsedAction.attack.sameTarget ? targetInstanceId : undefined 
+      }));
+    }
+    
     // For area attacks, find all monsters on the same tile
     const targetsToAttack = isAreaAttack 
       ? monsters.filter(m => m.tileId === monster.tileId)
