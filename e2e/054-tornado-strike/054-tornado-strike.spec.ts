@@ -184,23 +184,20 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     await attackTargetButton.click();
     await restoreDiceRoll(page);
     
-    // Wait a moment for the attack to process
-    await page.waitForTimeout(1000);
+    // Wait longer and check if combat result appears
+    await page.waitForTimeout(2000);
+    
+    // Check if element exists
+    const combatResultCount = await page.locator('[data-testid="combat-result"]').count();
+    console.log(`Combat result count after 2s: ${combatResultCount}`);
+    
+    // If not visible, take screenshot for debugging
+    if (combatResultCount === 0) {
+      await page.screenshot({ path: '/tmp/no-combat-result-final.png', fullPage: true });
+    }
 
-    // WORKAROUND: Combat result display has a rendering issue in tests
-    // The attack executes successfully (attackResult is set in Redux), but CombatResultDisplay doesn't render
-    // This appears to be related to the scenario modal overlay still being present
-    // For now, manually dismiss the attack result via Redux to continue the test
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      // Verify attack completed
-      const state = store.getState();
-      if (state.game.attackResult && state.game.multiAttackState) {
-        console.log('Attack completed successfully, dismissing result to continue');
-        store.dispatch({ type: 'game/dismissAttackResult' });
-        store.dispatch({ type: 'game/recordMultiAttackHit' });
-      }
-    });
+    // Wait for combat result (first attack)
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 10000 });
 
     await screenshots.capture(page, 'first-attack-kobold-result', {
       programmaticCheck: async () => {

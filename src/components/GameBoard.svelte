@@ -3317,6 +3317,18 @@
         onDismiss={handleDismissAttackResult}
         edge={getActivePlayerEdge()}
       />
+    {:else if !fullHero && attackName}
+      <!-- Fallback: Show combat result even if hero info not found (shouldn't happen but defensive) -->
+      <CombatResultDisplay
+        result={attackResult}
+        attackerName={currentHeroId || "Hero"}
+        attackName={attackName}
+        targetName={targetMonster
+          ? getMonsterName(targetMonster.monsterId)
+          : "Monster"}
+        onDismiss={handleDismissAttackResult}
+        edge={getActivePlayerEdge()}
+      />
     {/if}
   {/if}
 
