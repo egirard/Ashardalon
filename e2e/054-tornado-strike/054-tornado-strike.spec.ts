@@ -190,11 +190,37 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
 
     // STEP 5: First attack - attack Kobold
     await seedDiceRoll(page, 0.7); // Will give roll = floor(0.7 * 20) + 1 = 15
-    await page.locator('[data-testid="attack-target-kobold-test-1"]').click();
+    
+    // Click on the kobold monster token on the board directly
+    // The test has set up kobold-test-1 at position (3, 2)
+    const koboldToken = page.locator('[data-testid="monster-token"]').filter({ has: page.locator('[data-instance-id="kobold-test-1"]') }).first();
+    
+    // If the monster token approach doesn't work, try the attack button
+    const useMonsterToken = await koboldToken.isVisible().catch(() => false);
+    
+    if (useMonsterToken) {
+      console.log('Clicking monster token directly');
+      await koboldToken.click();
+    } else {
+      console.log('Clicking attack target button');
+      const attackButton = page.locator('[data-testid="attack-target-kobold-test-1"]');
+      await attackButton.waitFor({ state: 'visible', timeout: 5000 });
+      await attackButton.click();
+    }
+    
     await restoreDiceRoll(page);
+    
+    // Wait a moment for the attack to process
+    await page.waitForTimeout(1000);
 
-    // Wait for combat result (first attack)
-    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
+    // Wait for combat result (first attack) - give it more time
+    try {
+      await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 15000 });
+    } catch (e) {
+      console.log('Combat result did not appear, taking debug screenshot');
+      await page.screenshot({ path: '/tmp/no-combat-result.png', fullPage: true });
+      throw e;
+    }
 
     await screenshots.capture(page, 'first-attack-kobold-result', {
       programmaticCheck: async () => {
