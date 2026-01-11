@@ -4247,6 +4247,16 @@
     align-items: center;
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
     min-width: 150px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+
+  .environment-indicator:hover {
+    background: rgba(139, 92, 246, 1);
+    border-color: #a78bfa;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.6);
   }
 
   .environment-icon {
