@@ -228,6 +228,7 @@
   let drawnEncounter: EncounterCardType | null = $state(null);
   let encounterResult: import('../store/types').EncounterResult | null = $state(null);
   let activeEnvironmentId: string | null = $state(null);
+  let showEnvironmentDetail: boolean = $state(false);
   let traps: import("../store/types").TrapState[] = $state([]);
   let hazards: import("../store/types").HazardState[] = $state([]);
   let boardTokens: import("../store/types").BoardTokenState[] = $state([]);
@@ -1633,6 +1634,16 @@
     store.dispatch(cancelEncounterCard());
   }
 
+  // Handle showing the environment card detail
+  function handleShowEnvironmentDetail() {
+    showEnvironmentDetail = true;
+  }
+
+  // Handle dismissing the environment card detail
+  function handleDismissEnvironmentDetail() {
+    showEnvironmentDetail = false;
+  }
+
   // Handle using an action surge voluntarily at start of turn
   function handleUseActionSurge() {
     store.dispatch(useVoluntaryActionSurge());
@@ -2975,12 +2986,17 @@
         <!-- Active Environment Indicator -->
         {#if activeEnvironmentId}
           {@const environmentCard = ENCOUNTER_CARDS.find(c => c.id === activeEnvironmentId)}
-          <div class="environment-indicator" data-testid="environment-indicator">
+          <button 
+            class="environment-indicator" 
+            data-testid="environment-indicator"
+            onclick={handleShowEnvironmentDetail}
+            aria-label="View environment card details"
+          >
             <div class="environment-icon">🌫️</div>
             <div class="environment-name">
               {environmentCard?.name ?? 'Environment'}
             </div>
-          </div>
+          </button>
         {/if}
         
         <!-- Objective Display -->
@@ -3453,6 +3469,19 @@
         encounter={encounterCard}
         targets={encounterResult.targets}
         onDismiss={handleDismissEncounterResult}
+      />
+    {/if}
+  {/if}
+
+  <!-- Environment Card Detail Popup (shown when environment indicator is clicked) -->
+  {#if showEnvironmentDetail && activeEnvironmentId}
+    {@const environmentCard = ENCOUNTER_CARDS.find(c => c.id === activeEnvironmentId)}
+    {#if environmentCard}
+      <EncounterCard
+        encounter={environmentCard}
+        partyXp={partyResources.xp}
+        onDismiss={handleDismissEnvironmentDetail}
+        edge={getActivePlayerEdge()}
       />
     {/if}
   {/if}
@@ -4218,6 +4247,16 @@
     align-items: center;
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
     min-width: 150px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+
+  .environment-indicator:hover {
+    background: rgba(139, 92, 246, 1);
+    border-color: #a78bfa;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.6);
   }
 
   .environment-icon {
