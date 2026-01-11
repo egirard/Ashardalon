@@ -1,6 +1,103 @@
-import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory } from './types';
+import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory, HeroToken, Position } from './types';
 import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK, ENCOUNTER_CANCEL_COST } from './types';
 import type { StatusEffectType } from './statusEffects';
+import { getTileBounds, findTileAtPosition, getSubTileIdAtPosition } from './movement';
+
+/**
+ * Check if two positions are on the same tile (or sub-tile for start tile)
+ */
+export function areOnSameTile(pos1: Position, pos2: Position, dungeon: DungeonState): boolean {
+  const tile1 = findTileAtPosition(pos1, dungeon);
+  const tile2 = findTileAtPosition(pos2, dungeon);
+  
+  if (!tile1 || !tile2) {
+    return false;
+  }
+  
+  // If both are on start tile, check sub-tiles
+  if (tile1.tileType === 'start' && tile2.tileType === 'start') {
+    const subTile1 = getSubTileIdAtPosition(pos1, dungeon);
+    const subTile2 = getSubTileIdAtPosition(pos2, dungeon);
+    return subTile1 === subTile2;
+  }
+  
+  // Otherwise, compare tile IDs
+  return tile1.id === tile2.id;
+}
+
+/**
+ * Calculate the tile distance between two positions
+ * This counts the minimum number of tile boundaries crossed to reach from pos1 to pos2
+ */
+export function getTileDistance(pos1: Position, pos2: Position, dungeon: DungeonState): number {
+  // If on same tile, distance is 0
+  if (areOnSameTile(pos1, pos2, dungeon)) {
+    return 0;
+  }
+  
+  const tile1 = findTileAtPosition(pos1, dungeon);
+  const tile2 = findTileAtPosition(pos2, dungeon);
+  
+  if (!tile1 || !tile2) {
+    return Infinity;
+  }
+  
+  // For tiles, use Manhattan distance between tile positions
+  // Each tile is considered adjacent if they share an edge
+  const pos1Tile = tile1.position;
+  const pos2Tile = tile2.position;
+  
+  // For start tile, treat north and south sub-tiles separately
+  let adjustedRow1 = pos1Tile.row;
+  let adjustedRow2 = pos2Tile.row;
+  
+  if (tile1.tileType === 'start') {
+    // North sub-tile stays at row 0, south sub-tile is at row 1
+    const subTile1 = getSubTileIdAtPosition(pos1, dungeon);
+    adjustedRow1 = subTile1 === 'start-tile-north' ? 0 : 1;
+  }
+  
+  if (tile2.tileType === 'start') {
+    const subTile2 = getSubTileIdAtPosition(pos2, dungeon);
+    adjustedRow2 = subTile2 === 'start-tile-north' ? 0 : 1;
+  }
+  
+  // Calculate Manhattan distance between tile grid positions
+  const colDist = Math.abs(pos1Tile.col - pos2Tile.col);
+  const rowDist = Math.abs(adjustedRow1 - adjustedRow2);
+  
+  return colDist + rowDist;
+}
+
+/**
+ * Get heroes on the same tile as the active hero
+ */
+export function getHeroesOnTile(
+  activeHeroPosition: Position,
+  heroTokens: HeroToken[],
+  dungeon: DungeonState
+): string[] {
+  return heroTokens
+    .filter(token => areOnSameTile(token.position, activeHeroPosition, dungeon))
+    .map(token => token.heroId);
+}
+
+/**
+ * Get heroes within N tiles of the active hero (inclusive of active hero's tile)
+ */
+export function getHeroesWithinRange(
+  activeHeroPosition: Position,
+  heroTokens: HeroToken[],
+  dungeon: DungeonState,
+  range: number
+): string[] {
+  return heroTokens
+    .filter(token => {
+      const distance = getTileDistance(activeHeroPosition, token.position, dungeon);
+      return distance <= range;
+    })
+    .map(token => token.heroId);
+}
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -204,7 +301,7 @@ function formatHeroName(heroId: string): string {
  * Currently implemented effects:
  * - damage (active-hero): Deals damage to the current hero
  * - damage (all-heroes): Deals damage to all heroes
- * - damage (heroes-on-tile): Deals damage to all heroes (treated as all-heroes for now)
+ * - damage (heroes-on-tile): Deals damage to heroes on same tile as active hero
  * - attack: Makes attack roll vs AC and deals damage on hit
  * - environment: Persistent global effect (now tracked in game state)
  * 
@@ -218,6 +315,8 @@ export function resolveEncounterEffect(
   encounter: EncounterCard,
   heroHpList: HeroHpState[],
   activeHeroId: string,
+  heroTokens: HeroToken[] = [],
+  dungeon: DungeonState | null = null,
   randomFn: () => number = Math.random
 ): { heroHpList: HeroHpState[]; results: EncounterResultTarget[] } {
   const effect = encounter.effect;
@@ -225,31 +324,59 @@ export function resolveEncounterEffect(
   
   switch (effect.type) {
     case 'damage': {
+      // Determine target heroes based on effect target type
+      let targetHeroIds: string[];
+      
       if (effect.target === 'active-hero') {
-        // Apply damage to active hero only
-        const updatedHpList = heroHpList.map(hp => {
-          if (hp.heroId === activeHeroId) {
-            results.push({
-              heroId: hp.heroId,
-              heroName: formatHeroName(hp.heroId),
-              damageTaken: effect.amount,
-            });
-            return applyDamageToHero(hp, effect.amount);
+        targetHeroIds = [activeHeroId];
+      } else if (effect.target === 'all-heroes') {
+        targetHeroIds = heroHpList.map(h => h.heroId);
+      } else if (effect.target === 'heroes-on-tile') {
+        // Target only heroes on the same tile as the active hero
+        if (heroTokens.length > 0 && dungeon) {
+          const activeHeroToken = heroTokens.find(t => t.heroId === activeHeroId);
+          if (activeHeroToken) {
+            targetHeroIds = getHeroesOnTile(activeHeroToken.position, heroTokens, dungeon);
+          } else {
+            // Fallback to all heroes if active hero token not found
+            targetHeroIds = heroHpList.map(h => h.heroId);
           }
-          return hp;
-        });
-        return { heroHpList: updatedHpList, results };
+        } else {
+          // Fallback to all heroes if position info not available
+          targetHeroIds = heroHpList.map(h => h.heroId);
+        }
+      } else if (effect.target === 'heroes-within-1-tile') {
+        // Target heroes within 1 tile of the active hero
+        if (heroTokens.length > 0 && dungeon) {
+          const activeHeroToken = heroTokens.find(t => t.heroId === activeHeroId);
+          if (activeHeroToken) {
+            targetHeroIds = getHeroesWithinRange(activeHeroToken.position, heroTokens, dungeon, 1);
+          } else {
+            // Fallback to all heroes
+            targetHeroIds = heroHpList.map(h => h.heroId);
+          }
+        } else {
+          // Fallback to all heroes if position info not available
+          targetHeroIds = heroHpList.map(h => h.heroId);
+        }
       } else {
-        // Apply damage to all heroes (covers 'all-heroes' and 'heroes-on-tile')
-        heroHpList.forEach(hp => {
+        // Default to active hero for unknown target types
+        targetHeroIds = [activeHeroId];
+      }
+      
+      // Apply damage to target heroes
+      const updatedHpList = heroHpList.map(hp => {
+        if (targetHeroIds.includes(hp.heroId)) {
           results.push({
             heroId: hp.heroId,
             heroName: formatHeroName(hp.heroId),
             damageTaken: effect.amount,
           });
-        });
-        return { heroHpList: applyDamageToAllHeroes(heroHpList, effect.amount), results };
-      }
+          return applyDamageToHero(hp, effect.amount);
+        }
+        return hp;
+      });
+      return { heroHpList: updatedHpList, results };
     }
     
     case 'attack': {
@@ -264,13 +391,29 @@ export function resolveEncounterEffect(
           case 'active-hero':
             return [activeHeroId];
           case 'all-heroes':
-          case 'heroes-on-tile':
-          case 'heroes-within-1-tile':
-            // TODO: Implement proper tile-based targeting for 'heroes-on-tile' and 'heroes-within-1-tile'
-            // This would require passing hero positions and tile information to the resolver.
-            // For now, treat all area targets as all heroes (conservative approach that ensures
-            // no heroes are unfairly spared from attacks that should hit them).
             return heroHpList.map(h => h.heroId);
+          case 'heroes-on-tile': {
+            // Target only heroes on the same tile as the active hero
+            if (heroTokens.length > 0 && dungeon) {
+              const activeHeroToken = heroTokens.find(t => t.heroId === activeHeroId);
+              if (activeHeroToken) {
+                return getHeroesOnTile(activeHeroToken.position, heroTokens, dungeon);
+              }
+            }
+            // Fallback to all heroes if position info not available
+            return heroHpList.map(h => h.heroId);
+          }
+          case 'heroes-within-1-tile': {
+            // Target heroes within 1 tile of the active hero
+            if (heroTokens.length > 0 && dungeon) {
+              const activeHeroToken = heroTokens.find(t => t.heroId === activeHeroId);
+              if (activeHeroToken) {
+                return getHeroesWithinRange(activeHeroToken.position, heroTokens, dungeon, 1);
+              }
+            }
+            // Fallback to all heroes if position info not available
+            return heroHpList.map(h => h.heroId);
+          }
           default:
             return [activeHeroId];
         }
@@ -342,8 +485,21 @@ export function resolveEncounterEffect(
       // Hazard placement is handled separately in game slice
       // For hazards with immediate attacks (Cave In, Pit), apply them here
       if (effect.attackBonus !== undefined && effect.damage !== undefined) {
-        // Make attack rolls against heroes on the tile (treated as all heroes for now)
-        const targetHeroIds = heroHpList.map(h => h.heroId);
+        // Determine target heroes (hazards typically target heroes on the tile)
+        let targetHeroIds: string[];
+        
+        if (effect.target === 'heroes-on-tile' && heroTokens.length > 0 && dungeon) {
+          const activeHeroToken = heroTokens.find(t => t.heroId === activeHeroId);
+          if (activeHeroToken) {
+            targetHeroIds = getHeroesOnTile(activeHeroToken.position, heroTokens, dungeon);
+          } else {
+            // Fallback to all heroes
+            targetHeroIds = heroHpList.map(h => h.heroId);
+          }
+        } else {
+          // Default to all heroes for backward compatibility
+          targetHeroIds = heroHpList.map(h => h.heroId);
+        }
         
         const updatedHpList = heroHpList.map(hp => {
           if (!targetHeroIds.includes(hp.heroId)) {
