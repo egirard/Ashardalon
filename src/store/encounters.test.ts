@@ -420,7 +420,7 @@ describe("encounters", () => {
       // Roll 15 + 10 = 25, which beats AC 17
       const highRollRandom = () => 0.7; // Will produce roll of 15
       
-      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', highRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', [], null, highRollRandom);
       
       expect(result[0].currentHp).toBe(7); // Took 1 damage from attack
     });
