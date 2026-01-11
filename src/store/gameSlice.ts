@@ -86,7 +86,6 @@ import {
   getCurseStatusType,
   getHeroesNeedingMonsters,
   findClosestUnexploredEdge,
-  getSpawnPositionOnEdge,
 } from "./encounters";
 import {
   createTrapInstance,
@@ -1342,27 +1341,32 @@ export const gameSlice = createSlice({
           );
           
           if (closestEdge) {
-            // Get spawn position on the edge
-            const spawnPosition = getSpawnPositionOnEdge(closestEdge, state.dungeon);
+            // Find the tile that has this unexplored edge
+            const edgeTile = state.dungeon.tiles.find(t => t.id === closestEdge.tileId);
             
-            if (spawnPosition) {
+            if (edgeTile) {
               // Draw a monster from the deck
               const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
               
               if (drawnMonsterId) {
-                // Create monster instance at the spawn position
-                const monsterInstance = createMonsterInstance(
-                  drawnMonsterId,
-                  spawnPosition,
-                  heroId, // Monster is controlled by this hero
-                  closestEdge.tileId,
-                  state.monsterInstanceCounter
-                );
+                // Get proper spawn position on the tile (black square or adjacent)
+                const spawnPosition = getMonsterSpawnPosition(edgeTile, state.monsters);
                 
-                if (monsterInstance) {
-                  state.monsters.push(monsterInstance);
-                  state.monsterInstanceCounter += 1;
-                  state.monsterDeck = updatedMonsterDeck;
+                if (spawnPosition) {
+                  // Create monster instance at the spawn position
+                  const monsterInstance = createMonsterInstance(
+                    drawnMonsterId,
+                    spawnPosition,
+                    heroId, // Monster is controlled by this hero
+                    closestEdge.tileId,
+                    state.monsterInstanceCounter
+                  );
+                  
+                  if (monsterInstance) {
+                    state.monsters.push(monsterInstance);
+                    state.monsterInstanceCounter += 1;
+                    state.monsterDeck = updatedMonsterDeck;
+                  }
                 }
               }
             }
