@@ -18,6 +18,10 @@ export function areOnSameTile(pos1: Position, pos2: Position, dungeon: DungeonSt
   if (tile1.tileType === 'start' && tile2.tileType === 'start') {
     const subTile1 = getSubTileIdAtPosition(pos1, dungeon);
     const subTile2 = getSubTileIdAtPosition(pos2, dungeon);
+    // If either sub-tile is null (shouldn't happen but for safety), return false
+    if (subTile1 === null || subTile2 === null) {
+      return false;
+    }
     return subTile1 === subTile2;
   }
   
@@ -54,11 +58,13 @@ export function getTileDistance(pos1: Position, pos2: Position, dungeon: Dungeon
   if (tile1.tileType === 'start') {
     // North sub-tile stays at row 0, south sub-tile is at row 1
     const subTile1 = getSubTileIdAtPosition(pos1, dungeon);
+    // Default to row 1 if sub-tile is null (shouldn't happen but for safety)
     adjustedRow1 = subTile1 === 'start-tile-north' ? 0 : 1;
   }
   
   if (tile2.tileType === 'start') {
     const subTile2 = getSubTileIdAtPosition(pos2, dungeon);
+    // Default to row 1 if sub-tile is null (shouldn't happen but for safety)
     adjustedRow2 = subTile2 === 'start-tile-north' ? 0 : 1;
   }
   
