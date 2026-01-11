@@ -1501,7 +1501,9 @@ export const gameSlice = createSlice({
             const { heroHpList, results } = resolveEncounterEffect(
               state.drawnEncounter,
               state.heroHp,
-              activeHeroId
+              activeHeroId,
+              state.heroTokens,
+              state.dungeon
             );
             state.heroHp = heroHpList;
             
@@ -1857,7 +1859,9 @@ export const gameSlice = createSlice({
             const { heroHpList, results } = resolveEncounterEffect(
               state.drawnEncounter,
               state.heroHp,
-              activeHeroId
+              activeHeroId,
+              state.heroTokens,
+              state.dungeon
             );
             state.heroHp = heroHpList;
             

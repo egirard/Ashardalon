@@ -15,6 +15,10 @@ import {
   getMonsterCategoryForEncounter,
   isMonsterDeckManipulationCard,
   isTileDeckManipulationCard,
+  areOnSameTile,
+  getTileDistance,
+  getHeroesOnTile,
+  getHeroesWithinRange,
 } from "./encounters";
 import type { EncounterDeck, TurnState, HeroHpState, EncounterCard } from "./types";
 import { INITIAL_ENCOUNTER_DECK, ENCOUNTER_CARDS } from "./types";
@@ -439,7 +443,7 @@ describe("encounters", () => {
       // Roll 1 + 10 = 11, which does not beat AC 17
       const lowRollRandom = () => 0; // Will produce roll of 1
       
-      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', lowRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', [], null, lowRollRandom);
       
       expect(result[0].currentHp).toBe(8); // No damage taken
     });
@@ -462,7 +466,7 @@ describe("encounters", () => {
       // Roll 1 + 8 = 9, which does not beat AC 17
       const lowRollRandom = () => 0; // Will produce roll of 1
       
-      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', lowRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', [], null, lowRollRandom);
       
       expect(result[0].currentHp).toBe(7); // Took 1 miss damage
     });
@@ -485,7 +489,7 @@ describe("encounters", () => {
       // Use a random function that always returns high roll (hit guaranteed for both)
       const highRollRandom = () => 0.8; // Will produce roll of 17
       
-      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', highRollRandom);
+      const { heroHpList: result } = resolveEncounterEffect(encounter, heroHpList, 'quinn', [], null, highRollRandom);
       
       // Both heroes should take damage (roll 17 + 8 = 25 beats both AC 17 and AC 18)
       expect(result[0].currentHp).toBe(7);
@@ -747,6 +751,196 @@ describe("encounters", () => {
     it("should return false for non-tile deck cards", () => {
       expect(isTileDeckManipulationCard('frenzied-leap')).toBe(false);
       expect(isTileDeckManipulationCard('revel-in-destruction')).toBe(false);
+    });
+  });
+
+  describe("areOnSameTile", () => {
+    it("should return true for heroes on the same regular tile", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'start-tile', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0, edges: { north: 'wall', south: 'wall', east: 'open', west: 'wall' } },
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const pos1 = { x: 4, y: 0 }; // On tile-1
+      const pos2 = { x: 5, y: 1 }; // On tile-1
+      
+      expect(areOnSameTile(pos1, pos2, dungeon)).toBe(true);
+    });
+
+    it("should return false for heroes on different tiles", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'start-tile', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0, edges: { north: 'wall', south: 'wall', east: 'open', west: 'wall' } },
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const pos1 = { x: 1, y: 0 }; // On start-tile
+      const pos2 = { x: 4, y: 0 }; // On tile-1
+      
+      expect(areOnSameTile(pos1, pos2, dungeon)).toBe(false);
+    });
+
+    it("should handle start tile sub-tiles correctly", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'start-tile', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0, edges: { north: 'wall', south: 'wall', east: 'open', west: 'wall' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const pos1 = { x: 1, y: 1 }; // North sub-tile (y <= 3)
+      const pos2 = { x: 2, y: 2 }; // North sub-tile
+      const pos3 = { x: 1, y: 5 }; // South sub-tile (y >= 4)
+      
+      expect(areOnSameTile(pos1, pos2, dungeon)).toBe(true); // Same sub-tile
+      expect(areOnSameTile(pos1, pos3, dungeon)).toBe(false); // Different sub-tiles
+    });
+  });
+
+  describe("getTileDistance", () => {
+    it("should return 0 for same tile", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const pos1 = { x: 4, y: 0 };
+      const pos2 = { x: 5, y: 1 };
+      
+      expect(getTileDistance(pos1, pos2, dungeon)).toBe(0);
+    });
+
+    it("should return 1 for adjacent tiles", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'start-tile', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0, edges: { north: 'wall', south: 'wall', east: 'open', west: 'wall' } },
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const pos1 = { x: 1, y: 1 }; // Start tile
+      const pos2 = { x: 4, y: 0 }; // Tile-1
+      
+      expect(getTileDistance(pos1, pos2, dungeon)).toBe(1);
+    });
+
+    it("should calculate Manhattan distance for tiles farther apart", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+          { id: 'tile-2', tileType: 'tile-black-2exit-b', position: { col: 3, row: 2 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      // Tile-1 is at col 1, row 0: x: 4-7, y: 0-3
+      // Tile-2 is at col 3, row 2: x: 12-15, y: 12-15
+      const pos1 = { x: 4, y: 0 }; // Tile-1 at (1, 0)
+      const pos2 = { x: 12, y: 12 }; // Tile-2 at (3, 2)
+      
+      expect(getTileDistance(pos1, pos2, dungeon)).toBe(4); // |3-1| + |2-0| = 4
+    });
+  });
+
+  describe("getHeroesOnTile", () => {
+    it("should return all heroes on the same tile", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const heroTokens = [
+        { heroId: 'quinn', position: { x: 4, y: 0 } },
+        { heroId: 'vistra', position: { x: 5, y: 1 } },
+        { heroId: 'heskan', position: { x: 8, y: 0 } }, // Different tile
+      ];
+      
+      const result = getHeroesOnTile({ x: 4, y: 0 }, heroTokens, dungeon);
+      
+      expect(result).toContain('quinn');
+      expect(result).toContain('vistra');
+      expect(result).not.toContain('heskan');
+    });
+
+    it("should include the active hero in the result", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const heroTokens = [
+        { heroId: 'quinn', position: { x: 4, y: 0 } },
+      ];
+      
+      const result = getHeroesOnTile({ x: 4, y: 0 }, heroTokens, dungeon);
+      
+      expect(result).toContain('quinn');
+    });
+  });
+
+  describe("getHeroesWithinRange", () => {
+    it("should return heroes within specified range", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'start-tile', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0, edges: { north: 'wall', south: 'wall', east: 'open', west: 'wall' } },
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+          { id: 'tile-2', tileType: 'tile-black-2exit-b', position: { col: 2, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const heroTokens = [
+        { heroId: 'quinn', position: { x: 1, y: 1 } },    // Start tile
+        { heroId: 'vistra', position: { x: 4, y: 0 } },   // Tile-1 (1 tile away)
+        { heroId: 'heskan', position: { x: 8, y: 0 } },   // Tile-2 (2 tiles away)
+      ];
+      
+      const result = getHeroesWithinRange({ x: 1, y: 1 }, heroTokens, dungeon, 1);
+      
+      expect(result).toContain('quinn'); // Same tile
+      expect(result).toContain('vistra'); // 1 tile away
+      expect(result).not.toContain('heskan'); // 2 tiles away
+    });
+
+    it("should include heroes on same tile (range 0)", () => {
+      const dungeon = {
+        tiles: [
+          { id: 'tile-1', tileType: 'tile-black-2exit-a', position: { col: 1, row: 0 }, rotation: 0, edges: { north: 'open', south: 'open', east: 'wall', west: 'open' } },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const heroTokens = [
+        { heroId: 'quinn', position: { x: 4, y: 0 } },
+        { heroId: 'vistra', position: { x: 5, y: 1 } },
+      ];
+      
+      const result = getHeroesWithinRange({ x: 4, y: 0 }, heroTokens, dungeon, 0);
+      
+      expect(result).toContain('quinn');
+      expect(result).toContain('vistra');
     });
   });
 });
