@@ -880,29 +880,3 @@ export function findClosestUnexploredEdge(
   
   return closestEdge;
 }
-
-/**
- * Get a spawn position on an unexplored edge
- * Returns the first valid position on the edge side
- */
-export function getSpawnPositionOnEdge(edge: TileEdge, dungeon: DungeonState): Position | null {
-  const tile = dungeon.tiles.find(t => t.id === edge.tileId);
-  if (!tile) {
-    return null;
-  }
-  
-  const bounds = getTileBounds(tile, dungeon);
-  
-  // Return a position on the edge
-  // For simplicity, return the center position of the edge
-  switch (edge.direction) {
-    case 'north':
-      return { x: Math.floor((bounds.minX + bounds.maxX) / 2), y: bounds.minY };
-    case 'south':
-      return { x: Math.floor((bounds.minX + bounds.maxX) / 2), y: bounds.maxY };
-    case 'east':
-      return { x: bounds.maxX, y: Math.floor((bounds.minY + bounds.maxY) / 2) };
-    case 'west':
-      return { x: bounds.minX, y: Math.floor((bounds.minY + bounds.maxY) / 2) };
-  }
-}
