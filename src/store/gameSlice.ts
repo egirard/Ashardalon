@@ -84,6 +84,9 @@ import {
   isMonsterDeckManipulationCard,
   isTileDeckManipulationCard,
   getCurseStatusType,
+  getHeroesNeedingMonsters,
+  findClosestUnexploredEdge,
+  getSpawnPositionOnEdge,
 } from "./encounters";
 import {
   createTrapInstance,
@@ -1317,6 +1320,56 @@ export const gameSlice = createSlice({
       if (state.turnState.currentPhase !== "exploration-phase") {
         return;
       }
+      
+      // Apply Surrounded! environment effect if active
+      if (state.activeEnvironmentId === 'surrounded') {
+        // Get heroes that don't control at least one monster
+        const heroesNeedingMonsters = getHeroesNeedingMonsters(
+          state.heroTokens,
+          state.monsters
+        );
+        
+        // For each hero needing a monster, spawn one on the closest unexplored edge
+        for (const heroId of heroesNeedingMonsters) {
+          const heroToken = state.heroTokens.find(t => t.heroId === heroId);
+          if (!heroToken) continue;
+          
+          // Find closest unexplored edge to this hero
+          const closestEdge = findClosestUnexploredEdge(
+            heroToken.position,
+            state.dungeon.unexploredEdges,
+            state.dungeon
+          );
+          
+          if (closestEdge) {
+            // Get spawn position on the edge
+            const spawnPosition = getSpawnPositionOnEdge(closestEdge, state.dungeon);
+            
+            if (spawnPosition) {
+              // Draw a monster from the deck
+              const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+              
+              if (drawnMonsterId) {
+                // Create monster instance at the spawn position
+                const monsterInstance = createMonsterInstance(
+                  drawnMonsterId,
+                  spawnPosition,
+                  heroId, // Monster is controlled by this hero
+                  closestEdge.tileId,
+                  state.monsterInstanceCounter
+                );
+                
+                if (monsterInstance) {
+                  state.monsters.push(monsterInstance);
+                  state.monsterInstanceCounter += 1;
+                  state.monsterDeck = updatedMonsterDeck;
+                }
+              }
+            }
+          }
+        }
+      }
+      
       state.turnState.currentPhase = "villain-phase";
       // Reset villain phase monster index to start activating from the first monster
       state.villainPhaseMonsterIndex = 0;

@@ -1,4 +1,4 @@
-import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory, HeroToken, Position } from './types';
+import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory, HeroToken, Position, TileEdge, Direction } from './types';
 import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK, ENCOUNTER_CANCEL_COST } from './types';
 import type { StatusEffectType } from './statusEffects';
 import { getTileBounds, findTileAtPosition, getSubTileIdAtPosition } from './movement';
@@ -825,4 +825,84 @@ export function isTileDeckManipulationCard(encounterId: string): boolean {
     'spotted',
   ];
   return deckCards.includes(encounterId);
+}
+
+/**
+ * Get the center position of an unexplored edge
+ * This is used to calculate distance to the edge for Surrounded! environment
+ */
+function getEdgeCenterPosition(edge: TileEdge, dungeon: DungeonState): Position {
+  const tile = dungeon.tiles.find(t => t.id === edge.tileId);
+  if (!tile) {
+    return { x: 0, y: 0 }; // Fallback, shouldn't happen
+  }
+  
+  const bounds = getTileBounds(tile, dungeon);
+  
+  // Calculate center position based on edge direction
+  switch (edge.direction) {
+    case 'north':
+      return { x: (bounds.minX + bounds.maxX) / 2, y: bounds.minY };
+    case 'south':
+      return { x: (bounds.minX + bounds.maxX) / 2, y: bounds.maxY };
+    case 'east':
+      return { x: bounds.maxX, y: (bounds.minY + bounds.maxY) / 2 };
+    case 'west':
+      return { x: bounds.minX, y: (bounds.minY + bounds.maxY) / 2 };
+  }
+}
+
+/**
+ * Find the closest unexplored edge to a hero position
+ * Used by Surrounded! environment to spawn monsters
+ */
+export function findClosestUnexploredEdge(
+  heroPosition: Position,
+  unexploredEdges: TileEdge[],
+  dungeon: DungeonState
+): TileEdge | null {
+  if (unexploredEdges.length === 0) {
+    return null;
+  }
+  
+  let closestEdge: TileEdge | null = null;
+  let closestDistance = Infinity;
+  
+  for (const edge of unexploredEdges) {
+    const edgeCenter = getEdgeCenterPosition(edge, dungeon);
+    const distance = Math.abs(heroPosition.x - edgeCenter.x) + Math.abs(heroPosition.y - edgeCenter.y);
+    
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestEdge = edge;
+    }
+  }
+  
+  return closestEdge;
+}
+
+/**
+ * Get a spawn position on an unexplored edge
+ * Returns the first valid position on the edge side
+ */
+export function getSpawnPositionOnEdge(edge: TileEdge, dungeon: DungeonState): Position | null {
+  const tile = dungeon.tiles.find(t => t.id === edge.tileId);
+  if (!tile) {
+    return null;
+  }
+  
+  const bounds = getTileBounds(tile, dungeon);
+  
+  // Return a position on the edge
+  // For simplicity, return the center position of the edge
+  switch (edge.direction) {
+    case 'north':
+      return { x: Math.floor((bounds.minX + bounds.maxX) / 2), y: bounds.minY };
+    case 'south':
+      return { x: Math.floor((bounds.minX + bounds.maxX) / 2), y: bounds.maxY };
+    case 'east':
+      return { x: bounds.maxX, y: Math.floor((bounds.minY + bounds.maxY) / 2) };
+    case 'west':
+      return { x: bounds.minX, y: Math.floor((bounds.minY + bounds.maxY) / 2) };
+  }
 }
