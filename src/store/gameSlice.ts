@@ -1328,6 +1328,8 @@ export const gameSlice = createSlice({
           state.monsters
         );
         
+        let monstersSpawned = 0;
+        
         // For each hero needing a monster, spawn one on the closest unexplored edge
         for (const heroId of heroesNeedingMonsters) {
           const heroToken = state.heroTokens.find(t => t.heroId === heroId);
@@ -1366,11 +1368,18 @@ export const gameSlice = createSlice({
                     state.monsters.push(monsterInstance);
                     state.monsterInstanceCounter += 1;
                     state.monsterDeck = updatedMonsterDeck;
+                    monstersSpawned++;
                   }
                 }
               }
             }
           }
+        }
+        
+        // Show notification if any monsters were spawned
+        if (monstersSpawned > 0) {
+          const monsterWord = monstersSpawned === 1 ? 'monster' : 'monsters';
+          state.encounterEffectMessage = `Surrounded! ${monstersSpawned} ${monsterWord} spawned from the environment effect.`;
         }
       }
       
