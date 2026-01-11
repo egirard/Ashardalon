@@ -5,7 +5,7 @@ test.describe('073 - Surrounded Environment Activation', () => {
   test('surrounded environment spawns monsters for heroes without monsters at end of exploration phase', async ({ page }) => {
     const screenshots = createScreenshotHelper();
     
-    // STEP 1: Navigate and start game with Vistra
+    // STEP 1: Navigate and start game with two heroes (Vistra and Quinn)
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
     
@@ -18,8 +18,14 @@ test.describe('073 - Surrounded Environment Activation', () => {
     // Select Vistra from right edge to ensure game state panel is visible
     await page.locator('[data-testid="hero-vistra-right"]').click();
     
-    // Select power cards
+    // Select power cards for Vistra
     await selectDefaultPowerCards(page, 'vistra');
+    
+    // Select Quinn from bottom edge as second hero
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    
+    // Select power cards for Quinn
+    await selectDefaultPowerCards(page, 'quinn');
     
     // CRITICAL: Set deterministic seed before starting game
     await setupDeterministicGame(page);
@@ -123,17 +129,54 @@ test.describe('073 - Surrounded Environment Activation', () => {
       }
     });
     
-    // STEP 7: End exploration phase - this triggers Surrounded! effect
-    // Note: In this deterministic test scenario, a monster is spawned during initial exploration,
-    // so the Surrounded effect notification may not appear (hero already controls a monster).
-    // However, the code logic is verified and in real gameplay scenarios where a hero doesn't 
-    // control monsters, the notification will appear as implemented in gameSlice.ts
+    // STEP 7: Ensure second hero (Quinn) doesn't control any monsters
+    // This guarantees the Surrounded effect will trigger for Quinn
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      const state = store.getState();
+      
+      // Find Quinn's hero ID
+      const quinnToken = state.game.heroTokens.find((t: any) => t.heroId === 'quinn');
+      
+      if (quinnToken) {
+        // Remove all monsters controlled by Quinn
+        const updatedMonsters = state.game.monsters.filter((m: any) => m.controllerId !== 'quinn');
+        
+        // Update the state directly (this is for testing purposes)
+        state.game.monsters = updatedMonsters;
+      }
+    });
+    
+    // STEP 8: End exploration phase - this triggers Surrounded! effect for Quinn
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
         type: 'game/endExplorationPhase'
       });
     });
+    
+    // Wait for notification to appear
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible', timeout: 5000 });
+    
+    await screenshots.capture(page, 'surrounded-notification-shown', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify notification message is set
+        expect(storeState.game.encounterEffectMessage).toBeTruthy();
+        expect(storeState.game.encounterEffectMessage).toContain('Surrounded');
+        
+        // Verify notification is visible
+        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toBeVisible();
+        await expect(page.locator('[data-testid="notification-card"]')).toContainText('Surrounded');
+      }
+    });
+    
+    // Dismiss the notification
+    await page.locator('[data-testid="dismiss-effect-notification"]').click();
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'hidden' });
     
     // Wait for villain phase
     await page.evaluate(() => {
@@ -150,6 +193,7 @@ test.describe('073 - Surrounded Environment Activation', () => {
       });
     });
     
+    // STEP 9: Verify villain phase and monster spawning completed
     await screenshots.capture(page, 'after-exploration-phase-ended', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -157,32 +201,32 @@ test.describe('073 - Surrounded Environment Activation', () => {
         });
         expect(storeState.game.turnState.currentPhase).toBe('villain-phase');
         
-        // Verify monster count increased (Surrounded should have spawned a monster)
+        // Verify monster count increased (Surrounded spawned a monster for Quinn)
         const finalMonsterCount = storeState.game.monsters.length;
         expect(finalMonsterCount).toBeGreaterThan(initialMonsterCount);
       }
     });
     
-    // STEP 9: Verify the spawned monster location and controller
+    // STEP 10: Verify the spawned monster location and controller
     await screenshots.capture(page, 'surrounded-monster-spawned', {
       programmaticCheck: async () => {
         const monsterInfo = await page.evaluate(() => {
           const storeState = (window as any).__REDUX_STORE__.getState();
-          const heroId = storeState.game.heroTokens[storeState.game.turnState.currentHeroIndex].heroId;
-          const controlledMonsters = storeState.game.monsters.filter(
-            (m: any) => m.controllerId === heroId
+          
+          // Check if Quinn now controls a monster
+          const quinnMonsters = storeState.game.monsters.filter(
+            (m: any) => m.controllerId === 'quinn'
           );
           
           return {
             totalMonsters: storeState.game.monsters.length,
-            controlledByHero: controlledMonsters.length,
-            heroId: heroId,
+            quinnControlledMonsters: quinnMonsters.length,
             unexploredEdges: storeState.game.dungeon.unexploredEdges.length
           };
         });
         
-        // Hero should now control at least one monster (either from exploration or Surrounded)
-        expect(monsterInfo.controlledByHero).toBeGreaterThan(0);
+        // Quinn should now control at least one monster (from Surrounded effect)
+        expect(monsterInfo.quinnControlledMonsters).toBeGreaterThan(0);
       }
     });
   });
