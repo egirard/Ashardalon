@@ -64,7 +64,7 @@
     // 1. Rendering the hero phase item
     // 2. Currently IN the hero phase
     // 3. At least one action has been taken
-    if (phaseId === 'hero-phase' && phaseId === currentPhase && heroTurnActions) {
+    if (phaseId === 'hero-phase' && currentPhase === 'hero-phase' && heroTurnActions) {
       const actionsTaken = heroTurnActions.actionsTaken.length;
       if (actionsTaken > 0) {
         const totalActions = 2;
