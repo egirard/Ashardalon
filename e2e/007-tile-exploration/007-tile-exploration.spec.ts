@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 // Test constants for better readability
-const INITIAL_TILE_DECK_SIZE = 8;
-const TILE_DECK_SIZE_AFTER_EXPLORATION = 7;
+const INITIAL_TILE_DECK_SIZE = 16;
+const TILE_DECK_SIZE_AFTER_EXPLORATION = 15;
 // Start tile has 6 unexplored edges: north, south, 2 east (per sub-tile), 2 west (per sub-tile)
 const INITIAL_UNEXPLORED_EDGE_COUNT = 6;
 const NORTH_TILE_ROW_POSITION = -1;
