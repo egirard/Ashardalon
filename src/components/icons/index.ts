@@ -30,3 +30,4 @@ export { default as MapIcon } from './MapIcon.svelte';
 export { default as FeedbackIcon } from './FeedbackIcon.svelte';
 export { default as BugIcon } from './BugIcon.svelte';
 export { default as RotateArrowIcon } from './RotateArrowIcon.svelte';
+export { default as TileIcon } from './TileIcon.svelte';

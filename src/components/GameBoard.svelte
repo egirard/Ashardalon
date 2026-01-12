@@ -3019,9 +3019,8 @@
         <div class="party-resources">
           <XPCounter xp={partyResources.xp} />
           <HealingSurgeCounter surges={partyResources.healingSurges} />
+          <TileDeckCounter tileCount={dungeon.tileDeck.length} />
         </div>
-        
-        <TileDeckCounter tileCount={dungeon.tileDeck.length} />
 
         <!-- Zoom Controls (only shown when in map control mode) -->
         {#if mapControlMode}
