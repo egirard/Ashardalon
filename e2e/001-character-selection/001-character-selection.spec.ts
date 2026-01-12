@@ -105,11 +105,13 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
         // Verify game board is visible with tabletop layout
         await expect(page.locator('[data-testid="game-board"]')).toBeVisible();
         
-        // Verify all four player edge zones exist
-        await expect(page.locator('[data-testid="player-panel-top"]')).toBeVisible();
+        // Verify player panel exists for Quinn on the bottom edge (only 1 hero selected)
         await expect(page.locator('[data-testid="player-panel-bottom"]')).toBeVisible();
-        await expect(page.locator('[data-testid="player-panel-left"]')).toBeVisible();
-        await expect(page.locator('[data-testid="player-panel-right"]')).toBeVisible();
+        
+        // Verify other edge panels do NOT exist (since only 1 hero was selected)
+        await expect(page.locator('[data-testid="player-panel-top"]')).not.toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-left"]')).not.toBeVisible();
+        await expect(page.locator('[data-testid="player-panel-right"]')).not.toBeVisible();
         
         // Verify start tile is displayed in center
         await expect(page.locator('[data-testid="start-tile"]')).toBeVisible();
