@@ -6,6 +6,7 @@
   import { assetPath } from '../utils';
   import PowerCardSelection from './PowerCardSelection.svelte';
   import SideIndicator from './SideIndicator.svelte';
+  import DuplicateCharacterPanel from './DuplicateCharacterPanel.svelte';
   import { CheckIcon } from './icons';
   
   let selectedHeroes: Hero[] = $state([]);
@@ -120,72 +121,34 @@
 <div class="character-select" data-testid="character-select">
   <!-- Top edge - heroes rotated 180° for player sitting at top -->
   <div class="edge-zone edge-top" data-testid="edge-top">
-    <div class="hero-row" data-testid="hero-grid">
-      {#each availableHeroes as hero (hero.id)}
-        <div class="hero-with-power-button">
-          <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-          {#if isSelectedOnEdge(hero.id, 'top')}
-            <SideIndicator
-              edge="top"
-              currentSide={heroSidePreferences[hero.id]}
-              heroesOnSameEdge={getHeroesOnEdge('top').length}
-              onSwap={() => handleSwapSides('top')}
-            />
-          {/if}
-          
-          <!-- Power selection button above selected hero -->
-          {#if isSelectedOnEdge(hero.id, 'top')}
-            <button
-              class="power-select-button-above"
-              class:complete={isPowerCardSelectionComplete(hero.id)}
-              class:open={openPowerSelectionHeroes.has(hero.id)}
-              onclick={() => togglePowerCardSelection(hero)}
-              data-testid="select-powers-{hero.id}"
-              aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
-              title="Click to change powers"
-            >
-              {getPowerCountText(hero.id)}
-            </button>
-          {/if}
-          
-          <button
-            class="hero-card"
-            class:selected={isSelectedOnEdge(hero.id, 'top')}
-            class:unavailable={isSelectedOnOtherEdge(hero.id, 'top')}
-            data-testid="hero-{hero.id}-top"
-            onclick={() => handleHeroClick(hero.id, 'top')}
-            disabled={isSelectedOnOtherEdge(hero.id, 'top')}
-          >
-            <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
-            <div class="hero-info">
-              <span class="hero-name" data-testid="hero-name">{hero.name}</span>
-              <span class="hero-class">{hero.heroClass}</span>
-            </div>
-          </button>
-        </div>
-      {/each}
-    </div>
-  </div>
-
-  <!-- Middle section with left and right edges and center content -->
-  <div class="middle-section">
-    <!-- Left edge - heroes rotated 270° (90° counter-clockwise) for player sitting at left -->
-    <div class="edge-zone edge-left" data-testid="edge-left">
-      <div class="hero-column">
+    <div class="hero-row-container">
+      <!-- Duplicate panels for heroes on same edge -->
+      {#if getHeroesOnEdge('top').length >= 2}
+        {#each getHeroesOnEdge('top') as hero (hero.id)}
+          <DuplicateCharacterPanel
+            hero={hero}
+            side={heroSidePreferences[hero.id]}
+            edge="top"
+            onSwap={() => handleSwapSides('top')}
+          />
+        {/each}
+      {/if}
+      
+      <div class="hero-row" data-testid="hero-grid">
         {#each availableHeroes as hero (hero.id)}
           <div class="hero-with-power-button">
             <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-            {#if isSelectedOnEdge(hero.id, 'left')}
+            {#if isSelectedOnEdge(hero.id, 'top')}
               <SideIndicator
-                edge="left"
+                edge="top"
                 currentSide={heroSidePreferences[hero.id]}
-                heroesOnSameEdge={getHeroesOnEdge('left').length}
-                onSwap={() => handleSwapSides('left')}
+                heroesOnSameEdge={getHeroesOnEdge('top').length}
+                onSwap={() => handleSwapSides('top')}
               />
             {/if}
             
             <!-- Power selection button above selected hero -->
-            {#if isSelectedOnEdge(hero.id, 'left')}
+            {#if isSelectedOnEdge(hero.id, 'top')}
               <button
                 class="power-select-button-above"
                 class:complete={isPowerCardSelectionComplete(hero.id)}
@@ -201,11 +164,11 @@
             
             <button
               class="hero-card"
-              class:selected={isSelectedOnEdge(hero.id, 'left')}
-              class:unavailable={isSelectedOnOtherEdge(hero.id, 'left')}
-              data-testid="hero-{hero.id}-left"
-              onclick={() => handleHeroClick(hero.id, 'left')}
-              disabled={isSelectedOnOtherEdge(hero.id, 'left')}
+              class:selected={isSelectedOnEdge(hero.id, 'top')}
+              class:unavailable={isSelectedOnOtherEdge(hero.id, 'top')}
+              data-testid="hero-{hero.id}-top"
+              onclick={() => handleHeroClick(hero.id, 'top')}
+              disabled={isSelectedOnOtherEdge(hero.id, 'top')}
             >
               <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
               <div class="hero-info">
@@ -215,6 +178,72 @@
             </button>
           </div>
         {/each}
+      </div>
+    </div>
+  </div>
+
+  <!-- Middle section with left and right edges and center content -->
+  <div class="middle-section">
+    <!-- Left edge - heroes rotated 270° (90° counter-clockwise) for player sitting at left -->
+    <div class="edge-zone edge-left" data-testid="edge-left">
+      <div class="hero-column-container">
+        <!-- Duplicate panels for heroes on same edge -->
+        {#if getHeroesOnEdge('left').length >= 2}
+          {#each getHeroesOnEdge('left') as hero (hero.id)}
+            <DuplicateCharacterPanel
+              hero={hero}
+              side={heroSidePreferences[hero.id]}
+              edge="left"
+              onSwap={() => handleSwapSides('left')}
+            />
+          {/each}
+        {/if}
+        
+        <div class="hero-column">
+          {#each availableHeroes as hero (hero.id)}
+            <div class="hero-with-power-button">
+              <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+              {#if isSelectedOnEdge(hero.id, 'left')}
+                <SideIndicator
+                  edge="left"
+                  currentSide={heroSidePreferences[hero.id]}
+                  heroesOnSameEdge={getHeroesOnEdge('left').length}
+                  onSwap={() => handleSwapSides('left')}
+                />
+              {/if}
+              
+              <!-- Power selection button above selected hero -->
+              {#if isSelectedOnEdge(hero.id, 'left')}
+                <button
+                  class="power-select-button-above"
+                  class:complete={isPowerCardSelectionComplete(hero.id)}
+                  class:open={openPowerSelectionHeroes.has(hero.id)}
+                  onclick={() => togglePowerCardSelection(hero)}
+                  data-testid="select-powers-{hero.id}"
+                  aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                  title="Click to change powers"
+                >
+                  {getPowerCountText(hero.id)}
+                </button>
+              {/if}
+              
+              <button
+                class="hero-card"
+                class:selected={isSelectedOnEdge(hero.id, 'left')}
+                class:unavailable={isSelectedOnOtherEdge(hero.id, 'left')}
+                data-testid="hero-{hero.id}-left"
+                onclick={() => handleHeroClick(hero.id, 'left')}
+                disabled={isSelectedOnOtherEdge(hero.id, 'left')}
+              >
+                <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+                <div class="hero-info">
+                  <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+                  <span class="hero-class">{hero.heroClass}</span>
+                </div>
+              </button>
+            </div>
+          {/each}
+        </div>
       </div>
     </div>
 
@@ -241,21 +270,98 @@
 
     <!-- Right edge - heroes rotated 90° clockwise for player sitting at right -->
     <div class="edge-zone edge-right" data-testid="edge-right">
-      <div class="hero-column">
+      <div class="hero-column-container">
+        <!-- Duplicate panels for heroes on same edge -->
+        {#if getHeroesOnEdge('right').length >= 2}
+          {#each getHeroesOnEdge('right') as hero (hero.id)}
+            <DuplicateCharacterPanel
+              hero={hero}
+              side={heroSidePreferences[hero.id]}
+              edge="right"
+              onSwap={() => handleSwapSides('right')}
+            />
+          {/each}
+        {/if}
+        
+        <div class="hero-column">
+          {#each availableHeroes as hero (hero.id)}
+            <div class="hero-with-power-button">
+              <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+              {#if isSelectedOnEdge(hero.id, 'right')}
+                <SideIndicator
+                  edge="right"
+                  currentSide={heroSidePreferences[hero.id]}
+                  heroesOnSameEdge={getHeroesOnEdge('right').length}
+                  onSwap={() => handleSwapSides('right')}
+                />
+              {/if}
+              
+              <!-- Power selection button above selected hero -->
+              {#if isSelectedOnEdge(hero.id, 'right')}
+                <button
+                  class="power-select-button-above"
+                  class:complete={isPowerCardSelectionComplete(hero.id)}
+                  class:open={openPowerSelectionHeroes.has(hero.id)}
+                  onclick={() => togglePowerCardSelection(hero)}
+                  data-testid="select-powers-{hero.id}"
+                  aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                  title="Click to change powers"
+                >
+                  {getPowerCountText(hero.id)}
+                </button>
+              {/if}
+              
+              <button
+                class="hero-card"
+                class:selected={isSelectedOnEdge(hero.id, 'right')}
+                class:unavailable={isSelectedOnOtherEdge(hero.id, 'right')}
+                data-testid="hero-{hero.id}-right"
+                onclick={() => handleHeroClick(hero.id, 'right')}
+                disabled={isSelectedOnOtherEdge(hero.id, 'right')}
+              >
+                <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+                <div class="hero-info">
+                  <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+                  <span class="hero-class">{hero.heroClass}</span>
+                </div>
+              </button>
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom edge - heroes at 0° for player sitting at bottom (standard orientation) -->
+  <div class="edge-zone edge-bottom" data-testid="edge-bottom">
+    <div class="hero-row-container">
+      <!-- Duplicate panels for heroes on same edge -->
+      {#if getHeroesOnEdge('bottom').length >= 2}
+        {#each getHeroesOnEdge('bottom') as hero (hero.id)}
+          <DuplicateCharacterPanel
+            hero={hero}
+            side={heroSidePreferences[hero.id]}
+            edge="bottom"
+            onSwap={() => handleSwapSides('bottom')}
+          />
+        {/each}
+      {/if}
+      
+      <div class="hero-row">
         {#each availableHeroes as hero (hero.id)}
           <div class="hero-with-power-button">
             <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-            {#if isSelectedOnEdge(hero.id, 'right')}
+            {#if isSelectedOnEdge(hero.id, 'bottom')}
               <SideIndicator
-                edge="right"
+                edge="bottom"
                 currentSide={heroSidePreferences[hero.id]}
-                heroesOnSameEdge={getHeroesOnEdge('right').length}
-                onSwap={() => handleSwapSides('right')}
+                heroesOnSameEdge={getHeroesOnEdge('bottom').length}
+                onSwap={() => handleSwapSides('bottom')}
               />
             {/if}
             
             <!-- Power selection button above selected hero -->
-            {#if isSelectedOnEdge(hero.id, 'right')}
+            {#if isSelectedOnEdge(hero.id, 'bottom')}
               <button
                 class="power-select-button-above"
                 class:complete={isPowerCardSelectionComplete(hero.id)}
@@ -271,11 +377,11 @@
             
             <button
               class="hero-card"
-              class:selected={isSelectedOnEdge(hero.id, 'right')}
-              class:unavailable={isSelectedOnOtherEdge(hero.id, 'right')}
-              data-testid="hero-{hero.id}-right"
-              onclick={() => handleHeroClick(hero.id, 'right')}
-              disabled={isSelectedOnOtherEdge(hero.id, 'right')}
+              class:selected={isSelectedOnEdge(hero.id, 'bottom')}
+              class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom')}
+              data-testid="hero-{hero.id}-bottom"
+              onclick={() => handleHeroClick(hero.id, 'bottom')}
+              disabled={isSelectedOnOtherEdge(hero.id, 'bottom')}
             >
               <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
               <div class="hero-info">
@@ -286,55 +392,6 @@
           </div>
         {/each}
       </div>
-    </div>
-  </div>
-
-  <!-- Bottom edge - heroes at 0° for player sitting at bottom (standard orientation) -->
-  <div class="edge-zone edge-bottom" data-testid="edge-bottom">
-    <div class="hero-row">
-      {#each availableHeroes as hero (hero.id)}
-        <div class="hero-with-power-button">
-          <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-          {#if isSelectedOnEdge(hero.id, 'bottom')}
-            <SideIndicator
-              edge="bottom"
-              currentSide={heroSidePreferences[hero.id]}
-              heroesOnSameEdge={getHeroesOnEdge('bottom').length}
-              onSwap={() => handleSwapSides('bottom')}
-            />
-          {/if}
-          
-          <!-- Power selection button above selected hero -->
-          {#if isSelectedOnEdge(hero.id, 'bottom')}
-            <button
-              class="power-select-button-above"
-              class:complete={isPowerCardSelectionComplete(hero.id)}
-              class:open={openPowerSelectionHeroes.has(hero.id)}
-              onclick={() => togglePowerCardSelection(hero)}
-              data-testid="select-powers-{hero.id}"
-              aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
-              title="Click to change powers"
-            >
-              {getPowerCountText(hero.id)}
-            </button>
-          {/if}
-          
-          <button
-            class="hero-card"
-            class:selected={isSelectedOnEdge(hero.id, 'bottom')}
-            class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom')}
-            data-testid="hero-{hero.id}-bottom"
-            onclick={() => handleHeroClick(hero.id, 'bottom')}
-            disabled={isSelectedOnOtherEdge(hero.id, 'bottom')}
-          >
-            <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
-            <div class="hero-info">
-              <span class="hero-name" data-testid="hero-name">{hero.name}</span>
-              <span class="hero-class">{hero.heroClass}</span>
-            </div>
-          </button>
-        </div>
-      {/each}
     </div>
   </div>
 </div>
@@ -384,6 +441,13 @@
   }
   
   /* Hero row for top and bottom edges */
+  .hero-row-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
   .hero-row {
     display: flex;
     flex-direction: row;
@@ -393,6 +457,13 @@
   }
   
   /* Hero column for left and right edges */
+  .hero-column-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
   .hero-column {
     display: flex;
     flex-direction: row;
