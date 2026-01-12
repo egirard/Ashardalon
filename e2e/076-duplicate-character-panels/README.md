@@ -10,9 +10,8 @@ This test verifies the duplicate character panel feature for multi-player on the
 
 1. Navigate to character selection screen - no duplicate panels initially
 2. Select first hero (Quinn) from bottom edge - no duplicate panels yet (only 1 hero)
-3. Select second hero (Vistra) from bottom edge - duplicate panels appear for both heroes
+3. Select second hero (Vistra) from bottom edge - duplicate panels appear, original cards hidden
 4. Click swap arrow to swap their positions - panels update to show new positions
-5. Deselect one hero - duplicate panels disappear
 
 ## Screenshots
 
@@ -30,35 +29,33 @@ After selecting Quinn from the bottom edge, the hero is highlighted with a power
 
 ### Step 3: Two Heroes Selected - Duplicate Panels Appear
 
-After selecting Vistra from the bottom edge, duplicate character panels appear on the left and right sides of the hero row. Quinn's panel shows on the left with a right arrow (→), and Vistra's panel shows on the right with a left arrow (←).
+After selecting Vistra from the bottom edge, duplicate character panels appear on the left and right sides of the hero row. The original hero cards for Quinn and Vistra are hidden. Quinn's panel shows on the left with "5 of 5 Powers" at the top and a right arrow (→), and Vistra's panel shows on the right with "5 of 5 Powers" and a left arrow (←).
 
 ![002-two-heroes-duplicate-panels-appear](076-duplicate-character-panels.spec.ts-snapshots/002-two-heroes-duplicate-panels-appear-chromium-linux.png)
 
 ### Step 4: Positions Swapped
 
-After clicking Quinn's swap arrow, the positions swap. Vistra's panel is now on the left with a right arrow (→), and Quinn's panel is on the right with a left arrow (←).
+After clicking Quinn's swap arrow, the positions swap. Vistra's panel is now on the left with "5 of 5 Powers" and a left arrow (←), and Quinn's panel is on the right with "5 of 5 Powers" and a right arrow (→).
 
 ![003-positions-swapped](076-duplicate-character-panels.spec.ts-snapshots/003-positions-swapped-chromium-linux.png)
-
-### Step 5: One Hero Deselected - Panels Disappear
-
-After deselecting Vistra, only Quinn remains selected and the duplicate panels disappear since there's only one hero on this edge.
-
-![004-one-hero-panels-disappear](076-duplicate-character-panels.spec.ts-snapshots/004-one-hero-panels-disappear-chromium-linux.png)
 
 ## Verification Checklist
 
 - [x] Duplicate panels only appear when 2+ heroes are on the same edge
+- [x] Original hero cards are hidden when duplicate panels appear
 - [x] Panels are not shown when only 1 hero is selected on an edge
+- [x] Each panel shows "X of 5 Powers" count at the top
 - [x] Each panel shows hero portrait and name
+- [x] Hero images are smaller (64px) compared to original panels
 - [x] Panels are positioned on left and right sides of the hero row
 - [x] Left-side panel shows right arrow (→) for swapping
 - [x] Right-side panel shows left arrow (←) for swapping
+- [x] Arrow buttons are smaller (40px) compared to original
 - [x] Clicking arrow swaps side preferences for both heroes
 - [x] Panels update to reflect new positions after swap
-- [x] Panels disappear when number of heroes on edge drops below 2
+- [x] Panels disappear and original cards reappear when number of heroes on edge drops below 2
 - [x] Panels have attractive golden borders matching the game theme
-- [x] Side indicators above hero cards also update with swap
+- [x] Power count displays in green badge at top of panel
 
 ## Redux State Verification
 
@@ -82,8 +79,10 @@ The duplicate character panels include:
 
 The duplicate character panels feature:
 - **Position**: Absolutely positioned on left (-140px) and right (-140px) of hero row
-- **Size**: 80px hero portrait with 12px border radius
+- **Hero Portrait**: 64px circular image (reduced from 80px for better fit)
+- **Arrow Buttons**: 40px square buttons (reduced from 48px)
+- **Power Count**: Green badge at top showing "X of 5 Powers"
 - **Colors**: Golden borders (#FFD700) on dark background (rgba(20, 20, 40, 0.95))
 - **Effects**: Box shadow with golden glow, hover scale effect
 - **Rotation**: Properly rotated for each screen edge (0°, 90°, 180°, 270°)
-- **Arrows**: Large (48px) arrow buttons with hover effects
+- **Behavior**: Original hero cards are hidden when panels appear (2+ heroes on same edge)

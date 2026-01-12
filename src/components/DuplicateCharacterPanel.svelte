@@ -8,9 +8,10 @@
     side: SidePreference;
     edge: EdgePosition;
     onSwap: () => void;
+    powerCountText: string;
   }
   
-  let { hero, side, edge, onSwap }: Props = $props();
+  let { hero, side, edge, onSwap, powerCountText }: Props = $props();
   
   // Determine arrow direction - arrow points to the opposite side
   const arrowDirection = $derived(side === 'left' ? '→' : '←');
@@ -37,6 +38,7 @@
   data-testid="duplicate-panel-{hero.id}-{side}"
 >
   <div class="panel-content">
+    <div class="power-count">{powerCountText}</div>
     <div class="hero-preview">
       <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
       <div class="hero-label">
@@ -88,21 +90,32 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+  }
+  
+  .power-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4ade80;
+    background: rgba(34, 197, 94, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
   
   .hero-preview {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
   }
   
   .hero-image {
-    width: 80px;
-    height: 80px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    border: 3px solid rgba(255, 215, 0, 0.8);
+    border: 2px solid rgba(255, 215, 0, 0.8);
     object-fit: cover;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   }
@@ -112,7 +125,7 @@
   }
   
   .hero-name {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: bold;
     color: #ffd700;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -121,9 +134,9 @@
   .swap-arrow {
     background: rgba(255, 215, 0, 0.2);
     border: 2px solid rgba(255, 215, 0, 0.6);
-    border-radius: 8px;
-    width: 48px;
-    height: 48px;
+    border-radius: 6px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -143,7 +156,7 @@
   }
   
   .arrow-icon {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: bold;
     color: #ffd700;
     text-shadow: 0 0 6px rgba(255, 215, 0, 0.8);

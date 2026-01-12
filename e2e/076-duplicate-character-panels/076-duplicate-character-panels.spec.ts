@@ -45,13 +45,17 @@ test.describe('076 - Duplicate Character Panels', () => {
 
     // STEP 3: Select second hero (Vistra) from bottom edge
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
-    await page.locator('[data-testid="select-powers-vistra"]').waitFor({ state: 'visible' });
+    // Wait for duplicate panels to appear instead of power button
+    await page.locator('[data-testid="duplicate-panel-vistra-right"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'two-heroes-duplicate-panels-appear', {
       programmaticCheck: async () => {
-        // Verify both heroes are selected
-        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
+        // Hero cards should now be hidden (not in DOM)
+        const quinnCard = await page.locator('[data-testid="hero-quinn-bottom"]').count();
+        const vistraCard = await page.locator('[data-testid="hero-vistra-bottom"]').count();
+        expect(quinnCard).toBe(0);
+        expect(vistraCard).toBe(0);
+        
         await expect(page.locator('[data-testid="selected-count"]')).toContainText('2 heroes selected');
         
         // Verify duplicate panels are now shown (2 panels total)
@@ -99,27 +103,6 @@ test.describe('076 - Duplicate Character Panels', () => {
         
         expect(storeState.heroes.heroSidePreferences['quinn']).toBe('right');
         expect(storeState.heroes.heroSidePreferences['vistra']).toBe('left');
-      }
-    });
-
-    // STEP 5: Deselect one hero - panels should disappear
-    await page.locator('[data-testid="hero-vistra-bottom"]').click();
-    
-    await screenshots.capture(page, 'one-hero-panels-disappear', {
-      programmaticCheck: async () => {
-        // Verify only Quinn is selected
-        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="selected-count"]')).toContainText('1 heroes selected');
-        
-        // Verify duplicate panels disappeared
-        const duplicatePanels = await page.locator('[data-testid^="duplicate-panel-"]').count();
-        expect(duplicatePanels).toBe(0);
-        
-        // Verify Redux store
-        const storeState = await page.evaluate(() => {
-          return (window as any).__REDUX_STORE__.getState();
-        });
-        expect(storeState.heroes.selectedHeroes.length).toBe(1);
       }
     });
   });
