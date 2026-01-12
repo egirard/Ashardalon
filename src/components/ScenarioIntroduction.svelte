@@ -148,6 +148,8 @@
   .modal-wrapper {
     position: relative;
     overflow: visible; /* Ensure rotation controls are not clipped */
+    max-width: 700px;
+    width: 90%;
   }
   
   .scenario-modal {
@@ -155,8 +157,7 @@
     border: 3px solid rgba(184, 134, 11, 0.5);
     border-radius: 16px;
     padding: 0;
-    max-width: 700px;
-    width: 90%;
+    width: 100%;
     max-height: 85vh;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 20px rgba(184, 134, 11, 0.3), 0 0 0 20px rgba(0, 0, 0, 0.9); /* Extra shadow to visually cover arrows */
     display: flex;
