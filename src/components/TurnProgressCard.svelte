@@ -133,7 +133,6 @@
                   class="movement-action-button"
                   data-testid="complete-move-button"
                   onclick={onCompleteMove}
-                  title="Complete Move"
                   aria-label="Complete Move"
                 >
                   <CheckIcon size={12} color="#fff" ariaLabel="" />
@@ -144,7 +143,6 @@
                   class="movement-action-button undo-button"
                   data-testid="undo-button"
                   onclick={onUndo}
-                  title="Undo"
                   aria-label="Undo"
                 >
                   <UndoIcon size={12} color="#fff" ariaLabel="" />
