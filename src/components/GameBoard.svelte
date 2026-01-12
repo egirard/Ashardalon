@@ -3195,7 +3195,9 @@
     {@const isSinglePlayerOnEdge = heroesOnSameEdge === 1}
     {#if heroHpState}
       <div 
-        class="player-panel-overlay player-panel-{edge} player-panel-side-{sidePreference}" 
+        class="player-panel-overlay player-panel-{edge}" 
+        class:player-panel-side-left={!isSinglePlayerOnEdge && sidePreference === 'left'}
+        class:player-panel-side-right={!isSinglePlayerOnEdge && sidePreference === 'right'}
         class:single-player-on-edge={isSinglePlayerOnEdge}
         class:blade-barrier-selection-active={pendingBladeBarrier?.heroId === hero.id}
         data-testid="player-panel-{edge}"
