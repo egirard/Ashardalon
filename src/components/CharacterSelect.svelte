@@ -130,53 +130,57 @@
             side={heroSidePreferences[hero.id]}
             edge="top"
             onSwap={() => handleSwapSides('top')}
+            powerCountText={getPowerCountText(hero.id)}
           />
         {/each}
       {/if}
       
       <div class="hero-row" data-testid="hero-grid">
         {#each availableHeroes as hero (hero.id)}
-          <div class="hero-with-power-button">
-            <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-            {#if isSelectedOnEdge(hero.id, 'top')}
-              <SideIndicator
-                edge="top"
-                currentSide={heroSidePreferences[hero.id]}
-                heroesOnSameEdge={getHeroesOnEdge('top').length}
-                onSwap={() => handleSwapSides('top')}
-              />
-            {/if}
-            
-            <!-- Power selection button above selected hero -->
-            {#if isSelectedOnEdge(hero.id, 'top')}
+          <!-- Hide hero card if it's selected and there are 2+ heroes on this edge -->
+          {#if !(isSelectedOnEdge(hero.id, 'top') && getHeroesOnEdge('top').length >= 2)}
+            <div class="hero-with-power-button">
+              <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+              {#if isSelectedOnEdge(hero.id, 'top')}
+                <SideIndicator
+                  edge="top"
+                  currentSide={heroSidePreferences[hero.id]}
+                  heroesOnSameEdge={getHeroesOnEdge('top').length}
+                  onSwap={() => handleSwapSides('top')}
+                />
+              {/if}
+              
+              <!-- Power selection button above selected hero -->
+              {#if isSelectedOnEdge(hero.id, 'top')}
+                <button
+                  class="power-select-button-above"
+                  class:complete={isPowerCardSelectionComplete(hero.id)}
+                  class:open={openPowerSelectionHeroes.has(hero.id)}
+                  onclick={() => togglePowerCardSelection(hero)}
+                  data-testid="select-powers-{hero.id}"
+                  aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                  title="Click to change powers"
+                >
+                  {getPowerCountText(hero.id)}
+                </button>
+              {/if}
+              
               <button
-                class="power-select-button-above"
-                class:complete={isPowerCardSelectionComplete(hero.id)}
-                class:open={openPowerSelectionHeroes.has(hero.id)}
-                onclick={() => togglePowerCardSelection(hero)}
-                data-testid="select-powers-{hero.id}"
-                aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
-                title="Click to change powers"
+                class="hero-card"
+                class:selected={isSelectedOnEdge(hero.id, 'top')}
+                class:unavailable={isSelectedOnOtherEdge(hero.id, 'top')}
+                data-testid="hero-{hero.id}-top"
+                onclick={() => handleHeroClick(hero.id, 'top')}
+                disabled={isSelectedOnOtherEdge(hero.id, 'top')}
               >
-                {getPowerCountText(hero.id)}
+                <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+                <div class="hero-info">
+                  <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+                  <span class="hero-class">{hero.heroClass}</span>
+                </div>
               </button>
-            {/if}
-            
-            <button
-              class="hero-card"
-              class:selected={isSelectedOnEdge(hero.id, 'top')}
-              class:unavailable={isSelectedOnOtherEdge(hero.id, 'top')}
-              data-testid="hero-{hero.id}-top"
-              onclick={() => handleHeroClick(hero.id, 'top')}
-              disabled={isSelectedOnOtherEdge(hero.id, 'top')}
-            >
-              <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
-              <div class="hero-info">
-                <span class="hero-name" data-testid="hero-name">{hero.name}</span>
-                <span class="hero-class">{hero.heroClass}</span>
-              </div>
-            </button>
-          </div>
+            </div>
+          {/if}
         {/each}
       </div>
     </div>
@@ -195,53 +199,57 @@
               side={heroSidePreferences[hero.id]}
               edge="left"
               onSwap={() => handleSwapSides('left')}
+              powerCountText={getPowerCountText(hero.id)}
             />
           {/each}
         {/if}
         
         <div class="hero-column">
           {#each availableHeroes as hero (hero.id)}
-            <div class="hero-with-power-button">
-              <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-              {#if isSelectedOnEdge(hero.id, 'left')}
-                <SideIndicator
-                  edge="left"
-                  currentSide={heroSidePreferences[hero.id]}
-                  heroesOnSameEdge={getHeroesOnEdge('left').length}
-                  onSwap={() => handleSwapSides('left')}
-                />
-              {/if}
-              
-              <!-- Power selection button above selected hero -->
-              {#if isSelectedOnEdge(hero.id, 'left')}
+            <!-- Hide hero card if it's selected and there are 2+ heroes on this edge -->
+            {#if !(isSelectedOnEdge(hero.id, 'left') && getHeroesOnEdge('left').length >= 2)}
+              <div class="hero-with-power-button">
+                <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+                {#if isSelectedOnEdge(hero.id, 'left')}
+                  <SideIndicator
+                    edge="left"
+                    currentSide={heroSidePreferences[hero.id]}
+                    heroesOnSameEdge={getHeroesOnEdge('left').length}
+                    onSwap={() => handleSwapSides('left')}
+                  />
+                {/if}
+                
+                <!-- Power selection button above selected hero -->
+                {#if isSelectedOnEdge(hero.id, 'left')}
+                  <button
+                    class="power-select-button-above"
+                    class:complete={isPowerCardSelectionComplete(hero.id)}
+                    class:open={openPowerSelectionHeroes.has(hero.id)}
+                    onclick={() => togglePowerCardSelection(hero)}
+                    data-testid="select-powers-{hero.id}"
+                    aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                    title="Click to change powers"
+                  >
+                    {getPowerCountText(hero.id)}
+                  </button>
+                {/if}
+                
                 <button
-                  class="power-select-button-above"
-                  class:complete={isPowerCardSelectionComplete(hero.id)}
-                  class:open={openPowerSelectionHeroes.has(hero.id)}
-                  onclick={() => togglePowerCardSelection(hero)}
-                  data-testid="select-powers-{hero.id}"
-                  aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
-                  title="Click to change powers"
+                  class="hero-card"
+                  class:selected={isSelectedOnEdge(hero.id, 'left')}
+                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'left')}
+                  data-testid="hero-{hero.id}-left"
+                  onclick={() => handleHeroClick(hero.id, 'left')}
+                  disabled={isSelectedOnOtherEdge(hero.id, 'left')}
                 >
-                  {getPowerCountText(hero.id)}
+                  <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+                  <div class="hero-info">
+                    <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+                    <span class="hero-class">{hero.heroClass}</span>
+                  </div>
                 </button>
-              {/if}
-              
-              <button
-                class="hero-card"
-                class:selected={isSelectedOnEdge(hero.id, 'left')}
-                class:unavailable={isSelectedOnOtherEdge(hero.id, 'left')}
-                data-testid="hero-{hero.id}-left"
-                onclick={() => handleHeroClick(hero.id, 'left')}
-                disabled={isSelectedOnOtherEdge(hero.id, 'left')}
-              >
-                <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
-                <div class="hero-info">
-                  <span class="hero-name" data-testid="hero-name">{hero.name}</span>
-                  <span class="hero-class">{hero.heroClass}</span>
-                </div>
-              </button>
-            </div>
+              </div>
+            {/if}
           {/each}
         </div>
       </div>
@@ -279,53 +287,57 @@
               side={heroSidePreferences[hero.id]}
               edge="right"
               onSwap={() => handleSwapSides('right')}
+              powerCountText={getPowerCountText(hero.id)}
             />
           {/each}
         {/if}
         
         <div class="hero-column">
           {#each availableHeroes as hero (hero.id)}
-            <div class="hero-with-power-button">
-              <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-              {#if isSelectedOnEdge(hero.id, 'right')}
-                <SideIndicator
-                  edge="right"
-                  currentSide={heroSidePreferences[hero.id]}
-                  heroesOnSameEdge={getHeroesOnEdge('right').length}
-                  onSwap={() => handleSwapSides('right')}
-                />
-              {/if}
-              
-              <!-- Power selection button above selected hero -->
-              {#if isSelectedOnEdge(hero.id, 'right')}
+            <!-- Hide hero card if it's selected and there are 2+ heroes on this edge -->
+            {#if !(isSelectedOnEdge(hero.id, 'right') && getHeroesOnEdge('right').length >= 2)}
+              <div class="hero-with-power-button">
+                <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+                {#if isSelectedOnEdge(hero.id, 'right')}
+                  <SideIndicator
+                    edge="right"
+                    currentSide={heroSidePreferences[hero.id]}
+                    heroesOnSameEdge={getHeroesOnEdge('right').length}
+                    onSwap={() => handleSwapSides('right')}
+                  />
+                {/if}
+                
+                <!-- Power selection button above selected hero -->
+                {#if isSelectedOnEdge(hero.id, 'right')}
+                  <button
+                    class="power-select-button-above"
+                    class:complete={isPowerCardSelectionComplete(hero.id)}
+                    class:open={openPowerSelectionHeroes.has(hero.id)}
+                    onclick={() => togglePowerCardSelection(hero)}
+                    data-testid="select-powers-{hero.id}"
+                    aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                    title="Click to change powers"
+                  >
+                    {getPowerCountText(hero.id)}
+                  </button>
+                {/if}
+                
                 <button
-                  class="power-select-button-above"
-                  class:complete={isPowerCardSelectionComplete(hero.id)}
-                  class:open={openPowerSelectionHeroes.has(hero.id)}
-                  onclick={() => togglePowerCardSelection(hero)}
-                  data-testid="select-powers-{hero.id}"
-                  aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
-                  title="Click to change powers"
+                  class="hero-card"
+                  class:selected={isSelectedOnEdge(hero.id, 'right')}
+                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'right')}
+                  data-testid="hero-{hero.id}-right"
+                  onclick={() => handleHeroClick(hero.id, 'right')}
+                  disabled={isSelectedOnOtherEdge(hero.id, 'right')}
                 >
-                  {getPowerCountText(hero.id)}
+                  <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+                  <div class="hero-info">
+                    <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+                    <span class="hero-class">{hero.heroClass}</span>
+                  </div>
                 </button>
-              {/if}
-              
-              <button
-                class="hero-card"
-                class:selected={isSelectedOnEdge(hero.id, 'right')}
-                class:unavailable={isSelectedOnOtherEdge(hero.id, 'right')}
-                data-testid="hero-{hero.id}-right"
-                onclick={() => handleHeroClick(hero.id, 'right')}
-                disabled={isSelectedOnOtherEdge(hero.id, 'right')}
-              >
-                <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
-                <div class="hero-info">
-                  <span class="hero-name" data-testid="hero-name">{hero.name}</span>
-                  <span class="hero-class">{hero.heroClass}</span>
-                </div>
-              </button>
-            </div>
+              </div>
+            {/if}
           {/each}
         </div>
       </div>
@@ -343,53 +355,57 @@
             side={heroSidePreferences[hero.id]}
             edge="bottom"
             onSwap={() => handleSwapSides('bottom')}
+            powerCountText={getPowerCountText(hero.id)}
           />
         {/each}
       {/if}
       
       <div class="hero-row">
         {#each availableHeroes as hero (hero.id)}
-          <div class="hero-with-power-button">
-            <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
-            {#if isSelectedOnEdge(hero.id, 'bottom')}
-              <SideIndicator
-                edge="bottom"
-                currentSide={heroSidePreferences[hero.id]}
-                heroesOnSameEdge={getHeroesOnEdge('bottom').length}
-                onSwap={() => handleSwapSides('bottom')}
-              />
-            {/if}
-            
-            <!-- Power selection button above selected hero -->
-            {#if isSelectedOnEdge(hero.id, 'bottom')}
+          <!-- Hide hero card if it's selected and there are 2+ heroes on this edge -->
+          {#if !(isSelectedOnEdge(hero.id, 'bottom') && getHeroesOnEdge('bottom').length >= 2)}
+            <div class="hero-with-power-button">
+              <!-- Side indicator above selected hero (when 2+ heroes on same edge) -->
+              {#if isSelectedOnEdge(hero.id, 'bottom')}
+                <SideIndicator
+                  edge="bottom"
+                  currentSide={heroSidePreferences[hero.id]}
+                  heroesOnSameEdge={getHeroesOnEdge('bottom').length}
+                  onSwap={() => handleSwapSides('bottom')}
+                />
+              {/if}
+              
+              <!-- Power selection button above selected hero -->
+              {#if isSelectedOnEdge(hero.id, 'bottom')}
+                <button
+                  class="power-select-button-above"
+                  class:complete={isPowerCardSelectionComplete(hero.id)}
+                  class:open={openPowerSelectionHeroes.has(hero.id)}
+                  onclick={() => togglePowerCardSelection(hero)}
+                  data-testid="select-powers-{hero.id}"
+                  aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                  title="Click to change powers"
+                >
+                  {getPowerCountText(hero.id)}
+                </button>
+              {/if}
+              
               <button
-                class="power-select-button-above"
-                class:complete={isPowerCardSelectionComplete(hero.id)}
-                class:open={openPowerSelectionHeroes.has(hero.id)}
-                onclick={() => togglePowerCardSelection(hero)}
-                data-testid="select-powers-{hero.id}"
-                aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
-                title="Click to change powers"
+                class="hero-card"
+                class:selected={isSelectedOnEdge(hero.id, 'bottom')}
+                class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom')}
+                data-testid="hero-{hero.id}-bottom"
+                onclick={() => handleHeroClick(hero.id, 'bottom')}
+                disabled={isSelectedOnOtherEdge(hero.id, 'bottom')}
               >
-                {getPowerCountText(hero.id)}
+                <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
+                <div class="hero-info">
+                  <span class="hero-name" data-testid="hero-name">{hero.name}</span>
+                  <span class="hero-class">{hero.heroClass}</span>
+                </div>
               </button>
-            {/if}
-            
-            <button
-              class="hero-card"
-              class:selected={isSelectedOnEdge(hero.id, 'bottom')}
-              class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom')}
-              data-testid="hero-{hero.id}-bottom"
-              onclick={() => handleHeroClick(hero.id, 'bottom')}
-              disabled={isSelectedOnOtherEdge(hero.id, 'bottom')}
-            >
-              <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
-              <div class="hero-info">
-                <span class="hero-name" data-testid="hero-name">{hero.name}</span>
-                <span class="hero-class">{hero.heroClass}</span>
-              </div>
-            </button>
-          </div>
+            </div>
+          {/if}
         {/each}
       </div>
     </div>
