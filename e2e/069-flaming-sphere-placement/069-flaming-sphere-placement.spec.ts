@@ -16,11 +16,9 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
     
     // Select Flaming Sphere (ID 45) as daily - need to expand and select
     await page.locator('[data-testid="daily-card-45"]').click();
-    await page.locator('[data-testid="expanded-card"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="select-expanded-card"]').click();
     
     // Close power selection modal
-    await page.locator('[data-testid="done-power-selection"]').click();
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'hero-selected', {
