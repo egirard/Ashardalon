@@ -81,7 +81,7 @@
   .duplicate-panel:hover {
     border-color: rgba(255, 215, 0, 0.9);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 215, 0, 0.5);
-    transform: scale(1.05) rotate(var(--rotation));
+    transform: scale(1.05);
   }
   
   .panel-content {
