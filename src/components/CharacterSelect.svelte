@@ -94,6 +94,20 @@
     openPowerSelectionHeroes = new Set(openPowerSelectionHeroes);
   }
   
+  function getPowerCountText(heroId: string): string {
+    const selection = powerCardSelections[heroId];
+    if (!selection) return 'Select Powers';
+    
+    const utilityCount = selection.utility !== null ? 1 : 0;
+    const atWillCount = selection.atWills.length;
+    const dailyCount = selection.daily !== null ? 1 : 0;
+    const customAbilityCount = 1; // Custom ability is always auto-selected
+    const totalCount = utilityCount + atWillCount + dailyCount + customAbilityCount;
+    const maxCount = 5; // 1 utility + 2 at-wills + 1 daily + 1 custom ability (auto-selected)
+    
+    return `${totalCount} of ${maxCount} Powers`;
+  }
+  
   function getHeroesOnEdge(edge: EdgePosition): Hero[] {
     return selectedHeroes.filter(h => heroEdgeMap[h.id] === edge);
   }
@@ -128,8 +142,9 @@
               onclick={() => togglePowerCardSelection(hero)}
               data-testid="select-powers-{hero.id}"
               aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+              title="Click to change powers"
             >
-              {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
+              {getPowerCountText(hero.id)}
             </button>
           {/if}
           
@@ -178,8 +193,9 @@
                 onclick={() => togglePowerCardSelection(hero)}
                 data-testid="select-powers-{hero.id}"
                 aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                title="Click to change powers"
               >
-                {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
+                {getPowerCountText(hero.id)}
               </button>
             {/if}
             
@@ -247,8 +263,9 @@
                 onclick={() => togglePowerCardSelection(hero)}
                 data-testid="select-powers-{hero.id}"
                 aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+                title="Click to change powers"
               >
-                {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
+                {getPowerCountText(hero.id)}
               </button>
             {/if}
             
@@ -296,8 +313,9 @@
               onclick={() => togglePowerCardSelection(hero)}
               data-testid="select-powers-{hero.id}"
               aria-label="{isPowerCardSelectionComplete(hero.id) ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+              title="Click to change powers"
             >
-              {isPowerCardSelectionComplete(hero.id) ? '✓ Powers Selected' : 'Select Powers'}
+              {getPowerCountText(hero.id)}
             </button>
           {/if}
           

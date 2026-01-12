@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, setupDeterministicGame } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('019 - Power Card Selection', () => {
   test('player selects hero and chooses power cards before starting game', async ({ page }) => {
@@ -27,12 +27,9 @@ test.describe('019 - Power Card Selection', () => {
         // Verify Quinn is selected
         await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         
-        // Verify selected heroes list appears
-        await expect(page.locator('[data-testid="selected-heroes-list"]')).toBeVisible();
-        
-        // Verify the "Select Powers" button is visible for Quinn and shows powers are selected
+        // Verify the "Select Powers" button is visible for Quinn and shows power count
         await expect(page.locator('[data-testid="select-powers-quinn"]')).toBeVisible();
-        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
+        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('5 of 5 Powers');
         
         // Verify start button is now enabled (powers auto-selected)
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
@@ -60,32 +57,6 @@ test.describe('019 - Power Card Selection', () => {
         // Verify custom ability card is displayed (Healing Hymn for Quinn)
         await expect(page.locator('[data-testid="custom-ability-card"]')).toBeVisible();
         
-        // Verify utility cards section exists
-        await expect(page.locator('[data-testid="utility-cards"]')).toBeVisible();
-        
-        // Verify at-will cards section exists
-        await expect(page.locator('[data-testid="atwill-cards"]')).toBeVisible();
-        
-        // Verify daily cards section exists
-        await expect(page.locator('[data-testid="daily-cards"]')).toBeVisible();
-        
-        // Verify selection status shows complete (auto-selected)
-        await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
-        
-        // Verify done button is enabled
-        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
-      }
-    });
-
-    // STEP 4: Powers are already auto-selected, verify they are shown as complete
-    await screenshots.capture(page, 'auto-selected-powers', {
-      programmaticCheck: async () => {
-        // Verify selection status shows complete
-        await expect(page.locator('[data-testid="selection-status"]')).toContainText('Selection Complete');
-        
-        // Verify done button is enabled
-        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
-        
         // Verify at least one utility, two at-wills, and one daily are selected
         await expect(page.locator('[data-testid^="utility-card-"].selected')).toHaveCount(1);
         await expect(page.locator('[data-testid^="atwill-card-"].selected')).toHaveCount(2);
@@ -93,8 +64,18 @@ test.describe('019 - Power Card Selection', () => {
       }
     });
 
-    // STEP 5: Close the modal by clicking Done
-    await page.locator('[data-testid="done-power-selection"]').click();
+    // STEP 4: Powers are already auto-selected, verify they are shown as complete
+    await screenshots.capture(page, 'auto-selected-powers', {
+      programmaticCheck: async () => {
+        // Verify at least one utility, two at-wills, and one daily are selected
+        await expect(page.locator('[data-testid^="utility-card-"].selected')).toHaveCount(1);
+        await expect(page.locator('[data-testid^="atwill-card-"].selected')).toHaveCount(2);
+        await expect(page.locator('[data-testid^="daily-card-"].selected')).toHaveCount(1);
+      }
+    });
+
+    // STEP 5: Close the modal by clicking X button
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'modal-closed', {
@@ -102,8 +83,8 @@ test.describe('019 - Power Card Selection', () => {
         // Verify modal is closed
         await expect(page.locator('[data-testid="power-card-selection"]')).not.toBeVisible();
         
-        // Verify the power status shows complete for Quinn
-        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
+        // Verify the power count shows complete for Quinn
+        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('5 of 5 Powers');
         
         // Verify start button is enabled (powers auto-selected)
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();

@@ -154,16 +154,23 @@ export const heroesSlice = createSlice({
     },
     /**
      * Select a utility power card for a hero
+     * If the same card is clicked, it will be deselected (toggled off).
+     * If a different card is clicked, it will replace the current selection.
      */
     selectUtilityCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
       const { heroId, cardId } = action.payload;
       const selection = state.powerCardSelections[heroId];
       if (selection) {
+        // Toggle off if clicking the same card, otherwise replace
         selection.utility = selection.utility === cardId ? null : cardId;
       }
     },
     /**
      * Toggle an at-will power card for a hero (max 2)
+     * If clicking a selected card, it will be deselected.
+     * If clicking an unselected card and less than 2 are selected, it will be added.
+     * If clicking an unselected card and 2 are already selected, the first selected card
+     * will be deselected and the new card will be added (auto-swap).
      */
     toggleAtWillCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
       const { heroId, cardId } = action.payload;
@@ -176,16 +183,23 @@ export const heroesSlice = createSlice({
         } else if (selection.atWills.length < 2) {
           // Select (max 2)
           selection.atWills.push(cardId);
+        } else {
+          // At capacity: remove the first (topmost) card and add the new one
+          selection.atWills.shift();
+          selection.atWills.push(cardId);
         }
       }
     },
     /**
      * Select a daily power card for a hero
+     * If the same card is clicked, it will be deselected (toggled off).
+     * If a different card is clicked, it will replace the current selection.
      */
     selectDailyCard: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
       const { heroId, cardId } = action.payload;
       const selection = state.powerCardSelections[heroId];
       if (selection) {
+        // Toggle off if clicking the same card, otherwise replace
         selection.daily = selection.daily === cardId ? null : cardId;
       }
     },

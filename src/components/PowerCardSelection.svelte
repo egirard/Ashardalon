@@ -34,17 +34,6 @@
   const utilityCards = $derived(getShuffledUtilityCards(hero.heroClass, hero.id));
   const customAbilityId = $derived(HERO_CUSTOM_ABILITIES[hero.id]);
   const customAbility = $derived(customAbilityId ? getPowerCardById(customAbilityId) : null);
-  
-  // Track which card is expanded for preview
-  let expandedCardId: number | null = $state(null);
-  let expandedCardType: 'utility' | 'atWill' | 'daily' | null = $state(null);
-
-  // Check if selection is complete
-  const isSelectionComplete = $derived(
-    selection.utility !== null &&
-    selection.atWills.length === 2 &&
-    selection.daily !== null
-  );
 
   // Power card type colors
   function getPowerCardColor(type: string): string {
@@ -67,16 +56,8 @@
   }
 
   function handleCardClick(card: PowerCard, type: 'utility' | 'atWill' | 'daily') {
-    // If clicking the same card that's expanded, select it
-    if (expandedCardId === card.id && expandedCardType === type) {
-      selectCard(card.id, type);
-      expandedCardId = null;
-      expandedCardType = null;
-    } else {
-      // Otherwise, expand it for preview
-      expandedCardId = card.id;
-      expandedCardType = type;
-    }
+    // Clicking a card now immediately selects it
+    selectCard(card.id, type);
   }
 
   function selectCard(cardId: number, type: 'utility' | 'atWill' | 'daily') {
@@ -99,29 +80,6 @@
 
   function isDailySelected(cardId: number): boolean {
     return selection.daily === cardId;
-  }
-
-  function canSelectAtWill(cardId: number): boolean {
-    return selection.atWills.includes(cardId) || selection.atWills.length < 2;
-  }
-
-  function isCardExpanded(cardId: number): boolean {
-    return expandedCardId === cardId;
-  }
-
-  function getExpandedCard(): { card: PowerCard; type: 'utility' | 'atWill' | 'daily' } | null {
-    if (!expandedCardId || !expandedCardType) return null;
-    
-    let card: PowerCard | null = null;
-    if (expandedCardType === 'utility') {
-      card = utilityCards.find(c => c.id === expandedCardId) || null;
-    } else if (expandedCardType === 'atWill') {
-      card = atWillCards.find(c => c.id === expandedCardId) || null;
-    } else if (expandedCardType === 'daily') {
-      card = dailyCards.find(c => c.id === expandedCardId) || null;
-    }
-    
-    return card ? { card, type: expandedCardType } : null;
   }
 </script>
 
@@ -156,7 +114,6 @@
             <button
               class="mini-card"
               class:selected={isUtilitySelected(card.id)}
-              class:expanded={isCardExpanded(card.id)}
               style="border-color: {getPowerCardColor(card.type)};"
               onclick={() => handleCardClick(card, 'utility')}
               data-testid="utility-card-{card.id}"
@@ -179,11 +136,8 @@
             <button
               class="mini-card"
               class:selected={isAtWillSelected(card.id)}
-              class:expanded={isCardExpanded(card.id)}
-              class:disabled={!canSelectAtWill(card.id)}
               style="border-color: {getPowerCardColor(card.type)};"
               onclick={() => handleCardClick(card, 'atWill')}
-              disabled={!canSelectAtWill(card.id)}
               data-testid="atwill-card-{card.id}"
             >
               <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
@@ -204,7 +158,6 @@
             <button
               class="mini-card"
               class:selected={isDailySelected(card.id)}
-              class:expanded={isCardExpanded(card.id)}
               style="border-color: {getPowerCardColor(card.type)};"
               onclick={() => handleCardClick(card, 'daily')}
               data-testid="daily-card-{card.id}"
@@ -221,62 +174,12 @@
         </div>
       </div>
 
-      <!-- Right column: Expanded card view + Done button -->
+      <!-- Right column: Empty or could show selection status -->
       <div class="expanded-card-column">
-        {#if getExpandedCard()}
-          {@const { card, type } = getExpandedCard()!}
-          <div class="expanded-card" data-testid="expanded-card">
-            <div class="expanded-header">
-              <span class="card-type-badge large" style="background-color: {getPowerCardColor(card.type)};">
-                {card.type}
-              </span>
-              <h3 class="expanded-card-name">{card.name}</h3>
-            </div>
-            
-            <p class="expanded-description">{card.description}</p>
-            <p class="expanded-rule">{card.rule}</p>
-            
-            {#if card.attackBonus !== undefined}
-              <div class="expanded-stats">
-                <span class="stat-item"><strong>Attack:</strong> +{card.attackBonus}</span>
-                {#if card.damage !== undefined}
-                  <span class="stat-item"><strong>Damage:</strong> {card.damage}</span>
-                {/if}
-              </div>
-            {/if}
-
-            <button
-              class="select-button"
-              onclick={() => selectCard(card.id, type)}
-              data-testid="select-expanded-card"
-            >
-              {#if type === 'utility' && isUtilitySelected(card.id)}
-                Selected
-              {:else if type === 'atWill' && isAtWillSelected(card.id)}
-                Selected
-              {:else if type === 'daily' && isDailySelected(card.id)}
-                Selected
-              {:else}
-                Select This Card
-              {/if}
-            </button>
-          </div>
-        {:else}
-          <div class="no-selection">
-            <p>Tap a card to preview</p>
-            <p class="hint">Tap again to select</p>
-          </div>
-        {/if}
-
-        <!-- Done button moved here -->
-        <button
-          class="done-button"
-          onclick={onClose}
-          disabled={!isSelectionComplete}
-          data-testid="done-power-selection"
-        >
-          Done
-        </button>
+        <div class="no-selection">
+          <p>Click a card to select it</p>
+          <p class="hint">Selected cards are highlighted</p>
+        </div>
       </div>
     </div>
   </div>
