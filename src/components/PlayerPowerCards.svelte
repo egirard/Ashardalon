@@ -8,6 +8,7 @@
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
   import PowerCardDetailsPanel from './PowerCardDetailsPanel.svelte';
   import type { PendingFlamingSphereState, PendingMonsterRelocationState } from './PowerCardDetailsPanel.svelte';
+  import { parseActionCard, requiresMovementFirst } from '../store/actionCardParser';
 
   // Card ID constants
   const BLADE_BARRIER_CARD_ID = 5;
@@ -261,6 +262,17 @@
     return monster?.name || 'Unknown';
   }
 
+  // Get special badge text for a power card
+  function getSpecialBadge(card: PowerCard): string | null {
+    const parsed = parseActionCard(card);
+    if (requiresMovementFirst(parsed)) return 'Move+Attack';
+    if (parsed.attack?.attackCount === 2) return 'X2';
+    if (parsed.attack?.attackCount === 4) return 'X4';
+    if (parsed.attack?.maxTargets === 2) return '2 targets';
+    if (parsed.attack?.maxTargets === -1) return 'All targets';
+    return null;
+  }
+
   /**
    * Handle power card click
    * 
@@ -398,6 +410,7 @@
       {@const isBladeBarrierInSelection = bladeBarrierState && bladeBarrierState.cardId === card.id}
       {@const isFlamingSphereInSelection = flamingSphereState && flamingSphereState.cardId === card.id}
       {@const isSelected = selectedCardForDetailsPanel && selectedCardForDetailsPanel.id === card.id}
+      {@const specialBadge = getSpecialBadge(card)}
       
       <div 
         class="power-card-wrapper"
@@ -416,14 +429,25 @@
           data-testid="power-card-{card.id}"
           aria-label={getAriaLabel(card, highlightState, ineligibilityReason)}
         >
-          <span class="power-type" style="background-color: {getPowerCardColor(card.type)};">
-            {getPowerCardAbbrev(card.type)}
-          </span>
-          <span class="power-name">{card.name}</span>
-          {#if isFlipped}
-            <span class="flipped-indicator">
-              <XIcon size={14} ariaLabel="Used" />
+          <div class="card-header-mini">
+            <span class="power-type" style="background-color: {getPowerCardColor(card.type)};">
+              {getPowerCardAbbrev(card.type)}
             </span>
+            <span class="power-name">{card.name}</span>
+            {#if specialBadge}
+              <span class="special-badge-mini" data-testid="special-badge-{card.id}">{specialBadge}</span>
+            {/if}
+            {#if isFlipped}
+              <span class="flipped-indicator">
+                <XIcon size={14} ariaLabel="Used" />
+              </span>
+            {/if}
+          </div>
+          {#if isAttackCard}
+            <div class="card-stats-mini">
+              <span class="attack-bonus-mini">+{card.attackBonus}</span>
+              <span class="damage-mini">{card.damage || 1} dmg</span>
+            </div>
           {/if}
         </button>
         
@@ -573,7 +597,7 @@
 
   .power-card-mini {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 0.15rem;
     padding: 0.15rem 0.3rem;
     background: rgba(0, 0, 0, 0.4);
@@ -660,6 +684,46 @@
     color: #e53935;
     font-weight: bold;
     flex-shrink: 0;
+  }
+
+  /* Card header in mini view */
+  .card-header-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    width: 100%;
+  }
+
+  /* Special badge in mini view */
+  .special-badge-mini {
+    font-size: 0.45rem;
+    padding: 0.1rem 0.25rem;
+    border-radius: 2px;
+    text-transform: uppercase;
+    font-weight: bold;
+    background: rgba(255, 152, 0, 0.3);
+    color: #ff9800;
+    border: 1px solid rgba(255, 152, 0, 0.5);
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  /* Card stats in mini view */
+  .card-stats-mini {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.5rem;
+    color: #aaa;
+    margin-left: 1.5rem; /* Align with card name after type badge */
+  }
+
+  .attack-bonus-mini {
+    color: #ffd700;
+    font-weight: bold;
+  }
+
+  .damage-mini {
+    color: #e76f51;
   }
 
   /* Expanded attack card styles */
