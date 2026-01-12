@@ -173,14 +173,6 @@
           {/each}
         </div>
       </div>
-
-      <!-- Right column: Empty or could show selection status -->
-      <div class="expanded-card-column">
-        <div class="no-selection">
-          <p>Click a card to select it</p>
-          <p class="hint">Selected cards are highlighted</p>
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -264,17 +256,16 @@
 
   .card-layout {
     display: flex;
-    gap: 0.75rem;
     flex: 1;
     min-height: 0;
     overflow: hidden;
   }
 
-  /* Left: Mini cards in CSS column layout (single column split in half) */
+  /* Mini cards in CSS column layout (single column split in half) */
   .mini-cards-columns {
     column-count: 2;
     column-gap: 0.5rem;
-    flex: 0 0 340px;
+    flex: 1;
     max-height: 100%;
     overflow-y: auto;
     padding-right: 0.5rem;
@@ -365,136 +356,5 @@
     font-size: 0.6rem;
     color: #9c27b0;
     font-weight: bold;
-  }
-
-  /* Right column: Expanded card view + Done button */
-  .expanded-card-column {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    min-height: 0;
-  }
-
-  .expanded-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(255, 215, 0, 0.3);
-    border-radius: 8px;
-    padding: 0.75rem;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  .expanded-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .card-type-badge.large {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.5rem;
-    text-transform: uppercase;
-  }
-
-  .expanded-card-name {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: bold;
-  }
-
-  .expanded-description {
-    font-size: 0.75rem;
-    color: #ccc;
-    margin: 0;
-    font-style: italic;
-    line-height: 1.3;
-  }
-
-  .expanded-rule {
-    font-size: 0.75rem;
-    margin: 0;
-    white-space: pre-line;
-    line-height: 1.4;
-  }
-
-  .expanded-stats {
-    display: flex;
-    gap: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 0.75rem;
-    color: #ffd700;
-  }
-
-  .stat-item strong {
-    color: #fff;
-  }
-
-  .select-button {
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
-    font-weight: bold;
-    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-    color: #1a1a2e;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .select-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  }
-
-  .no-selection {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    color: #999;
-    font-size: 0.85rem;
-    text-align: center;
-    gap: 0.5rem;
-  }
-
-  .no-selection p {
-    margin: 0;
-  }
-
-  .no-selection .hint {
-    font-size: 0.75rem;
-    color: #666;
-  }
-
-  .done-button {
-    padding: 0.6rem 1.5rem;
-    font-size: 0.9rem;
-    font-weight: bold;
-    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-    color: #1a1a2e;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-  }
-
-  .done-button:hover:not(:disabled) {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  }
-
-  .done-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #666;
   }
 </style>
