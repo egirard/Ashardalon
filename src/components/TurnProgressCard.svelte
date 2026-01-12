@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { GamePhase, HeroTurnActions } from '../store/types';
+  import type { GamePhase, HeroTurnActions, IncrementalMovementState, UndoSnapshot } from '../store/types';
   import { CheckIcon, CircleIcon } from './icons';
 
   interface Props {
@@ -14,6 +14,14 @@
     endPhaseButtonText?: string;
     /** Whether the end phase button should be disabled */
     endPhaseButtonDisabled?: boolean;
+    /** Incremental movement state for displaying movement progress */
+    incrementalMovement?: IncrementalMovementState | null;
+    /** Undo snapshot for showing undo button */
+    undoSnapshot?: UndoSnapshot | null;
+    /** Callback when the complete move button is clicked */
+    onCompleteMove?: () => void;
+    /** Callback when the undo button is clicked */
+    onUndo?: () => void;
   }
 
   let { 
@@ -24,7 +32,11 @@
     monstersActivated = 0,
     onEndPhase,
     endPhaseButtonText,
-    endPhaseButtonDisabled = false
+    endPhaseButtonDisabled = false,
+    incrementalMovement = null,
+    undoSnapshot = null,
+    onCompleteMove,
+    onUndo
   }: Props = $props();
 
   // Define phase information
@@ -103,6 +115,34 @@
           {#if getPhaseDetail(phase.id)}
             <div class="phase-detail" data-testid="phase-detail-{phase.id}">
               {getPhaseDetail(phase.id)}
+            </div>
+          {/if}
+          
+          <!-- Movement Controls (shown only for active hero phase with incremental movement) -->
+          {#if phase.id === 'hero-phase' && phase.id === currentPhase && incrementalMovement?.inProgress}
+            <div class="movement-info" data-testid="movement-info">
+              <span class="movement-icon">🏃</span>
+              <span class="movement-text">{incrementalMovement.remainingMovement} of {incrementalMovement.speed}</span>
+              {#if onCompleteMove}
+                <button
+                  class="movement-action-button"
+                  data-testid="complete-move-button"
+                  onclick={onCompleteMove}
+                  title="Complete Move"
+                >
+                  End
+                </button>
+              {/if}
+              {#if undoSnapshot && onUndo}
+                <button
+                  class="movement-action-button undo-button"
+                  data-testid="undo-button"
+                  onclick={onUndo}
+                  title="Undo"
+                >
+                  Undo
+                </button>
+              {/if}
             </div>
           {/if}
           
@@ -218,6 +258,56 @@
     padding: 0.2rem 0.3rem;
     background: rgba(142, 202, 230, 0.1);
     border-radius: 3px;
+  }
+
+  /* Movement controls */
+  .movement-info {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+    padding: 0.3rem 0.4rem;
+    background: rgba(30, 144, 255, 0.15);
+    border: 1px solid rgba(30, 144, 255, 0.4);
+    border-radius: 3px;
+    font-size: 0.65rem;
+  }
+
+  .movement-icon {
+    font-size: 0.8rem;
+  }
+
+  .movement-text {
+    color: #1e90ff;
+    font-weight: bold;
+    flex: 1;
+  }
+
+  .movement-action-button {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.6rem;
+    font-weight: bold;
+    background: rgba(30, 144, 255, 0.8);
+    color: #fff;
+    border: 1px solid #1e90ff;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+  }
+
+  .movement-action-button:hover {
+    background: rgba(30, 144, 255, 0.95);
+    box-shadow: 0 0 5px rgba(30, 144, 255, 0.4);
+  }
+
+  .movement-action-button.undo-button {
+    background: rgba(255, 165, 0, 0.8);
+    border-color: #ffa500;
+  }
+
+  .movement-action-button.undo-button:hover {
+    background: rgba(255, 165, 0, 0.95);
+    box-shadow: 0 0 5px rgba(255, 165, 0, 0.4);
   }
 
   /* End phase button */
