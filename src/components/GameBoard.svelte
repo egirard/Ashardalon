@@ -97,8 +97,6 @@
   import TrapMarker from "./TrapMarker.svelte";
   import HazardMarker from "./HazardMarker.svelte";
   import BoardTokenMarker from "./BoardTokenMarker.svelte";
-  import PowerCardAttackPanel from "./PowerCardAttackPanel.svelte";
-  import AttackCardDetailPanel from "./AttackCardDetailPanel.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
   import XPCounter from "./XPCounter.svelte";
@@ -274,8 +272,6 @@
   } | null = $state(null);
   
   // Track which power card is selected for attacking (so map clicks can trigger attacks)
-  let selectedAttackCardId: number | null = $state(null);
-  
   // Track remaining targets for area attacks (attacks that hit all monsters on a tile)
   let pendingAreaAttackTargets: MonsterState[] = $state([]);
 
@@ -1486,26 +1482,6 @@
     store.dispatch(cancelMoveAttack());
   }
   
-  // Handle when the selected attack card changes in the PowerCardAttackPanel
-  function handleSelectedAttackCardChange(cardId: number | null) {
-    selectedAttackCardId = cardId;
-  }
-  
-  // Handle dismissing the attack card detail panel
-  function handleDismissAttackCardDetail() {
-    selectedAttackCardId = null;
-  }
-  
-  // Clear selected attack card when we're not in an attack-ready state
-  $effect(() => {
-    // Clear selected card if not in hero phase, can't attack, or in map control mode
-    if (turnState.currentPhase !== "hero-phase" || 
-        (!heroTurnActions.canAttack && !multiAttackState) ||
-        mapControlMode) {
-      selectedAttackCardId = null;
-    }
-  });
-
   // Handle completing a move-after-attack sequence
   function handleCompleteMoveAfterAttack() {
     store.dispatch(completeMoveAfterAttack());
@@ -1695,30 +1671,7 @@
       return;
     }
     
-    // If this is a monster click and we have a selected attack card, trigger the attack
-    if (targetType === 'monster' && selectedAttackCardId !== null) {
-      const currentHeroId = getCurrentHeroId();
-      if (!currentHeroId) return;
-      
-      // Check if this monster is targetable with the selected card
-      const targetableMonsters = getTargetableMonstersForCurrentHero();
-      const isTargetable = targetableMonsters.some(m => m.instanceId === targetId);
-      
-      if (isTargetable) {
-        // Check if the selected card can target this specific monster
-        const card = getPowerCardById(selectedAttackCardId);
-        if (card) {
-          const monster = monsters.find(m => m.instanceId === targetId);
-          if (monster) {
-            // Use the existing attack handler
-            handleAttackWithCard(selectedAttackCardId, targetId);
-            return;
-          }
-        }
-      }
-    }
-    
-    // Otherwise, just select the target (existing behavior)
+    // Select the target (existing behavior)
     store.dispatch(selectTarget({ targetId, targetType }));
   }
 
@@ -3141,46 +3094,6 @@
           </div>
         {/if}
 
-        <!-- Power Card Attack Panel - only show during hero phase when adjacent to monster and can attack -->
-        <!-- Disabled during map control mode to prevent actions while editing -->
-        {#if turnState.currentPhase === "hero-phase" && (heroTurnActions.canAttack || multiAttackState) && !mapControlMode}
-          {@const currentHeroId = getCurrentHeroId()}
-          {@const currentHeroPowerCards = currentHeroId
-            ? heroPowerCards[currentHeroId]
-            : undefined}
-          {@const targetableMonsters = getTargetableMonstersForCurrentHero()}
-          {#if currentHeroPowerCards && targetableMonsters.length > 0}
-            <PowerCardAttackPanel
-              heroPowerCards={currentHeroPowerCards}
-              adjacentMonsters={targetableMonsters}
-              onAttackWithCard={handleAttackWithCard}
-              {multiAttackState}
-              onStartMultiAttack={handleStartMultiAttack}
-              onCancelMultiAttack={handleCancelMultiAttack}
-              {pendingMoveAttack}
-              onStartMoveAttack={handleStartMoveAttack}
-              onCancelMoveAttack={handleCancelMoveAttack}
-              canMove={heroTurnActions.canMove}
-              onSelectedCardChange={handleSelectedAttackCardChange}
-            />
-            
-            <!-- Attack Card Detail Panel - shown when a card is selected OR during multi-attack or move-attack -->
-            {#if selectedAttackCardId !== null || multiAttackState || pendingMoveAttack}
-              {@const activeCardId = multiAttackState?.cardId ?? (pendingMoveAttack ? pendingMoveAttack.cardId : selectedAttackCardId)}
-              {#if activeCardId !== null}
-                <AttackCardDetailPanel
-                  cardId={activeCardId}
-                  availableTargets={targetableMonsters}
-                  onAttackWithCard={handleAttackWithCard}
-                  onDismiss={handleDismissAttackCardDetail}
-                  {multiAttackState}
-                  {pendingMoveAttack}
-                  onCancelMultiAttack={handleCancelMultiAttack}
-                />
-              {/if}
-            {/if}
-          {/if}
-        {/if}
       </div>
     </div>
 
