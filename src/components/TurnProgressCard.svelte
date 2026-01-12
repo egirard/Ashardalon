@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { GamePhase, HeroTurnActions, IncrementalMovementState, UndoSnapshot } from '../store/types';
-  import { CheckIcon, CircleIcon } from './icons';
+  import { CheckIcon, CircleIcon, UndoIcon } from './icons';
 
   interface Props {
     currentPhase: GamePhase;
@@ -44,7 +44,7 @@
     {
       id: 'hero-phase' as GamePhase,
       name: 'Hero Phase',
-      description: 'Move and attack with your hero',
+      description: '', // Removed description as per user request
     },
     {
       id: 'exploration-phase' as GamePhase,
@@ -58,20 +58,23 @@
     },
   ];
 
+  // Get phase name with action count for hero phase
+  function getPhaseName(phaseId: GamePhase): string {
+    if (phaseId === 'hero-phase' && heroTurnActions) {
+      const actionsTaken = heroTurnActions.actionsTaken.length;
+      const totalActions = 2;
+      return `Hero Phase (${actionsTaken} of ${totalActions} actions)`;
+    }
+    return phases.find(p => p.id === phaseId)?.name || '';
+  }
+
   // Get phase-specific detail text
   function getPhaseDetail(phaseId: GamePhase): string | null {
     if (phaseId !== currentPhase) return null;
 
     switch (phaseId) {
       case 'hero-phase':
-        if (heroTurnActions) {
-          const actions = heroTurnActions.actionsTaken;
-          if (actions.length === 0) {
-            return 'Ready to act';
-          }
-          const actionText = actions.map(a => a === 'move' ? 'Moved' : 'Attacked').join(', ');
-          return actionText;
-        }
+        // Removed "Ready to act" text as per user request
         return null;
 
       case 'exploration-phase':
@@ -110,8 +113,10 @@
         </div>
         
         <div class="phase-content">
-          <div class="phase-name">{phase.name}</div>
-          <div class="phase-description">{phase.description}</div>
+          <div class="phase-name">{getPhaseName(phase.id)}</div>
+          {#if phase.description}
+            <div class="phase-description">{phase.description}</div>
+          {/if}
           {#if getPhaseDetail(phase.id)}
             <div class="phase-detail" data-testid="phase-detail-{phase.id}">
               {getPhaseDetail(phase.id)}
@@ -122,15 +127,16 @@
           {#if phase.id === currentPhase && currentPhase === 'hero-phase' && incrementalMovement?.inProgress}
             <div class="movement-info" data-testid="movement-info">
               <span class="movement-icon">🏃</span>
-              <span class="movement-text">{incrementalMovement.remainingMovement} of {incrementalMovement.speed}</span>
+              <span class="movement-text">{incrementalMovement.remainingMovement} of {incrementalMovement.totalSpeed};</span>
               {#if onCompleteMove}
                 <button
                   class="movement-action-button"
                   data-testid="complete-move-button"
                   onclick={onCompleteMove}
                   title="Complete Move"
+                  aria-label="Complete Move"
                 >
-                  End
+                  <CheckIcon size={12} color="#fff" ariaLabel="" />
                 </button>
               {/if}
               {#if undoSnapshot && onUndo}
@@ -139,8 +145,9 @@
                   data-testid="undo-button"
                   onclick={onUndo}
                   title="Undo"
+                  aria-label="Undo"
                 >
-                  Undo
+                  <UndoIcon size={12} color="#fff" ariaLabel="" />
                 </button>
               {/if}
             </div>
@@ -284,7 +291,7 @@
   }
 
   .movement-action-button {
-    padding: 0.2rem 0.4rem;
+    padding: 0.25rem;
     font-size: 0.6rem;
     font-weight: bold;
     background: rgba(30, 144, 255, 0.8);
@@ -293,6 +300,11 @@
     border-radius: 3px;
     cursor: pointer;
     transition: all 0.2s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    min-height: 20px;
   }
 
   .movement-action-button:hover {
