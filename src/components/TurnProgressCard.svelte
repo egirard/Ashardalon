@@ -119,7 +119,7 @@
           {/if}
           
           <!-- Movement Controls (shown only for active hero phase with incremental movement) -->
-          {#if phase.id === 'hero-phase' && phase.id === currentPhase && incrementalMovement?.inProgress}
+          {#if phase.id === currentPhase && currentPhase === 'hero-phase' && incrementalMovement?.inProgress}
             <div class="movement-info" data-testid="movement-info">
               <span class="movement-icon">🏃</span>
               <span class="movement-text">{incrementalMovement.remainingMovement} of {incrementalMovement.speed}</span>
