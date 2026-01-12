@@ -3068,42 +3068,6 @@
           </div>
         {/if}
 
-        <!-- Movement Controls (shown during hero phase with incremental movement) -->
-        <!-- Disabled during map control mode to prevent actions while editing -->
-        {#if turnState.currentPhase === "hero-phase" && !mapControlMode}
-          <div class="movement-controls" data-testid="movement-controls">
-            <!-- Remaining Movement Display -->
-            {#if incrementalMovement?.inProgress}
-              <div class="remaining-movement" data-testid="remaining-movement">
-                <span class="movement-label">🏃 Movement:</span>
-                <span class="movement-value">{incrementalMovement.remainingMovement} remaining</span>
-              </div>
-            {/if}
-            
-            <!-- Complete Move Button (shown when movement in progress) -->
-            {#if incrementalMovement?.inProgress}
-              <button
-                class="complete-move-button"
-                data-testid="complete-move-button"
-                onclick={handleCompleteMove}
-              >
-                <CheckIcon size={14} ariaLabel="Complete" /> Complete Move
-              </button>
-            {/if}
-            
-            <!-- Undo Button (shown when undo is available) -->
-            {#if undoSnapshot}
-              <button
-                class="undo-button"
-                data-testid="undo-button"
-                onclick={handleUndo}
-              >
-                ↩ Undo
-              </button>
-            {/if}
-          </div>
-        {/if}
-
         <!-- Dazed Status Warning (shown during hero phase when hero is Dazed) -->
         {#if turnState.currentPhase === "hero-phase" && isCurrentHeroDazed() && !mapControlMode}
           <div class="dazed-warning" data-testid="dazed-warning">
@@ -3272,6 +3236,10 @@
               onEndPhase={handleEndPhase}
               endPhaseButtonText={getEndPhaseButtonText()}
               endPhaseButtonDisabled={mapControlMode}
+              incrementalMovement={incrementalMovement}
+              undoSnapshot={undoSnapshot}
+              onCompleteMove={handleCompleteMove}
+              onUndo={handleUndo}
             />
           {/if}
           <!-- Power cards to the right of player card -->
@@ -4004,74 +3972,6 @@
   .reset-view-button:hover {
     background: rgba(85, 85, 85, 0.9);
     color: #fff;
-  }
-
-  /* Movement controls container */
-  .movement-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: flex-end;
-  }
-
-  /* Remaining movement display */
-  .remaining-movement {
-    background: rgba(0, 0, 0, 0.7);
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    border: 1px solid #1e90ff;
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .movement-label {
-    font-size: 0.8rem;
-    color: #8ecae6;
-  }
-
-  .movement-value {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #1e90ff;
-  }
-
-  /* Complete move button */
-  .complete-move-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    background: rgba(30, 144, 255, 0.8);
-    color: #fff;
-    border: 1px solid #1e90ff;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .complete-move-button:hover {
-    background: rgba(30, 144, 255, 0.95);
-    box-shadow: 0 0 10px rgba(30, 144, 255, 0.4);
-  }
-
-  /* Undo button */
-  .undo-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    background: rgba(255, 165, 0, 0.8);
-    color: #fff;
-    border: 1px solid #ffa500;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .undo-button:hover {
-    background: rgba(255, 165, 0, 0.95);
-    box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
   }
 
   /* Dazed warning display */
