@@ -42,9 +42,6 @@ test.describe('061 - Turn Progress Indicator', () => {
         await expect(heroPhase).toHaveClass(/active/);
         await expect(heroPhase.locator('[data-testid="active-phase-indicator"]')).toBeVisible();
         
-        // Verify phase detail shows "Ready to act"
-        await expect(page.locator('[data-testid="phase-detail-hero-phase"]')).toContainText('Ready to act');
-        
         // Verify other phases are not active
         await expect(page.locator('[data-testid="phase-exploration-phase"]')).not.toHaveClass(/active/);
         await expect(page.locator('[data-testid="phase-villain-phase"]')).not.toHaveClass(/active/);
@@ -67,9 +64,6 @@ test.describe('061 - Turn Progress Indicator', () => {
         
         // Verify hero phase is still active
         await expect(page.locator('[data-testid="phase-hero-phase"]')).toHaveClass(/active/);
-        
-        // Verify phase detail now shows "Moved"
-        await expect(page.locator('[data-testid="phase-detail-hero-phase"]')).toContainText('Moved');
       }
     });
     

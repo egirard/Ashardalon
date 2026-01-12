@@ -60,10 +60,16 @@
 
   // Get phase name with action count for hero phase
   function getPhaseName(phaseId: GamePhase): string {
-    if (phaseId === 'hero-phase' && heroTurnActions) {
+    // Only show action counter when:
+    // 1. Rendering the hero phase item
+    // 2. Currently IN the hero phase
+    // 3. At least one action has been taken
+    if (phaseId === 'hero-phase' && phaseId === currentPhase && heroTurnActions) {
       const actionsTaken = heroTurnActions.actionsTaken.length;
-      const totalActions = 2;
-      return `Hero Phase (${actionsTaken} of ${totalActions} actions)`;
+      if (actionsTaken > 0) {
+        const totalActions = 2;
+        return `Hero Phase (${actionsTaken} of ${totalActions} actions)`;
+      }
     }
     return phases.find(p => p.id === phaseId)?.name || '';
   }

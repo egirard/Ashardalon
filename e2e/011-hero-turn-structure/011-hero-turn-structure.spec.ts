@@ -65,6 +65,9 @@ test.describe('011 - Hero Turn Structure', () => {
     // STEP 3: Move once (first move) - click on first available move target
     await page.locator('button:has-text("Move to")').first().click();
     
+    // Complete the first move
+    await page.locator('[data-testid="complete-move-button"]').click();
+    
     await screenshots.capture(page, 'after-first-move', {
       programmaticCheck: async () => {
         // Still in hero phase after first move
@@ -82,6 +85,9 @@ test.describe('011 - Hero Turn Structure', () => {
     
     // STEP 4: Move again (double move - turn should auto-advance)
     await page.locator('button:has-text("Move to")').first().click();
+    
+    // Complete the second move (this should auto-advance to exploration)
+    await page.locator('[data-testid="complete-move-button"]').click();
     
     // Wait for phase to change to exploration
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase', { timeout: 5000 });
