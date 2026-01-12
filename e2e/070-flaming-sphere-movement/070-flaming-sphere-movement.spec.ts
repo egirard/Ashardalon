@@ -13,9 +13,7 @@ test.describe('070 - Flaming Sphere Movement UI', () => {
     await page.locator('[data-testid="select-powers-haskan"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="daily-card-45"]').click();
-    await page.locator('[data-testid="expanded-card"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="select-expanded-card"]').click();
-    await page.locator('[data-testid="done-power-selection"]').click();
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     // CRITICAL: Set deterministic seed before starting game
