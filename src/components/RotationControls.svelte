@@ -97,6 +97,7 @@
     /* Extend the container by 18px on all sides to accommodate arrows */
     inset: -18px;
     pointer-events: none;
+    z-index: 10; /* Ensure arrows appear above modal and its box-shadow */
   }
   
   .rotation-arrow {
