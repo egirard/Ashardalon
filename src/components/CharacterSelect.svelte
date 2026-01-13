@@ -145,6 +145,10 @@
     return selectedHeroes.filter(h => heroEdgeMap[h.id] === edge);
   }
   
+  function isHeroUnavailable(heroId: string, edge: EdgePosition): boolean {
+    return isSelectedOnOtherEdge(heroId, edge) || (!isSelectedOnEdge(heroId, edge) && getHeroesOnEdge(edge).length >= 2);
+  }
+  
   function handleSwapSides(edge: EdgePosition) {
     store.dispatch(swapSidesOnEdge({ edge }));
   }
@@ -203,7 +207,7 @@
               <button
                 class="hero-card"
                 class:selected={isSelectedOnEdge(hero.id, 'top')}
-                class:unavailable={isSelectedOnOtherEdge(hero.id, 'top') || (!isSelectedOnEdge(hero.id, 'top') && getHeroesOnEdge('top').length >= 2)}
+                class:unavailable={isHeroUnavailable(hero.id, 'top')}
                 data-testid="hero-{hero.id}-top"
                 onclick={() => handleHeroClick(hero.id, 'top')}
                 disabled={!canSelectHeroOnEdge(hero.id, 'top')}
@@ -275,7 +279,7 @@
                 <button
                   class="hero-card"
                   class:selected={isSelectedOnEdge(hero.id, 'left')}
-                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'left') || (!isSelectedOnEdge(hero.id, 'left') && getHeroesOnEdge('left').length >= 2)}
+                  class:unavailable={isHeroUnavailable(hero.id, 'left')}
                   data-testid="hero-{hero.id}-left"
                   onclick={() => handleHeroClick(hero.id, 'left')}
                   disabled={!canSelectHeroOnEdge(hero.id, 'left')}
@@ -366,7 +370,7 @@
                 <button
                   class="hero-card"
                   class:selected={isSelectedOnEdge(hero.id, 'right')}
-                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'right') || (!isSelectedOnEdge(hero.id, 'right') && getHeroesOnEdge('right').length >= 2)}
+                  class:unavailable={isHeroUnavailable(hero.id, 'right')}
                   data-testid="hero-{hero.id}-right"
                   onclick={() => handleHeroClick(hero.id, 'right')}
                   disabled={!canSelectHeroOnEdge(hero.id, 'right')}
@@ -437,7 +441,7 @@
               <button
                 class="hero-card"
                 class:selected={isSelectedOnEdge(hero.id, 'bottom')}
-                class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom') || (!isSelectedOnEdge(hero.id, 'bottom') && getHeroesOnEdge('bottom').length >= 2)}
+                class:unavailable={isHeroUnavailable(hero.id, 'bottom')}
                 data-testid="hero-{hero.id}-bottom"
                 onclick={() => handleHeroClick(hero.id, 'bottom')}
                 disabled={!canSelectHeroOnEdge(hero.id, 'bottom')}
