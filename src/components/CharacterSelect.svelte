@@ -53,9 +53,41 @@
     return selectedEdge !== undefined && selectedEdge !== currentEdge;
   }
   
+  function canSelectHeroOnEdge(heroId: string, edge: EdgePosition): boolean {
+    // Already selected hero can be deselected
+    if (isSelectedOnEdge(heroId, edge)) {
+      return true;
+    }
+    
+    // Cannot select if already selected on another edge
+    if (isSelectedOnOtherEdge(heroId, edge)) {
+      return false;
+    }
+    
+    // Cannot select more than 5 heroes total
+    if (selectedHeroes.length >= 5) {
+      return false;
+    }
+    
+    // Cannot select more than 2 heroes on the same edge
+    const heroesOnEdge = getHeroesOnEdge(edge);
+    if (heroesOnEdge.length >= 2) {
+      return false;
+    }
+    
+    return true;
+  }
+  
   function handleHeroClick(heroId: string, edge: EdgePosition) {
+    if (canSelectHeroOnEdge(heroId, edge)) {
+      store.dispatch(selectHeroFromEdge({ heroId, edge }));
+    }
+  }
+  
+  function handleDeselectHero(heroId: string, edge: EdgePosition) {
     store.dispatch(selectHeroFromEdge({ heroId, edge }));
   }
+
   
   function handleStartGame() {
     if (selectedHeroes.length > 0 && allPowerCardsSelected()) {
@@ -130,7 +162,10 @@
             side={heroSidePreferences[hero.id]}
             edge="top"
             onSwap={() => handleSwapSides('top')}
+            onPowerSelect={() => togglePowerCardSelection(hero)}
+            onDeselect={() => handleDeselectHero(hero.id, 'top')}
             powerCountText={getPowerCountText(hero.id)}
+            isPowerSelectionComplete={isPowerCardSelectionComplete(hero.id)}
           />
         {/each}
       {/if}
@@ -168,10 +203,10 @@
               <button
                 class="hero-card"
                 class:selected={isSelectedOnEdge(hero.id, 'top')}
-                class:unavailable={isSelectedOnOtherEdge(hero.id, 'top')}
+                class:unavailable={isSelectedOnOtherEdge(hero.id, 'top') || (!isSelectedOnEdge(hero.id, 'top') && getHeroesOnEdge('top').length >= 2)}
                 data-testid="hero-{hero.id}-top"
                 onclick={() => handleHeroClick(hero.id, 'top')}
-                disabled={isSelectedOnOtherEdge(hero.id, 'top')}
+                disabled={!canSelectHeroOnEdge(hero.id, 'top')}
               >
                 <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
                 <div class="hero-info">
@@ -199,7 +234,10 @@
               side={heroSidePreferences[hero.id]}
               edge="left"
               onSwap={() => handleSwapSides('left')}
+              onPowerSelect={() => togglePowerCardSelection(hero)}
+              onDeselect={() => handleDeselectHero(hero.id, 'left')}
               powerCountText={getPowerCountText(hero.id)}
+              isPowerSelectionComplete={isPowerCardSelectionComplete(hero.id)}
             />
           {/each}
         {/if}
@@ -237,10 +275,10 @@
                 <button
                   class="hero-card"
                   class:selected={isSelectedOnEdge(hero.id, 'left')}
-                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'left')}
+                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'left') || (!isSelectedOnEdge(hero.id, 'left') && getHeroesOnEdge('left').length >= 2)}
                   data-testid="hero-{hero.id}-left"
                   onclick={() => handleHeroClick(hero.id, 'left')}
-                  disabled={isSelectedOnOtherEdge(hero.id, 'left')}
+                  disabled={!canSelectHeroOnEdge(hero.id, 'left')}
                 >
                   <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
                   <div class="hero-info">
@@ -287,7 +325,10 @@
               side={heroSidePreferences[hero.id]}
               edge="right"
               onSwap={() => handleSwapSides('right')}
+              onPowerSelect={() => togglePowerCardSelection(hero)}
+              onDeselect={() => handleDeselectHero(hero.id, 'right')}
               powerCountText={getPowerCountText(hero.id)}
+              isPowerSelectionComplete={isPowerCardSelectionComplete(hero.id)}
             />
           {/each}
         {/if}
@@ -325,10 +366,10 @@
                 <button
                   class="hero-card"
                   class:selected={isSelectedOnEdge(hero.id, 'right')}
-                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'right')}
+                  class:unavailable={isSelectedOnOtherEdge(hero.id, 'right') || (!isSelectedOnEdge(hero.id, 'right') && getHeroesOnEdge('right').length >= 2)}
                   data-testid="hero-{hero.id}-right"
                   onclick={() => handleHeroClick(hero.id, 'right')}
-                  disabled={isSelectedOnOtherEdge(hero.id, 'right')}
+                  disabled={!canSelectHeroOnEdge(hero.id, 'right')}
                 >
                   <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
                   <div class="hero-info">
@@ -355,7 +396,10 @@
             side={heroSidePreferences[hero.id]}
             edge="bottom"
             onSwap={() => handleSwapSides('bottom')}
+            onPowerSelect={() => togglePowerCardSelection(hero)}
+            onDeselect={() => handleDeselectHero(hero.id, 'bottom')}
             powerCountText={getPowerCountText(hero.id)}
+            isPowerSelectionComplete={isPowerCardSelectionComplete(hero.id)}
           />
         {/each}
       {/if}
@@ -393,10 +437,10 @@
               <button
                 class="hero-card"
                 class:selected={isSelectedOnEdge(hero.id, 'bottom')}
-                class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom')}
+                class:unavailable={isSelectedOnOtherEdge(hero.id, 'bottom') || (!isSelectedOnEdge(hero.id, 'bottom') && getHeroesOnEdge('bottom').length >= 2)}
                 data-testid="hero-{hero.id}-bottom"
                 onclick={() => handleHeroClick(hero.id, 'bottom')}
-                disabled={isSelectedOnOtherEdge(hero.id, 'bottom')}
+                disabled={!canSelectHeroOnEdge(hero.id, 'bottom')}
               >
                 <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
                 <div class="hero-info">
