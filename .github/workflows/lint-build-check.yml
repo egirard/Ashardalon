@@ -24,7 +24,7 @@ jobs:
         run: bun install
       
       - name: Run ESLint
-        run: npm run lint
+        run: bun run lint
         continue-on-error: false
 
   build:
