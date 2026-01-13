@@ -463,6 +463,19 @@
     }
   });
 
+  // Auto-end exploration phase when both steps are complete or phase is skipped
+  $effect(() => {
+    if (turnState.currentPhase !== "exploration-phase") return;
+    if (explorationPhase.step !== 'complete' && explorationPhase.step !== 'skipped') return;
+    
+    // Wait a brief moment for the user to see the completion/skip state
+    const timer = setTimeout(() => {
+      store.dispatch(endExplorationPhase());
+    }, explorationPhase.step === 'skipped' ? 1500 : 500); // Longer delay for skipped message
+    
+    return () => clearTimeout(timer);
+  });
+
   // Auto-show movement options when hero phase starts and hero can move
   $effect(() => {
     if (turnState.currentPhase !== "hero-phase") return;

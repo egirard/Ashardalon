@@ -58,7 +58,7 @@
     },
     {
       id: 'exploration-phase' as GamePhase,
-      name: 'Exploration',
+      name: 'Exploration Phase',
       description: '', // Removed static description
     },
     {
@@ -67,6 +67,14 @@
       description: 'Monsters activate and attack',
     },
   ];
+
+  // Check if a phase is completed (appears before current phase in the list)
+  function isPhaseCompleted(phaseId: GamePhase): boolean {
+    const phaseOrder: GamePhase[] = ['hero-phase', 'exploration-phase', 'villain-phase'];
+    const currentIndex = phaseOrder.indexOf(currentPhase);
+    const checkIndex = phaseOrder.indexOf(phaseId);
+    return checkIndex < currentIndex;
+  }
 
   // Get phase name with action count for hero phase
   function getPhaseName(phaseId: GamePhase): string {
@@ -119,6 +127,10 @@
             <div class="active-indicator" data-testid="active-phase-indicator">
               <CircleIcon size={16} color="#ffd700" ariaLabel="Active" />
             </div>
+          {:else if isPhaseCompleted(phase.id)}
+            <div class="completed-indicator" data-testid="completed-phase-indicator">
+              <CheckIcon size={16} color="#4caf50" ariaLabel="Complete" />
+            </div>
           {:else}
             <div class="inactive-indicator">
               <CircleIcon size={12} color="#666" ariaLabel="Inactive" />
@@ -147,30 +159,39 @@
               <!-- Tile step -->
               {#if explorationPhaseState.step === 'awaiting-tile'}
                 <button
-                  class="exploration-step clickable"
+                  class="exploration-step clickable active"
                   data-testid="exploration-step-place-tile"
                   onclick={onPlaceTile}
                 >
-                  Add new tile
+                  <CircleIcon size={12} color="#4caf50" ariaLabel="Pending" />
+                  <span>Add new tile</span>
                 </button>
               {:else}
                 <div class="exploration-step completed" data-testid="exploration-step-tile-placed">
-                  New tile placed ✓
+                  <CheckIcon size={12} color="#4caf50" ariaLabel="Complete" />
+                  <span>New tile placed</span>
                 </div>
               {/if}
               
               <!-- Monster step -->
-              {#if explorationPhaseState.step === 'awaiting-monster'}
+              {#if explorationPhaseState.step === 'awaiting-tile'}
+                <div class="exploration-step pending-inactive" data-testid="exploration-step-monster-pending">
+                  <CircleIcon size={12} color="#666" ariaLabel="Not ready" />
+                  <span>Add monster</span>
+                </div>
+              {:else if explorationPhaseState.step === 'awaiting-monster'}
                 <button
-                  class="exploration-step clickable"
+                  class="exploration-step clickable active"
                   data-testid="exploration-step-add-monster"
                   onclick={onAddMonster}
                 >
-                  Add monster
+                  <CircleIcon size={12} color="#4caf50" ariaLabel="Pending" />
+                  <span>Add monster</span>
                 </button>
               {:else if explorationPhaseState.step === 'complete'}
                 <div class="exploration-step completed" data-testid="exploration-step-monster-added">
-                  Monster added ✓
+                  <CheckIcon size={12} color="#4caf50" ariaLabel="Complete" />
+                  <span>Monster added</span>
                 </div>
               {/if}
             {/if}
@@ -204,8 +225,8 @@
             </div>
           {/if}
           
-          <!-- End Phase Button (shown only for active phase) -->
-          {#if phase.id === currentPhase && onEndPhase && endPhaseButtonText}
+          <!-- End Phase Button (shown only for active phase, but NOT for exploration phase) -->
+          {#if phase.id === currentPhase && phase.id !== 'exploration-phase' && onEndPhase && endPhaseButtonText}
             <button
               class="end-phase-button"
               data-testid="end-phase-button"
@@ -320,6 +341,9 @@
 
   /* Exploration steps */
   .exploration-step {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     font-size: 0.65rem;
     padding: 0.3rem 0.4rem;
     margin-top: 0.2rem;
@@ -334,21 +358,34 @@
   }
 
   .exploration-step.clickable {
-    background: rgba(46, 125, 50, 0.3);
-    border: 1px solid rgba(76, 175, 80, 0.5);
     cursor: pointer;
     transition: all 0.2s ease-out;
     text-align: left;
     font-family: inherit;
     font-weight: bold;
     width: 100%;
+    border: 1px solid rgba(76, 175, 80, 0.5);
   }
 
-  .exploration-step.clickable:hover {
-    background: rgba(46, 125, 50, 0.5);
+  /* Active clickable step - bright green */
+  .exploration-step.clickable.active {
+    background: rgba(76, 175, 80, 0.4);
     border-color: #4caf50;
+  }
+
+  .exploration-step.clickable.active:hover {
+    background: rgba(76, 175, 80, 0.6);
+    border-color: #66bb6a;
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.4);
+  }
+
+  /* Pending inactive step - dim */
+  .exploration-step.pending-inactive {
+    background: rgba(46, 125, 50, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+    color: #888;
+    opacity: 0.6;
   }
 
   .exploration-step.completed {
