@@ -61,7 +61,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: lint
+    needs: [lint, build]  # Ensure tests run after both lint and build pass
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
