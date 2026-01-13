@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { GamePhase, HeroTurnActions, IncrementalMovementState, UndoSnapshot } from '../store/types';
+  import type { ExplorationPhaseState } from '../store/gameSlice';
   import { CheckIcon, CircleIcon, UndoIcon } from './icons';
 
   interface Props {
@@ -22,6 +23,12 @@
     onCompleteMove?: () => void;
     /** Callback when the undo button is clicked */
     onUndo?: () => void;
+    /** Exploration phase state for displaying interactive steps */
+    explorationPhaseState?: ExplorationPhaseState | null;
+    /** Callback when placing tile step is clicked */
+    onPlaceTile?: () => void;
+    /** Callback when adding monster step is clicked */
+    onAddMonster?: () => void;
   }
 
   let { 
@@ -36,7 +43,10 @@
     incrementalMovement = null,
     undoSnapshot = null,
     onCompleteMove,
-    onUndo
+    onUndo,
+    explorationPhaseState = null,
+    onPlaceTile,
+    onAddMonster
   }: Props = $props();
 
   // Define phase information
@@ -49,7 +59,7 @@
     {
       id: 'exploration-phase' as GamePhase,
       name: 'Exploration',
-      description: 'Explore unexplored edges',
+      description: '', // Removed static description
     },
     {
       id: 'villain-phase' as GamePhase,
@@ -81,7 +91,8 @@
         return null;
 
       case 'exploration-phase':
-        return 'Check for unexplored edges';
+        // Don't show detail text for exploration phase (handled by steps)
+        return null;
 
       case 'villain-phase':
         if (monstersToActivate > 0) {
@@ -124,6 +135,45 @@
             <div class="phase-detail" data-testid="phase-detail-{phase.id}">
               {getPhaseDetail(phase.id)}
             </div>
+          {/if}
+          
+          <!-- Exploration Steps (shown only for active exploration phase) -->
+          {#if phase.id === currentPhase && currentPhase === 'exploration-phase' && explorationPhaseState}
+            {#if explorationPhaseState.step === 'skipped'}
+              <div class="exploration-step skipped" data-testid="exploration-skipped">
+                Not on edge - phase skipped
+              </div>
+            {:else if explorationPhaseState.step === 'awaiting-tile' || explorationPhaseState.step === 'awaiting-monster' || explorationPhaseState.step === 'complete'}
+              <!-- Tile step -->
+              {#if explorationPhaseState.step === 'awaiting-tile'}
+                <button
+                  class="exploration-step clickable"
+                  data-testid="exploration-step-place-tile"
+                  onclick={onPlaceTile}
+                >
+                  Add new tile
+                </button>
+              {:else}
+                <div class="exploration-step completed" data-testid="exploration-step-tile-placed">
+                  New tile placed ✓
+                </div>
+              {/if}
+              
+              <!-- Monster step -->
+              {#if explorationPhaseState.step === 'awaiting-monster'}
+                <button
+                  class="exploration-step clickable"
+                  data-testid="exploration-step-add-monster"
+                  onclick={onAddMonster}
+                >
+                  Add monster
+                </button>
+              {:else if explorationPhaseState.step === 'complete'}
+                <div class="exploration-step completed" data-testid="exploration-step-monster-added">
+                  Monster added ✓
+                </div>
+              {/if}
+            {/if}
           {/if}
           
           <!-- Movement Controls (shown only for active hero phase with incremental movement) -->
@@ -266,6 +316,46 @@
     padding: 0.2rem 0.3rem;
     background: rgba(142, 202, 230, 0.1);
     border-radius: 3px;
+  }
+
+  /* Exploration steps */
+  .exploration-step {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.4rem;
+    margin-top: 0.2rem;
+    border-radius: 3px;
+    color: #fff;
+  }
+
+  .exploration-step.skipped {
+    background: rgba(128, 128, 128, 0.2);
+    color: #999;
+    border: 1px solid rgba(128, 128, 128, 0.3);
+  }
+
+  .exploration-step.clickable {
+    background: rgba(46, 125, 50, 0.3);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    text-align: left;
+    font-family: inherit;
+    font-weight: bold;
+    width: 100%;
+  }
+
+  .exploration-step.clickable:hover {
+    background: rgba(46, 125, 50, 0.5);
+    border-color: #4caf50;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+  }
+
+  .exploration-step.completed {
+    background: rgba(46, 125, 50, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    color: #4caf50;
+    font-weight: bold;
   }
 
   /* Movement controls */

@@ -9,6 +9,8 @@
     completeMove,
     undoAction,
     endHeroPhase,
+    placeExplorationTile,
+    addExplorationMonster,
     endExplorationPhase,
     endVillainPhase,
     dismissMonsterCard,
@@ -215,6 +217,7 @@
   let healingSurgeHpRestored: number | null = $state(null);
   let encounterEffectMessage: string | null = $state(null);
   let explorationPhaseMessage: string | null = $state(null);
+  let explorationPhase: import('../store/gameSlice').ExplorationPhaseState = $state({ step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null });
   let recentlyPlacedTileId: string | null = $state(null);
   let pendingMonsterDisplayId: string | null = $state(null);
   let poisonedDamageNotification: { heroId: string; damage: number } | null = $state(null);
@@ -322,6 +325,7 @@
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
       encounterEffectMessage = state.game.encounterEffectMessage;
       explorationPhaseMessage = state.game.explorationPhaseMessage;
+      explorationPhase = state.game.explorationPhase;
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
       pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
       poisonedDamageNotification = state.game.poisonedDamageNotification;
@@ -383,6 +387,7 @@
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     encounterEffectMessage = state.game.encounterEffectMessage;
     explorationPhaseMessage = state.game.explorationPhaseMessage;
+    explorationPhase = state.game.explorationPhase;
     recentlyPlacedTileId = state.game.recentlyPlacedTileId;
     pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
     poisonedDamageNotification = state.game.poisonedDamageNotification;
@@ -1034,6 +1039,16 @@
         store.dispatch(endVillainPhase());
         break;
     }
+  }
+
+  // Handle placing exploration tile
+  function handlePlaceTile() {
+    store.dispatch(placeExplorationTile());
+  }
+
+  // Handle adding exploration monster
+  function handleAddMonster() {
+    store.dispatch(addExplorationMonster());
   }
 
   // Get button text based on current phase
@@ -3155,6 +3170,9 @@
               undoSnapshot={undoSnapshot}
               onCompleteMove={handleCompleteMove}
               onUndo={handleUndo}
+              explorationPhaseState={explorationPhase}
+              onPlaceTile={handlePlaceTile}
+              onAddMonster={handleAddMonster}
             />
           {/if}
           <!-- Power cards to the right of player card -->

@@ -271,6 +271,8 @@ export interface GameState {
   encounterEffectMessage: string | null;
   /** Exploration phase notification message (null if no notification) */
   explorationPhaseMessage: string | null;
+  /** Exploration phase step tracking for interactive progression */
+  explorationPhase: ExplorationPhaseState;
   /** ID of the most recently placed tile (for animation tracking) */
   recentlyPlacedTileId: string | null;
   /** ID of monster waiting to be displayed after tile animation completes */
@@ -289,6 +291,31 @@ export interface GameState {
   selectedTargetType: 'monster' | 'trap' | 'treasure' | null;
   /** Whether the scenario introduction modal should be shown (can be reopened via objective panel) */
   showScenarioIntroduction: boolean;
+}
+
+/**
+ * Exploration phase step types
+ */
+export type ExplorationStep = 
+  | 'not-started'        // Phase just started, no steps shown yet
+  | 'skipped'            // Hero not on edge, phase will be skipped
+  | 'awaiting-tile'      // Waiting for user to click to place tile
+  | 'tile-placed'        // Tile has been placed
+  | 'awaiting-monster'   // Waiting for user to click to add monster
+  | 'monster-added'      // Monster has been added
+  | 'complete';          // All steps completed
+
+/**
+ * Exploration phase state tracking
+ */
+export interface ExplorationPhaseState {
+  step: ExplorationStep;
+  /** Drawn tile waiting to be placed */
+  drawnTile: string | null;
+  /** Explored edge where tile will be placed */
+  exploredEdge: import('./types').TileEdge | null;
+  /** Drawn monster waiting to be placed */
+  drawnMonster: string | null;
 }
 
 /**
@@ -503,6 +530,7 @@ const initialState: GameState = {
   undoSnapshot: null,
   encounterEffectMessage: null,
   explorationPhaseMessage: null,
+  explorationPhase: { step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null },
   recentlyPlacedTileId: null,
   pendingMonsterDisplayId: null,
   poisonedDamageNotification: null,
@@ -1177,106 +1205,34 @@ export const gameSlice = createSlice({
       const exploredEdge = checkExploration(currentToken, state.dungeon);
       
       if (exploredEdge && state.dungeon.tileDeck.length > 0) {
-        // Set exploration phase message for tile placement
-        state.explorationPhaseMessage = "Exploration phase: Adding a new tile";
-        
+        // Hero is on edge - prepare for exploration
         // Draw a tile from the deck
         const { drawnTile, remainingDeck } = drawTile(state.dungeon.tileDeck);
         
         if (drawnTile) {
-          // Place the new tile
-          const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
+          // Draw a monster from the deck for later placement
+          const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
           
-          if (newTile) {
-            // Track the recently placed tile for animation
-            state.recentlyPlacedTileId = newTile.id;
-            
-            // Check if this is a black or white tile BEFORE updating exploration state
-            const tileDef = getTileDefinition(drawnTile);
-            const isBlackTile = tileDef?.isBlackTile ?? true; // Default to black if definition not found
-            
-            // Track whether only white tiles have been drawn this turn
-            // Logic: If any black tile is drawn, drewOnlyWhiteTilesThisTurn = false
-            //        If only white tiles have been drawn, drewOnlyWhiteTilesThisTurn = true
-            if (isBlackTile) {
-              // Black tile drawn - encounters will trigger
-              state.turnState.drewOnlyWhiteTilesThisTurn = false;
-            } else {
-              // White tile drawn - prevents encounter only if no black tiles drawn yet
-              // If this is the first tile (exploredThisTurn was false), set to true
-              // If we already drew a white tile (drewOnlyWhiteTilesThisTurn is true), keep it true
-              // If we drew a black tile before (drewOnlyWhiteTilesThisTurn is false and exploredThisTurn is true), keep it false
-              if (!state.turnState.exploredThisTurn) {
-                // First tile this turn is white
-                state.turnState.drewOnlyWhiteTilesThisTurn = true;
-              }
-              // else: keep current value (don't override if black was already drawn)
-            }
-            
-            // Mark that exploration occurred this turn
-            state.turnState.exploredThisTurn = true;
-            
-            // Update dungeon state
-            state.dungeon = updateDungeonAfterExploration(
-              state.dungeon,
-              exploredEdge,
-              newTile
-            );
-            state.dungeon.tileDeck = remainingDeck;
-            
-            // Both black and white tiles spawn monsters
-            const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
-            
-            if (drawnMonsterId) {
-              // Get spawn position (black square, or adjacent if occupied)
-              const monsterPosition = getMonsterSpawnPosition(newTile, state.monsters);
-              
-              if (monsterPosition) {
-                const monsterInstance = createMonsterInstance(
-                  drawnMonsterId,
-                  monsterPosition,
-                  currentToken.heroId, // Monster is controlled by the exploring hero
-                  newTile.id,
-                  state.monsterInstanceCounter
-                );
-                
-                if (monsterInstance) {
-                  state.monsters.push(monsterInstance);
-                  state.monsterInstanceCounter += 1;
-                  // Set pending monster display instead of showing immediately
-                  // This allows tile animation to complete first (2 seconds)
-                  state.pendingMonsterDisplayId = monsterInstance.instanceId;
-                  
-                  // Check for Blade Barrier tokens at spawn position
-                  const bladeBarrierCheck = checkBladeBarrierDamage(
-                    monsterInstance.position,
-                    state.boardTokens || []
-                  );
-                  
-                  if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
-                    // Deal 1 damage to the monster
-                    const monster = state.monsters.find(m => m.instanceId === monsterInstance.instanceId);
-                    if (monster) {
-                      monster.currentHp = Math.max(0, monster.currentHp - 1);
-                    }
-                    
-                    // Remove the blade barrier token
-                    state.boardTokens = state.boardTokens.filter(
-                      token => token.id !== bladeBarrierCheck.tokenToRemove
-                    );
-                  }
-                }
-              }
-              // Note: If no valid spawn position, monster card is still drawn but not placed
-              // This could happen if all positions on the tile are occupied (rare edge case)
-              
-              state.monsterDeck = updatedMonsterDeck;
-            }
-          }
+          // Set up exploration phase state
+          state.explorationPhase = {
+            step: 'awaiting-tile',
+            drawnTile,
+            exploredEdge,
+            drawnMonster: drawnMonsterId,
+          };
+          
+          // Update decks
+          state.dungeon.tileDeck = remainingDeck;
+          state.monsterDeck = updatedMonsterDeck;
         }
       } else {
-        // No exploration occurred - hero not on unexplored edge
-        state.explorationPhaseMessage = "Exploration phase: No tile placed because the active player is not on an unexplored edge";
+        // No exploration - hero not on unexplored edge
+        state.explorationPhase = {
+          step: 'skipped',
+          drawnTile: null,
+          exploredEdge: null,
+          drawnMonster: null,
+        };
       }
       
       // Apply environment effects that trigger at end of Hero Phase
@@ -1313,12 +1269,139 @@ export const gameSlice = createSlice({
       state.turnState.currentPhase = "exploration-phase";
     },
     /**
+     * Advance exploration phase to next step (place tile)
+     */
+    placeExplorationTile: (state) => {
+      if (state.turnState.currentPhase !== "exploration-phase") {
+        return;
+      }
+      
+      if (state.explorationPhase.step !== 'awaiting-tile') {
+        return;
+      }
+      
+      const { drawnTile, exploredEdge } = state.explorationPhase;
+      const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
+      
+      if (!drawnTile || !exploredEdge || !currentToken) {
+        return;
+      }
+      
+      // Place the new tile
+      const newTile = placeTile(exploredEdge, drawnTile, state.dungeon);
+      
+      if (newTile) {
+        // Track the recently placed tile for animation
+        state.recentlyPlacedTileId = newTile.id;
+        
+        // Check if this is a black or white tile
+        const tileDef = getTileDefinition(drawnTile);
+        const isBlackTile = tileDef?.isBlackTile ?? true;
+        
+        // Track tile colors for encounter logic
+        if (isBlackTile) {
+          state.turnState.drewOnlyWhiteTilesThisTurn = false;
+        } else {
+          if (!state.turnState.exploredThisTurn) {
+            state.turnState.drewOnlyWhiteTilesThisTurn = true;
+          }
+        }
+        
+        // Mark that exploration occurred this turn
+        state.turnState.exploredThisTurn = true;
+        
+        // Update dungeon state
+        state.dungeon = updateDungeonAfterExploration(
+          state.dungeon,
+          exploredEdge,
+          newTile
+        );
+        
+        // Move to next step
+        state.explorationPhase.step = 'awaiting-monster';
+      }
+    },
+    /**
+     * Advance exploration phase to add monster
+     */
+    addExplorationMonster: (state) => {
+      if (state.turnState.currentPhase !== "exploration-phase") {
+        return;
+      }
+      
+      if (state.explorationPhase.step !== 'awaiting-monster') {
+        return;
+      }
+      
+      const { drawnMonster } = state.explorationPhase;
+      const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
+      
+      if (!drawnMonster || !currentToken) {
+        // No monster to place, mark as complete
+        state.explorationPhase.step = 'complete';
+        return;
+      }
+      
+      // Find the recently placed tile
+      const newTile = state.dungeon.tiles.find(t => t.id === state.recentlyPlacedTileId);
+      
+      if (newTile) {
+        // Get spawn position (black square, or adjacent if occupied)
+        const monsterPosition = getMonsterSpawnPosition(newTile, state.monsters);
+        
+        if (monsterPosition) {
+          const monsterInstance = createMonsterInstance(
+            drawnMonster,
+            monsterPosition,
+            currentToken.heroId,
+            newTile.id,
+            state.monsterInstanceCounter
+          );
+          
+          if (monsterInstance) {
+            state.monsters.push(monsterInstance);
+            state.monsterInstanceCounter += 1;
+            // Set pending monster display for animation
+            state.pendingMonsterDisplayId = monsterInstance.instanceId;
+            
+            // Check for Blade Barrier tokens at spawn position
+            const bladeBarrierCheck = checkBladeBarrierDamage(
+              monsterInstance.position,
+              state.boardTokens || []
+            );
+            
+            if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+              // Deal 1 damage to the monster
+              const monster = state.monsters.find(m => m.instanceId === monsterInstance.instanceId);
+              if (monster) {
+                monster.currentHp = Math.max(0, monster.currentHp - 1);
+              }
+              
+              // Remove the blade barrier token
+              state.boardTokens = state.boardTokens.filter(
+                token => token.id !== bladeBarrierCheck.tokenToRemove
+              );
+            }
+          }
+        }
+      }
+      
+      // Mark exploration as complete
+      state.explorationPhase.step = 'complete';
+    },
+    /**
+     * End the exploration phase and move to villain phase
+     */
+    /**
      * End the exploration phase and move to villain phase
      */
     endExplorationPhase: (state) => {
       if (state.turnState.currentPhase !== "exploration-phase") {
         return;
       }
+      
+      // Reset exploration phase state
+      state.explorationPhase = { step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null };
       
       // Apply Surrounded! environment effect if active
       if (state.activeEnvironmentId === 'surrounded') {
@@ -3392,6 +3475,8 @@ export const {
   undoAction,
   resetGame,
   endHeroPhase,
+  placeExplorationTile,
+  addExplorationMonster,
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
