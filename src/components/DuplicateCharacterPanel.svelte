@@ -37,6 +37,15 @@
   style="transform: rotate({rotation}deg);"
   data-testid="duplicate-panel-{hero.id}-{side}"
 >
+  <button 
+    class="swap-arrow" 
+    onclick={onSwap}
+    aria-label="Swap {hero.name} to {side === 'left' ? 'right' : 'left'} side"
+    data-testid="swap-arrow-{hero.id}-{side}"
+  >
+    <span class="arrow-icon">{arrowDirection}</span>
+  </button>
+  
   <div class="panel-content">
     <div class="power-count">{powerCountText}</div>
     <div class="hero-preview">
@@ -45,14 +54,6 @@
         <span class="hero-name">{hero.name}</span>
       </div>
     </div>
-    <button 
-      class="swap-arrow" 
-      onclick={onSwap}
-      aria-label="Swap {hero.name} to {side === 'left' ? 'right' : 'left'} side"
-      data-testid="swap-arrow-{hero.id}-{side}"
-    >
-      <span class="arrow-icon">{arrowDirection}</span>
-    </button>
   </div>
 </div>
 
@@ -67,6 +68,7 @@
     border: 2px solid rgba(255, 215, 0, 0.6);
     border-radius: 12px;
     padding: 0.75rem;
+    padding-top: 3rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
     z-index: 10;
     transition: all 0.3s ease;
@@ -132,6 +134,10 @@
   }
   
   .swap-arrow {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
     background: rgba(255, 215, 0, 0.2);
     border: 2px solid rgba(255, 215, 0, 0.6);
     border-radius: 6px;
@@ -143,16 +149,17 @@
     cursor: pointer;
     transition: all 0.2s ease;
     padding: 0;
+    z-index: 1;
   }
   
   .swap-arrow:hover {
     background: rgba(255, 215, 0, 0.4);
     border-color: rgba(255, 215, 0, 1);
-    transform: scale(1.1);
+    transform: translateX(-50%) scale(1.1);
   }
   
   .swap-arrow:active {
-    transform: scale(0.95);
+    transform: translateX(-50%) scale(0.95);
   }
   
   .arrow-icon {
