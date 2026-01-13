@@ -42,7 +42,7 @@ export default [
   },
   {
     // Allow require() in config files (Node.js context)
-    files: ['*.config.js', '*.config.ts', 'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
+    files: ['*.config.js', '*.config.ts', 'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts', 'eslint.config.js'],
     rules: {
       'no-restricted-syntax': 'off',
       'no-restricted-globals': 'off',

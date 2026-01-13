@@ -8,8 +8,9 @@ jobs:
   check-e2e-tests:
     name: Verify PR includes E2E tests
     runs-on: ubuntu-latest
-    # Run after lint and build checks pass
-    needs: []  # Will be updated to depend on lint-build-check workflow
+    # E2E tests should run after lint and build checks pass
+    # This is handled by GitHub's required status checks, not explicit needs
+    # The lint-build-check workflow must complete successfully before merge
     permissions:
       contents: read
       pull-requests: read
