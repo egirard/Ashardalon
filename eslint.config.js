@@ -22,6 +22,14 @@ export default [
           selector: 'CallExpression[callee.name="require"]',
           message: 'CommonJS require() is not allowed in browser code. Use ES6 import instead. This breaks in browser context and was the root cause of PR #383 bug.',
         },
+        {
+          selector: 'MemberExpression[object.name="global"][property.name="require"]',
+          message: 'Indirect require access via global.require is not allowed. Use ES6 import instead.',
+        },
+        {
+          selector: 'MemberExpression[object.name="window"][property.name="require"]',
+          message: 'Indirect require access via window.require is not allowed. Use ES6 import instead.',
+        },
       ],
       'no-restricted-globals': [
         'error',
