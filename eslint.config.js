@@ -7,7 +7,7 @@ export default [
     languageOptions: {
       parser: tsparser,
       parserOptions: {
-        ecmaVersion: 'latest',
+        ecmaVersion: 2023,
         sourceType: 'module',
       },
     },
