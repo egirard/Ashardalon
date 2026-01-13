@@ -8,10 +8,13 @@
     side: SidePreference;
     edge: EdgePosition;
     onSwap: () => void;
+    onPowerSelect: () => void;
+    onDeselect: () => void;
     powerCountText: string;
+    isPowerSelectionComplete: boolean;
   }
   
-  let { hero, side, edge, onSwap, powerCountText }: Props = $props();
+  let { hero, side, edge, onSwap, onPowerSelect, onDeselect, powerCountText, isPowerSelectionComplete }: Props = $props();
   
   // Determine arrow direction - arrow points to the opposite side
   const arrowDirection = $derived(side === 'left' ? '→' : '←');
@@ -47,13 +50,29 @@
   </button>
   
   <div class="panel-content">
-    <div class="power-count">{powerCountText}</div>
-    <div class="hero-preview">
+    <button
+      class="power-button"
+      class:complete={isPowerSelectionComplete}
+      onclick={onPowerSelect}
+      data-testid="power-button-{hero.id}-{side}"
+      aria-label="{isPowerSelectionComplete ? 'Powers selected for' : 'Select powers for'} {hero.name}"
+      title="Click to change powers"
+    >
+      {powerCountText}
+    </button>
+    
+    <button 
+      class="hero-preview"
+      onclick={onDeselect}
+      data-testid="deselect-{hero.id}-{side}"
+      aria-label="Deselect {hero.name}"
+      title="Click to deselect character"
+    >
       <img src={assetPath(hero.imagePath)} alt={hero.name} class="hero-image" />
       <div class="hero-label">
         <span class="hero-name">{hero.name}</span>
       </div>
-    </div>
+    </button>
   </div>
 </div>
 
@@ -85,7 +104,6 @@
   .duplicate-panel:hover {
     border-color: rgba(255, 215, 0, 0.9);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 215, 0, 0.5);
-    transform: scale(1.05);
   }
   
   .panel-content {
@@ -95,15 +113,34 @@
     gap: 0.4rem;
   }
   
-  .power-count {
+  .power-button {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #4ade80;
-    background: rgba(34, 197, 94, 0.2);
-    padding: 0.25rem 0.5rem;
+    color: #000;
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    padding: 0.3rem 0.6rem;
     border-radius: 4px;
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(255, 165, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  
+  .power-button:hover {
+    background: linear-gradient(135deg, #ffed4e 0%, #ff9c1a 100%);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.5);
+  }
+  
+  .power-button.complete {
+    border-color: #4caf50;
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    color: #fff;
+  }
+  
+  .power-button.complete:hover {
+    background: linear-gradient(135deg, #5cb85c 0%, #4caf50 100%);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
   }
   
   .hero-preview {
@@ -111,6 +148,21 @@
     flex-direction: column;
     align-items: center;
     gap: 0.2rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .hero-preview:hover {
+    background: rgba(255, 50, 50, 0.2);
+    transform: scale(1.05);
+  }
+  
+  .hero-preview:hover .hero-name {
+    color: #ff6b6b;
   }
   
   .hero-image {
@@ -120,6 +172,11 @@
     border: 2px solid rgba(255, 215, 0, 0.8);
     object-fit: cover;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+  }
+  
+  .hero-preview:hover .hero-image {
+    border-color: rgba(255, 50, 50, 0.8);
   }
   
   .hero-label {
@@ -131,6 +188,7 @@
     font-weight: bold;
     color: #ffd700;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    transition: color 0.2s ease;
   }
   
   .swap-arrow {
