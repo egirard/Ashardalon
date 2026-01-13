@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings 0",
+    "lint:check": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
