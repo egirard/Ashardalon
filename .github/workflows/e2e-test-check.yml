@@ -8,6 +8,8 @@ jobs:
   check-e2e-tests:
     name: Verify PR includes E2E tests
     runs-on: ubuntu-latest
+    # Run after lint and build checks pass
+    needs: []  # Will be updated to depend on lint-build-check workflow
     permissions:
       contents: read
       pull-requests: read

@@ -55,6 +55,29 @@ For detailed rules and gameplay mechanics, refer to the original Wrath of Ashard
 
 ## Project Documentation
 
+### Development
+- [**Development Environment**](docs/DEVELOPMENT.md) - Setup and development tools
+- [**Import Best Practices**](docs/IMPORT_BEST_PRACTICES.md) - Guidelines for ES6 imports vs CommonJS require()
+- [**Post-Mortem: require() Issue**](docs/POST_MORTEM_REQUIRE_ISSUE.md) - Analysis of PR #383 browser compatibility bug
+- [**E2E Test Guidelines**](docs/E2E_TEST_GUIDELINES.md) - Writing E2E tests with Playwright
+
+### Code Quality
+
+Before committing, ensure your code passes all checks:
+
+```bash
+# Lint code (catches require() and other issues)
+npm run lint
+
+# Run unit tests
+bun run test:unit
+
+# Build successfully
+bun run build
+```
+
+**Important**: Always use ES6 `import` statements, never CommonJS `require()` in `src/` files. The linter will catch this automatically.
+
 ### User Experience & Design
 - [**lobby-ux.md**](docs/lobby-ux.md) - Character selection screen layout and interactions
 - [**gameplay-ux.md**](docs/gameplay-ux.md) - Game board screen layout and interactions
