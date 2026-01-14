@@ -45,7 +45,7 @@ These effect types display the card description and resolve to the discard pile,
 | bloodlust | Bloodlust | Take 1 damage at turn start | ⚠️ Display only (see issue: bloodlust-doc-update) |
 | cage | Cage | AC -2, cannot move, Roll 10+ to escape | ⚠️ Display only (see issue: cage-doc-update) |
 | dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ⚠️ Display only (see issue: dragon-fear-doc-update) |
-| terrifying-roar | Terrifying Roar | Attack -4 penalty | ⚠️ Display only |
+| terrifying-roar | Terrifying Roar | Attack -4 penalty | ✅ Fully Implemented |
 | time-leap | Time Leap | Hero removed from play, returns next turn | ✅ Fully Implemented |
 | wrath-of-enemy | Wrath of the Enemy | Monster moves to hero each turn | ✅ Fully Implemented |
 
@@ -85,6 +85,19 @@ Issues have been filed for the first five Curse cards to track future implementa
 - If no monster is found off-tile, the player is notified
 - Multiple heroes can have this curse simultaneously, and each will trigger the effect
 - Effect message is appended to any existing messages (using " | " separator) to ensure visibility
+
+**Terrifying Roar** is now fully implemented:
+- When a hero has this curse, they suffer an Attack -4 penalty on all attacks against monsters
+- The penalty is applied after item bonuses are calculated
+- Uses the `getModifiedAttackBonusWithCurses()` function from statusEffects.ts
+- Integrates into the attack resolution flow in GameBoard.svelte
+- The curse persists until removed via a DC 10+ roll at the end of Exploration Phase
+- Multiple status effects and curses can stack (e.g., blinded + terrifying roar = -6 total)
+- Comprehensive unit tests verify the penalty calculation
+- E2E test (080) demonstrates the curse effect in gameplay
+- Limitations:
+  - The UI displays the base attack bonus from power cards, not the modified value with curse penalties
+  - The actual attack rolls correctly use the modified (reduced) attack bonus
 
 ### Environment Cards (6 cards, #59-64)
 
@@ -177,14 +190,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 2 | 6 |
+| Curse | 8 | 3 | 5 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **19** | **34** |
+| **Total** | **53** | **20** | **33** |
 
 ## Features Not Yet Implemented
 
