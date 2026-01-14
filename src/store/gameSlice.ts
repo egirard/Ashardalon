@@ -2822,11 +2822,17 @@ export const gameSlice = createSlice({
         }
       }
 
+      // Filter out heroes that are removed from play (e.g., Time Leap curse)
+      const activeHeroTokens = state.heroTokens.filter(token => {
+        const heroHp = state.heroHp.find(hp => hp.heroId === token.heroId);
+        return !heroHp?.removedFromPlay;
+      });
+
       // Execute the monster's turn
       const randomFn = action.payload?.randomFn ?? Math.random;
       const result = executeMonsterTurn(
         monster,
-        state.heroTokens,
+        activeHeroTokens,
         heroHpMap,
         heroAcMap,
         state.monsters,
