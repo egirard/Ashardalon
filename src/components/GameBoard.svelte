@@ -2893,7 +2893,9 @@
           {@const isActive = token.heroId === getCurrentHeroId()}
           {@const startTile = dungeon.tiles.find((t) => t.tileType === "start")}
           {@const tokenRotation = getHeroTokenRotation(token.heroId)}
-          {#if hero && startTile}
+          {@const heroHpState = heroHp.find((h) => h.heroId === token.heroId)}
+          {@const isRemovedFromPlay = heroHpState?.removedFromPlay ?? false}
+          {#if hero && startTile && !isRemovedFromPlay}
             {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
             <div
               class="hero-token"

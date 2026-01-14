@@ -59,12 +59,14 @@ This E2E test demonstrates that:
 - Encounter effect notification dismissed
 - Turn advanced to Vistra (hero index 1)
 - Quinn remains removed from play
+- **Quinn's hero token is hidden from the map** (removed from play UI)
 - Game continues normally for active heroes
 - Vistra's player panel is now the active one
 - **Verification**: 
   - Current hero is Vistra
   - Quinn still has `removedFromPlay = true`
   - No notification popup is visible
+  - Quinn's token is not visible on the map
 
 ### Step 7: Quinn's Turn Returns - Curse Removed
 ![Screenshot 006](079-time-leap-curse.spec.ts-snapshots/006-quinn-restored-curse-removed-chromium-linux.png)
@@ -81,12 +83,16 @@ This E2E test demonstrates that:
 ### Step 8: Monster Targeting Verification
 ![Screenshot 007](079-time-leap-curse.spec.ts-snapshots/007-monster-spawned-quinn-removed-again-chromium-linux.png)
 - Time Leap curse applied to Quinn again
+- Encounter effect notification dismissed
 - Monster spawned on board
+- **Quinn's hero token is hidden from the map** (removed from play UI)
 - Filtering logic excludes Quinn from targeting
 - **Verification**: 
   - Quinn has `removedFromPlay = true`
   - Monster exists on board
   - Only Vistra is in the active hero tokens list (Quinn filtered out)
+  - Quinn's token is not visible on the map
+  - No notification popup is visible
 
 ## Key Mechanics Tested
 
@@ -95,18 +101,20 @@ This E2E test demonstrates that:
 - ✅ Hero is immediately marked with `removedFromPlay = true`
 - ✅ Curse is tracked in hero's `statuses` array with type `curse-time-leap`
 - ✅ Hero remains removed through other heroes' turns
+- ✅ **Hero token is hidden from the map while removed** (UI feedback)
 - ✅ At start of hero's next turn, restoration is automatic
 - ✅ `removedFromPlay` flag is cleared
 - ✅ `curse-time-leap` status is removed
 - ✅ Restoration notification is displayed
 - ✅ Monsters ignore removed heroes during targeting
+- ✅ **Hero token reappears on map when restored**
 
 ### Expected Mechanical Behavior
 1. **Application**: When curse card is dismissed, hero gets `removedFromPlay = true` and `curse-time-leap` status
 2. **Duration**: Hero stays removed for the entire turn cycle (through all other heroes' turns)
 3. **Restoration**: At `endVillainPhase` when cycling to hero's turn, automatic restoration occurs
 4. **Monster Targeting**: During `activateMonster`, removed heroes are filtered out before passing to AI
-5. **UI**: Hero token remains visible but is functionally inactive
+5. **UI**: Hero token is hidden from the map when removed, reappears when restored
 
 ## Manual Verification Checklist
 
@@ -144,10 +152,15 @@ This E2E test demonstrates that:
    - Filters hero tokens to exclude those with `removedFromPlay = true`
    - Passes filtered list to `executeMonsterTurn`
 
+4. **UI Rendering** (`GameBoard.svelte`):
+   - Hero tokens with `removedFromPlay = true` are hidden from the map
+   - Token reappears when hero is restored
+
 **Effect Trigger Locations**: 
 - **Application**: `dismissEncounterCard` in hero phase
 - **Restoration**: `endVillainPhase` at start of hero's turn
 - **Targeting Filter**: `activateMonster` during villain phase
+- **UI Rendering**: `GameBoard.svelte` hero token rendering
 
 **Bug Fixed**:
 - Initial implementation overwrote `removedFromPlay` flag during status processing
@@ -155,10 +168,11 @@ This E2E test demonstrates that:
 
 ## Limitations
 
-- **UI Visual Indication**: Hero token remains visually present on the board
-  - Token does not dim, fade, or hide
-  - This is acceptable as the mechanical effect is fully functional
-  - Future enhancement could add visual feedback
+- **UI Panel Indication**: Hero's player panel doesn't show a visual marker
+  - Panel doesn't have a "removed from play" indicator (similar to downed indicator)
+  - Hero's name and stats remain visible in their panel
+  - This is a minor limitation - the map correctly hides the token
+  - Future enhancement could add visual indicator on the panel
 
 ## Cards Made Functional
 
