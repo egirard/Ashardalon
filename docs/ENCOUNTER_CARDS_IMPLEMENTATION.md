@@ -40,14 +40,23 @@ These effect types display the card description and resolve to the discard pile,
 
 | ID | Name | Effect Summary | Implementation Status |
 |----|------|----------------|----------------------|
-| gap-in-armor | A Gap in the Armor | AC -4 until hero doesn't move | ⚠️ Display only |
-| bad-luck | Bad Luck | Draw extra encounter each turn | ⚠️ Display only |
-| bloodlust | Bloodlust | Take 1 damage at turn start | ⚠️ Display only |
-| cage | Cage | AC -2, cannot move, Roll 10+ to escape | ⚠️ Display only |
-| dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ⚠️ Display only |
+| gap-in-armor | A Gap in the Armor | AC -4 until hero doesn't move | ⚠️ Display only (see issue: gap-in-armor-doc-update) |
+| bad-luck | Bad Luck | Draw extra encounter each turn | ⚠️ Display only (see issue: bad-luck-doc-update) |
+| bloodlust | Bloodlust | Take 1 damage at turn start | ⚠️ Display only (see issue: bloodlust-doc-update) |
+| cage | Cage | AC -2, cannot move, Roll 10+ to escape | ⚠️ Display only (see issue: cage-doc-update) |
+| dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ⚠️ Display only (see issue: dragon-fear-doc-update) |
 | terrifying-roar | Terrifying Roar | Attack -4 penalty | ⚠️ Display only |
 | time-leap | Time Leap | Hero removed from play, returns next turn | ⚠️ Display only |
 | wrath-of-enemy | Wrath of the Enemy | Monster moves to hero each turn | ⚠️ Display only |
+
+#### Implementation Notes
+
+Issues have been filed for the first five Curse cards to track future implementation work:
+- **A Gap in the Armor**: See issue `gap-in-armor-doc-update`
+- **Bad Luck**: See issue `bad-luck-doc-update`
+- **Bloodlust**: See issue `bloodlust-doc-update`
+- **Cage**: See issue `cage-doc-update`
+- **Dragon Fear**: See issue `dragon-fear-doc-update`
 
 ### Environment Cards (6 cards, #59-64)
 
