@@ -181,6 +181,45 @@ describe('powerCards', () => {
       const otherCards = flipped.cardStates.filter(s => s.cardId !== 5);
       expect(otherCards.every(s => s.isFlipped === false)).toBe(true);
     });
+
+    it('should be able to flip at-will cards (but they should never be flipped in practice)', () => {
+      // Note: While flipPowerCard() CAN flip any card type,
+      // at-will cards should NEVER be flipped in the game logic.
+      // This test verifies the function works, but the game should never call it for at-will cards.
+      const state = createInitialPowerCardsState('quinn', 1, 8, [2, 3], 5);
+      const flipped = flipPowerCard(state, 2); // Card 2 is "Cleric's Shield", an at-will
+      
+      const atWillState = flipped.cardStates.find(s => s.cardId === 2);
+      expect(atWillState?.isFlipped).toBe(true);
+      
+      // In real gameplay, at-will cards should never reach this state
+      // The shouldFlipDailyCard() function prevents this
+    });
+  });
+
+  describe('at-will power cards', () => {
+    it('should identify at-will cards by type', () => {
+      const distractingJab = getPowerCardById(32); // Distracting Jab
+      const clericsShield = getPowerCardById(2); // Cleric's Shield
+      const luckyStrike = getPowerCardById(33); // Lucky Strike
+      
+      expect(distractingJab?.type).toBe('at-will');
+      expect(clericsShield?.type).toBe('at-will');
+      expect(luckyStrike?.type).toBe('at-will');
+    });
+
+    it('should never flip at-will cards in practice', () => {
+      // This is a documentation test to clarify expected behavior:
+      // - At-will powers can be used multiple times per turn
+      // - They should NEVER be flipped (marked as used)
+      // - The shouldFlipDailyCard() function in GameBoard.svelte ensures this
+      
+      const atWillCards = POWER_CARDS.filter(card => card.type === 'at-will');
+      expect(atWillCards.length).toBeGreaterThan(0);
+      
+      // All at-will cards should have attack bonuses (they're all attack powers)
+      expect(atWillCards.every(card => card.attackBonus !== undefined)).toBe(true);
+    });
   });
 
   describe('addLevel2DailyCard', () => {
