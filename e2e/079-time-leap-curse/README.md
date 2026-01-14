@@ -43,23 +43,28 @@ This E2E test demonstrates that:
 - Card type is identified as "curse"
 - **Verification**: Encounter card visible with "Time Leap" text
 
-### Step 5: Curse Applied - Quinn Removed from Play
+### Step 5: Curse Applied - Quinn Removed from Play (Notification Shown)
 ![Screenshot 004](079-time-leap-curse.spec.ts-snapshots/004-curse-applied-quinn-removed-chromium-linux.png)
 - Encounter card dismissed after acceptance
 - Curse effect applied to Quinn
+- Encounter effect notification displayed showing removal message
 - Quinn is now marked as removed from play
 - **Verification**: 
   - Quinn has `removedFromPlay = true`
   - Quinn has `curse-time-leap` status effect
+  - Notification visible with "removed from play" message
 
 ### Step 6: Vistra's Turn - Quinn Still Removed
 ![Screenshot 005](079-time-leap-curse.spec.ts-snapshots/005-vistra-turn-quinn-still-removed-chromium-linux.png)
+- Encounter effect notification dismissed
 - Turn advanced to Vistra (hero index 1)
 - Quinn remains removed from play
 - Game continues normally for active heroes
+- Vistra's player panel is now the active one
 - **Verification**: 
   - Current hero is Vistra
   - Quinn still has `removedFromPlay = true`
+  - No notification popup is visible
 
 ### Step 7: Quinn's Turn Returns - Curse Removed
 ![Screenshot 006](079-time-leap-curse.spec.ts-snapshots/006-quinn-restored-curse-removed-chromium-linux.png)

@@ -100,6 +100,9 @@ test.describe('079 - Time Leap Curse Mechanical Effect', () => {
     // Wait for card to disappear
     await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
     
+    // Wait for encounter effect notification to appear
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
+    
     await screenshots.capture(page, 'curse-applied-quinn-removed', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -118,8 +121,26 @@ test.describe('079 - Time Leap Curse Mechanical Effect', () => {
           (s: any) => s.type === 'curse-time-leap'
         );
         expect(hasTimeLeapCurse).toBe(true);
+        
+        // Verify the notification is showing
+        const notification = page.locator('[data-testid="encounter-effect-notification"]');
+        await expect(notification).toBeVisible();
+        
+        // Verify message contains expected text
+        const messageText = await page.locator('[data-testid="effect-message"]').textContent();
+        expect(messageText).toContain('removed from play');
       }
     });
+    
+    // Dismiss the encounter effect notification
+    await page.locator('[data-testid="dismiss-effect-notification"]').click();
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'hidden' });
+    
+    // Wait for UI to settle after dismissing notification
+    await page.waitForFunction(() => {
+      const state = (window as any).__REDUX_STORE__.getState();
+      return state.game.encounterEffectMessage === null;
+    }, { timeout: 5000 });
     
     // STEP 3: End Quinn's turn and move to Vistra
     // We need to transition through phases
