@@ -120,6 +120,7 @@ import {
   hasStatusEffect,
   isDazed,
   attemptPoisonRecovery as attemptPoisonRecoveryUtil,
+  attemptCurseRemoval,
   type StatusEffect,
   type StatusEffectType,
 } from "./statusEffects";
@@ -1486,6 +1487,8 @@ export const gameSlice = createSlice({
           state.dungeon
         );
         
+        let monsterMoved = false;
+        
         if (closestMonster) {
           // Find a position adjacent to the hero for the monster to move to
           const adjacentPos = findPositionAdjacentToHero(
@@ -1515,7 +1518,53 @@ export const gameSlice = createSlice({
                 } else {
                   state.encounterEffectMessage = `Wrath of the Enemy: ${monsterName} moved adjacent to ${heroHp.heroId}!`;
                 }
+                monsterMoved = true;
               }
+            }
+          } else {
+            // No valid adjacent position - notify player
+            const monsterDef = getMonsterById(closestMonster.monsterId);
+            const monsterName = monsterDef?.name || 'Monster';
+            if (state.encounterEffectMessage) {
+              state.encounterEffectMessage += ` | Wrath of the Enemy: ${monsterName} could not move adjacent to ${heroHp.heroId} (no valid position)`;
+            } else {
+              state.encounterEffectMessage = `Wrath of the Enemy: ${monsterName} could not move adjacent to ${heroHp.heroId} (no valid position)`;
+            }
+          }
+        } else {
+          // No monster found - notify player
+          if (state.encounterEffectMessage) {
+            state.encounterEffectMessage += ` | Wrath of the Enemy: No monster found to move toward ${heroHp.heroId}`;
+          } else {
+            state.encounterEffectMessage = `Wrath of the Enemy: No monster found to move toward ${heroHp.heroId}`;
+          }
+        }
+        
+        // Attempt to remove curse with roll 10+
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === heroHp.heroId);
+        if (heroHpIndex !== -1) {
+          const roll = rollD20();
+          const statuses = state.heroHp[heroHpIndex].statuses ?? [];
+          const { updatedStatuses, removed } = attemptCurseRemoval(statuses, 'curse-wrath-of-enemy', roll);
+          
+          // Update hero's status effects
+          state.heroHp[heroHpIndex] = {
+            ...state.heroHp[heroHpIndex],
+            statuses: updatedStatuses,
+          };
+          
+          // Add curse removal result to message
+          if (removed) {
+            if (state.encounterEffectMessage) {
+              state.encounterEffectMessage += ` | ${heroHp.heroId} rolled ${roll} and removed Wrath of the Enemy curse!`;
+            } else {
+              state.encounterEffectMessage = `${heroHp.heroId} rolled ${roll} and removed Wrath of the Enemy curse!`;
+            }
+          } else {
+            if (state.encounterEffectMessage) {
+              state.encounterEffectMessage += ` | ${heroHp.heroId} rolled ${roll} and failed to remove the curse (need 10+)`;
+            } else {
+              state.encounterEffectMessage = `${heroHp.heroId} rolled ${roll} and failed to remove the curse (need 10+)`;
             }
           }
         }

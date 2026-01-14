@@ -62,10 +62,12 @@ Issues have been filed for the first five Curse cards to track future implementa
 - When a hero has this curse, at the end of Exploration Phase, the closest monster NOT on the hero's tile moves adjacent to the cursed hero
 - Uses Manhattan distance to find the closest monster
 - Monster movement uses existing AI pathfinding to find an adjacent position
-- If no valid adjacent position exists, the monster doesn't move
+- After the monster movement (or attempt), the hero automatically rolls d20 to attempt curse removal
+- Roll 10+ removes the curse - both success and failure are shown in the notification message
+- If no valid adjacent position exists, the player is notified that the monster couldn't move
+- If no monster is found off-tile, the player is notified
 - Multiple heroes can have this curse simultaneously, and each will trigger the effect
 - Effect message is appended to any existing messages (using " | " separator) to ensure visibility
-- The curse can be removed by rolling 10+ at the end of Exploration Phase (not yet implemented)
 
 ### Environment Cards (6 cards, #59-64)
 
