@@ -487,10 +487,12 @@ export function findTileForGlobalPosition(globalPos: Position, dungeon: DungeonS
  * Find the closest monster to a hero that is NOT on the hero's tile.
  * Used for the "Wrath of the Enemy" curse effect.
  * 
+ * Uses Manhattan distance to determine which monster is closest.
+ * 
  * @param heroPos The hero's position
  * @param monsters All monsters on the board
  * @param dungeon Dungeon state
- * @returns The closest monster not on hero's tile, or null if none found
+ * @returns The closest monster not on hero's tile (by Manhattan distance), or null if none found
  */
 export function findClosestMonsterNotOnTile(
   heroPos: Position,

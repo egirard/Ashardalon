@@ -1508,8 +1508,11 @@ export const gameSlice = createSlice({
                 const monsterDef = getMonsterById(closestMonster.monsterId);
                 const monsterName = monsterDef?.name || 'Monster';
                 
-                // Set message if not already set by environment effect
-                if (!state.encounterEffectMessage) {
+                // Append to existing message or create new one
+                // This ensures the curse effect is always visible to the player
+                if (state.encounterEffectMessage) {
+                  state.encounterEffectMessage += ` | Wrath of the Enemy: ${monsterName} moved adjacent to ${heroHp.heroId}!`;
+                } else {
                   state.encounterEffectMessage = `Wrath of the Enemy: ${monsterName} moved adjacent to ${heroHp.heroId}!`;
                 }
               }
