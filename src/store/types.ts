@@ -408,6 +408,8 @@ export interface HeroHpState {
   attackBonus: number;
   /** Active status effects on this hero */
   statuses?: import('./statusEffects').StatusEffect[];
+  /** Whether hero is removed from play (e.g., Time Leap curse) */
+  removedFromPlay?: boolean;
 }
 
 /**

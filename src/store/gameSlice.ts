@@ -1647,6 +1647,17 @@ export const gameSlice = createSlice({
         const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
         if (heroHpIndex !== -1) {
           const heroHp = state.heroHp[heroHpIndex];
+          
+          // Handle Time Leap curse - return hero to play and remove curse
+          if (heroHp.removedFromPlay && hasStatusEffect(heroHp.statuses ?? [], 'curse-time-leap')) {
+            state.heroHp[heroHpIndex] = {
+              ...heroHp,
+              removedFromPlay: false,
+              statuses: removeStatusEffect(heroHp.statuses ?? [], 'curse-time-leap'),
+            };
+            state.encounterEffectMessage = `${currentHeroId} returns to play!`;
+          }
+          
           const { updatedStatuses, ongoingDamage, poisonedDamage } = processStatusEffectsStartOfTurn(
             heroHp.statuses ?? [],
             state.turnState.turnNumber
@@ -2093,10 +2104,18 @@ export const gameSlice = createSlice({
                   state.drawnEncounter.id,
                   state.turnState.turnNumber
                 );
+                
+                // Special handling for Time Leap curse - remove hero from play
+                const isTimeLeap = state.drawnEncounter.id === 'time-leap';
                 state.heroHp[heroHpIndex] = {
                   ...heroHp,
                   statuses: updatedStatuses,
+                  removedFromPlay: isTimeLeap ? true : (heroHp.removedFromPlay || false),
                 };
+                
+                if (isTimeLeap) {
+                  state.encounterEffectMessage = `${activeHeroId} is removed from play until next turn!`;
+                }
               }
             }
           }
