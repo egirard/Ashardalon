@@ -242,6 +242,17 @@ test.describe('079 - Time Leap Curse Mechanical Effect', () => {
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
     await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
     
+    // Wait for and dismiss encounter effect notification
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="dismiss-effect-notification"]').click();
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'hidden' });
+    
+    // Wait for UI to settle
+    await page.waitForFunction(() => {
+      const state = (window as any).__REDUX_STORE__.getState();
+      return state.game.encounterEffectMessage === null;
+    }, { timeout: 5000 });
+    
     // Add a monster
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;

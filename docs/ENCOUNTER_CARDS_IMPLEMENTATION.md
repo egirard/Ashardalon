@@ -69,9 +69,11 @@ Issues have been filed for the first five Curse cards to track future implementa
   - Does not take their turn (turn passes to next hero)
   - Is not targeted by monsters during Villain Phase
   - Cannot be affected by encounter cards or environment effects
+  - **Hero token is hidden from the map** (visual feedback)
 - Limitations:
-  - UI currently does not visually hide/dim the removed hero token on the board
-  - The hero's token remains visible but functionally inactive until they return
+  - Hero's player panel doesn't show a visual "removed" indicator (like downed indicator)
+  - Panel remains visible with hero's name and stats
+  - The map correctly hides the token, providing clear visual feedback
 
 **Wrath of the Enemy** is now fully implemented:
 - When a hero has this curse, at the end of Exploration Phase, the closest monster NOT on the hero's tile moves adjacent to the cursed hero
