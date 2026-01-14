@@ -28,7 +28,7 @@ These effect types display the card description and resolve to the discard pile,
 
 | Effect Type | Description | Cards Count | Notes |
 |-------------|-------------|-------------|-------|
-| `curse` | Persistent debuff attached to hero | 8 cards | Requires hero status tracking system |
+| `curse` | Persistent debuff attached to hero | 8 cards | ⚠️ 1 of 8 fully functional (Wrath of the Enemy) |
 | `environment` | Persistent dungeon-wide effect | 6 cards | ✅ Implemented (2 of 6 cards fully functional) |
 | `trap` | Persistent trap with triggered effects | 4 cards | Requires trap marker/trigger system |
 | `hazard` | Hazard marker with ongoing effects | 3 cards | Requires hazard marker system |
@@ -47,7 +47,7 @@ These effect types display the card description and resolve to the discard pile,
 | dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ⚠️ Display only (see issue: dragon-fear-doc-update) |
 | terrifying-roar | Terrifying Roar | Attack -4 penalty | ⚠️ Display only |
 | time-leap | Time Leap | Hero removed from play, returns next turn | ⚠️ Display only |
-| wrath-of-enemy | Wrath of the Enemy | Monster moves to hero each turn | ⚠️ Display only |
+| wrath-of-enemy | Wrath of the Enemy | Monster moves to hero each turn | ✅ Fully Implemented |
 
 #### Implementation Notes
 
@@ -57,6 +57,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 - **Bloodlust**: See issue `bloodlust-doc-update`
 - **Cage**: See issue `cage-doc-update`
 - **Dragon Fear**: See issue `dragon-fear-doc-update`
+
+**Wrath of the Enemy** is now fully implemented:
+- When a hero has this curse, at the end of Exploration Phase, the closest monster NOT on the hero's tile moves adjacent to the cursed hero
+- Uses Manhattan distance to find the closest monster
+- Monster movement uses existing AI pathfinding to find an adjacent position
+- If no valid adjacent position exists, the monster doesn't move
+- Multiple heroes can have this curse simultaneously, and each will trigger the effect
+- The curse can be removed by rolling 10+ at the end of Exploration Phase (not yet implemented)
 
 ### Environment Cards (6 cards, #59-64)
 
@@ -139,14 +147,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 0 | 8 |
+| Curse | 8 | 1 | 7 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 0 | 16 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **16** | **37** |
+| **Total** | **53** | **17** | **36** |
 
 ## Features Not Yet Implemented
 
