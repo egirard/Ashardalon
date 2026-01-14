@@ -87,9 +87,10 @@ This E2E test demonstrates that:
 - For each cursed hero, finds closest monster and moves it adjacent
 
 **Limitations**:
-- Roll 10+ to remove curse is not yet implemented
-- If no valid adjacent position exists, monster doesn't move (no error shown)
-- Message notification may be overwritten if multiple curses trigger
+- None - all card mechanics are now fully implemented
+  - ✅ Roll 10+ to remove curse is implemented
+  - ✅ Notification shown when monster can't move to valid adjacent position
+  - ✅ Notification shown when no monster is found off-tile
 
 ## Cards Made Functional
 

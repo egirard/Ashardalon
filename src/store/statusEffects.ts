@@ -13,6 +13,11 @@ export const POISONED_DAMAGE = 1; // Damage dealt per turn when poisoned
 export const POISON_RECOVERY_DC = 10; // Dice roll needed to recover (10+ on d20)
 
 /**
+ * Curse removal constants
+ */
+export const CURSE_REMOVAL_DC = 10; // Dice roll needed to remove curse (10+ on d20)
+
+/**
  * Status effect type - unique identifier for each status
  */
 export type StatusEffectType = 
@@ -453,5 +458,37 @@ export function attemptPoisonRecovery(
   return {
     updatedStatuses: statuses,
     recovered: false,
+  };
+}
+
+/**
+ * Attempt to remove a specific curse at end of Exploration Phase
+ * @param statuses Current status effects
+ * @param curseType The specific curse type to attempt removal
+ * @param rollResult D20 roll result (1-20)
+ * @returns Object with updated statuses and success flag
+ */
+export function attemptCurseRemoval(
+  statuses: StatusEffect[],
+  curseType: StatusEffectType,
+  rollResult: number
+): {
+  updatedStatuses: StatusEffect[];
+  removed: boolean;
+} {
+  const success = rollResult >= CURSE_REMOVAL_DC;
+  
+  if (success) {
+    // Remove the specific curse on successful roll
+    return {
+      updatedStatuses: statuses.filter(s => s.type !== curseType),
+      removed: true,
+    };
+  }
+  
+  // Keep all statuses if removal failed
+  return {
+    updatedStatuses: statuses,
+    removed: false,
   };
 }

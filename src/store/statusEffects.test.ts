@@ -18,6 +18,7 @@ import {
   canAttack,
   isDazed,
   attemptPoisonRecovery,
+  attemptCurseRemoval,
 } from './statusEffects';
 
 describe('StatusEffects', () => {
@@ -464,6 +465,55 @@ describe('StatusEffects', () => {
       
       expect(result.recovered).toBe(false);
       expect(result.updatedStatuses).toHaveLength(2);
+    });
+  });
+
+  describe('attemptCurseRemoval', () => {
+    it('should remove specific curse on roll of 10 or higher', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-wrath-of-enemy', source: 'wrath-of-enemy', appliedOnTurn: 1 },
+        { type: 'dazed', source: 'encounter-1', appliedOnTurn: 1 }
+      ];
+      const result = attemptCurseRemoval(statuses, 'curse-wrath-of-enemy', 10);
+      
+      expect(result.removed).toBe(true);
+      expect(result.updatedStatuses).toHaveLength(1);
+      expect(result.updatedStatuses[0].type).toBe('dazed');
+    });
+
+    it('should keep curse on roll below 10', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-wrath-of-enemy', source: 'wrath-of-enemy', appliedOnTurn: 1 }
+      ];
+      const result = attemptCurseRemoval(statuses, 'curse-wrath-of-enemy', 9);
+      
+      expect(result.removed).toBe(false);
+      expect(result.updatedStatuses).toHaveLength(1);
+      expect(result.updatedStatuses[0].type).toBe('curse-wrath-of-enemy');
+    });
+
+    it('should work with natural 20', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-wrath-of-enemy', source: 'wrath-of-enemy', appliedOnTurn: 1 }
+      ];
+      const result = attemptCurseRemoval(statuses, 'curse-wrath-of-enemy', 20);
+      
+      expect(result.removed).toBe(true);
+      expect(result.updatedStatuses).toHaveLength(0);
+    });
+
+    it('should not affect other curses or statuses on successful removal', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-wrath-of-enemy', source: 'wrath-of-enemy', appliedOnTurn: 1 },
+        { type: 'curse-dragon-fear', source: 'dragon-fear', appliedOnTurn: 2 },
+        { type: 'dazed', source: 'encounter-1', appliedOnTurn: 1 }
+      ];
+      const result = attemptCurseRemoval(statuses, 'curse-wrath-of-enemy', 15);
+      
+      expect(result.removed).toBe(true);
+      expect(result.updatedStatuses).toHaveLength(2);
+      expect(result.updatedStatuses.find(s => s.type === 'curse-dragon-fear')).toBeDefined();
+      expect(result.updatedStatuses.find(s => s.type === 'dazed')).toBeDefined();
     });
   });
 });
