@@ -1305,6 +1305,14 @@
 
   // Helper function to determine if a daily power card should be flipped
   function shouldFlipDailyCard(powerCard: PowerCard, parsedAction: any, attackResult: any): boolean {
+    // At-Will powers should NEVER be flipped - they can be used repeatedly
+    if (powerCard.type === 'at-will') return false;
+    
+    // Utility powers should NEVER be flipped when used as attacks
+    // (they may be flipped when activated as utility powers via handleActivatePowerCard)
+    if (powerCard.type === 'utility') return false;
+    
+    // Only daily powers should be flipped after use
     if (powerCard.type !== 'daily') return false;
     
     // Check if this card has special miss behavior (don't flip on miss)
@@ -1383,9 +1391,9 @@
       store.dispatch(hideMovement());
     }
     
-    // Flip the power card if it's a daily (at-wills can be used repeatedly)
+    // Flip the power card only if it's a daily power (at-wills and utilities should NEVER be flipped)
     // For area attacks, don't flip yet - wait until all targets are attacked
-    // For multi-attacks in progress, don't flip yet - already flipped on first attack
+    // For multi-attacks in progress, don't flip yet - wait until last attack completes
     const isMultiAttackInProgress = multiAttackState && multiAttackState.attacksCompleted > 0;
     if (!isMultiAttackInProgress && !isAreaAttack) {
       if (shouldFlipDailyCard(powerCard, parsedAction, result)) {
@@ -1790,6 +1798,13 @@
     const card = POWER_CARDS.find((c) => c.id === cardId);
     
     if (!card) return;
+    
+    // At-Will powers should never be flipped via this function
+    // They are attack powers and should go through handleAttackWithCard instead
+    if (card.type === 'at-will') {
+      console.error('At-Will power card should not be activated via handleActivatePowerCard:', card.name);
+      return;
+    }
     
     // Get game state for context
     const state = store.getState();
