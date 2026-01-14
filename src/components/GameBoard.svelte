@@ -1312,9 +1312,7 @@
     // (they may be flipped when activated as utility powers via handleActivatePowerCard)
     if (powerCard.type === 'utility') return false;
     
-    // Only daily powers should be flipped after use
-    if (powerCard.type !== 'daily') return false;
-    
+    // At this point, we know it's a daily power
     // Check if this card has special miss behavior (don't flip on miss)
     const hasMissNoFlip = parsedAction.missEffects?.some((effect: any) => effect.type === 'no-flip');
     
