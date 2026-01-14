@@ -3670,6 +3670,212 @@ describe("gameSlice", () => {
     });
   });
 
+  describe("Deadly Poison", () => {
+    it("should apply 1 damage to each poisoned hero and draw another encounter", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            currentHp: 8, 
+            maxHp: 8, 
+            level: 1, 
+            ac: 17, 
+            surgeValue: 4, 
+            attackBonus: 6,
+            statuses: [{ type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 }]
+          },
+          { 
+            heroId: "vistra", 
+            currentHp: 10, 
+            maxHp: 10, 
+            level: 1, 
+            ac: 18, 
+            surgeValue: 5, 
+            attackBonus: 8,
+            statuses: [{ type: 'poisoned', source: 'cultist-1', appliedOnTurn: 1 }]
+          },
+        ],
+        drawnEncounter: {
+          id: "deadly-poison",
+          name: "Deadly Poison",
+          type: "event",
+          description: "Each Hero that is currently Poisoned takes 1 damage. Draw another Encounter Card.",
+          effect: { type: "special", description: "Poisoned heroes take 1 damage. Draw another encounter." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: ["frenzied-leap"], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Both poisoned heroes should take 1 damage
+      expect(state.heroHp[0].currentHp).toBe(7); // Quinn: 8 - 1 = 7
+      expect(state.heroHp[1].currentHp).toBe(9); // Vistra: 10 - 1 = 9
+      expect(state.encounterEffectMessage).toBe("2 poisoned heroes took 1 damage");
+      // Deadly poison should be discarded
+      expect(state.encounterDeck.discardPile).toContain("deadly-poison");
+      // Should draw another encounter card (frenzied-leap in this case)
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.drawnEncounter?.id).toBe("frenzied-leap");
+    });
+
+    it("should only damage poisoned heroes, not unpoisoned ones", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+          { heroId: "vistra", position: { x: 3, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            currentHp: 8, 
+            maxHp: 8, 
+            level: 1, 
+            ac: 17, 
+            surgeValue: 4, 
+            attackBonus: 6,
+            statuses: [{ type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 }]
+          },
+          { 
+            heroId: "vistra", 
+            currentHp: 10, 
+            maxHp: 10, 
+            level: 1, 
+            ac: 18, 
+            surgeValue: 5, 
+            attackBonus: 8,
+            statuses: [] // Not poisoned
+          },
+        ],
+        drawnEncounter: {
+          id: "deadly-poison",
+          name: "Deadly Poison",
+          type: "event",
+          description: "Each Hero that is currently Poisoned takes 1 damage. Draw another Encounter Card.",
+          effect: { type: "special", description: "Poisoned heroes take 1 damage. Draw another encounter." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: ["unbearable-heat"], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Only Quinn (poisoned) should take damage
+      expect(state.heroHp[0].currentHp).toBe(7); // Quinn: 8 - 1 = 7
+      expect(state.heroHp[1].currentHp).toBe(10); // Vistra: unchanged (not poisoned)
+      expect(state.encounterEffectMessage).toBe("1 poisoned hero took 1 damage");
+      // Should draw another encounter
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.drawnEncounter?.id).toBe("unbearable-heat");
+    });
+
+    it("should show appropriate message when no heroes are poisoned", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            currentHp: 8, 
+            maxHp: 8, 
+            level: 1, 
+            ac: 17, 
+            surgeValue: 4, 
+            attackBonus: 6,
+            statuses: [] // Not poisoned
+          },
+        ],
+        drawnEncounter: {
+          id: "deadly-poison",
+          name: "Deadly Poison",
+          type: "event",
+          description: "Each Hero that is currently Poisoned takes 1 damage. Draw another Encounter Card.",
+          effect: { type: "special", description: "Poisoned heroes take 1 damage. Draw another encounter." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: ["bulls-eye"], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // No damage should be applied
+      expect(state.heroHp[0].currentHp).toBe(8); // Quinn: unchanged
+      expect(state.encounterEffectMessage).toBe("No poisoned heroes");
+      // Should still draw another encounter
+      expect(state.drawnEncounter).not.toBeNull();
+      expect(state.drawnEncounter?.id).toBe("bulls-eye");
+    });
+
+    it("should trigger defeat when deadly poison reduces all heroes to 0 HP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            currentHp: 1, // Only 1 HP left
+            maxHp: 8, 
+            level: 1, 
+            ac: 17, 
+            surgeValue: 4, 
+            attackBonus: 6,
+            statuses: [{ type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 }]
+          },
+        ],
+        drawnEncounter: {
+          id: "deadly-poison",
+          name: "Deadly Poison",
+          type: "event",
+          description: "Each Hero that is currently Poisoned takes 1 damage. Draw another Encounter Card.",
+          effect: { type: "special", description: "Poisoned heroes take 1 damage. Draw another encounter." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Hero should be reduced to 0 HP and trigger defeat
+      expect(state.heroHp[0].currentHp).toBe(0);
+      expect(state.currentScreen).toBe("defeat");
+      expect(state.defeatReason).toContain("Deadly Poison");
+    });
+  });
+
   describe("cancelEncounterCard", () => {
     it("should cancel encounter without applying effect when party has 5+ XP", () => {
       const initialState = createGameState({
