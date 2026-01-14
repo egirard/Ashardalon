@@ -482,3 +482,58 @@ export function findTileForGlobalPosition(globalPos: Position, dungeon: DungeonS
   const tile = findTileAtPosition(globalPos, dungeon);
   return tile?.id ?? null;
 }
+
+/**
+ * Find the closest monster to a hero that is NOT on the hero's tile.
+ * Used for the "Wrath of the Enemy" curse effect.
+ * 
+ * @param heroPos The hero's position
+ * @param monsters All monsters on the board
+ * @param dungeon Dungeon state
+ * @returns The closest monster not on hero's tile, or null if none found
+ */
+export function findClosestMonsterNotOnTile(
+  heroPos: Position,
+  monsters: MonsterState[],
+  dungeon: DungeonState
+): MonsterState | null {
+  if (monsters.length === 0) return null;
+  
+  // Find which tile the hero is on
+  const heroTile = findTileAtPosition(heroPos, dungeon);
+  if (!heroTile) return null;
+  
+  // Filter monsters not on the hero's tile
+  const monstersNotOnTile = monsters.filter(monster => {
+    const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
+    if (!monsterGlobal) return false;
+    
+    // Check if monster is on a different tile than the hero
+    const monsterTile = findTileAtPosition(monsterGlobal, dungeon);
+    if (!monsterTile) return false;
+    
+    // Compare tile IDs (handles both regular tiles and start tile sub-tiles)
+    return heroTile.id !== monsterTile.id;
+  });
+  
+  if (monstersNotOnTile.length === 0) return null;
+  
+  // Find the closest monster using Manhattan distance
+  let closestMonster: MonsterState | null = null;
+  let closestDistance = Infinity;
+  
+  for (const monster of monstersNotOnTile) {
+    const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
+    if (!monsterGlobal) continue;
+    
+    // Calculate Manhattan distance
+    const distance = getManhattanDistance(heroPos, monsterGlobal);
+    
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestMonster = monster;
+    }
+  }
+  
+  return closestMonster;
+}

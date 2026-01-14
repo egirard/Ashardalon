@@ -8,6 +8,7 @@ import {
   getMonsterGlobalPosition,
   getManhattanDistance,
   findHeroWithinTileRange,
+  findClosestMonsterNotOnTile,
 } from './monsterAI';
 import type { MonsterState, HeroToken, DungeonState, PlacedTile } from './types';
 
@@ -587,6 +588,182 @@ describe('monsterAI', () => {
       // That's about 9 squares via BFS which is more than 4 squares
       const result = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, 1);
       expect(result).toBeNull();
+    });
+  });
+
+  describe('findClosestMonsterNotOnTile', () => {
+    it('should find the closest monster not on hero\'s tile', () => {
+      // Create a dungeon with start tile and an adjacent tile
+      const startTile: PlacedTile = {
+        id: 'start-tile',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        rotation: 0,
+        edges: {
+          north: 'unexplored',
+          south: 'unexplored',
+          east: 'unexplored',
+          west: 'unexplored',
+        },
+      };
+      
+      const adjacentTile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'cave',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+        edges: {
+          north: 'wall',
+          south: 'wall',
+          east: 'unexplored',
+          west: 'wall',
+        },
+      };
+
+      const dungeon: DungeonState = {
+        tiles: [startTile, adjacentTile],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      // Hero at position (2, 2) on start tile
+      const heroPos = { x: 2, y: 2 };
+
+      // Monster 1 on start tile - should be excluded (same tile as hero)
+      const monster1: MonsterState = {
+        monsterId: 'kobold',
+        instanceId: 'kobold-0',
+        position: { x: 2, y: 5 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      // Monster 2 on adjacent tile - should be found (different tile)
+      const monster2: MonsterState = {
+        monsterId: 'snake',
+        instanceId: 'snake-0',
+        position: { x: 1, y: 1 }, // Local position on tile-1
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'tile-1',
+      };
+
+      const result = findClosestMonsterNotOnTile(heroPos, [monster1, monster2], dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result?.instanceId).toBe('snake-0');
+    });
+
+    it('should return null when all monsters are on hero\'s tile', () => {
+      const dungeon = createTestDungeon();
+      
+      const heroPos = { x: 2, y: 2 };
+
+      // Both monsters on same tile as hero
+      const monster1: MonsterState = {
+        monsterId: 'kobold',
+        instanceId: 'kobold-0',
+        position: { x: 2, y: 5 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      const monster2: MonsterState = {
+        monsterId: 'snake',
+        instanceId: 'snake-0',
+        position: { x: 1, y: 1 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      const result = findClosestMonsterNotOnTile(heroPos, [monster1, monster2], dungeon);
+      expect(result).toBeNull();
+    });
+
+    it('should return null when there are no monsters', () => {
+      const dungeon = createTestDungeon();
+      const heroPos = { x: 2, y: 2 };
+
+      const result = findClosestMonsterNotOnTile(heroPos, [], dungeon);
+      expect(result).toBeNull();
+    });
+
+    it('should find closer monster when multiple monsters not on tile', () => {
+      // Create a dungeon with multiple tiles
+      const startTile: PlacedTile = {
+        id: 'start-tile',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        rotation: 0,
+        edges: {
+          north: 'unexplored',
+          south: 'unexplored',
+          east: 'unexplored',
+          west: 'unexplored',
+        },
+      };
+      
+      const nearTile: PlacedTile = {
+        id: 'tile-near',
+        tileType: 'cave',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+        edges: {
+          north: 'wall',
+          south: 'wall',
+          east: 'unexplored',
+          west: 'wall',
+        },
+      };
+
+      const farTile: PlacedTile = {
+        id: 'tile-far',
+        tileType: 'cave',
+        position: { col: 2, row: 0 },
+        rotation: 0,
+        edges: {
+          north: 'wall',
+          south: 'wall',
+          east: 'unexplored',
+          west: 'wall',
+        },
+      };
+
+      const dungeon: DungeonState = {
+        tiles: [startTile, nearTile, farTile],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const heroPos = { x: 2, y: 2 };
+
+      // Near monster (should be selected)
+      const nearMonster: MonsterState = {
+        monsterId: 'kobold',
+        instanceId: 'kobold-0',
+        position: { x: 0, y: 0 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'tile-near',
+      };
+
+      // Far monster
+      const farMonster: MonsterState = {
+        monsterId: 'snake',
+        instanceId: 'snake-0',
+        position: { x: 0, y: 0 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'tile-far',
+      };
+
+      const result = findClosestMonsterNotOnTile(heroPos, [farMonster, nearMonster], dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result?.instanceId).toBe('kobold-0');
     });
   });
 });
