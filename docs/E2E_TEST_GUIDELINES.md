@@ -12,7 +12,27 @@ This document outlines how to properly write end-to-end (E2E) tests for the Wrat
 - CI does not regenerate baselines - it only compares against existing ones
 - Baseline screenshots serve as the visual "source of truth"
 
-### 2. Deterministic Game Initialization
+### 2. Scroll Elements Into View Before Interaction
+
+**Hero selection actions must scroll elements into view before clicking to ensure proper alignment.**
+
+When selecting heroes in E2E tests, elements should be scrolled into view at the bottom of the screen to align with natural reading orientation. This ensures better UX consistency across automation workflows.
+
+**Always use scrollIntoViewIfNeeded() before clicking hero elements:**
+```typescript
+// ✅ GOOD: Scroll into view before clicking
+await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
+await page.locator('[data-testid="hero-quinn"]').click();
+```
+
+**Why this is important:**
+- Ensures elements are visible before interaction
+- Aligns with natural reading flow (bottom-aligned scrolling)
+- Prevents flaky tests caused by off-screen elements
+- Improves visual consistency in test screenshots
+- Matches how users naturally interact with the interface
+
+### 3. Deterministic Game Initialization
 
 **Tests must use deterministic game initialization to ensure stable screenshot comparisons.**
 
@@ -55,6 +75,8 @@ test('my game test', async ({ page }) => {
     Date.now = function() { return 1234567890000; };
   });
   
+  // Scroll hero into view before clicking
+  await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
   await page.locator('[data-testid="hero-quinn"]').click();
   await page.locator('[data-testid="start-game-button"]').click();
   // Game now has deterministic layout
@@ -75,7 +97,7 @@ expect: {
 
 This ensures any visual regression is caught immediately.
 
-### 3. No Arbitrary Delays or Retries
+### 4. No Arbitrary Delays or Retries
 
 **Tests must not use arbitrary delays or rely on retries.**
 
@@ -98,7 +120,7 @@ retries: 0,  // Tests must pass on first attempt
 
 If a test is flaky, fix the underlying issue rather than relying on retries.
 
-### 4. Programmatic Verification is Required
+### 5. Programmatic Verification is Required
 
 **Every screenshot must be accompanied by programmatic verification of the page content or Redux store state.**
 
@@ -220,6 +242,8 @@ test('player selects hero and sees game board', async ({ page }) => {
   });
   
   // STEP 2: Select a hero
+  // Scroll into view before clicking to ensure element is visible
+  await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
   await page.locator('[data-testid="hero-quinn"]').click();
   await screenshots.capture(page, 'hero-selected', {
     programmaticCheck: async () => {
@@ -477,6 +501,8 @@ test.describe('001 - Character Selection to Game Board', () => {
     });
     
     // STEP 2: Select hero Quinn
+    // Scroll into view before clicking to ensure proper alignment
+    await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
     await page.locator('[data-testid="hero-quinn"]').click();
     
     await screenshots.capture(page, 'hero-selected', {
