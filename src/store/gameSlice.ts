@@ -54,6 +54,9 @@ import {
   executeMonsterTurn,
   globalToLocalPosition,
   findTileForGlobalPosition,
+  findClosestMonsterNotOnTile,
+  findPositionAdjacentToHero,
+  getMonsterGlobalPosition,
 } from "./monsterAI";
 import {
   canLevelUp,
@@ -1463,6 +1466,55 @@ export const gameSlice = createSlice({
         if (monstersSpawned > 0) {
           const monsterWord = monstersSpawned === 1 ? 'monster' : 'monsters';
           state.encounterEffectMessage = `Surrounded! ${monstersSpawned} ${monsterWord} spawned from the environment effect.`;
+        }
+      }
+      
+      // Apply Wrath of the Enemy curse effect - check all heroes for this curse
+      for (const heroHp of state.heroHp) {
+        // Check if hero has wrath-of-enemy curse
+        const hasWrathCurse = heroHp.statuses?.some(s => s.type === 'curse-wrath-of-enemy');
+        if (!hasWrathCurse) continue;
+        
+        // Find the hero token
+        const heroToken = state.heroTokens.find(t => t.heroId === heroHp.heroId);
+        if (!heroToken) continue;
+        
+        // Find the closest monster not on this hero's tile
+        const closestMonster = findClosestMonsterNotOnTile(
+          heroToken.position,
+          state.monsters,
+          state.dungeon
+        );
+        
+        if (closestMonster) {
+          // Find a position adjacent to the hero for the monster to move to
+          const adjacentPos = findPositionAdjacentToHero(
+            closestMonster,
+            heroToken,
+            state.heroTokens,
+            state.monsters,
+            state.dungeon
+          );
+          
+          if (adjacentPos) {
+            // Move the monster to the adjacent position
+            const newTileId = findTileForGlobalPosition(adjacentPos, state.dungeon);
+            if (newTileId) {
+              const localPos = globalToLocalPosition(adjacentPos, newTileId, state.dungeon);
+              if (localPos) {
+                closestMonster.position = localPos;
+                closestMonster.tileId = newTileId;
+                
+                const monsterDef = getMonsterById(closestMonster.monsterId);
+                const monsterName = monsterDef?.name || 'Monster';
+                
+                // Set message if not already set by environment effect
+                if (!state.encounterEffectMessage) {
+                  state.encounterEffectMessage = `Wrath of the Enemy: ${monsterName} moved adjacent to ${heroHp.heroId}!`;
+                }
+              }
+            }
+          }
         }
       }
       
