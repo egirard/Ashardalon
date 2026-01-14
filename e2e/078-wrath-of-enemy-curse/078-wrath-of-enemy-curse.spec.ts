@@ -15,8 +15,8 @@ test.describe('078 - Wrath of the Enemy Curse Mechanical Effect', () => {
       }
     });
     
-    // Select Quinn from top edge
-    await page.locator('[data-testid="hero-quinn-top"]').click();
+    // Select Quinn from bottom edge (so text is oriented towards viewer)
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Wait for and dismiss power selection modal (Quinn has auto-selected powers)
     await page.waitForTimeout(1000);

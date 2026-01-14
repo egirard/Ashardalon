@@ -17,7 +17,7 @@ This E2E test demonstrates that:
 ### Step 1: Character Selection
 ![Screenshot 000](screenshots/000-character-select-screen-chromium-linux.png)
 - Character selection screen displayed
-- Quinn is available for selection
+- Quinn is available for selection from bottom edge (for text orientation towards viewer)
 - **Verification**: Character select UI is visible
 
 ### Step 2: Game Setup - Monster on Different Tile
