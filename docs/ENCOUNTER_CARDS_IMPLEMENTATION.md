@@ -113,7 +113,7 @@ Issues have been filed for the first five Curse cards to track future implementa
 | ID | Name | Effect Summary | Implementation Status |
 |----|------|----------------|----------------------|
 | ancient-spirits-blessing | Ancient Spirit's Blessing | Flip up a Daily Power | ⚠️ Display only |
-| deadly-poison | Deadly Poison | Poisoned heroes take 1 damage | ⚠️ Display only |
+| deadly-poison | Deadly Poison | Poisoned heroes take 1 damage | ✅ Fully Implemented |
 | duergar-outpost | Duergar Outpost | Filter monster deck for Devils | ⚠️ Display only |
 | hall-of-orcs | Hall of the Orcs | Filter monster deck for Orcs | ⚠️ Display only |
 | hidden-treasure | Hidden Treasure | Place treasure token | ⚠️ Display only |
@@ -128,6 +128,16 @@ Issues have been filed for the first five Curse cards to track future implementa
 | unnatural-corruption | Unnatural Corruption | Filter monster deck for Aberrants | ⚠️ Display only |
 | wandering-monster | Wandering Monster | Spawn monster on unexplored edge | ⚠️ Display only |
 | warp-in-time | Warp in Time | Pass monster cards right | ⚠️ Display only |
+
+#### Deadly Poison Implementation Notes
+
+**Deadly Poison** is now fully implemented:
+- When the encounter card is drawn and accepted, it checks all heroes for the "poisoned" status effect
+- Each hero with the poisoned status takes exactly 1 damage
+- The effect message displays the number of heroes affected (e.g., "2 poisoned heroes took 1 damage" or "No poisoned heroes")
+- After applying the damage, the card is discarded and automatically draws another encounter card (as per the card's text)
+- Party defeat is triggered if all heroes are reduced to 0 HP
+- Comprehensive unit tests validate all scenarios (multiple poisoned heroes, mix of poisoned/unpoisoned, no poisoned heroes, defeat trigger)
 
 ### Hazard Cards (3 cards, #97-99)
 
@@ -154,10 +164,10 @@ Issues have been filed for the first five Curse cards to track future implementa
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
-| Event (Special) | 16 | 0 | 16 |
+| Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **17** | **36** |
+| **Total** | **53** | **18** | **35** |
 
 ## Features Not Yet Implemented
 
