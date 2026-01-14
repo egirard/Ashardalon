@@ -46,7 +46,7 @@ These effect types display the card description and resolve to the discard pile,
 | cage | Cage | AC -2, cannot move, Roll 10+ to escape | ⚠️ Display only (see issue: cage-doc-update) |
 | dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ⚠️ Display only (see issue: dragon-fear-doc-update) |
 | terrifying-roar | Terrifying Roar | Attack -4 penalty | ⚠️ Display only |
-| time-leap | Time Leap | Hero removed from play, returns next turn | ⚠️ Display only |
+| time-leap | Time Leap | Hero removed from play, returns next turn | ✅ Fully Implemented |
 | wrath-of-enemy | Wrath of the Enemy | Monster moves to hero each turn | ✅ Fully Implemented |
 
 #### Implementation Notes
@@ -57,6 +57,21 @@ Issues have been filed for the first five Curse cards to track future implementa
 - **Bloodlust**: See issue `bloodlust-doc-update`
 - **Cage**: See issue `cage-doc-update`
 - **Dragon Fear**: See issue `dragon-fear-doc-update`
+
+**Time Leap** is now fully implemented:
+- When the curse is applied (during Villain Phase encounter resolution), the hero is immediately marked as `removedFromPlay`
+- The hero remains removed for the remainder of the current turn and through the entire next turn cycle
+- At the start of the hero's next Hero Phase (when `endVillainPhase` transitions to their turn), the hero is automatically:
+  - Restored to play (removedFromPlay flag cleared)
+  - The Time Leap curse status is removed
+- The hero can then take their turn normally
+- While removed from play, the hero:
+  - Does not take their turn (turn passes to next hero)
+  - Is not targeted by monsters during Villain Phase
+  - Cannot be affected by encounter cards or environment effects
+- Limitations:
+  - UI currently does not visually hide/dim the removed hero token on the board
+  - The hero's token remains visible but functionally inactive until they return
 
 **Wrath of the Enemy** is now fully implemented:
 - When a hero has this curse, at the end of Exploration Phase, the closest monster NOT on the hero's tile moves adjacent to the cursed hero
@@ -160,14 +175,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 1 | 7 |
+| Curse | 8 | 2 | 6 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **18** | **35** |
+| **Total** | **53** | **19** | **34** |
 
 ## Features Not Yet Implemented
 
