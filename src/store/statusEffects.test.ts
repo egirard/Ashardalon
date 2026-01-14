@@ -13,12 +13,14 @@ import {
   getStatusDisplayData,
   getModifiedSpeed,
   getModifiedAttackBonus,
+  getModifiedAttackBonusWithCurses,
   getModifiedDamage,
   canMove,
   canAttack,
   isDazed,
   attemptPoisonRecovery,
   attemptCurseRemoval,
+  getModifiedAC,
 } from './statusEffects';
 
 describe('StatusEffects', () => {
@@ -514,6 +516,87 @@ describe('StatusEffects', () => {
       expect(result.updatedStatuses).toHaveLength(2);
       expect(result.updatedStatuses.find(s => s.type === 'curse-dragon-fear')).toBeDefined();
       expect(result.updatedStatuses.find(s => s.type === 'dazed')).toBeDefined();
+    });
+  });
+
+  describe('getModifiedAttackBonusWithCurses', () => {
+    it('should apply -4 penalty for Terrifying Roar curse', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-terrifying-roar', source: 'terrifying-roar', appliedOnTurn: 1 }
+      ];
+      
+      expect(getModifiedAttackBonusWithCurses(statuses, 7)).toBe(3);
+    });
+
+    it('should return base attack bonus when no curse present', () => {
+      const statuses: StatusEffect[] = [];
+      
+      expect(getModifiedAttackBonusWithCurses(statuses, 7)).toBe(7);
+    });
+
+    it('should stack with blinded penalty', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'blinded', source: 'encounter-1', appliedOnTurn: 1 },
+        { type: 'curse-terrifying-roar', source: 'terrifying-roar', appliedOnTurn: 1 }
+      ];
+      
+      // Blinded gives -2, Terrifying Roar gives -4, total -6
+      expect(getModifiedAttackBonusWithCurses(statuses, 7)).toBe(1);
+    });
+
+    it('should not be affected by other curses', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-gap-in-armor', source: 'gap-in-armor', appliedOnTurn: 1 },
+        { type: 'curse-wrath-of-enemy', source: 'wrath-of-enemy', appliedOnTurn: 1 }
+      ];
+      
+      // Other curses don't affect attack bonus
+      expect(getModifiedAttackBonusWithCurses(statuses, 7)).toBe(7);
+    });
+
+    it('should handle negative attack bonuses', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-terrifying-roar', source: 'terrifying-roar', appliedOnTurn: 1 }
+      ];
+      
+      // Starting with +2, curse makes it -2
+      expect(getModifiedAttackBonusWithCurses(statuses, 2)).toBe(-2);
+    });
+  });
+
+  describe('getModifiedAC', () => {
+    it('should apply -4 penalty for Gap in Armor curse', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-gap-in-armor', source: 'gap-in-armor', appliedOnTurn: 1 }
+      ];
+      
+      expect(getModifiedAC(statuses, 17)).toBe(13);
+    });
+
+    it('should apply -2 penalty for Cage curse', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-cage', source: 'cage', appliedOnTurn: 1 }
+      ];
+      
+      expect(getModifiedAC(statuses, 17)).toBe(15);
+    });
+
+    it('should stack both AC curses', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-gap-in-armor', source: 'gap-in-armor', appliedOnTurn: 1 },
+        { type: 'curse-cage', source: 'cage', appliedOnTurn: 2 }
+      ];
+      
+      // Gap in Armor -4, Cage -2, total -6
+      expect(getModifiedAC(statuses, 17)).toBe(11);
+    });
+
+    it('should return base AC when no AC-affecting curses present', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-terrifying-roar', source: 'terrifying-roar', appliedOnTurn: 1 }
+      ];
+      
+      expect(getModifiedAC(statuses, 17)).toBe(17);
     });
   });
 });

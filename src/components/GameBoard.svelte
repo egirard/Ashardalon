@@ -136,7 +136,7 @@
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
-  import { getStatusDisplayData, isDazed, STATUS_EFFECT_DEFINITIONS } from "../store/statusEffects";
+  import { getStatusDisplayData, isDazed, STATUS_EFFECT_DEFINITIONS, getModifiedAttackBonusWithCurses } from "../store/statusEffects";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -1380,7 +1380,19 @@
     // Apply item bonuses from hero's inventory
     const attackWithBonuses = applyItemBonusesToAttack(baseAttack, heroInventories[currentHeroId]);
 
-    const result = resolveAttack(attackWithBonuses, monsterAC);
+    // Apply curse modifiers (e.g., Terrifying Roar -4 attack)
+    const heroHpState = heroHp.find(h => h.heroId === currentHeroId);
+    const finalAttackBonus = getModifiedAttackBonusWithCurses(
+      heroHpState?.statuses ?? [],
+      attackWithBonuses.attackBonus
+    );
+    
+    const finalAttack = {
+      ...attackWithBonuses,
+      attackBonus: finalAttackBonus,
+    };
+
+    const result = resolveAttack(finalAttack, monsterAC);
     store.dispatch(setAttackResult({ result, targetInstanceId: firstTarget.instanceId, attackName: powerCard.name, cardId }));
     
     // If this was a charge attack, clear the move-attack state and hide movement
