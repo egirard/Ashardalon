@@ -12,25 +12,33 @@ This document outlines how to properly write end-to-end (E2E) tests for the Wrat
 - CI does not regenerate baselines - it only compares against existing ones
 - Baseline screenshots serve as the visual "source of truth"
 
-### 2. Scroll Elements Into View Before Interaction
+### 2. Select Heroes from Bottom Edge for Natural Reading Orientation
 
-**Hero selection actions must scroll elements into view before clicking to ensure proper alignment.**
+**Always select heroes from the bottom edge of the screen to ensure proper text alignment and natural reading orientation.**
 
-When selecting heroes in E2E tests, elements should be scrolled into view at the bottom of the screen to align with natural reading orientation. This ensures better UX consistency across automation workflows.
+When selecting heroes in E2E tests, use the `-bottom` variant of hero test IDs (e.g., `hero-quinn-bottom` instead of `hero-quinn`). This ensures that in-game messages and UI elements align with the natural reading orientation for users sitting at the bottom of the screen.
 
-**Always use scrollIntoViewIfNeeded() before clicking hero elements:**
+**Always use the bottom variant when selecting heroes:**
 ```typescript
-// ✅ GOOD: Scroll into view before clicking
-await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
+// ✅ GOOD: Select hero from bottom edge
+await page.locator('[data-testid="hero-quinn-bottom"]').click();
+
+// ❌ BAD: Generic selector without position
 await page.locator('[data-testid="hero-quinn"]').click();
 ```
 
 **Why this is important:**
-- Ensures elements are visible before interaction
-- Aligns with natural reading flow (bottom-aligned scrolling)
-- Prevents flaky tests caused by off-screen elements
-- Improves visual consistency in test screenshots
-- Matches how users naturally interact with the interface
+- Ensures consistent player perspective in E2E tests
+- Aligns UI messages with natural reading orientation
+- Matches how most users interact with the game
+- Provides stable, predictable test screenshots
+- Simulates the primary player viewpoint
+
+**Available hero positions:**
+- `hero-{name}-bottom` - Hero card at bottom edge (recommended for tests)
+- `hero-{name}-top` - Hero card at top edge
+- `hero-{name}-left` - Hero card at left edge
+- `hero-{name}-right` - Hero card at right edge
 
 ### 3. Deterministic Game Initialization
 
@@ -75,9 +83,8 @@ test('my game test', async ({ page }) => {
     Date.now = function() { return 1234567890000; };
   });
   
-  // Scroll hero into view before clicking
-  await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
-  await page.locator('[data-testid="hero-quinn"]').click();
+  // Select hero from bottom edge for natural reading orientation
+  await page.locator('[data-testid="hero-quinn-bottom"]').click();
   await page.locator('[data-testid="start-game-button"]').click();
   // Game now has deterministic layout
 });
@@ -241,13 +248,11 @@ test('player selects hero and sees game board', async ({ page }) => {
     }
   });
   
-  // STEP 2: Select a hero
-  // Scroll into view before clicking to ensure element is visible
-  await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
-  await page.locator('[data-testid="hero-quinn"]').click();
+  // STEP 2: Select a hero from bottom edge
+  await page.locator('[data-testid="hero-quinn-bottom"]').click();
   await screenshots.capture(page, 'hero-selected', {
     programmaticCheck: async () => {
-      await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+      await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
       await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
     }
   });
@@ -500,14 +505,12 @@ test.describe('001 - Character Selection to Game Board', () => {
       }
     });
     
-    // STEP 2: Select hero Quinn
-    // Scroll into view before clicking to ensure proper alignment
-    await page.locator('[data-testid="hero-quinn"]').scrollIntoViewIfNeeded();
-    await page.locator('[data-testid="hero-quinn"]').click();
+    // STEP 2: Select hero Quinn from bottom edge
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     await screenshots.capture(page, 'hero-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
         
         // Verify Redux store
