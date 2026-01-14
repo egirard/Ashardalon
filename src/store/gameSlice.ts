@@ -1646,16 +1646,17 @@ export const gameSlice = createSlice({
       if (currentHeroId) {
         const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
         if (heroHpIndex !== -1) {
-          const heroHp = state.heroHp[heroHpIndex];
+          let heroHp = state.heroHp[heroHpIndex];
+          let isRestoredFromTimeLeap = false;
           
           // Handle Time Leap curse - return hero to play and remove curse
           if (heroHp.removedFromPlay && hasStatusEffect(heroHp.statuses ?? [], 'curse-time-leap')) {
-            state.heroHp[heroHpIndex] = {
+            heroHp = {
               ...heroHp,
               removedFromPlay: false,
               statuses: removeStatusEffect(heroHp.statuses ?? [], 'curse-time-leap'),
             };
-            state.encounterEffectMessage = `${currentHeroId} returns to play!`;
+            isRestoredFromTimeLeap = true;
           }
           
           const { updatedStatuses, ongoingDamage, poisonedDamage } = processStatusEffectsStartOfTurn(
@@ -1669,7 +1670,13 @@ export const gameSlice = createSlice({
             ...heroHp,
             currentHp: Math.max(0, heroHp.currentHp - totalDamage),
             statuses: updatedStatuses,
+            removedFromPlay: heroHp.removedFromPlay, // Preserve removedFromPlay flag
           };
+          
+          // Set restoration message if hero was restored
+          if (isRestoredFromTimeLeap) {
+            state.encounterEffectMessage = `${currentHeroId} returns to play!`;
+          }
           
           // Show poisoned damage notification if character took damage from poison
           if (poisonedDamage > 0) {
