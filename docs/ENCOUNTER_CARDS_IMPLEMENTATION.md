@@ -64,6 +64,7 @@ Issues have been filed for the first five Curse cards to track future implementa
 - Monster movement uses existing AI pathfinding to find an adjacent position
 - If no valid adjacent position exists, the monster doesn't move
 - Multiple heroes can have this curse simultaneously, and each will trigger the effect
+- Effect message is appended to any existing messages (using " | " separator) to ensure visibility
 - The curse can be removed by rolling 10+ at the end of Exploration Phase (not yet implemented)
 
 ### Environment Cards (6 cards, #59-64)
