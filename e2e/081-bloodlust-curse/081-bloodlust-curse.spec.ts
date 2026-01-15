@@ -113,7 +113,7 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
         expect(hasCurse).toBe(true);
         
         // Verify the message was shown
-        expect(state.game.encounterEffectMessage).toContain('Bloodlust curse');
+        expect(state.game.encounterEffectMessage).toContain('bloodlust curse');
       }
     });
     

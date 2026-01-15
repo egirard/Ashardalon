@@ -1689,7 +1689,7 @@ export const gameSlice = createSlice({
           }
           
           if (bloodlustDamage > 0) {
-            messages.push(`${currentHeroId} takes ${bloodlustDamage} damage from Bloodlust curse`);
+            messages.push(`${currentHeroId} takes ${bloodlustDamage} damage from bloodlust curse`);
           }
           
           // Set combined message if any notifications exist

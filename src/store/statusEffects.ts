@@ -13,6 +13,11 @@ export const POISONED_DAMAGE = 1; // Damage dealt per turn when poisoned
 export const POISON_RECOVERY_DC = 10; // Dice roll needed to recover (10+ on d20)
 
 /**
+ * Bloodlust curse constants
+ */
+export const BLOODLUST_DAMAGE = 1; // Damage dealt per turn when cursed with bloodlust
+
+/**
  * Curse removal constants
  */
 export const CURSE_REMOVAL_DC = 10; // Dice roll needed to remove curse (10+ on d20)
@@ -260,7 +265,7 @@ export function processStatusEffectsStartOfTurn(
 
     // Apply bloodlust curse damage
     if (status.type === 'curse-bloodlust') {
-      bloodlustDamage += 1;
+      bloodlustDamage += BLOODLUST_DAMAGE;
     }
 
     // Check if status should expire based on duration
