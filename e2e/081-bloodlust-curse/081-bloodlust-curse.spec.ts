@@ -117,9 +117,14 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
       }
     });
     
-    // STEP 5: Spawn a monster and position hero to attack it
+    // STEP 5: Clear message and spawn a monster
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
+      
+      // Clear the encounter effect message from previous step
+      store.dispatch({
+        type: 'game/dismissEncounterEffectMessage'
+      });
       
       // Create a weak monster (Kobold Skirmisher, 1 HP)
       const monster = {
@@ -146,6 +151,8 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
           return store.getState();
         });
         expect(state.game.monsters.length).toBe(1);
+        // Verify message was cleared
+        expect(state.game.encounterEffectMessage).toBeNull();
       }
     });
     
@@ -166,6 +173,9 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
         const quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
         const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-bloodlust');
         expect(hasCurse).toBe(true);
+        
+        // Message is still cleared from step 5
+        expect(state.game.encounterEffectMessage).toBeNull();
         
         // The implementation in gameSlice.ts lines 2281-2306 will remove the curse
         // when a monster is defeated by the cursed hero
@@ -192,6 +202,8 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
         expect(state.game.turnState.currentPhase).toBe('hero-phase');
         expect(state.game.heroTokens.length).toBe(1);
         expect(state.game.monsters.length).toBe(1);
+        // Message should still be cleared
+        expect(state.game.encounterEffectMessage).toBeNull();
       }
     });
   });
