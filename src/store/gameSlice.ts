@@ -1659,13 +1659,13 @@ export const gameSlice = createSlice({
             isRestoredFromTimeLeap = true;
           }
           
-          const { updatedStatuses, ongoingDamage, poisonedDamage } = processStatusEffectsStartOfTurn(
+          const { updatedStatuses, ongoingDamage, poisonedDamage, bloodlustDamage } = processStatusEffectsStartOfTurn(
             heroHp.statuses ?? [],
             state.turnState.turnNumber
           );
           
-          // Apply ongoing damage and poisoned damage, update statuses
-          const totalDamage = ongoingDamage + poisonedDamage;
+          // Apply ongoing damage, poisoned damage, and bloodlust damage, update statuses
+          const totalDamage = ongoingDamage + poisonedDamage + bloodlustDamage;
           state.heroHp[heroHpIndex] = {
             ...heroHp,
             currentHp: Math.max(0, heroHp.currentHp - totalDamage),
@@ -1673,17 +1673,28 @@ export const gameSlice = createSlice({
             removedFromPlay: heroHp.removedFromPlay, // Preserve removedFromPlay flag
           };
           
-          // Set restoration message if hero was restored
+          // Build notification messages
+          let messages: string[] = [];
+          
           if (isRestoredFromTimeLeap) {
-            state.encounterEffectMessage = `${currentHeroId} returns to play!`;
+            messages.push(`${currentHeroId} returns to play!`);
           }
           
-          // Show poisoned damage notification if character took damage from poison
           if (poisonedDamage > 0) {
+            messages.push(`${currentHeroId} takes ${poisonedDamage} poison damage`);
             state.poisonedDamageNotification = {
               heroId: currentHeroId,
               damage: poisonedDamage,
             };
+          }
+          
+          if (bloodlustDamage > 0) {
+            messages.push(`${currentHeroId} takes ${bloodlustDamage} damage from Bloodlust curse`);
+          }
+          
+          // Set combined message if any notifications exist
+          if (messages.length > 0) {
+            state.encounterEffectMessage = messages.join(' | ');
           }
         }
       }
@@ -2269,6 +2280,29 @@ export const gameSlice = createSlice({
             
             // Track monster defeated for scenario
             state.scenario.monstersDefeated += 1;
+            
+            // Remove Bloodlust curse from attacking hero if they have it
+            const attackerHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+            if (attackerHeroId) {
+              const attackerHpIndex = state.heroHp.findIndex(h => h.heroId === attackerHeroId);
+              if (attackerHpIndex !== -1) {
+                const attackerHp = state.heroHp[attackerHpIndex];
+                if (hasStatusEffect(attackerHp.statuses ?? [], 'curse-bloodlust')) {
+                  state.heroHp[attackerHpIndex] = {
+                    ...attackerHp,
+                    statuses: removeStatusEffect(attackerHp.statuses ?? [], 'curse-bloodlust'),
+                  };
+                  
+                  // Append bloodlust removal message to encounter effect message
+                  const removalMessage = `${attackerHeroId}'s Bloodlust curse is lifted!`;
+                  if (state.encounterEffectMessage) {
+                    state.encounterEffectMessage += ` | ${removalMessage}`;
+                  } else {
+                    state.encounterEffectMessage = removalMessage;
+                  }
+                }
+              }
+            }
             
             // Draw treasure on monster defeat (only once per turn)
             if (!state.treasureDrawnThisTurn) {

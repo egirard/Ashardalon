@@ -208,6 +208,35 @@ describe('StatusEffects', () => {
       
       expect(result.updatedStatuses).toHaveLength(0);
     });
+
+    it('should calculate bloodlust curse damage', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-bloodlust', source: 'bloodlust', appliedOnTurn: 1 }
+      ];
+      const result = processStatusEffectsStartOfTurn(statuses, 2);
+      
+      expect(result.bloodlustDamage).toBe(1);
+      expect(result.poisonedDamage).toBe(0);
+      expect(result.ongoingDamage).toBe(0);
+    });
+
+    it('should sum bloodlust damage with other damage sources', () => {
+      const statuses: StatusEffect[] = [
+        { type: 'curse-bloodlust', source: 'bloodlust', appliedOnTurn: 1 },
+        { type: 'poisoned', source: 'snake-1', appliedOnTurn: 1 },
+        { 
+          type: 'ongoing-damage', 
+          source: 'fire-trap', 
+          appliedOnTurn: 1,
+          data: { damage: 2 }
+        }
+      ];
+      const result = processStatusEffectsStartOfTurn(statuses, 2);
+      
+      expect(result.bloodlustDamage).toBe(1);
+      expect(result.poisonedDamage).toBe(1);
+      expect(result.ongoingDamage).toBe(2);
+    });
   });
 
   describe('hasStatusEffect', () => {

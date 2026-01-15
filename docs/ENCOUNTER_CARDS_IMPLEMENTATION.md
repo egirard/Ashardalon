@@ -42,7 +42,7 @@ These effect types display the card description and resolve to the discard pile,
 |----|------|----------------|----------------------|
 | gap-in-armor | A Gap in the Armor | AC -4 until hero doesn't move | ⚠️ Display only (see issue: gap-in-armor-doc-update) |
 | bad-luck | Bad Luck | Draw extra encounter each turn | ⚠️ Display only (see issue: bad-luck-doc-update) |
-| bloodlust | Bloodlust | Take 1 damage at turn start | ⚠️ Display only (see issue: bloodlust-doc-update) |
+| bloodlust | Bloodlust | Take 1 damage at turn start | ✅ Fully Implemented (see issue: egirard/Ashardalon#53) |
 | cage | Cage | AC -2, cannot move, Roll 10+ to escape | ⚠️ Display only (see issue: cage-doc-update) |
 | dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ⚠️ Display only (see issue: dragon-fear-doc-update) |
 | terrifying-roar | Terrifying Roar | Attack -4 penalty | ✅ Fully Implemented |
@@ -54,9 +54,19 @@ These effect types display the card description and resolve to the discard pile,
 Issues have been filed for the first five Curse cards to track future implementation work:
 - **A Gap in the Armor**: See issue `gap-in-armor-doc-update`
 - **Bad Luck**: See issue `bad-luck-doc-update`
-- **Bloodlust**: See issue `bloodlust-doc-update`
+- ~~**Bloodlust**: See issue `bloodlust-doc-update`~~ ✅ **Fully Implemented** (see below)
 - **Cage**: See issue `cage-doc-update`
 - **Dragon Fear**: See issue `dragon-fear-doc-update`
+
+**Bloodlust** is now fully implemented:
+- When a hero has this curse, they take 1 damage at the start of each Hero Phase (when `endVillainPhase` transitions to their turn)
+- The damage is applied via the `processStatusEffectsStartOfTurn()` function in statusEffects.ts
+- The curse is automatically removed when the cursed hero defeats a monster (during attack resolution)
+- A notification message appears when the curse damage is applied: "{heroId} takes 1 damage from Bloodlust curse"
+- A notification message appears when the curse is removed: "{heroId}'s Bloodlust curse is lifted!"
+- The curse removal message is appended to any existing encounter effect messages
+- Comprehensive unit tests verify the damage calculation
+- E2E test demonstrates the complete curse lifecycle: application, damage, and removal
 
 **Time Leap** is now fully implemented:
 - When the curse is applied (during Villain Phase encounter resolution), the hero is immediately marked as `removedFromPlay`
@@ -190,14 +200,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 3 | 5 |
+| Curse | 8 | 4 | 4 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **20** | **33** |
+| **Total** | **53** | **21** | **32** |
 
 ## Features Not Yet Implemented
 
