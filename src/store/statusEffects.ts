@@ -240,9 +240,11 @@ export function processStatusEffectsStartOfTurn(
   updatedStatuses: StatusEffect[];
   ongoingDamage: number;
   poisonedDamage: number;
+  bloodlustDamage: number;
 } {
   let ongoingDamage = 0;
   let poisonedDamage = 0;
+  let bloodlustDamage = 0;
   const updatedStatuses: StatusEffect[] = [];
 
   for (const status of statuses) {
@@ -254,6 +256,11 @@ export function processStatusEffectsStartOfTurn(
     // Apply poisoned damage
     if (status.type === 'poisoned') {
       poisonedDamage += POISONED_DAMAGE;
+    }
+
+    // Apply bloodlust curse damage
+    if (status.type === 'curse-bloodlust') {
+      bloodlustDamage += 1;
     }
 
     // Check if status should expire based on duration
@@ -269,7 +276,7 @@ export function processStatusEffectsStartOfTurn(
     updatedStatuses.push(status);
   }
 
-  return { updatedStatuses, ongoingDamage, poisonedDamage };
+  return { updatedStatuses, ongoingDamage, poisonedDamage, bloodlustDamage };
 }
 
 /**
