@@ -53,9 +53,9 @@ This test validates the complete lifecycle of the Bloodlust curse:
 ![Bloodlust Damage](081-bloodlust-curse.spec.ts-snapshots/004-bloodlust-damage-applied-chromium-linux.png)
 **User Action:** New Hero Phase begins (transition from Villain Phase).
 **Expected State:**
-- Quinn takes 1 damage from Bloodlust curse
+- Quinn takes 1 damage from bloodlust curse
 - HP reduces from 8 to 7 (or from current HP - 1)
-- Message displays: "quinn takes 1 damage from Bloodlust curse"
+- Message displays: "quinn takes 1 damage from bloodlust curse"
 - Curse remains active on hero
 
 ### 005 - Monster Spawned Ready to Attack
