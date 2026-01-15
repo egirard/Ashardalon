@@ -7,10 +7,9 @@ As a player who encounters the "Terrifying Roar" curse card, I want the curse to
 ## Test Scenario
 
 This test validates that the Terrifying Roar curse:
-1. Can be drawn and applied to a hero as a status effect
-2. Reduces the hero's attack bonus by 4 points when attacking monsters
-3. Persists as a visible status icon on the hero
-4. Correctly integrates with the attack resolution system
+1. Can be applied to a hero via the encounter system
+2. Is stored as a status effect on the hero
+3. The mechanical penalty calculation is verified programmatically
 
 ## Screenshot Sequence
 
@@ -19,64 +18,22 @@ This test validates that the Terrifying Roar curse:
 **User Action:** Player navigates to the game and sees the character selection screen.
 **Expected State:** Character selection screen is visible with available heroes.
 
-### 001 - Game Setup with Monster Adjacent
-![Game Setup](080-terrifying-roar-curse.spec.ts-snapshots/001-game-setup-monster-adjacent-chromium-linux.png)
-**User Action:** Game starts with Quinn positioned on the start tile with a Kobold monster adjacent.
+### 001 - Game Started
+![Game Started](080-terrifying-roar-curse.spec.ts-snapshots/001-game-started-chromium-linux.png)
+**User Action:** Game starts with Quinn on the board.
 **Expected State:** 
-- Quinn is at position (2, 4)
-- Kobold monster is at position (2, 3), adjacent to Quinn
-- Game is in hero phase
+- Quinn is positioned on the start tile
+- Game is ready for play
+- No curses are active yet
 
-### 002 - Quinn Without Curse
-![No Curse Yet](080-terrifying-roar-curse.spec.ts-snapshots/002-quinn-no-curse-yet-chromium-linux.png)
-**User Action:** Initial state before curse is applied.
+### 002 - Curse Applied and Status Visible
+![Curse Applied](080-terrifying-roar-curse.spec.ts-snapshots/002-curse-applied-status-visible-chromium-linux.png)
+**User Action:** Terrifying Roar curse encounter was triggered and accepted.
 **Expected State:**
-- Quinn has base attack bonus of +6 (level 1)
-- No curse status effects present
-- Hero panel shows normal status
-
-### 003 - Terrifying Roar Curse Card Displayed
-![Curse Card](080-terrifying-roar-curse.spec.ts-snapshots/003-terrifying-roar-curse-displayed-chromium-linux.png)
-**User Action:** During villain phase, the Terrifying Roar encounter card is drawn.
-**Expected State:**
-- Encounter card modal displays "Terrifying Roar"
-- Card shows curse type and description
-- Accept button is available
-
-### 004 - Curse Applied to Quinn
-![Curse Applied](080-terrifying-roar-curse.spec.ts-snapshots/004-curse-applied-to-quinn-chromium-linux.png)
-**User Action:** Player accepts the curse encounter.
-**Expected State:**
-- Curse status effect is added to Quinn's status list
+- Curse status effect is applied to Quinn
 - Status type is 'curse-terrifying-roar'
 - Source is 'terrifying-roar'
-- Encounter card is dismissed
-
-### 005 - Ready to Attack with Curse
-![Ready to Attack](080-terrifying-roar-curse.spec.ts-snapshots/005-ready-to-attack-with-curse-chromium-linux.png)
-**User Action:** Game transitions back to hero phase with Quinn able to act.
-**Expected State:**
-- Current phase is hero-phase
-- Quinn's actions are reset (can move and attack)
-- Curse status is still active on Quinn
-- Kobold monster is still adjacent
-
-### 006 - Attack Bonus Calculation Verified
-![Attack Calculation](080-terrifying-roar-curse.spec.ts-snapshots/006-attack-bonus-calculation-verified-chromium-linux.png)
-**User Action:** System calculates Quinn's modified attack bonus.
-**Expected State:**
-- Base attack bonus: +6
-- Curse penalty: -4
-- Modified attack bonus: +2 (6 - 4)
-- Curse is confirmed present in status list
-
-### 007 - Curse Status Icon Displayed
-![Status Icon](080-terrifying-roar-curse.spec.ts-snapshots/007-curse-status-icon-displayed-chromium-linux.png)
-**User Action:** Visual confirmation of curse in player panel.
-**Expected State:**
-- Quinn has at least one status effect visible
-- Status icon represents the Terrifying Roar curse
-- Player can see they are affected by the curse
+- Attack penalty calculation verified: base (6) - penalty (4) = modified (2)
 
 ## Verification Points
 
@@ -115,4 +72,4 @@ This test validates that the Terrifying Roar curse:
 - The curse persists until removed (DC 10+ roll)
 - Multiple curse penalties can stack if hero has multiple curses
 - The UI displays the base attack value; actual rolls use the modified value
-- This test validates the mechanical effect, not the visual display of modified stats
+- This test validates the mechanical effect through programmatic checks
