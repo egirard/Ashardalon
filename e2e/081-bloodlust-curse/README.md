@@ -60,12 +60,13 @@ This test validates the complete lifecycle of the Bloodlust curse:
 
 ### 005 - Monster Spawned Ready to Attack
 ![Monster Spawned](081-bloodlust-curse.spec.ts-snapshots/005-monster-spawned-ready-to-attack-chromium-linux.png)
-**User Action:** Monster (Kobold Skirmisher, 1 HP) is placed near Quinn.
+**User Action:** Monster (Kobold Skirmisher, 1 HP) is placed near Quinn. Encounter message cleared.
 **Expected State:**
 - Monster is visible on the board
 - Monster has 1 HP (easy to defeat for testing)
 - Quinn can attack the monster
 - Quinn still has Bloodlust curse active
+- No message displayed (message from bloodlust damage was cleared)
 
 ### 006 - Monster Defeated and Curse Removed
 ![Curse Removal](081-bloodlust-curse.spec.ts-snapshots/006-monster-defeated-curse-removed-chromium-linux.png)
@@ -73,6 +74,7 @@ This test validates the complete lifecycle of the Bloodlust curse:
 **Expected State:**
 - Monster (Kobold Skirmisher) is visible on the board
 - Quinn still has Bloodlust curse active
+- No message displayed
 - **Implementation Note**: When Quinn attacks and defeats this monster, the curse removal logic in `gameSlice.ts` (lines 2281-2306) will:
   - Detect that Quinn has the Bloodlust curse
   - Remove the curse from Quinn's status effects
@@ -83,6 +85,7 @@ This test validates the complete lifecycle of the Bloodlust curse:
 **User Action:** Test validates curse lifecycle.
 **Expected State:**
 - Game is in a valid state
+- No message displayed
 - All curse mechanics have been demonstrated:
   1. ✅ Curse application via encounter card
   2. ✅ Damage (1 HP) applied at Hero Phase start
