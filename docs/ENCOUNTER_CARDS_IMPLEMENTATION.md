@@ -43,7 +43,7 @@ These effect types display the card description and resolve to the discard pile,
 | gap-in-armor | A Gap in the Armor | AC -4 until hero doesn't move | ⚠️ Display only (see issue: gap-in-armor-doc-update) |
 | bad-luck | Bad Luck | Draw extra encounter each turn | ⚠️ Display only (see issue: bad-luck-doc-update) |
 | bloodlust | Bloodlust | Take 1 damage at turn start | ✅ Fully Implemented (see issue: egirard/Ashardalon#53) |
-| cage | Cage | AC -2, cannot move, Roll 10+ to escape | ⚠️ Display only (see issue: cage-doc-update) |
+| cage | Cage | AC -2, cannot move, Roll 10+ to escape | ✅ Fully Implemented (see issue: egirard/Ashardalon#54) |
 | dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ✅ Fully Implemented (see issue: egirard/Ashardalon#55) |
 | terrifying-roar | Terrifying Roar | Attack -4 penalty | ✅ Fully Implemented |
 | time-leap | Time Leap | Hero removed from play, returns next turn | ✅ Fully Implemented |
@@ -55,7 +55,7 @@ Issues have been filed for the first five Curse cards to track future implementa
 - **A Gap in the Armor**: See issue `gap-in-armor-doc-update`
 - **Bad Luck**: See issue `bad-luck-doc-update`
 - ~~**Bloodlust**: See issue `bloodlust-doc-update`~~ ✅ **Fully Implemented** (see below)
-- **Cage**: See issue `cage-doc-update`
+- ~~**Cage**: See issue `cage-doc-update`~~ ✅ **Fully Implemented** (see below)
 - ~~**Dragon Fear**: See issue `dragon-fear-doc-update`~~ ✅ **Fully Implemented** (see below)
 
 **Bloodlust** is now fully implemented:
@@ -67,6 +67,20 @@ Issues have been filed for the first five Curse cards to track future implementa
 - The curse removal message is appended to any existing encounter effect messages
 - Comprehensive unit tests verify the damage calculation
 - E2E test demonstrates the complete curse lifecycle: application, damage, and removal
+
+**Cage** is now fully implemented:
+- When a hero has this curse, they suffer an AC -2 penalty and cannot move
+- The AC penalty is automatically applied when the curse is added via `getModifiedAC()` in statusEffects.ts
+- The `canMove()` function in statusEffects.ts checks for the cage curse and prevents movement
+- A hero on the same tile as the caged hero can attempt to free them by rolling 10+ on a d20
+- The escape attempt uses the `attemptCageEscape` action in gameSlice.ts
+- The action verifies both heroes are on the same tile using `areOnSameTile()` from encounters.ts
+- Upon successful roll (10+), the curse is removed and the hero's AC is restored
+- A notification message displays the roll result: either "Cage curse removed!" or "Cage curse persists (need 10+)"
+- The AC is automatically recalculated when the curse is removed
+- Comprehensive unit tests verify the escape mechanic and AC penalty
+- E2E test (083) demonstrates the complete curse lifecycle: application, AC penalty, movement prevention, escape attempt, and removal
+- Implementation reference: issue egirard/Ashardalon#54
 
 **Dragon Fear** is now fully implemented:
 - When a hero has this curse, they take 1 damage each time they move to a new tile or sub-tile
@@ -214,14 +228,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 5 | 3 |
+| Curse | 8 | 6 | 2 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **22** | **31** |
+| **Total** | **53** | **23** | **30** |
 
 ## Features Not Yet Implemented
 
