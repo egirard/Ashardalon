@@ -240,18 +240,19 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
         
         expect(actualHp).toBe(expectedHp);
         
-        // Verify damage message was shown
+        // Verify damage message was shown with removal instructions
         expect(state.game.encounterEffectMessage).toContain('quinn');
         expect(state.game.encounterEffectMessage).toContain('1 damage');
         expect(state.game.encounterEffectMessage).toContain('Dragon Fear');
+        expect(state.game.encounterEffectMessage).toContain('Roll 10+ at end of Hero Phase to remove');
       }
     });
     
-    // STEP 8: Clear message
+    // STEP 8: End Hero Phase to trigger curse removal attempt
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
-      // Clear the message
+      // Clear the message first
       store.dispatch({
         type: 'game/dismissEncounterEffectMessage'
       });
@@ -259,23 +260,37 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
     
     await page.waitForTimeout(300);
     
-    await screenshots.capture(page, 'curse-damage-applied-message-cleared', {
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      
+      // End hero phase to trigger curse removal
+      store.dispatch({
+        type: 'game/endHeroPhase'
+      });
+    });
+    
+    await page.waitForTimeout(500);
+    
+    await screenshots.capture(page, 'end-hero-phase-curse-removal-attempt', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
           const store = (window as any).__REDUX_STORE__;
           return store.getState();
         });
         
-        // Verify curse is still active
-        const quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
-        const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-dragon-fear');
-        expect(hasCurse).toBe(true);
+        // Verify we're in exploration phase now
+        expect(state.game.turnState.currentPhase).toBe('exploration-phase');
         
-        // Verify message was cleared
-        expect(state.game.encounterEffectMessage).toBeNull();
+        // Verify curse removal message was shown
+        expect(state.game.encounterEffectMessage).toBeTruthy();
+        expect(state.game.encounterEffectMessage).toContain('Dragon Fear curse');
         
-        // Note: The curse description indicates "Roll 10+ to remove" 
-        // This would be implemented when exploration phase curse removal is added
+        // Message should contain either "removed!" or "persists"
+        const containsRemoved = state.game.encounterEffectMessage?.includes('removed!');
+        const containsPersists = state.game.encounterEffectMessage?.includes('persists');
+        expect(containsRemoved || containsPersists).toBe(true);
+        
+        console.log('Curse removal message:', state.game.encounterEffectMessage);
       }
     });
   });

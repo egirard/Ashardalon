@@ -73,11 +73,13 @@ Issues have been filed for the first five Curse cards to track future implementa
 - The damage is applied in the `moveHero` reducer when the hero's position changes to a different tile
 - Tile change detection uses `areOnSameTile()` to compare old and new positions
 - The start tile's two sub-tiles (north y:0-3, south y:4-7) are treated as separate tiles for this effect
-- A notification message appears when the damage is applied: "{heroId} takes 1 damage from Dragon Fear curse"
+- A notification message appears when the damage is applied: "{heroId} takes 1 damage from Dragon Fear curse. Roll 10+ at end of Hero Phase to remove."
 - The message is appended to any existing encounter effect messages using " | " separator
 - Party defeat is triggered if all heroes are reduced to 0 HP by the curse damage
-- Comprehensive unit tests verify damage is applied on tile change but not within same tile
-- E2E test (082) demonstrates the curse effect: no damage within same tile, 1 damage when crossing to different tile
+- At the end of Hero Phase, the hero automatically rolls d20 to attempt curse removal (10+ removes the curse)
+- A notification message displays the roll result: either "Dragon Fear curse removed!" or "Dragon Fear curse persists (need 10+)"
+- Comprehensive unit tests verify damage is applied on tile change but not within same tile, and curse removal attempts occur
+- E2E test (082) demonstrates the complete curse lifecycle: damage on tile crossing, removal instructions, and automatic removal attempt
 - Implementation reference: issue egirard/Ashardalon#55
 
 **Time Leap** is now fully implemented:

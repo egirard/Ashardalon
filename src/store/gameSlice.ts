@@ -1029,7 +1029,7 @@ export const gameSlice = createSlice({
             };
             
             // Set encounter effect message for Dragon Fear damage
-            const message = `${heroId} takes ${DRAGON_FEAR_DAMAGE} damage from Dragon Fear curse`;
+            const message = `${heroId} takes ${DRAGON_FEAR_DAMAGE} damage from Dragon Fear curse. Roll 10+ at end of Hero Phase to remove.`;
             if (state.encounterEffectMessage) {
               state.encounterEffectMessage += ` | ${message}`;
             } else {
@@ -1302,6 +1302,33 @@ export const gameSlice = createSlice({
             state.defeatReason = `The party was overwhelmed by environment effects.`;
             state.currentScreen = "defeat";
             return;
+          }
+        }
+      }
+      
+      // Attempt to remove Dragon Fear curse at end of Hero Phase
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (currentHeroId) {
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+        if (heroHpIndex !== -1) {
+          const heroHp = state.heroHp[heroHpIndex];
+          if (hasStatusEffect(heroHp.statuses ?? [], 'curse-dragon-fear')) {
+            const roll = rollD20();
+            const statuses = heroHp.statuses ?? [];
+            const { updatedStatuses, removed } = attemptCurseRemoval(statuses, 'curse-dragon-fear', roll);
+            
+            // Update hero's status effects
+            state.heroHp[heroHpIndex] = {
+              ...state.heroHp[heroHpIndex],
+              statuses: updatedStatuses,
+            };
+            
+            // Set message for curse removal attempt
+            if (removed) {
+              state.encounterEffectMessage = `${currentHeroId} rolled ${roll} - Dragon Fear curse removed!`;
+            } else {
+              state.encounterEffectMessage = `${currentHeroId} rolled ${roll} - Dragon Fear curse persists (need 10+)`;
+            }
           }
         }
       }

@@ -918,6 +918,116 @@ describe("gameSlice", () => {
       // Verify no message was set
       expect(state.encounterEffectMessage).toBeNull();
     });
+
+    it("should attempt Dragon Fear curse removal at end of Hero Phase", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'start-tile', 
+            tileType: 'start' as const, 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall' as const, south: 'wall' as const, east: 'open' as const, west: 'wall' as const } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const stateWithCurse = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } },
+        ],
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            maxHp: 10, 
+            currentHp: 8,
+            statuses: [
+              { type: 'curse-dragon-fear' as const, source: 'dragon-fear', appliedOnTurn: 1 }
+            ]
+          }
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon,
+      });
+
+      const state = gameReducer(stateWithCurse, endHeroPhase());
+
+      // Verify we're now in exploration phase
+      expect(state.turnState.currentPhase).toBe('exploration-phase');
+      
+      // Verify a message was set about curse removal attempt
+      expect(state.encounterEffectMessage).toBeTruthy();
+      expect(state.encounterEffectMessage).toContain('Dragon Fear curse');
+      
+      // The message should contain either "removed!" or "persists"
+      const containsRemoved = state.encounterEffectMessage?.includes('removed!');
+      const containsPersists = state.encounterEffectMessage?.includes('persists');
+      expect(containsRemoved || containsPersists).toBe(true);
+    });
+
+    it("should include removal instructions in Dragon Fear damage message", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'start-tile', 
+            tileType: 'start' as const, 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall' as const, south: 'wall' as const, east: 'open' as const, west: 'wall' as const } 
+          },
+          { 
+            id: 'tile-1', 
+            tileType: 'tile-black-2exit-a' as const, 
+            position: { col: 1, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'open' as const, south: 'open' as const, east: 'wall' as const, west: 'open' as const } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const stateWithCurse = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } }, // Start tile
+        ],
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            maxHp: 10, 
+            currentHp: 8,
+            statuses: [
+              { type: 'curse-dragon-fear' as const, source: 'dragon-fear', appliedOnTurn: 1 }
+            ]
+          }
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 5, y: 1 }], // Position on tile-1
+        showingMovement: true,
+        dungeon,
+      });
+
+      const state = gameReducer(
+        stateWithCurse,
+        moveHero({ heroId: "quinn", position: { x: 5, y: 1 } }), // Move to tile-1
+      );
+
+      // Verify the message includes removal instructions
+      expect(state.encounterEffectMessage).toContain('Dragon Fear curse');
+      expect(state.encounterEffectMessage).toContain('Roll 10+ at end of Hero Phase to remove');
+    });
   });
 
   describe("endHeroPhase", () => {
