@@ -112,8 +112,9 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
         const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-bloodlust');
         expect(hasCurse).toBe(true);
         
-        // Verify the message was shown
+        // Verify the message was shown with removal instructions
         expect(state.game.encounterEffectMessage).toContain('bloodlust curse');
+        expect(state.game.encounterEffectMessage).toContain('defeat a monster to remove');
       }
     });
     
@@ -182,7 +183,48 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
       }
     });
     
-    // STEP 7: Document that curse removal prevents damage on next turn
+    // STEP 7: Simulate monster defeat and show curse removal notification
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      
+      // Simulate an attack that defeats the monster
+      store.dispatch({
+        type: 'game/setAttackResult',
+        payload: {
+          result: {
+            isHit: true,
+            roll: 20,
+            damage: 2,
+          },
+          targetInstanceId: 'test-monster-1',
+          attackName: 'Cleave',
+        }
+      });
+    });
+    
+    await page.waitForTimeout(500);
+    
+    await screenshots.capture(page, 'curse-removal-notification-displayed', {
+      programmaticCheck: async () => {
+        const state = await page.evaluate(() => {
+          const store = (window as any).__REDUX_STORE__;
+          return store.getState();
+        });
+        
+        // Monster should be defeated
+        expect(state.game.monsters.length).toBe(0);
+        
+        // Curse should be removed from Quinn
+        const quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
+        const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-bloodlust');
+        expect(hasCurse).toBe(false);
+        
+        // Verify the removal notification is displayed
+        expect(state.game.encounterEffectMessage).toContain("Bloodlust curse is lifted");
+      }
+    });
+    
+    // STEP 8: Document that curse removal prevents damage on next turn
     // Note: The curse removal logic is implemented and verified in unit tests
     // When a hero with Bloodlust defeats a monster:
     // 1. Monster HP reaches 0 (gameSlice.ts line 2259)
@@ -201,9 +243,9 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
         // Verify game is in a valid state
         expect(state.game.turnState.currentPhase).toBe('hero-phase');
         expect(state.game.heroTokens.length).toBe(1);
-        expect(state.game.monsters.length).toBe(1);
-        // Message should still be cleared
-        expect(state.game.encounterEffectMessage).toBeNull();
+        expect(state.game.monsters.length).toBe(0); // Monster defeated in step 7
+        // Removal message from step 7 should still be visible
+        expect(state.game.encounterEffectMessage).toContain("Bloodlust curse is lifted");
       }
     });
   });
