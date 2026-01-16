@@ -44,7 +44,7 @@ These effect types display the card description and resolve to the discard pile,
 | bad-luck | Bad Luck | Draw extra encounter each turn | ⚠️ Display only (see issue: bad-luck-doc-update) |
 | bloodlust | Bloodlust | Take 1 damage at turn start | ✅ Fully Implemented (see issue: egirard/Ashardalon#53) |
 | cage | Cage | AC -2, cannot move, Roll 10+ to escape | ⚠️ Display only (see issue: cage-doc-update) |
-| dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ⚠️ Display only (see issue: dragon-fear-doc-update) |
+| dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ✅ Fully Implemented (see issue: egirard/Ashardalon#55) |
 | terrifying-roar | Terrifying Roar | Attack -4 penalty | ✅ Fully Implemented |
 | time-leap | Time Leap | Hero removed from play, returns next turn | ✅ Fully Implemented |
 | wrath-of-enemy | Wrath of the Enemy | Monster moves to hero each turn | ✅ Fully Implemented |
@@ -56,7 +56,7 @@ Issues have been filed for the first five Curse cards to track future implementa
 - **Bad Luck**: See issue `bad-luck-doc-update`
 - ~~**Bloodlust**: See issue `bloodlust-doc-update`~~ ✅ **Fully Implemented** (see below)
 - **Cage**: See issue `cage-doc-update`
-- **Dragon Fear**: See issue `dragon-fear-doc-update`
+- ~~**Dragon Fear**: See issue `dragon-fear-doc-update`~~ ✅ **Fully Implemented** (see below)
 
 **Bloodlust** is now fully implemented:
 - When a hero has this curse, they take 1 damage at the start of each Hero Phase (when `endVillainPhase` transitions to their turn)
@@ -67,6 +67,18 @@ Issues have been filed for the first five Curse cards to track future implementa
 - The curse removal message is appended to any existing encounter effect messages
 - Comprehensive unit tests verify the damage calculation
 - E2E test demonstrates the complete curse lifecycle: application, damage, and removal
+
+**Dragon Fear** is now fully implemented:
+- When a hero has this curse, they take 1 damage each time they move to a new tile or sub-tile
+- The damage is applied in the `moveHero` reducer when the hero's position changes to a different tile
+- Tile change detection uses `areOnSameTile()` to compare old and new positions
+- The start tile's two sub-tiles (north y:0-3, south y:4-7) are treated as separate tiles for this effect
+- A notification message appears when the damage is applied: "{heroId} takes 1 damage from Dragon Fear curse"
+- The message is appended to any existing encounter effect messages using " | " separator
+- Party defeat is triggered if all heroes are reduced to 0 HP by the curse damage
+- Comprehensive unit tests verify damage is applied on tile change but not within same tile
+- E2E test (082) demonstrates the curse effect: no damage within same tile, 1 damage when crossing to different tile
+- Implementation reference: issue egirard/Ashardalon#55
 
 **Time Leap** is now fully implemented:
 - When the curse is applied (during Villain Phase encounter resolution), the hero is immediately marked as `removedFromPlay`
@@ -200,14 +212,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 4 | 4 |
+| Curse | 8 | 5 | 3 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **21** | **32** |
+| **Total** | **53** | **22** | **31** |
 
 ## Features Not Yet Implemented
 
