@@ -3221,6 +3221,55 @@ export const gameSlice = createSlice({
       };
     },
     /**
+     * Attempt to escape from Cage curse
+     * A hero on the same tile as the caged hero can attempt a DC 10+ roll to free them
+     */
+    attemptCageEscape: (state, action: PayloadAction<{
+      cagedHeroId: string;
+      rescuerHeroId: string;
+    }>) => {
+      const { cagedHeroId, rescuerHeroId } = action.payload;
+      
+      // Find the caged hero
+      const cagedHeroIndex = state.heroHp.findIndex(h => h.heroId === cagedHeroId);
+      if (cagedHeroIndex === -1) return;
+      
+      const cagedHero = state.heroHp[cagedHeroIndex];
+      const statuses = cagedHero.statuses ?? [];
+      
+      // Verify the hero has the cage curse
+      if (!hasStatusEffect(statuses, 'curse-cage')) {
+        return;
+      }
+      
+      // Verify rescuer and caged hero are on the same tile
+      const rescuerToken = state.heroTokens.find(t => t.heroId === rescuerHeroId);
+      const cagedToken = state.heroTokens.find(t => t.heroId === cagedHeroId);
+      
+      if (!rescuerToken || !cagedToken) return;
+      
+      if (!areOnSameTile(rescuerToken.position, cagedToken.position, state.dungeon)) {
+        return;
+      }
+      
+      // Roll d20 for escape attempt
+      const roll = rollD20();
+      const { updatedStatuses, removed } = attemptCurseRemoval(statuses, 'curse-cage', roll);
+      
+      // Update caged hero's status effects
+      state.heroHp[cagedHeroIndex] = {
+        ...cagedHero,
+        statuses: updatedStatuses,
+      };
+      
+      // Show escape attempt message
+      if (removed) {
+        state.encounterEffectMessage = `${rescuerHeroId} rolled ${roll} - ${cagedHeroId}'s Cage curse removed!`;
+      } else {
+        state.encounterEffectMessage = `${rescuerHeroId} rolled ${roll} - ${cagedHeroId}'s Cage curse persists (need 10+)`;
+      }
+    },
+    /**
      * Show the pending monster card after tile animation completes
      * This is called after a 2-second delay to sequence the animations properly
      */
@@ -3733,6 +3782,7 @@ export const {
   dismissPoisonedDamageNotification,
   dismissPoisonRecoveryNotification,
   attemptPoisonRecovery,
+  attemptCageEscape,
   showPendingMonster,
   setHeroHp,
   dismissLevelUpNotification,

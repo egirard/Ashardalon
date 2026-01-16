@@ -5275,4 +5275,106 @@ describe("gameSlice", () => {
       expect(quinnHp?.statuses.some(s => s.type === 'dazed')).toBe(true);
     });
   });
+  
+  describe('Cage curse escape mechanic', () => {
+    it('should allow hero on same tile to attempt cage escape', () => {
+      // Start game with two heroes
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn', 'vistra'],
+        seed: 12345,
+      }));
+      
+      // Apply cage curse to Quinn
+      state = gameReducer(state, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'curse-cage',
+          source: 'cage'
+        }
+      });
+      
+      // Verify Quinn has the cage curse
+      let quinnHp = state.heroHp.find(h => h.heroId === 'quinn');
+      expect(quinnHp?.statuses.some(s => s.type === 'curse-cage')).toBe(true);
+      
+      // Place both heroes on the same tile
+      const samePosition = { x: 3, y: 3 };
+      state = gameReducer(state, setHeroPosition({ heroId: 'quinn', position: samePosition }));
+      state = gameReducer(state, setHeroPosition({ heroId: 'vistra', position: samePosition }));
+      
+      // Attempt cage escape with Vistra helping Quinn
+      state = gameReducer(state, {
+        type: 'game/attemptCageEscape',
+        payload: {
+          cagedHeroId: 'quinn',
+          rescuerHeroId: 'vistra'
+        }
+      });
+      
+      // Check that an encounter message was set
+      expect(state.encounterEffectMessage).not.toBeNull();
+      expect(state.encounterEffectMessage).toContain('vistra rolled');
+      expect(state.encounterEffectMessage).toContain('quinn');
+      expect(state.encounterEffectMessage).toContain('Cage curse');
+    });
+    
+    it('should not allow cage escape when heroes are on different tiles', () => {
+      // Start game with two heroes
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn', 'vistra'],
+        seed: 12345,
+      }));
+      
+      // Apply cage curse to Quinn
+      state = gameReducer(state, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'curse-cage',
+          source: 'cage'
+        }
+      });
+      
+      // Place heroes on different tiles
+      state = gameReducer(state, setHeroPosition({ heroId: 'quinn', position: { x: 3, y: 3 } }));
+      state = gameReducer(state, setHeroPosition({ heroId: 'vistra', position: { x: 10, y: 10 } }));
+      
+      // Attempt cage escape - should not work
+      const oldMessage = state.encounterEffectMessage;
+      state = gameReducer(state, {
+        type: 'game/attemptCageEscape',
+        payload: {
+          cagedHeroId: 'quinn',
+          rescuerHeroId: 'vistra'
+        }
+      });
+      
+      // Message should not have changed (escape didn't happen)
+      expect(state.encounterEffectMessage).toBe(oldMessage);
+    });
+    
+    it('should prevent movement when caged', () => {
+      // Start game with Quinn
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn'],
+        seed: 12345,
+      }));
+      
+      // Apply cage curse to Quinn
+      state = gameReducer(state, {
+        type: 'game/applyHeroStatus',
+        payload: {
+          heroId: 'quinn',
+          statusType: 'curse-cage',
+          source: 'cage'
+        }
+      });
+      
+      // Verify Quinn cannot move (validated via statusEffects.canMove)
+      const quinnHp = state.heroHp.find(h => h.heroId === 'quinn');
+      expect(quinnHp?.statuses.some(s => s.type === 'curse-cage')).toBe(true);
+      // The actual movement prevention is tested in statusEffects.test.ts
+    });
+  });
 });
