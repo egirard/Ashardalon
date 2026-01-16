@@ -124,6 +124,7 @@ import {
   attemptCurseRemoval,
   DRAGON_FEAR_DAMAGE,
   getModifiedAC,
+  canMove as canMoveWithStatus,
   type StatusEffect,
   type StatusEffectType,
 } from "./statusEffects";
@@ -929,6 +930,13 @@ export const gameSlice = createSlice({
       }
       
       const { heroId, speed } = action.payload;
+      
+      // Check if hero can move based on status effects (e.g., cage curse)
+      const heroStatuses = getHeroStatuses(state, heroId);
+      if (!canMoveWithStatus(heroStatuses)) {
+        return;
+      }
+      
       const token = state.heroTokens.find((t) => t.heroId === heroId);
       
       if (token) {
@@ -966,6 +974,12 @@ export const gameSlice = createSlice({
       
       // Only allow move during hero phase and if hero can move
       if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canMove) {
+        return;
+      }
+      
+      // Check if hero can move based on status effects (e.g., cage curse)
+      const heroStatuses = getHeroStatuses(state, heroId);
+      if (!canMoveWithStatus(heroStatuses)) {
         return;
       }
       
