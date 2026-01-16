@@ -132,12 +132,13 @@
     arePositionsAdjacent,
     isWithinTileRange,
   } from "../store/combat";
-  import { findTileAtPosition, getTileOrSubTileId, getTileBounds } from "../store/movement";
+  import { findTileAtPosition, getTileOrSubTileId } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards, POWER_CARDS } from "../store/powerCards";
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
   import { getStatusDisplayData, isDazed, STATUS_EFFECT_DEFINITIONS, getModifiedAttackBonusWithCurses } from "../store/statusEffects";
+  import { areOnSameTile } from "../store/encounters";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -851,30 +852,8 @@
       const heroHpState = getHeroHpState(token.heroId);
       const hasCageCurse = heroHpState?.statuses?.some(s => s.type === 'curse-cage');
       
-      if (hasCageCurse) {
-        // Check if on same tile
-        const cagedTile = dungeon.tiles.find(t => {
-          const bounds = getTileBounds(t, dungeon);
-          return token.position.x >= bounds.minX && token.position.x <= bounds.maxX &&
-                 token.position.y >= bounds.minY && token.position.y <= bounds.maxY;
-        });
-        
-        const currentTile = dungeon.tiles.find(t => {
-          const bounds = getTileBounds(t, dungeon);
-          return currentToken.position.x >= bounds.minX && currentToken.position.x <= bounds.maxX &&
-                 currentToken.position.y >= bounds.minY && currentToken.position.y <= bounds.maxY;
-        });
-        
-        // For start tile, check sub-tiles
-        if (cagedTile?.id === 'start-tile' && currentTile?.id === 'start-tile') {
-          const cagedSubTile = token.position.y <= 3 ? 'north' : 'south';
-          const currentSubTile = currentToken.position.y <= 3 ? 'north' : 'south';
-          if (cagedSubTile === currentSubTile) {
-            return token.heroId;
-          }
-        } else if (cagedTile?.id === currentTile?.id) {
-          return token.heroId;
-        }
+      if (hasCageCurse && areOnSameTile(currentToken.position, token.position, dungeon)) {
+        return token.heroId;
       }
     }
     
