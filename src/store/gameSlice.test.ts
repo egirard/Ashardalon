@@ -746,6 +746,178 @@ describe("gameSlice", () => {
       // State should remain unchanged
       expect(state.heroTokens).toEqual(stateWithMovement.heroTokens);
     });
+
+    it("should apply Dragon Fear curse damage when moving to a new tile", () => {
+      // Create dungeon with two tiles
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'start-tile', 
+            tileType: 'start' as const, 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall' as const, south: 'wall' as const, east: 'open' as const, west: 'wall' as const } 
+          },
+          { 
+            id: 'tile-1', 
+            tileType: 'tile-black-2exit-a' as const, 
+            position: { col: 1, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'open' as const, south: 'open' as const, east: 'wall' as const, west: 'open' as const } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const stateWithCurse = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } }, // Start tile
+        ],
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            maxHp: 10, 
+            currentHp: 8,
+            statuses: [
+              { type: 'curse-dragon-fear' as const, source: 'dragon-fear', appliedOnTurn: 1 }
+            ]
+          }
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 5, y: 1 }], // Position on tile-1
+        showingMovement: true,
+        dungeon,
+      });
+
+      const state = gameReducer(
+        stateWithCurse,
+        moveHero({ heroId: "quinn", position: { x: 5, y: 1 } }), // Move to tile-1
+      );
+
+      // Verify hero took Dragon Fear damage
+      const quinnHp = state.heroHp.find(hp => hp.heroId === "quinn");
+      expect(quinnHp?.currentHp).toBe(7); // 8 - 1 = 7
+      
+      // Verify message was set
+      expect(state.encounterEffectMessage).toContain("quinn takes 1 damage from Dragon Fear curse");
+    });
+
+    it("should not apply Dragon Fear damage when moving within same tile", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'start-tile', 
+            tileType: 'start' as const, 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall' as const, south: 'wall' as const, east: 'open' as const, west: 'wall' as const } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const stateWithCurse = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } }, // Start tile
+        ],
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            maxHp: 10, 
+            currentHp: 8,
+            statuses: [
+              { type: 'curse-dragon-fear' as const, source: 'dragon-fear', appliedOnTurn: 1 }
+            ]
+          }
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 3, y: 2 }], // Still on start tile
+        showingMovement: true,
+        dungeon,
+      });
+
+      const state = gameReducer(
+        stateWithCurse,
+        moveHero({ heroId: "quinn", position: { x: 3, y: 2 } }), // Move within start tile
+      );
+
+      // Verify hero did NOT take Dragon Fear damage
+      const quinnHp = state.heroHp.find(hp => hp.heroId === "quinn");
+      expect(quinnHp?.currentHp).toBe(8); // No damage
+      
+      // Verify no message was set
+      expect(state.encounterEffectMessage).toBeNull();
+    });
+
+    it("should not apply Dragon Fear damage if hero does not have the curse", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'start-tile', 
+            tileType: 'start' as const, 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall' as const, south: 'wall' as const, east: 'open' as const, west: 'wall' as const } 
+          },
+          { 
+            id: 'tile-1', 
+            tileType: 'tile-black-2exit-a' as const, 
+            position: { col: 1, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'open' as const, south: 'open' as const, east: 'wall' as const, west: 'open' as const } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const stateWithoutCurse = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [
+          { heroId: "quinn", position: { x: 2, y: 2 } }, // Start tile
+        ],
+        heroHp: [
+          { 
+            heroId: "quinn", 
+            maxHp: 10, 
+            currentHp: 8,
+            statuses: [] // No curse
+          }
+        ],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        validMoveSquares: [{ x: 5, y: 1 }], // Position on tile-1
+        showingMovement: true,
+        dungeon,
+      });
+
+      const state = gameReducer(
+        stateWithoutCurse,
+        moveHero({ heroId: "quinn", position: { x: 5, y: 1 } }), // Move to tile-1
+      );
+
+      // Verify hero did NOT take Dragon Fear damage
+      const quinnHp = state.heroHp.find(hp => hp.heroId === "quinn");
+      expect(quinnHp?.currentHp).toBe(8); // No damage
+      
+      // Verify no message was set
+      expect(state.encounterEffectMessage).toBeNull();
+    });
   });
 
   describe("endHeroPhase", () => {
