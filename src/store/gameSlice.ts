@@ -89,6 +89,7 @@ import {
   getCurseStatusType,
   getHeroesNeedingMonsters,
   findClosestUnexploredEdge,
+  areOnSameTile,
 } from "./encounters";
 import {
   createTrapInstance,
@@ -121,6 +122,7 @@ import {
   isDazed,
   attemptPoisonRecovery as attemptPoisonRecoveryUtil,
   attemptCurseRemoval,
+  DRAGON_FEAR_DAMAGE,
   type StatusEffect,
   type StatusEffectType,
 } from "./statusEffects";
@@ -974,6 +976,9 @@ export const gameSlice = createSlice({
       const token = state.heroTokens.find((t) => t.heroId === heroId);
       if (!token) return;
       
+      // Store old position to check for tile change (for Dragon Fear curse)
+      const oldPosition = { ...token.position };
+      
       // Calculate distance moved (for incremental movement tracking)
       const distance = Math.max(
         Math.abs(position.x - token.position.x),
@@ -1006,6 +1011,38 @@ export const gameSlice = createSlice({
       
       // Move the hero
       token.position = position;
+      
+      // Check if hero moved to a new tile (for Dragon Fear curse)
+      const movedToNewTile = !areOnSameTile(oldPosition, position, state.dungeon);
+      
+      // Apply Dragon Fear curse damage if hero moved to a new tile
+      if (movedToNewTile) {
+        const heroHpIndex = state.heroHp.findIndex(hp => hp.heroId === heroId);
+        if (heroHpIndex !== -1) {
+          const heroHp = state.heroHp[heroHpIndex];
+          if (hasStatusEffect(heroHp.statuses ?? [], 'curse-dragon-fear')) {
+            // Apply Dragon Fear damage
+            const newHp = Math.max(0, heroHp.currentHp - DRAGON_FEAR_DAMAGE);
+            state.heroHp[heroHpIndex] = {
+              ...heroHp,
+              currentHp: newHp,
+            };
+            
+            // Set encounter effect message for Dragon Fear damage
+            const message = `${heroId} takes ${DRAGON_FEAR_DAMAGE} damage from Dragon Fear curse`;
+            if (state.encounterEffectMessage) {
+              state.encounterEffectMessage += ` | ${message}`;
+            } else {
+              state.encounterEffectMessage = message;
+            }
+            
+            // Check for party defeat
+            if (checkPartyDefeat(state.heroHp)) {
+              state.partyDefeated = true;
+            }
+          }
+        }
+      }
       
       // Check if all movement is used or if this completes the move action
       if (state.incrementalMovement.remainingMovement <= 0) {

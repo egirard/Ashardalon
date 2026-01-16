@@ -18,6 +18,11 @@ export const POISON_RECOVERY_DC = 10; // Dice roll needed to recover (10+ on d20
 export const BLOODLUST_DAMAGE = 1; // Damage dealt per turn when cursed with bloodlust
 
 /**
+ * Dragon Fear curse constants
+ */
+export const DRAGON_FEAR_DAMAGE = 1; // Damage dealt when moving to a new tile
+
+/**
  * Curse removal constants
  */
 export const CURSE_REMOVAL_DC = 10; // Dice roll needed to remove curse (10+ on d20)
