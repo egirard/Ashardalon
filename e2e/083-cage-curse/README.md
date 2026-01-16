@@ -40,9 +40,11 @@ As a player, when my hero is afflicted with the "Cage" curse:
 ![Heroes on Same Tile](./083-cage-curse.spec.ts-snapshots/005-heroes-on-same-tile-chromium-linux.png)
 - Both Quinn and Vistra are moved to position (3, 3)
 - They are on the same tile, enabling escape attempt
+- **UI Note**: When it's Vistra's turn (Hero Phase), a golden "🔓 Attempt Escape (Roll 10+)" button appears in the center game area, showing that Quinn is caged and allowing Vistra to attempt the rescue
 
 ### Step 7: Cage Escape Attempted
 ![Cage Escape Attempted](./083-cage-curse.spec.ts-snapshots/006-cage-escape-attempted-chromium-linux.png)
+- Player clicks the escape button (or in automated test, action is dispatched)
 - Vistra attempts to free Quinn with a d20 roll
 - Message is dismissed for clean screenshot
 
