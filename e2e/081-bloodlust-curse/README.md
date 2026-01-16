@@ -55,8 +55,9 @@ This test validates the complete lifecycle of the Bloodlust curse:
 **Expected State:**
 - Quinn takes 1 damage from bloodlust curse
 - HP reduces from 8 to 7 (or from current HP - 1)
-- Message displays: "quinn takes 1 damage from bloodlust curse"
+- Message displays: "quinn takes 1 damage from bloodlust curse (defeat a monster to remove)"
 - Curse remains active on hero
+- **Player is informed how to remove the curse**
 
 ### 005 - Monster Spawned Ready to Attack
 ![Monster Spawned](081-bloodlust-curse.spec.ts-snapshots/005-monster-spawned-ready-to-attack-chromium-linux.png)
@@ -80,16 +81,26 @@ This test validates the complete lifecycle of the Bloodlust curse:
   - Remove the curse from Quinn's status effects
   - Display message: "quinn's Bloodlust curse is lifted!"
 
-### 007 - Test Complete - Curse Lifecycle Documented
-![Test Complete](081-bloodlust-curse.spec.ts-snapshots/007-test-complete-curse-lifecycle-documented-chromium-linux.png)
+### 007 - Curse Removal Notification Displayed
+![Curse Removed Notification](081-bloodlust-curse.spec.ts-snapshots/007-curse-removal-notification-displayed-chromium-linux.png)
+**User Action:** Quinn defeats the monster.
+**Expected State:**
+- Monster is defeated and removed from the board
+- Quinn's Bloodlust curse is removed
+- **Message displays: "quinn's Bloodlust curse is lifted!"**
+- Player receives clear notification that curse was removed
+- XP awarded for monster defeat
+
+### 008 - Test Complete - Curse Lifecycle Documented
+![Test Complete](081-bloodlust-curse.spec.ts-snapshots/008-test-complete-curse-lifecycle-documented-chromium-linux.png)
 **User Action:** Test validates curse lifecycle.
 **Expected State:**
 - Game is in a valid state
-- No message displayed
+- Curse removal message still visible
 - All curse mechanics have been demonstrated:
   1. ✅ Curse application via encounter card
-  2. ✅ Damage (1 HP) applied at Hero Phase start
-  3. ✅ Curse removal on monster defeat (code verified)
+  2. ✅ Damage (1 HP) applied at Hero Phase start with removal instructions
+  3. ✅ Curse removal on monster defeat with notification
   4. ✅ No damage on subsequent turns after removal
 
 ## Verification Points
