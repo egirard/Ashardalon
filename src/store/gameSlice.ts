@@ -123,6 +123,7 @@ import {
   attemptPoisonRecovery as attemptPoisonRecoveryUtil,
   attemptCurseRemoval,
   DRAGON_FEAR_DAMAGE,
+  getModifiedAC,
   type StatusEffect,
   type StatusEffectType,
 } from "./statusEffects";
@@ -2187,11 +2188,19 @@ export const gameSlice = createSlice({
                   state.turnState.turnNumber
                 );
                 
+                // Get base AC from hero level stats
+                const hero = AVAILABLE_HEROES.find(h => h.id === activeHeroId);
+                const baseAC = hero ? HERO_LEVELS[activeHeroId][`level${heroHp.level}`].ac : heroHp.ac;
+                
+                // Recalculate AC with updated status effects
+                const modifiedAC = getModifiedAC(updatedStatuses, baseAC);
+                
                 // Special handling for Time Leap curse - remove hero from play
                 const isTimeLeap = state.drawnEncounter.id === 'time-leap';
                 state.heroHp[heroHpIndex] = {
                   ...heroHp,
                   statuses: updatedStatuses,
+                  ac: modifiedAC,
                   removedFromPlay: isTimeLeap ? true : (heroHp.removedFromPlay || false),
                 };
                 
@@ -3256,10 +3265,18 @@ export const gameSlice = createSlice({
       const roll = rollD20();
       const { updatedStatuses, removed } = attemptCurseRemoval(statuses, 'curse-cage', roll);
       
-      // Update caged hero's status effects
+      // Get base AC from hero level stats
+      const hero = AVAILABLE_HEROES.find(h => h.id === cagedHeroId);
+      const baseAC = hero ? HERO_LEVELS[cagedHeroId][`level${cagedHero.level}`].ac : cagedHero.ac;
+      
+      // Recalculate AC with updated status effects
+      const modifiedAC = getModifiedAC(updatedStatuses, baseAC);
+      
+      // Update caged hero's status effects and AC
       state.heroHp[cagedHeroIndex] = {
         ...cagedHero,
         statuses: updatedStatuses,
+        ac: modifiedAC,
       };
       
       // Show escape attempt message
@@ -3519,16 +3536,26 @@ export const gameSlice = createSlice({
       
       if (heroHpIndex !== -1) {
         const heroHp = state.heroHp[heroHpIndex];
+        const updatedStatuses = applyStatusEffect(
+          heroHp.statuses ?? [],
+          statusType,
+          source,
+          state.turnState.turnNumber,
+          duration,
+          data
+        );
+        
+        // Get base AC from hero level stats
+        const hero = AVAILABLE_HEROES.find(h => h.id === heroId);
+        const baseAC = hero ? HERO_LEVELS[heroId][`level${heroHp.level}`].ac : heroHp.ac;
+        
+        // Recalculate AC with status effects
+        const modifiedAC = getModifiedAC(updatedStatuses, baseAC);
+        
         state.heroHp[heroHpIndex] = {
           ...heroHp,
-          statuses: applyStatusEffect(
-            heroHp.statuses ?? [],
-            statusType,
-            source,
-            state.turnState.turnNumber,
-            duration,
-            data
-          ),
+          statuses: updatedStatuses,
+          ac: modifiedAC,
         };
       }
     },
@@ -3544,9 +3571,19 @@ export const gameSlice = createSlice({
       
       if (heroHpIndex !== -1) {
         const heroHp = state.heroHp[heroHpIndex];
+        const updatedStatuses = removeStatusEffect(heroHp.statuses ?? [], statusType);
+        
+        // Get base AC from hero level stats
+        const hero = AVAILABLE_HEROES.find(h => h.id === heroId);
+        const baseAC = hero ? HERO_LEVELS[heroId][`level${heroHp.level}`].ac : heroHp.ac;
+        
+        // Recalculate AC with remaining status effects
+        const modifiedAC = getModifiedAC(updatedStatuses, baseAC);
+        
         state.heroHp[heroHpIndex] = {
           ...heroHp,
-          statuses: removeStatusEffect(heroHp.statuses ?? [], statusType),
+          statuses: updatedStatuses,
+          ac: modifiedAC,
         };
       }
     },
