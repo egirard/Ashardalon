@@ -210,9 +210,9 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
       let state = store.getState();
       let quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
       let attempts = 0;
-      const maxAttempts = 20; // Should succeed within 20 attempts statistically
+      const MAX_ESCAPE_ATTEMPTS = 20; // Should succeed within 20 attempts statistically
       
-      while (quinnHp?.statuses?.some((s: any) => s.type === 'curse-cage') && attempts < maxAttempts) {
+      while (quinnHp?.statuses?.some((s: any) => s.type === 'curse-cage') && attempts < MAX_ESCAPE_ATTEMPTS) {
         store.dispatch({
           type: 'game/attemptCageEscape',
           payload: {

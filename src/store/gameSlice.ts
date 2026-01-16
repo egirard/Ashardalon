@@ -3230,7 +3230,7 @@ export const gameSlice = createSlice({
       };
     },
     /**
-     * Attempt to escape from Cage curse
+     * Attempt to escape from Cage curse (curse-cage status effect)
      * A hero on the same tile as the caged hero can attempt a DC 10+ roll to free them
      */
     attemptCageEscape: (state, action: PayloadAction<{
