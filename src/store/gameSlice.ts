@@ -1037,7 +1037,7 @@ export const gameSlice = createSlice({
             }
             
             // Check for party defeat
-            if (checkPartyDefeat(state.heroHp)) {
+            if (checkPartyDefeat(state.heroHp, state.partyResources)) {
               state.partyDefeated = true;
             }
           }
