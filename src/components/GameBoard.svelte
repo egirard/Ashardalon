@@ -33,6 +33,7 @@
     dismissPoisonedDamageNotification,
     dismissPoisonRecoveryNotification,
     attemptPoisonRecovery,
+    attemptCageEscape,
     showPendingMonster,
     useVoluntaryActionSurge,
     skipActionSurge,
@@ -131,7 +132,7 @@
     arePositionsAdjacent,
     isWithinTileRange,
   } from "../store/combat";
-  import { findTileAtPosition, getTileOrSubTileId } from "../store/movement";
+  import { findTileAtPosition, getTileOrSubTileId, getTileBounds } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards, POWER_CARDS } from "../store/powerCards";
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
@@ -833,6 +834,62 @@
     if (!currentHeroId) return false;
     const heroHpState = getHeroHpState(currentHeroId);
     return heroHpState?.statuses ? isDazed(heroHpState.statuses) : false;
+  }
+
+  // Check if there's a caged hero on the same tile as current hero
+  function getCagedHeroOnSameTile(): string | null {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return null;
+    
+    const currentToken = heroTokens.find(t => t.heroId === currentHeroId);
+    if (!currentToken) return null;
+    
+    // Find other heroes on the same tile with cage curse
+    for (const token of heroTokens) {
+      if (token.heroId === currentHeroId) continue; // Skip self
+      
+      const heroHpState = getHeroHpState(token.heroId);
+      const hasCageCurse = heroHpState?.statuses?.some(s => s.type === 'curse-cage');
+      
+      if (hasCageCurse) {
+        // Check if on same tile
+        const cagedTile = dungeon.tiles.find(t => {
+          const bounds = getTileBounds(t, dungeon);
+          return token.position.x >= bounds.minX && token.position.x <= bounds.maxX &&
+                 token.position.y >= bounds.minY && token.position.y <= bounds.maxY;
+        });
+        
+        const currentTile = dungeon.tiles.find(t => {
+          const bounds = getTileBounds(t, dungeon);
+          return currentToken.position.x >= bounds.minX && currentToken.position.x <= bounds.maxX &&
+                 currentToken.position.y >= bounds.minY && currentToken.position.y <= bounds.maxY;
+        });
+        
+        // For start tile, check sub-tiles
+        if (cagedTile?.id === 'start-tile' && currentTile?.id === 'start-tile') {
+          const cagedSubTile = token.position.y <= 3 ? 'north' : 'south';
+          const currentSubTile = currentToken.position.y <= 3 ? 'north' : 'south';
+          if (cagedSubTile === currentSubTile) {
+            return token.heroId;
+          }
+        } else if (cagedTile?.id === currentTile?.id) {
+          return token.heroId;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Handle cage escape attempt
+  function handleAttemptCageEscape() {
+    const cagedHeroId = getCagedHeroOnSameTile();
+    if (!cagedHeroId) return;
+    
+    const rescuerHeroId = getCurrentHeroId();
+    if (!rescuerHeroId) return;
+    
+    store.dispatch(attemptCageEscape({ cagedHeroId, rescuerHeroId }));
   }
 
   // Get monsters controlled by the current hero
@@ -3093,6 +3150,28 @@
           </div>
         {/if}
 
+        <!-- Cage Escape Button (shown when another hero on same tile has cage curse) -->
+        {#if turnState.currentPhase === "hero-phase" && getCagedHeroOnSameTile() && !mapControlMode}
+          {@const cagedHeroId = getCagedHeroOnSameTile()}
+          {@const cagedHero = AVAILABLE_HEROES.find(h => h.id === cagedHeroId)}
+          <div class="cage-escape-panel" data-testid="cage-escape-panel">
+            <div class="cage-escape-header">
+              <span class="cage-icon">{STATUS_EFFECT_DEFINITIONS['curse-cage'].icon}</span>
+              <span class="cage-title">CAGED ALLY</span>
+            </div>
+            <div class="cage-escape-message">
+              {cagedHero?.name || cagedHeroId} is trapped in a cage!
+            </div>
+            <button
+              class="cage-escape-button"
+              data-testid="attempt-cage-escape"
+              onclick={handleAttemptCageEscape}
+            >
+              🔓 Attempt Escape (Roll 10+)
+            </button>
+          </div>
+        {/if}
+
         <!-- Move-After-Attack Hero Selection (shown when multiple heroes on tile) -->
         {#if pendingMoveAfterAttack && !pendingMoveAfterAttack.selectedHeroId && pendingMoveAfterAttack.availableHeroes.length > 1 && !attackResult && !mapControlMode}
           <div class="hero-selection-overlay" data-testid="hero-selection-overlay">
@@ -3994,6 +4073,78 @@
     color: #fff;
     text-align: center;
     line-height: 1.3;
+  }
+
+  /* Cage escape panel display */
+  .cage-escape-panel {
+    background: rgba(180, 100, 30, 0.2);
+    border: 2px solid rgba(180, 100, 30, 0.7);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    animation: cage-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes cage-pulse {
+    0%, 100% {
+      border-color: rgba(180, 100, 30, 0.7);
+      box-shadow: 0 0 0 rgba(180, 100, 30, 0.3);
+    }
+    50% {
+      border-color: rgba(200, 120, 50, 0.9);
+      box-shadow: 0 0 10px rgba(180, 100, 30, 0.5);
+    }
+  }
+
+  .cage-escape-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .cage-icon {
+    font-size: 1.5rem;
+  }
+
+  .cage-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #d4a574;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cage-escape-message {
+    font-size: 0.85rem;
+    color: #fff;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .cage-escape-button {
+    background: linear-gradient(135deg, #8b6914 0%, #b8860b 100%);
+    border: 2px solid #d4a574;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .cage-escape-button:hover {
+    background: linear-gradient(135deg, #9a7620 0%, #d4a017 100%);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(180, 100, 30, 0.6);
+  }
+
+  .cage-escape-button:active {
+    transform: scale(0.98);
   }
 
 
