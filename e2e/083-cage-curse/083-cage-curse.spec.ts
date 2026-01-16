@@ -153,10 +153,17 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
         expect(quinnToken.position.y).toBe(3);
         expect(vistraToken.position.x).toBe(3);
         expect(vistraToken.position.y).toBe(3);
+        
+        // Note: In actual gameplay, when it's Vistra's turn (Hero Phase),
+        // a golden "🔓 Attempt Escape (Roll 10+)" button will appear
+        // in the game board area, allowing the player to click it.
+        // This button is implemented in GameBoard.svelte as cage-escape-panel.
       }
     });
     
     // STEP 6: Attempt cage escape with Vistra helping Quinn
+    // Note: In the actual game, the player would click the escape button.
+    // For automated testing, we dispatch the action directly.
     const escapeResult = await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
