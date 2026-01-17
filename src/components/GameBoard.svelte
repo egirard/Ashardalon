@@ -845,6 +845,14 @@
     const currentToken = heroTokens.find(t => t.heroId === currentHeroId);
     if (!currentToken) return null;
     
+    // Check if current hero is caged (can escape themselves)
+    const currentHeroHpState = getHeroHpState(currentHeroId);
+    const isCurrentHeroCaged = currentHeroHpState?.statuses?.some(s => s.type === 'curse-cage');
+    
+    if (isCurrentHeroCaged) {
+      return currentHeroId;
+    }
+    
     // Find other heroes on the same tile with cage curse
     for (const token of heroTokens) {
       if (token.heroId === currentHeroId) continue; // Skip self
@@ -858,6 +866,15 @@
     }
     
     return null;
+  }
+  
+  // Helper to check if the current hero is caged
+  function isCurrentHeroCaged(): boolean {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return false;
+    
+    const heroHpState = getHeroHpState(currentHeroId);
+    return heroHpState?.statuses?.some(s => s.type === 'curse-cage') ?? false;
   }
   
   // Handle cage escape attempt
@@ -3278,6 +3295,7 @@
               return { heroId: cagedHeroId, heroName: cagedHero?.name || cagedHeroId };
             })() : null}
             onAttemptCageEscape={isHeroActive ? handleAttemptCageEscape : undefined}
+            isCurrentHeroCaged={isHeroActive && turnState.currentPhase === "hero-phase" ? isCurrentHeroCaged() : false}
           />
         </div>
       </div>
