@@ -80,6 +80,14 @@
      */
     onMoveFlamingSphere?: () => void;
     onActivateFlamingSphereDamage?: () => void;
+    /**
+     * Caged ally info (if there's a caged hero on the same tile)
+     */
+    cagedAllyInfo?: { heroId: string; heroName: string } | null;
+    /**
+     * Callback when attempting cage escape
+     */
+    onAttemptCageEscape?: () => void;
   }
 
   let { 
@@ -100,7 +108,9 @@
     flamingSphereToken = null,
     heroHasMoved = false,
     onMoveFlamingSphere,
-    onActivateFlamingSphereDamage
+    onActivateFlamingSphereDamage,
+    cagedAllyInfo = null,
+    onAttemptCageEscape
   }: Props = $props();
 
   // State for expanded attack card
@@ -391,9 +401,16 @@
     }
   }
 
+  // Handle cage escape click
+  function handleCageEscapeClick() {
+    if (onAttemptCageEscape) {
+      onAttemptCageEscape();
+    }
+  }
+
 </script>
 
-{#if powerCards.length > 0}
+{#if powerCards.length > 0 || cagedAllyInfo}
   <div class="power-cards-container">
     <div 
       class="player-power-cards"
@@ -402,6 +419,28 @@
       class:position-right={boardPosition === 'right'}
       data-testid="player-power-cards"
     >
+      <!-- Cage Escape Action (shown when ally is caged on same tile) -->
+      {#if cagedAllyInfo}
+        <button 
+          class="power-card-mini special-action"
+          class:eligible={true}
+          title="Free {cagedAllyInfo.heroName} from cage (Roll 10+ to escape)"
+          onclick={handleCageEscapeClick}
+          data-testid="cage-escape-action"
+          aria-label="Attempt to free {cagedAllyInfo.heroName} from cage"
+        >
+          <div class="card-header-mini">
+            <span class="power-type special-action-type">
+              ⛓️
+            </span>
+            <span class="power-name">Free Ally</span>
+          </div>
+          <div class="card-stats-mini special-action-detail">
+            Roll 10+
+          </div>
+        </button>
+      {/if}
+
       {#each powerCards as { card, isFlipped, highlightState, ineligibilityReason } (card.id)}
       {@const isExpanded = expandedAttackCardId === card.id}
       {@const isAttackCard = card.attackBonus !== undefined}
@@ -678,6 +717,34 @@
   .power-card-mini.eligible .power-name {
     color: #fff;
     font-weight: 600;
+  }
+
+  /* Special action styling for cage escape */
+  .power-card-mini.special-action {
+    background: rgba(180, 100, 30, 0.3);
+    border-color: #d4a574;
+  }
+
+  .power-card-mini.special-action.eligible {
+    background: rgba(180, 100, 30, 0.4);
+    border-color: #ffd700;
+    box-shadow: 0 0 8px rgba(212, 165, 116, 0.6);
+  }
+
+  .power-card-mini.special-action.eligible:hover {
+    background: rgba(200, 120, 50, 0.5);
+    border-color: #ffd700;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.7);
+  }
+
+  .special-action-type {
+    background: rgba(180, 100, 30, 0.8);
+    font-size: 0.6rem;
+  }
+
+  .special-action-detail {
+    color: #ffd700;
+    font-weight: bold;
   }
 
   .flipped-indicator {
