@@ -126,6 +126,22 @@
   
   // State for showing cage escape details panel
   let showCageEscapeDetails: boolean = $state(false);
+  
+  // Get cage escape display text based on whether the current hero is caged
+  let cageEscapeDisplayText = $derived.by(() => {
+    if (!cagedAllyInfo) return '';
+    return isCurrentHeroCaged 
+      ? 'You are trapped and cannot move.' 
+      : `${cagedAllyInfo.heroName} is trapped and cannot move.`;
+  });
+  
+  // Get cage escape aria label based on whether the current hero is caged
+  let cageEscapeAriaLabel = $derived.by(() => {
+    if (!cagedAllyInfo) return '';
+    return isCurrentHeroCaged 
+      ? 'Attempt to escape from cage' 
+      : `Attempt to free ${cagedAllyInfo.heroName} from cage`;
+  });
 
   // Determine if Flaming Sphere card should be auto-selected
   let shouldAutoSelectFlamingSphere = $derived.by(() => {
@@ -611,7 +627,7 @@
           
           <div class="power-stats">
             <div class="stat-item">
-              <span class="cage-icon">⛓️</span> {isCurrentHeroCaged ? 'You are trapped and cannot move.' : `${cagedAllyInfo.heroName} is trapped and cannot move.`}
+              <span class="cage-icon">⛓️</span> {cageEscapeDisplayText}
             </div>
           </div>
           
@@ -620,7 +636,7 @@
               class="activate-button compact"
               onclick={handleCageEscapeAction}
               data-testid="attempt-cage-escape-button"
-              aria-label="{isCurrentHeroCaged ? 'Attempt to escape from cage' : `Attempt to free ${cagedAllyInfo.heroName} from cage`}"
+              aria-label={cageEscapeAriaLabel}
             >
               🔓 Attempt escape (10+)
             </button>

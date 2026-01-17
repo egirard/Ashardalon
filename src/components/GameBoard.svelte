@@ -837,6 +837,12 @@
     return heroHpState?.statuses ? isDazed(heroHpState.statuses) : false;
   }
 
+  // Helper to check if a hero has the cage curse
+  function hasHeroCageCurse(heroId: string): boolean {
+    const heroHpState = getHeroHpState(heroId);
+    return heroHpState?.statuses?.some(s => s.type === 'curse-cage') ?? false;
+  }
+
   // Check if there's a caged hero on the same tile as current hero
   function getCagedHeroOnSameTile(): string | null {
     const currentHeroId = getCurrentHeroId();
@@ -846,10 +852,7 @@
     if (!currentToken) return null;
     
     // Check if current hero is caged (can escape themselves)
-    const currentHeroHpState = getHeroHpState(currentHeroId);
-    const isCurrentHeroCaged = currentHeroHpState?.statuses?.some(s => s.type === 'curse-cage');
-    
-    if (isCurrentHeroCaged) {
+    if (hasHeroCageCurse(currentHeroId)) {
       return currentHeroId;
     }
     
@@ -857,10 +860,7 @@
     for (const token of heroTokens) {
       if (token.heroId === currentHeroId) continue; // Skip self
       
-      const heroHpState = getHeroHpState(token.heroId);
-      const hasCageCurse = heroHpState?.statuses?.some(s => s.type === 'curse-cage');
-      
-      if (hasCageCurse && areOnSameTile(currentToken.position, token.position, dungeon)) {
+      if (hasHeroCageCurse(token.heroId) && areOnSameTile(currentToken.position, token.position, dungeon)) {
         return token.heroId;
       }
     }
@@ -872,9 +872,7 @@
   function isCurrentHeroCaged(): boolean {
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return false;
-    
-    const heroHpState = getHeroHpState(currentHeroId);
-    return heroHpState?.statuses?.some(s => s.type === 'curse-cage') ?? false;
+    return hasHeroCageCurse(currentHeroId);
   }
   
   // Handle cage escape attempt
