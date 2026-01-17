@@ -154,16 +154,24 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
         expect(vistraToken.position.x).toBe(3);
         expect(vistraToken.position.y).toBe(3);
         
-        // Note: In actual gameplay, when it's Vistra's turn (Hero Phase),
-        // a golden "🔓 Attempt Escape (Roll 10+)" button will appear
-        // in the game board area, allowing the player to click it.
-        // This button is implemented in GameBoard.svelte as cage-escape-panel.
+        // Verify the "Free Ally" action card is visible in the power cards list
+        // when it's Vistra's turn (Hero Phase) and both heroes are on the same tile.
       }
     });
     
-    // STEP 6: Attempt cage escape with Vistra helping Quinn
-    // Note: In the actual game, the player would click the escape button.
-    // For automated testing, we dispatch the action directly.
+    // STEP 6: Click the "Free Ally" action card to open details panel
+    await page.click('[data-testid="cage-escape-action"]');
+    await page.waitForTimeout(300);
+    
+    await screenshots.capture(page, 'cage-escape-details-opened', {
+      programmaticCheck: async () => {
+        // Verify the details panel is visible
+        const detailsPanel = await page.locator('[data-testid="cage-escape-details-panel"]');
+        await expect(detailsPanel).toBeVisible();
+      }
+    });
+    
+    // STEP 7: Click the "Attempt Escape" button in the details panel
     const escapeResult = await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
@@ -211,7 +219,7 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
       }
     });
     
-    // STEP 7: If curse still active, try again until successful (for test completeness)
+    // STEP 8: If curse still active, try again until successful (for test completeness)
     await page.evaluate(async () => {
       const store = (window as any).__REDUX_STORE__;
       let state = store.getState();
@@ -258,7 +266,7 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
       }
     });
     
-    // STEP 8: Document test completion
+    // STEP 9: Document test completion
     await screenshots.capture(page, 'test-complete', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
