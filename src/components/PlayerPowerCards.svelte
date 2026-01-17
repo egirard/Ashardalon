@@ -118,6 +118,9 @@
   
   // State for selected card to show in details panel (replaces inline expansion and CardDetailView)
   let selectedCardForDetailsPanel: PowerCard | null = $state(null);
+  
+  // State for showing cage escape details panel
+  let showCageEscapeDetails: boolean = $state(false);
 
   // Determine if Flaming Sphere card should be auto-selected
   let shouldAutoSelectFlamingSphere = $derived.by(() => {
@@ -325,6 +328,9 @@
       return;
     }
     
+    // Close cage escape details when opening a power card
+    showCageEscapeDetails = false;
+    
     // Show details panel for this power card
     selectedCardForDetailsPanel = card;
     
@@ -401,10 +407,25 @@
     }
   }
 
-  // Handle cage escape click
+  // Handle cage escape click - show details panel
   function handleCageEscapeClick() {
+    // Toggle details panel
+    if (showCageEscapeDetails) {
+      showCageEscapeDetails = false;
+    } else {
+      // Close any open power card details
+      selectedCardForDetailsPanel = null;
+      expandedAttackCardId = null;
+      // Open cage escape details
+      showCageEscapeDetails = true;
+    }
+  }
+  
+  // Handle cage escape action - execute the escape attempt
+  function handleCageEscapeAction() {
     if (onAttemptCageEscape) {
       onAttemptCageEscape();
+      // Keep details panel open to see the result
     }
   }
 
@@ -424,6 +445,7 @@
         <button 
           class="power-card-mini special-action"
           class:eligible={true}
+          class:selected={showCageEscapeDetails}
           title="Free {cagedAllyInfo.heroName} from cage (Roll 10+ to escape)"
           onclick={handleCageEscapeClick}
           data-testid="cage-escape-action"
@@ -567,6 +589,56 @@
         onConfirmFlamingSphere={onConfirmFlamingSphere}
         onCancelMonsterRelocation={onCancelMonsterRelocation}
       />
+    {/if}
+    
+    <!-- Cage Escape Details Panel (shown when cage escape action is selected) -->
+    {#if showCageEscapeDetails && cagedAllyInfo}
+      <div 
+        class="power-card-details-panel cage-escape-details" 
+        data-testid="cage-escape-details-panel"
+        role="dialog"
+        aria-label="Cage escape action details"
+      >
+        <div class="detail-content">
+          <div class="card-type-badge cage-escape-badge">
+            Special Action
+          </div>
+          
+          <div class="cage-escape-info">
+            <div class="cage-icon-large">⛓️</div>
+            <h3>Free Caged Ally</h3>
+            <p class="caged-hero-name">{cagedAllyInfo.heroName} is trapped in a cage!</p>
+          </div>
+          
+          <div class="description">
+            Your ally is trapped in a cage and cannot move. You can attempt to free them by rolling the dice.
+          </div>
+          
+          <div class="rule">
+            <strong>Escape Mechanic:</strong> Roll 1d20. On a result of 10 or higher, the cage curse is removed and your ally is freed.
+          </div>
+          
+          <div class="clickability-info">
+            <button 
+              class="activate-button compact"
+              onclick={handleCageEscapeAction}
+              data-testid="attempt-cage-escape-button"
+              aria-label="Attempt to free {cagedAllyInfo.heroName} from cage"
+            >
+              🔓 Attempt Escape (Roll 10+)
+            </button>
+          </div>
+          
+          <button 
+            class="dismiss-button" 
+            onclick={() => showCageEscapeDetails = false}
+            data-testid="dismiss-cage-escape-button"
+            aria-label="Close details panel"
+          >
+            <XIcon size={16} ariaLabel="Close" />
+          </button>
+        </div>
+      </div>
     {/if}
   </div>
 {/if}
@@ -745,6 +817,47 @@
   .special-action-detail {
     color: #ffd700;
     font-weight: bold;
+  }
+
+  /* Cage escape details panel styling */
+  .cage-escape-details {
+    background: linear-gradient(135deg, rgba(40, 25, 10, 0.98) 0%, rgba(60, 40, 20, 0.98) 100%);
+    border-color: rgba(212, 165, 116, 0.8);
+  }
+
+  .cage-escape-badge {
+    background-color: rgba(180, 100, 30, 0.3);
+    border-color: #d4a574;
+    color: #d4a574;
+  }
+
+  .cage-escape-info {
+    text-align: center;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(212, 165, 116, 0.3);
+  }
+
+  .cage-icon-large {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .cage-escape-info h3 {
+    color: #ffd700;
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .caged-hero-name {
+    color: #fff;
+    font-size: 0.95rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: 600;
   }
 
   .flipped-indicator {
