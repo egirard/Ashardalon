@@ -594,7 +594,7 @@
     <!-- Cage Escape Details Panel (shown when cage escape action is selected) -->
     {#if showCageEscapeDetails && cagedAllyInfo}
       <div 
-        class="power-card-details-panel cage-escape-details" 
+        class="power-card-details-panel" 
         data-testid="cage-escape-details-panel"
         role="dialog"
         aria-label="Cage escape action details"
@@ -604,10 +604,10 @@
             Special Action
           </div>
           
-          <div class="cage-escape-info">
-            <div class="cage-icon-large">⛓️</div>
-            <h3>Free Caged Ally</h3>
-            <p class="caged-hero-name">{cagedAllyInfo.heroName} is trapped in a cage!</p>
+          <div class="power-stats">
+            <div class="stat-item">
+              <span class="cage-icon">⛓️</span> <strong>Trapped Ally:</strong> {cagedAllyInfo.heroName}
+            </div>
           </div>
           
           <div class="description">
@@ -820,44 +820,14 @@
   }
 
   /* Cage escape details panel styling */
-  .cage-escape-details {
-    background: linear-gradient(135deg, rgba(40, 25, 10, 0.98) 0%, rgba(60, 40, 20, 0.98) 100%);
-    border-color: rgba(212, 165, 116, 0.8);
-  }
-
   .cage-escape-badge {
     background-color: rgba(180, 100, 30, 0.3);
     border-color: #d4a574;
     color: #d4a574;
   }
 
-  .cage-escape-info {
-    text-align: center;
-    margin: 1rem 0;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    border: 1px solid rgba(212, 165, 116, 0.3);
-  }
-
-  .cage-icon-large {
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .cage-escape-info h3 {
-    color: #ffd700;
-    font-size: 1.1rem;
-    margin: 0.5rem 0;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .caged-hero-name {
-    color: #fff;
-    font-size: 0.95rem;
-    margin: 0.5rem 0 0 0;
-    font-weight: 600;
+  .cage-icon {
+    font-size: 1rem;
   }
 
   .flipped-indicator {
