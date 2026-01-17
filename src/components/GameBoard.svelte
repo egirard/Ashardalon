@@ -3129,30 +3129,6 @@
           </div>
         {/if}
 
-        <!-- Cage Escape Overlay (shown when another hero on same tile has cage curse) -->
-        {#if turnState.currentPhase === "hero-phase" && getCagedHeroOnSameTile() && !mapControlMode}
-          {@const cagedHeroId = getCagedHeroOnSameTile()}
-          {@const cagedHero = AVAILABLE_HEROES.find(h => h.id === cagedHeroId)}
-          <div class="cage-escape-overlay" data-testid="cage-escape-overlay">
-            <div class="cage-escape-panel" data-testid="cage-escape-panel">
-              <div class="cage-escape-header">
-                <span class="cage-icon">{STATUS_EFFECT_DEFINITIONS['curse-cage'].icon}</span>
-                <span class="cage-title">CAGED ALLY</span>
-              </div>
-              <div class="cage-escape-message">
-                {cagedHero?.name || cagedHeroId} is trapped in a cage!
-              </div>
-              <button
-                class="cage-escape-button"
-                data-testid="attempt-cage-escape"
-                onclick={handleAttemptCageEscape}
-              >
-                🔓 Attempt Escape (Roll 10+)
-              </button>
-            </div>
-          </div>
-        {/if}
-
         <!-- Move-After-Attack Hero Selection (shown when multiple heroes on tile) -->
         {#if pendingMoveAfterAttack && !pendingMoveAfterAttack.selectedHeroId && pendingMoveAfterAttack.availableHeroes.length > 1 && !attackResult && !mapControlMode}
           <div class="hero-selection-overlay" data-testid="hero-selection-overlay">
@@ -3295,6 +3271,13 @@
             heroHasMoved={isHeroActive ? heroTurnActions?.actionsTaken.includes('move') : false}
             onMoveFlamingSphere={isHeroActive ? handleMoveFlamingSphere : undefined}
             onActivateFlamingSphereDamage={isHeroActive ? handleActivateFlamingSphereDamage : undefined}
+            cagedAllyInfo={isHeroActive && turnState.currentPhase === "hero-phase" ? (() => {
+              const cagedHeroId = getCagedHeroOnSameTile();
+              if (!cagedHeroId) return null;
+              const cagedHero = AVAILABLE_HEROES.find(h => h.id === cagedHeroId);
+              return { heroId: cagedHeroId, heroName: cagedHero?.name || cagedHeroId };
+            })() : null}
+            onAttemptCageEscape={isHeroActive ? handleAttemptCageEscape : undefined}
           />
         </div>
       </div>
@@ -4055,95 +4038,6 @@
     text-align: center;
     line-height: 1.3;
   }
-
-  /* Cage escape overlay and panel */
-  .cage-escape-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-  }
-
-  .cage-escape-panel {
-    background: linear-gradient(135deg, rgba(40, 25, 10, 0.98) 0%, rgba(60, 40, 20, 0.98) 100%);
-    border: 3px solid rgba(180, 100, 30, 0.9);
-    border-radius: 12px;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-    animation: cage-pulse 2s ease-in-out infinite;
-    min-width: 320px;
-    box-shadow: 0 8px 32px rgba(180, 100, 30, 0.4);
-  }
-
-  @keyframes cage-pulse {
-    0%, 100% {
-      border-color: rgba(180, 100, 30, 0.7);
-      box-shadow: 0 0 0 rgba(180, 100, 30, 0.3);
-    }
-    50% {
-      border-color: rgba(200, 120, 50, 0.9);
-      box-shadow: 0 0 10px rgba(180, 100, 30, 0.5);
-    }
-  }
-
-  .cage-escape-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .cage-icon {
-    font-size: 1.5rem;
-  }
-
-  .cage-title {
-    font-size: 1rem;
-    font-weight: bold;
-    color: #d4a574;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .cage-escape-message {
-    font-size: 0.85rem;
-    color: #fff;
-    text-align: center;
-    line-height: 1.3;
-  }
-
-  .cage-escape-button {
-    background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
-    border: 2px solid #ffd700;
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: bold;
-    color: #000;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  }
-
-  .cage-escape-button:hover {
-    background: linear-gradient(135deg, #daa520 0%, #ffd700 100%);
-    transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.5);
-  }
-
-  .cage-escape-button:active {
-    transform: scale(0.98);
-  }
-
 
   /* Move-after-attack controls */
   .move-after-attack-controls {
