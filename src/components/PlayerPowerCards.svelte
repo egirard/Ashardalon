@@ -620,36 +620,37 @@
         role="dialog"
         aria-label="Cage escape action details"
       >
-        <div class="detail-content">
-          <div class="card-type-badge cage-escape-badge">
-            Special Action: Escape
-          </div>
-          
-          <div class="power-stats">
-            <div class="stat-item">
-              <span class="cage-icon">⛓️</span> {cageEscapeDisplayText}
-            </div>
-          </div>
-          
-          <div class="clickability-info">
-            <button 
-              class="activate-button compact"
-              onclick={handleCageEscapeAction}
-              data-testid="attempt-cage-escape-button"
-              aria-label={cageEscapeAriaLabel}
-            >
-              🔓 Attempt escape (10+)
-            </button>
-          </div>
-          
+        <div class="detail-header">
+          <h3 class="detail-title">Trap Curse</h3>
           <button 
-            class="dismiss-button" 
+            class="close-button" 
             onclick={() => showCageEscapeDetails = false}
             data-testid="dismiss-cage-escape-button"
-            aria-label="Close details panel"
+            aria-label="Close details"
           >
             <XIcon size={16} ariaLabel="Close" />
           </button>
+        </div>
+        
+        <div class="detail-content">
+          <div class="power-stats">
+            <div class="stat-item">
+              ⛓️ {cageEscapeDisplayText}
+            </div>
+          </div>
+          
+          <div class="target-selection">
+            <div class="target-list">
+              <button 
+                class="attack-button"
+                onclick={handleCageEscapeAction}
+                data-testid="attempt-cage-escape-button"
+                aria-label={cageEscapeAriaLabel}
+              >
+                🔓 Attempt escape (10+)
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     {/if}
@@ -832,15 +833,76 @@
     font-weight: bold;
   }
 
-  /* Cage escape details panel styling */
-  .cage-escape-badge {
-    background-color: rgba(180, 100, 30, 0.3);
-    border-color: #d4a574;
-    color: #d4a574;
+  /* Cage escape details panel styling - matches AttackCardDetailPanel */
+  .detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
   }
 
-  .cage-icon {
+  .detail-title {
     font-size: 1rem;
+    color: #ffd700;
+    margin: 0;
+    font-weight: bold;
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+  }
+
+  .close-button:hover {
+    color: #fff;
+  }
+
+  .target-selection {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(139, 69, 19, 0.3);
+    border: 1px solid #d4a574;
+    border-radius: 6px;
+  }
+
+  .target-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .attack-button {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+    background: linear-gradient(145deg, #8b4513 0%, #654321 100%);
+    color: #fff;
+    border: 2px solid #d4a574;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    text-align: left;
+  }
+
+  .attack-button:hover {
+    background: linear-gradient(145deg, #a0522d 0%, #8b4513 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .attack-button:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
 
   .flipped-indicator {
