@@ -88,6 +88,10 @@
      * Callback when attempting cage escape
      */
     onAttemptCageEscape?: () => void;
+    /**
+     * Whether the current hero is the one who is caged
+     */
+    isCurrentHeroCaged?: boolean;
   }
 
   let { 
@@ -110,7 +114,8 @@
     onMoveFlamingSphere,
     onActivateFlamingSphereDamage,
     cagedAllyInfo = null,
-    onAttemptCageEscape
+    onAttemptCageEscape,
+    isCurrentHeroCaged = false
   }: Props = $props();
 
   // State for expanded attack card
@@ -601,21 +606,13 @@
       >
         <div class="detail-content">
           <div class="card-type-badge cage-escape-badge">
-            Special Action
+            Special Action: Escape
           </div>
           
           <div class="power-stats">
             <div class="stat-item">
-              <span class="cage-icon">⛓️</span> <strong>Trapped Ally:</strong> {cagedAllyInfo.heroName}
+              <span class="cage-icon">⛓️</span> {isCurrentHeroCaged ? 'You are trapped and cannot move.' : `${cagedAllyInfo.heroName} is trapped and cannot move.`}
             </div>
-          </div>
-          
-          <div class="description">
-            Your ally is trapped in a cage and cannot move. You can attempt to free them by rolling the dice.
-          </div>
-          
-          <div class="rule">
-            <strong>Escape Mechanic:</strong> Roll 1d20. On a result of 10 or higher, the cage curse is removed and your ally is freed.
           </div>
           
           <div class="clickability-info">
@@ -623,9 +620,9 @@
               class="activate-button compact"
               onclick={handleCageEscapeAction}
               data-testid="attempt-cage-escape-button"
-              aria-label="Attempt to free {cagedAllyInfo.heroName} from cage"
+              aria-label="{isCurrentHeroCaged ? 'Attempt to escape from cage' : `Attempt to free ${cagedAllyInfo.heroName} from cage`}"
             >
-              🔓 Attempt Escape (Roll 10+)
+              🔓 Attempt escape (10+)
             </button>
           </div>
           
