@@ -22,7 +22,7 @@ import {
   getHeroesNeedingMonsters,
   findClosestUnexploredEdge,
 } from "./encounters";
-import type { EncounterDeck, TurnState, HeroHpState, EncounterCard } from "./types";
+import type { EncounterDeck, TurnState, HeroHpState, EncounterCard, TileEdge } from "./types";
 import { INITIAL_ENCOUNTER_DECK, ENCOUNTER_CARDS } from "./types";
 
 describe("encounters", () => {
@@ -974,7 +974,7 @@ describe("encounters", () => {
         { heroId: 'vistra' },
       ];
       
-      const monsters: any[] = [];
+      const monsters: Array<{ controllerId: string }> = [];
       
       const result = getHeroesNeedingMonsters(heroTokens, monsters);
       
@@ -1073,7 +1073,7 @@ describe("encounters", () => {
         tileDeck: [],
       };
       
-      const unexploredEdges: any[] = [];
+      const unexploredEdges: TileEdge[] = [];
       const heroPosition = { x: 4, y: 4 };
       
       const result = findClosestUnexploredEdge(heroPosition, unexploredEdges, dungeon);
