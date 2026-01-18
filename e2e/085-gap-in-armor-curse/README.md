@@ -10,9 +10,11 @@ This test demonstrates the "A Gap in the Armor" curse effect:
 1. Player accepts the "A Gap in the Armor" curse encounter card
 2. Curse is applied to the hero with AC -4 penalty
 3. Hero enters Hero Phase with the curse active
-4. Hero ends Hero Phase without moving (curse should be removed)
-5. Curse removal message displays: "effect removed because you did not move"
-6. Test verifies curse persists if hero moves during Hero Phase
+4. Hero moves during Hero Phase (curse should persist)
+5. Hero ends Hero Phase after moving (curse still active - NOT removed)
+6. Curse is applied again for second scenario
+7. Hero ends Hero Phase without moving (curse should be removed)
+8. Curse removal message displays: "effect removed because you did not move"
 
 ## Screenshots
 
@@ -31,14 +33,14 @@ This test demonstrates the "A Gap in the Armor" curse effect:
 ![004 - Hero Phase with Curse Active](085-gap-in-armor-curse.spec.ts-snapshots/004-hero-phase-with-curse-active-chromium-linux.png)
 *Hero phase resumes with curse active, hero has not moved yet*
 
-![005 - Curse Removed - Did Not Move](085-gap-in-armor-curse.spec.ts-snapshots/005-curse-removed-did-not-move-chromium-linux.png)
-*Hero ends phase without moving, curse is automatically removed with notification message*
+![005 - Hero Moved - Curse Still Active](085-gap-in-armor-curse.spec.ts-snapshots/005-hero-moved-curse-still-active-chromium-linux.png)
+*Hero moves during Hero Phase, curse remains active*
 
-![006 - Hero Moved - Curse Still Active](085-gap-in-armor-curse.spec.ts-snapshots/006-hero-moved-curse-still-active-chromium-linux.png)
-*When hero moves during Hero Phase, curse remains active*
+![006 - Curse Persists After Moving](085-gap-in-armor-curse.spec.ts-snapshots/006-curse-persists-after-moving-chromium-linux.png)
+*After moving and ending Hero Phase, curse is NOT removed (persists because hero moved)*
 
-![007 - Curse Persists After Moving](085-gap-in-armor-curse.spec.ts-snapshots/007-curse-persists-after-moving-chromium-linux.png)
-*After moving, curse is NOT removed at end of Hero Phase*
+![007 - Curse Removed - Did Not Move](085-gap-in-armor-curse.spec.ts-snapshots/007-curse-removed-did-not-move-chromium-linux.png)
+*In second scenario, hero ends phase without moving - curse is automatically removed with notification message*
 
 ## Verification Checklist
 
