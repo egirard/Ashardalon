@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 test.describe('073 - Surrounded Environment Activation', () => {
   test('surrounded environment spawns monsters for heroes without monsters at end of exploration phase', async ({ page }) => {
@@ -18,14 +18,12 @@ test.describe('073 - Surrounded Environment Activation', () => {
     // Select Vistra from right edge to ensure game state panel is visible
     await page.locator('[data-testid="hero-vistra-right"]').click();
     
-    // Select power cards for Vistra
-    await selectDefaultPowerCards(page, 'vistra');
+    // Powers are auto-selected when hero is selected, no need to manually select
     
     // Select Quinn from bottom edge as second hero
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
-    // Select power cards for Quinn
-    await selectDefaultPowerCards(page, 'quinn');
+    // Powers are auto-selected when hero is selected, no need to manually select
     
     // CRITICAL: Set deterministic seed before starting game
     await setupDeterministicGame(page);
@@ -155,8 +153,17 @@ test.describe('073 - Surrounded Environment Activation', () => {
       });
     });
     
-    // Wait for notification to appear
+    // After ending exploration phase, an encounter card is drawn first
+    // Wait for and dismiss the encounter card
+    await page.locator('[data-testid="encounter-card-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('.encounter-card .accept-button').click();
+    await page.locator('[data-testid="encounter-card-overlay"]').waitFor({ state: 'hidden' });
+    
+    // Now wait for the Surrounded! notification to appear
     await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible', timeout: 5000 });
+    
+    // Wait a moment for animations to complete
+    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'surrounded-notification-shown', {
       programmaticCheck: async () => {
@@ -174,7 +181,7 @@ test.describe('073 - Surrounded Environment Activation', () => {
       }
     });
     
-    // Dismiss the notification
+    // Dismiss the Surrounded! notification
     await page.locator('[data-testid="dismiss-effect-notification"]').click();
     await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'hidden' });
     
