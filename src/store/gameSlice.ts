@@ -87,7 +87,6 @@ import {
   isMonsterDeckManipulationCard,
   isTileDeckManipulationCard,
   getCurseStatusType,
-  getHeroesNeedingMonsters,
   findClosestUnexploredEdge,
   areOnSameTile,
 } from "./encounters";
@@ -1521,64 +1520,60 @@ export const gameSlice = createSlice({
       
       // Apply Surrounded! environment effect if active
       if (state.activeEnvironmentId === 'surrounded') {
-        // Get heroes that don't control at least one monster
-        const heroesNeedingMonsters = getHeroesNeedingMonsters(
-          state.heroTokens,
-          state.monsters
-        );
+        // Get the active hero
+        const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
         
-        let monstersSpawned = 0;
-        
-        // For each hero needing a monster, spawn one on the closest unexplored edge
-        for (const heroId of heroesNeedingMonsters) {
-          const heroToken = state.heroTokens.find(t => t.heroId === heroId);
-          if (!heroToken) continue;
+        if (activeHeroId) {
+          // Check if the active hero controls at least one monster
+          const activeHeroControlsMonster = state.monsters.some(m => m.controllerId === activeHeroId);
           
-          // Find closest unexplored edge to this hero
-          const closestEdge = findClosestUnexploredEdge(
-            heroToken.position,
-            state.dungeon.unexploredEdges,
-            state.dungeon
-          );
-          
-          if (closestEdge) {
-            // Find the tile that has this unexplored edge
-            const edgeTile = state.dungeon.tiles.find(t => t.id === closestEdge.tileId);
+          if (!activeHeroControlsMonster) {
+            const heroToken = state.heroTokens.find(t => t.heroId === activeHeroId);
             
-            if (edgeTile) {
-              // Draw a monster from the deck
-              const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+            if (heroToken) {
+              // Find closest unexplored edge to the active hero
+              const closestEdge = findClosestUnexploredEdge(
+                heroToken.position,
+                state.dungeon.unexploredEdges,
+                state.dungeon
+              );
               
-              if (drawnMonsterId) {
-                // Get proper spawn position on the tile (black square or adjacent)
-                const spawnPosition = getMonsterSpawnPosition(edgeTile, state.monsters);
+              if (closestEdge) {
+                // Find the tile that has this unexplored edge
+                const edgeTile = state.dungeon.tiles.find(t => t.id === closestEdge.tileId);
                 
-                if (spawnPosition) {
-                  // Create monster instance at the spawn position
-                  const monsterInstance = createMonsterInstance(
-                    drawnMonsterId,
-                    spawnPosition,
-                    heroId, // Monster is controlled by this hero
-                    closestEdge.tileId,
-                    state.monsterInstanceCounter
-                  );
+                if (edgeTile) {
+                  // Draw a monster from the deck
+                  const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
                   
-                  if (monsterInstance) {
-                    state.monsters.push(monsterInstance);
-                    state.monsterInstanceCounter += 1;
-                    state.monsterDeck = updatedMonsterDeck;
-                    monstersSpawned++;
+                  if (drawnMonsterId) {
+                    // Get proper spawn position on the tile (black square or adjacent)
+                    const spawnPosition = getMonsterSpawnPosition(edgeTile, state.monsters);
+                    
+                    if (spawnPosition) {
+                      // Create monster instance at the spawn position
+                      const monsterInstance = createMonsterInstance(
+                        drawnMonsterId,
+                        spawnPosition,
+                        activeHeroId, // Monster is controlled by the active hero
+                        closestEdge.tileId,
+                        state.monsterInstanceCounter
+                      );
+                      
+                      if (monsterInstance) {
+                        state.monsters.push(monsterInstance);
+                        state.monsterInstanceCounter += 1;
+                        state.monsterDeck = updatedMonsterDeck;
+                        
+                        // Set pending monster display to show the monster card popup
+                        state.pendingMonsterDisplayId = monsterInstance.instanceId;
+                      }
+                    }
                   }
                 }
               }
             }
           }
-        }
-        
-        // Show notification if any monsters were spawned
-        if (monstersSpawned > 0) {
-          const monsterWord = monstersSpawned === 1 ? 'monster' : 'monsters';
-          state.encounterEffectMessage = `Surrounded! ${monstersSpawned} ${monsterWord} spawned from the environment effect.`;
         }
       }
       

@@ -288,21 +288,23 @@ To fully implement all encounter cards, the following systems would need to be a
 #### Surrounded! Implementation Notes
 
 **Surrounded!** is now fully implemented:
-- When the environment is active, at the end of each Exploration Phase, the game checks which heroes don't control at least one monster
-- For each hero needing a monster, the closest unexplored edge to that hero is found using Manhattan distance
+- When the environment is active, at the end of each Exploration Phase, the game checks if the **active player** controls at least one monster
+- If the active player doesn't control any monsters, the closest unexplored edge to that player is found using Manhattan distance
 - A monster is drawn from the monster deck and placed on that edge
-- The spawned monster is controlled by the hero who needed it
-- A notification message displays how many monsters were spawned (e.g., "Surrounded! 1 monster spawned from the environment effect.")
+- The spawned monster is controlled by the active player
+- A monster card popup is displayed showing the spawned monster (same as regular monster spawns)
+- The effect only triggers for the active player on their turn, not for all players simultaneously
 - Edge cases handled:
   - No unexplored edges: Effect does not spawn monster
   - Empty monster deck: Effect does not spawn monster
   - No valid spawn position on tile: Effect does not spawn monster
+  - Active player already controls a monster: Effect does not spawn monster
 - Comprehensive unit tests verify:
-  - `getHeroesNeedingMonsters()` correctly identifies heroes without monsters
+  - Active player monster spawning logic
   - `findClosestUnexploredEdge()` finds the nearest unexplored edge using Manhattan distance
-  - All edge cases (no edges, no monsters, multiple heroes)
-- E2E test (073) demonstrates the complete effect lifecycle: activation, monster spawning, notification, and verification
-- Implementation reference: `gameSlice.ts` lines 1522-1583, `encounters.ts` lines 746-882
+  - All edge cases (no edges, no monsters, active player has monsters)
+- E2E test (073) demonstrates the complete effect lifecycle: activation, monster spawning, popup display, and verification
+- Implementation reference: `gameSlice.ts` lines 1522-1575, `encounters.ts` lines 859-882
 
 ### 3. Trap/Hazard System
 - Place markers on tiles
