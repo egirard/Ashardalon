@@ -301,6 +301,8 @@ export interface GameState {
   showScenarioIntroduction: boolean;
   /** Whether an extra encounter should be drawn due to Bad Luck curse (set after first encounter) */
   badLuckExtraEncounterPending: boolean;
+  /** Whether the current hero moved during this Hero Phase (for Gap in the Armor curse tracking) */
+  heroMovedThisPhase: boolean;
 }
 
 /**
@@ -551,6 +553,7 @@ const initialState: GameState = {
   selectedTargetType: null,
   showScenarioIntroduction: false,
   badLuckExtraEncounterPending: false,
+  heroMovedThisPhase: false,
 };
 
 /**
@@ -1031,6 +1034,9 @@ export const gameSlice = createSlice({
       // Move the hero
       token.position = position;
       
+      // Track that the hero moved this phase (for Gap in the Armor curse)
+      state.heroMovedThisPhase = true;
+      
       // Check if hero moved to a new tile (for Dragon Fear curse)
       const movedToNewTile = !areOnSameTile(oldPosition, position, state.dungeon);
       
@@ -1349,6 +1355,28 @@ export const gameSlice = createSlice({
             } else {
               state.encounterEffectMessage = `${currentHeroId} rolled ${roll} - Dragon Fear curse persists (need 10+)`;
             }
+          }
+        }
+      }
+      
+      // Remove Gap in the Armor curse if hero didn't move during Hero Phase
+      if (currentHeroId) {
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+        if (heroHpIndex !== -1) {
+          const heroHp = state.heroHp[heroHpIndex];
+          if (hasStatusEffect(heroHp.statuses ?? [], 'curse-gap-in-armor') && !state.heroMovedThisPhase) {
+            // Remove the curse because hero didn't move
+            const statuses = heroHp.statuses ?? [];
+            const updatedStatuses = removeStatusEffect(statuses, 'curse-gap-in-armor');
+            
+            // Update hero's status effects
+            state.heroHp[heroHpIndex] = {
+              ...state.heroHp[heroHpIndex],
+              statuses: updatedStatuses,
+            };
+            
+            // Set message for curse removal
+            state.encounterEffectMessage = `${currentHeroId}'s A Gap in the Armor curse removed (did not move)`;
           }
         }
       }
@@ -1761,6 +1789,9 @@ export const gameSlice = createSlice({
       // Start new hero phase with fresh turn actions
       state.turnState.currentPhase = "hero-phase";
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
+      
+      // Reset hero moved flag for Gap in the Armor curse tracking
+      state.heroMovedThisPhase = false;
       
       // Reset treasure drawn flag for the new turn
       state.treasureDrawnThisTurn = false;
