@@ -299,6 +299,9 @@ export interface GameState {
   selectedTargetType: 'monster' | 'trap' | 'treasure' | null;
   /** Whether the scenario introduction modal should be shown (can be reopened via objective panel) */
   showScenarioIntroduction: boolean;
+  /** Whether an extra encounter should be drawn due to Bad Luck curse (set after first encounter) */
+  badLuckExtraEncounterPending: boolean;
+  showScenarioIntroduction: boolean;
 }
 
 /**
@@ -548,6 +551,7 @@ const initialState: GameState = {
   selectedTargetId: null,
   selectedTargetType: null,
   showScenarioIntroduction: false,
+  badLuckExtraEncounterPending: false,
 };
 
 /**
@@ -893,6 +897,7 @@ export const gameSlice = createSlice({
       
       // Clear encounter effect messages
       state.encounterEffectMessage = null;
+      state.badLuckExtraEncounterPending = false;
 
       // Show scenario introduction on game start
       state.showScenarioIntroduction = true;
@@ -1206,6 +1211,7 @@ export const gameSlice = createSlice({
       state.incrementalMovement = null;
       state.undoSnapshot = null;
       state.encounterEffectMessage = null;
+      state.badLuckExtraEncounterPending = false;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -1671,6 +1677,19 @@ export const gameSlice = createSlice({
           const encounter = getEncounterById(encounterId);
           if (encounter) {
             state.drawnEncounter = encounter;
+            
+            // Check if current hero has Bad Luck curse - mark for extra encounter
+            const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+            if (currentHeroId) {
+              const heroHp = state.heroHp.find(h => h.heroId === currentHeroId);
+              const hasBadLuckCurse = heroHp?.statuses?.some(s => s.type === 'curse-bad-luck');
+              
+              if (hasBadLuckCurse) {
+                // Set a flag to draw extra encounter after this one is resolved
+                // We'll check this flag in dismissEncounterCard
+                state.badLuckExtraEncounterPending = true;
+              }
+            }
           }
         }
       }
@@ -1692,6 +1711,37 @@ export const gameSlice = createSlice({
       
       // Clear encounter state
       state.drawnEncounter = null;
+      state.badLuckExtraEncounterPending = false;
+      
+      // Attempt Bad Luck curse removal for current hero
+      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (currentHeroId) {
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+        if (heroHpIndex !== -1) {
+          const heroHp = state.heroHp[heroHpIndex];
+          const hasBadLuckCurse = heroHp.statuses?.some(s => s.type === 'curse-bad-luck');
+          
+          if (hasBadLuckCurse) {
+            // Automatically roll to attempt curse removal (10+ removes)
+            const roll = rollD20();
+            const statuses = heroHp.statuses ?? [];
+            const { updatedStatuses, removed } = attemptCurseRemoval(statuses, 'curse-bad-luck', roll);
+            
+            // Update hero's status effects
+            state.heroHp[heroHpIndex] = {
+              ...heroHp,
+              statuses: updatedStatuses,
+            };
+            
+            // Add curse removal result to message
+            if (removed) {
+              state.encounterEffectMessage = `${currentHeroId} rolled ${roll} and removed Bad Luck curse!`;
+            } else {
+              state.encounterEffectMessage = `${currentHeroId} rolled ${roll} and failed to remove Bad Luck curse (need 10+)`;
+            }
+          }
+        }
+      }
       
       // Clear any previous healing surge notification
       state.healingSurgeUsedHeroId = null;
@@ -2264,6 +2314,27 @@ export const gameSlice = createSlice({
         }
         
         state.drawnEncounter = null;
+        
+        // Check if Bad Luck curse requires drawing an extra encounter
+        if (state.badLuckExtraEncounterPending) {
+          state.badLuckExtraEncounterPending = false;
+          
+          // Draw the extra encounter for Bad Luck curse
+          const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+          state.encounterDeck = updatedDeck;
+          
+          if (encounterId) {
+            const encounter = getEncounterById(encounterId);
+            if (encounter) {
+              state.drawnEncounter = encounter;
+              // Set message to inform player this is the Bad Luck extra encounter
+              const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+              state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+              // Don't clear drawnEncounter - let the UI show the new card
+              return;
+            }
+          }
+        }
       }
     },
     /**
