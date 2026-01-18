@@ -1714,9 +1714,9 @@ export const gameSlice = createSlice({
       state.badLuckExtraEncounterPending = false;
       
       // Attempt Bad Luck curse removal for current hero
-      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
-      if (currentHeroId) {
-        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroId);
+      const currentHeroIdForCurse = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      if (currentHeroIdForCurse) {
+        const heroHpIndex = state.heroHp.findIndex(h => h.heroId === currentHeroIdForCurse);
         if (heroHpIndex !== -1) {
           const heroHp = state.heroHp[heroHpIndex];
           const hasBadLuckCurse = heroHp.statuses?.some(s => s.type === 'curse-bad-luck');
@@ -1735,9 +1735,9 @@ export const gameSlice = createSlice({
             
             // Add curse removal result to message
             if (removed) {
-              state.encounterEffectMessage = `${currentHeroId} rolled ${roll} and removed Bad Luck curse!`;
+              state.encounterEffectMessage = `${currentHeroIdForCurse} rolled ${roll} and removed Bad Luck curse!`;
             } else {
-              state.encounterEffectMessage = `${currentHeroId} rolled ${roll} and failed to remove Bad Luck curse (need 10+)`;
+              state.encounterEffectMessage = `${currentHeroIdForCurse} rolled ${roll} and failed to remove Bad Luck curse (need 10+)`;
             }
           }
         }
@@ -1892,6 +1892,25 @@ export const gameSlice = createSlice({
           
           // Discard the trap encounter card
           state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+          
+          // Check if Bad Luck curse requires drawing an extra encounter
+          if (state.badLuckExtraEncounterPending) {
+            state.badLuckExtraEncounterPending = false;
+            
+            // Draw the extra encounter for Bad Luck curse
+            const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+            state.encounterDeck = updatedDeck;
+            
+            if (encounterId) {
+              const encounter = getEncounterById(encounterId);
+              if (encounter) {
+                state.drawnEncounter = encounter;
+                const currentHeroId = activeHeroToken?.heroId;
+                state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                return;
+              }
+            }
+          }
         } else if (shouldPlaceHazardMarker(state.drawnEncounter)) {
           // Place hazard marker on active hero's tile (if no hazard already there)
           if (activeHeroPosition && !tileHasHazard(activeHeroPosition, state.hazards)) {
@@ -1937,6 +1956,25 @@ export const gameSlice = createSlice({
           
           // Discard the hazard encounter card
           state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+          
+          // Check if Bad Luck curse requires drawing an extra encounter
+          if (state.badLuckExtraEncounterPending) {
+            state.badLuckExtraEncounterPending = false;
+            
+            // Draw the extra encounter for Bad Luck curse
+            const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+            state.encounterDeck = updatedDeck;
+            
+            if (encounterId) {
+              const encounter = getEncounterById(encounterId);
+              if (encounter) {
+                state.drawnEncounter = encounter;
+                const currentHeroId = activeHeroToken?.heroId;
+                state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                return;
+              }
+            }
+          }
         } else if (state.drawnEncounter.effect.type === 'special') {
           // Handle special encounter cards
           const encounterId = state.drawnEncounter.id;
@@ -2221,7 +2259,29 @@ export const gameSlice = createSlice({
             state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
           }
           
-          // Check if we need to draw another encounter card
+          // Check if Bad Luck curse requires drawing an extra encounter FIRST
+          // This ensures Bad Luck extra is drawn before any special encounter extras
+          if (state.badLuckExtraEncounterPending) {
+            state.badLuckExtraEncounterPending = false;
+            
+            // Draw the extra encounter for Bad Luck curse
+            const { encounterId: badLuckEncounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+            state.encounterDeck = updatedDeck;
+            
+            if (badLuckEncounterId) {
+              const badLuckEncounter = getEncounterById(badLuckEncounterId);
+              if (badLuckEncounter) {
+                state.drawnEncounter = badLuckEncounter;
+                const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+                state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                // Note: If this Bad Luck encounter itself requires another draw (like Deadly Poison),
+                // it will be handled when this encounter is dismissed
+                return;
+              }
+            }
+          }
+          
+          // Check if we need to draw another encounter card (for special encounters like Deadly Poison)
           if (shouldDrawAnotherEncounter(encounterId)) {
             const { encounterId: nextEncounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
             state.encounterDeck = updatedDeck;
@@ -2230,7 +2290,14 @@ export const gameSlice = createSlice({
               const nextEncounter = getEncounterById(nextEncounterId);
               if (nextEncounter) {
                 state.drawnEncounter = nextEncounter;
-                // Don't clear drawnEncounter - let the UI show the new card
+                // If hero has Bad Luck curse, set flag again for the extra draw after this one
+                const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+                if (currentHeroId) {
+                  const heroHp = state.heroHp.find(h => h.heroId === currentHeroId);
+                  if (heroHp?.statuses?.some(s => s.type === 'curse-bad-luck')) {
+                    state.badLuckExtraEncounterPending = true;
+                  }
+                }
                 return;
               }
             }
@@ -2277,6 +2344,25 @@ export const gameSlice = createSlice({
           
           // Discard curse encounter card
           state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+          
+          // Check if Bad Luck curse requires drawing an extra encounter
+          if (state.badLuckExtraEncounterPending) {
+            state.badLuckExtraEncounterPending = false;
+            
+            // Draw the extra encounter for Bad Luck curse
+            const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+            state.encounterDeck = updatedDeck;
+            
+            if (encounterId) {
+              const encounter = getEncounterById(encounterId);
+              if (encounter) {
+                state.drawnEncounter = encounter;
+                const currentHeroId = activeHeroToken?.heroId;
+                state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                return;
+              }
+            }
+          }
         } else {
           // Get the current hero ID for active-hero effects
           const activeHeroId = activeHeroToken?.heroId;
@@ -2311,30 +2397,29 @@ export const gameSlice = createSlice({
           
           // Discard non-environment encounters
           state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
-        }
-        
-        state.drawnEncounter = null;
-        
-        // Check if Bad Luck curse requires drawing an extra encounter
-        if (state.badLuckExtraEncounterPending) {
-          state.badLuckExtraEncounterPending = false;
           
-          // Draw the extra encounter for Bad Luck curse
-          const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
-          state.encounterDeck = updatedDeck;
-          
-          if (encounterId) {
-            const encounter = getEncounterById(encounterId);
-            if (encounter) {
-              state.drawnEncounter = encounter;
-              // Set message to inform player this is the Bad Luck extra encounter
-              const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
-              state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
-              // Don't clear drawnEncounter - let the UI show the new card
-              return;
+          // Check if Bad Luck curse requires drawing an extra encounter
+          if (state.badLuckExtraEncounterPending) {
+            state.badLuckExtraEncounterPending = false;
+            
+            // Draw the extra encounter for Bad Luck curse
+            const { encounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+            state.encounterDeck = updatedDeck;
+            
+            if (encounterId) {
+              const encounter = getEncounterById(encounterId);
+              if (encounter) {
+                state.drawnEncounter = encounter;
+                const currentHeroId = activeHeroToken?.heroId;
+                state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                return;
+              }
             }
           }
         }
+        
+        state.drawnEncounter = null;
+        state.badLuckExtraEncounterPending = false;
       }
     },
     /**
