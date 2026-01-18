@@ -172,7 +172,7 @@ These effect types display the card description and resolve to the discard pile,
 | hidden-snipers | Hidden Snipers | 1 damage when alone on tile | ✅ Fully Implemented |
 | high-alert | High Alert | Pass monster card to right each turn | ⚠️ Tracked, not enforced (requires multiplayer card passing) |
 | kobold-trappers | Kobold Trappers | -4 to trap disable rolls | ⚠️ Tracked, not enforced (traps not yet implemented) |
-| surrounded | Surrounded! | Spawn monster if hero has none | ⚠️ Tracked, helper function added (monster spawning deferred) |
+| surrounded | Surrounded! | Spawn monster if hero has none | ✅ Fully Implemented |
 | walls-of-magma | Walls of Magma | 1 damage when adjacent to wall | ✅ Fully Implemented |
 
 ### Event Cards - Damage Effects (2 cards)
@@ -256,13 +256,13 @@ These effect types display the card description and resolve to the discard pile,
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
 | Curse | 8 | 8 | 0 |
-| Environment | 6 | 0 | 6 |
+| Environment | 6 | 3 | 3 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **25** | **28** |
+| **Total** | **53** | **28** | **25** |
 
 ## Features Not Yet Implemented
 
@@ -280,10 +280,29 @@ To fully implement all encounter cards, the following systems would need to be a
 - ✅ Display active environment in UI
 - ✅ Hidden Snipers: Apply 1 damage to active hero when ending Hero Phase alone on tile
 - ✅ Walls of Magma: Apply 1 damage to active hero when ending Hero Phase adjacent to wall
-- ⚠️ Surrounded!: Helper function added, full implementation requires monster spawning logic
+- ✅ Surrounded!: Spawn monster on closest unexplored edge for heroes without monsters at end of Exploration Phase
 - ⚠️ High Alert: Requires multiplayer card passing mechanism (not in current game state)
 - ⚠️ Dragon's Tribute: Requires treasure draw UI changes to draw 2 and choose
 - ⚠️ Kobold Trappers: Requires trap system implementation
+
+#### Surrounded! Implementation Notes
+
+**Surrounded!** is now fully implemented:
+- When the environment is active, at the end of each Exploration Phase, the game checks which heroes don't control at least one monster
+- For each hero needing a monster, the closest unexplored edge to that hero is found using Manhattan distance
+- A monster is drawn from the monster deck and placed on that edge
+- The spawned monster is controlled by the hero who needed it
+- A notification message displays how many monsters were spawned (e.g., "Surrounded! 1 monster spawned from the environment effect.")
+- Edge cases handled:
+  - No unexplored edges: Effect does not spawn monster
+  - Empty monster deck: Effect does not spawn monster
+  - No valid spawn position on tile: Effect does not spawn monster
+- Comprehensive unit tests verify:
+  - `getHeroesNeedingMonsters()` correctly identifies heroes without monsters
+  - `findClosestUnexploredEdge()` finds the nearest unexplored edge using Manhattan distance
+  - All edge cases (no edges, no monsters, multiple heroes)
+- E2E test (073) demonstrates the complete effect lifecycle: activation, monster spawning, notification, and verification
+- Implementation reference: `gameSlice.ts` lines 1522-1583, `encounters.ts` lines 746-882
 
 ### 3. Trap/Hazard System
 - Place markers on tiles
