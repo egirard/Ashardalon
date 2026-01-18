@@ -19,6 +19,8 @@ import {
   getTileDistance,
   getHeroesOnTile,
   getHeroesWithinRange,
+  getHeroesNeedingMonsters,
+  findClosestUnexploredEdge,
 } from "./encounters";
 import type { EncounterDeck, TurnState, HeroHpState, EncounterCard } from "./types";
 import { INITIAL_ENCOUNTER_DECK, ENCOUNTER_CARDS } from "./types";
@@ -941,6 +943,213 @@ describe("encounters", () => {
       
       expect(result).toContain('quinn');
       expect(result).toContain('vistra');
+    });
+  });
+
+  describe("getHeroesNeedingMonsters", () => {
+    it("should return heroes who don't control any monsters", () => {
+      const heroTokens = [
+        { heroId: 'quinn' },
+        { heroId: 'vistra' },
+        { heroId: 'heskan' },
+      ];
+      
+      const monsters = [
+        { controllerId: 'quinn', id: 'monster-1', position: { x: 0, y: 0 }, monsterId: 'kobold', hp: 5, tileId: 'tile-1', instanceId: 0 },
+        { controllerId: 'vistra', id: 'monster-2', position: { x: 1, y: 1 }, monsterId: 'kobold', hp: 5, tileId: 'tile-1', instanceId: 1 },
+      ];
+      
+      const result = getHeroesNeedingMonsters(heroTokens, monsters);
+      
+      // Heskan doesn't control any monsters
+      expect(result).toContain('heskan');
+      expect(result).not.toContain('quinn');
+      expect(result).not.toContain('vistra');
+      expect(result).toHaveLength(1);
+    });
+
+    it("should return all heroes when no monsters exist", () => {
+      const heroTokens = [
+        { heroId: 'quinn' },
+        { heroId: 'vistra' },
+      ];
+      
+      const monsters: any[] = [];
+      
+      const result = getHeroesNeedingMonsters(heroTokens, monsters);
+      
+      expect(result).toContain('quinn');
+      expect(result).toContain('vistra');
+      expect(result).toHaveLength(2);
+    });
+
+    it("should return empty array when all heroes control monsters", () => {
+      const heroTokens = [
+        { heroId: 'quinn' },
+        { heroId: 'vistra' },
+      ];
+      
+      const monsters = [
+        { controllerId: 'quinn', id: 'monster-1', position: { x: 0, y: 0 }, monsterId: 'kobold', hp: 5, tileId: 'tile-1', instanceId: 0 },
+        { controllerId: 'vistra', id: 'monster-2', position: { x: 1, y: 1 }, monsterId: 'kobold', hp: 5, tileId: 'tile-1', instanceId: 1 },
+      ];
+      
+      const result = getHeroesNeedingMonsters(heroTokens, monsters);
+      
+      expect(result).toHaveLength(0);
+    });
+
+    it("should work when a hero controls multiple monsters", () => {
+      const heroTokens = [
+        { heroId: 'quinn' },
+        { heroId: 'vistra' },
+      ];
+      
+      const monsters = [
+        { controllerId: 'quinn', id: 'monster-1', position: { x: 0, y: 0 }, monsterId: 'kobold', hp: 5, tileId: 'tile-1', instanceId: 0 },
+        { controllerId: 'quinn', id: 'monster-2', position: { x: 1, y: 1 }, monsterId: 'kobold', hp: 5, tileId: 'tile-1', instanceId: 1 },
+        { controllerId: 'quinn', id: 'monster-3', position: { x: 2, y: 2 }, monsterId: 'kobold', hp: 5, tileId: 'tile-1', instanceId: 2 },
+      ];
+      
+      const result = getHeroesNeedingMonsters(heroTokens, monsters);
+      
+      // Quinn controls 3 monsters, Vistra controls 0
+      expect(result).toContain('vistra');
+      expect(result).not.toContain('quinn');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe("findClosestUnexploredEdge", () => {
+    it("should find the closest unexplored edge to hero position", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'tile-1', 
+            tileType: 'tile-black-2exit-a', 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall', south: 'open', east: 'open', west: 'wall' } 
+          },
+          { 
+            id: 'tile-2', 
+            tileType: 'tile-black-2exit-a', 
+            position: { col: 1, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'open', south: 'wall', east: 'wall', west: 'open' } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const unexploredEdges = [
+        { tileId: 'tile-1', direction: 'south' as const },
+        { tileId: 'tile-2', direction: 'north' as const },
+      ];
+      
+      // Hero at position (2, 2) - closer to tile-1's south edge
+      const heroPosition = { x: 2, y: 2 };
+      
+      const result = findClosestUnexploredEdge(heroPosition, unexploredEdges, dungeon);
+      
+      expect(result).not.toBeNull();
+      expect(result?.tileId).toBe('tile-1');
+      expect(result?.direction).toBe('south');
+    });
+
+    it("should return null when no unexplored edges exist", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'tile-1', 
+            tileType: 'tile-black-2exit-a', 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall', south: 'wall', east: 'wall', west: 'wall' } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const unexploredEdges: any[] = [];
+      const heroPosition = { x: 4, y: 4 };
+      
+      const result = findClosestUnexploredEdge(heroPosition, unexploredEdges, dungeon);
+      
+      expect(result).toBeNull();
+    });
+
+    it("should calculate distance using Manhattan distance", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'tile-1', 
+            tileType: 'tile-black-2exit-a', 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall', south: 'open', east: 'wall', west: 'wall' } 
+          },
+          { 
+            id: 'tile-2', 
+            tileType: 'tile-black-2exit-a', 
+            position: { col: 2, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall', south: 'open', east: 'wall', west: 'wall' } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      const unexploredEdges = [
+        { tileId: 'tile-1', direction: 'south' as const }, // At x=4, y=8
+        { tileId: 'tile-2', direction: 'south' as const }, // At x=20, y=8
+      ];
+      
+      // Hero at (5, 5) should be closest to tile-1
+      const heroPosition = { x: 5, y: 5 };
+      
+      const result = findClosestUnexploredEdge(heroPosition, unexploredEdges, dungeon);
+      
+      expect(result?.tileId).toBe('tile-1');
+    });
+
+    it("should handle multiple edges with same distance (return first found)", () => {
+      const dungeon = {
+        tiles: [
+          { 
+            id: 'tile-1', 
+            tileType: 'tile-black-2exit-a', 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall', south: 'open', east: 'wall', west: 'wall' } 
+          },
+          { 
+            id: 'tile-2', 
+            tileType: 'tile-black-2exit-a', 
+            position: { col: 0, row: 0 }, 
+            rotation: 0, 
+            edges: { north: 'wall', south: 'wall', east: 'open', west: 'wall' } 
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+      
+      // Two edges at exactly same position (equidistant)
+      const unexploredEdges = [
+        { tileId: 'tile-1', direction: 'south' as const },
+        { tileId: 'tile-2', direction: 'east' as const },
+      ];
+      
+      const heroPosition = { x: 4, y: 4 };
+      
+      const result = findClosestUnexploredEdge(heroPosition, unexploredEdges, dungeon);
+      
+      // Should return the first edge found (tile-1)
+      expect(result?.tileId).toBe('tile-1');
     });
   });
 });
