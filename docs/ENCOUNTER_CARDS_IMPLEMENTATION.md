@@ -40,7 +40,7 @@ These effect types display the card description and resolve to the discard pile,
 
 | ID | Name | Effect Summary | Implementation Status |
 |----|------|----------------|----------------------|
-| gap-in-armor | A Gap in the Armor | AC -4 until hero doesn't move | ⚠️ Display only (see issue: gap-in-armor-doc-update) |
+| gap-in-armor | A Gap in the Armor | AC -4 until hero doesn't move | ✅ Fully Implemented (see issue: egirard/Ashardalon#51) |
 | bad-luck | Bad Luck | Draw extra encounter each turn | ✅ Fully Implemented (see issue: egirard/Ashardalon#52) |
 | bloodlust | Bloodlust | Take 1 damage at turn start | ✅ Fully Implemented (see issue: egirard/Ashardalon#53) |
 | cage | Cage | AC -2, cannot move, Roll 10+ to escape | ✅ Fully Implemented (see issue: egirard/Ashardalon#54) |
@@ -51,7 +51,20 @@ These effect types display the card description and resolve to the discard pile,
 
 #### Implementation Notes
 
-Issues have been filed for the first two Curse cards to track future implementation work:
+**A Gap in the Armor** is now fully implemented:
+- When a hero has this curse, they suffer an AC -4 penalty
+- The AC penalty is automatically applied when the curse is added via `getModifiedAC()` in statusEffects.ts
+- The game tracks whether the hero moved during the Hero Phase via the `heroMovedThisPhase` flag
+- The flag is set to true in the `moveHero` reducer when the hero moves
+- The flag is reset to false at the start of each Hero Phase (in `endVillainPhase`)
+- At the end of Hero Phase (in `endHeroPhase`), if the hero has the curse and didn't move, the curse is automatically removed
+- A notification message displays: "{heroId}'s A Gap in the Armor curse removed (did not move)"
+- The AC is automatically recalculated when the curse is removed
+- Comprehensive unit tests verify the curse mechanics
+- E2E test (085) demonstrates the complete curse lifecycle: application, AC penalty, not moving, and removal
+- Implementation reference: issue egirard/Ashardalon#51
+
+~~**A Gap in the Armor**: See issue `gap-in-armor-doc-update`~~ ✅ **Fully Implemented** (see above)
 - **A Gap in the Armor**: See issue `gap-in-armor-doc-update`
 - ~~**Bad Luck**: See issue `bad-luck-doc-update`~~ ✅ **Fully Implemented** (see below)
 - ~~**Bloodlust**: See issue `bloodlust-doc-update`~~ ✅ **Fully Implemented** (see below)
@@ -242,14 +255,14 @@ Issues have been filed for the first two Curse cards to track future implementat
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 7 | 1 |
+| Curse | 8 | 8 | 0 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **24** | **29** |
+| **Total** | **53** | **25** | **28** |
 
 ## Features Not Yet Implemented
 
