@@ -127,69 +127,7 @@ test.describe('085 - Gap in the Armor Curse Effect', () => {
       }
     });
     
-    // STEP 6: End Hero Phase WITHOUT moving (to trigger curse removal)
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/endHeroPhase' });
-    });
-    
-    await page.waitForTimeout(500);
-    
-    await screenshots.capture(page, 'curse-removed-did-not-move', {
-      programmaticCheck: async () => {
-        const state = await page.evaluate(() => {
-          const store = (window as any).__REDUX_STORE__;
-          return store.getState();
-        });
-        
-        // Verify we're in exploration phase now
-        expect(state.game.turnState.currentPhase).toBe('exploration-phase');
-        
-        // Verify curse was removed
-        const quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
-        const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-gap-in-armor');
-        expect(hasCurse).toBe(false);
-        
-        // Verify curse removal message was shown
-        expect(state.game.encounterEffectMessage).toBeTruthy();
-        expect(state.game.encounterEffectMessage).toContain('A Gap in the Armor curse removed');
-        expect(state.game.encounterEffectMessage).toContain('did not move');
-        
-        console.log('Curse removal message:', state.game.encounterEffectMessage);
-      }
-    });
-    
-    // STEP 7: Test that curse persists if hero moves
-    // Reset to hero phase
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      
-      // Set back to villain phase to apply curse again
-      store.dispatch({
-        type: 'game/setTurnPhase',
-        payload: 'villain-phase'
-      });
-      
-      store.dispatch({
-        type: 'game/setDrawnEncounter',
-        payload: 'gap-in-armor'
-      });
-    });
-    
-    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'visible' });
-    
-    // Accept curse again
-    await page.locator('[data-testid="encounter-continue"]').click();
-    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
-    
-    // Return to hero phase
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/endVillainPhase' });
-    });
-    
-    await page.waitForTimeout(300);
-    
+    // STEP 6: Move the hero to test curse persistence
     // Get hero position for movement
     const heroPosition = await page.evaluate(() => {
       const state = (window as any).__REDUX_STORE__.getState();
@@ -240,7 +178,7 @@ test.describe('085 - Gap in the Armor Curse Effect', () => {
       }
     });
     
-    // End Hero Phase after moving
+    // STEP 7: End Hero Phase after moving - curse should persist
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({ type: 'game/endHeroPhase' });
@@ -260,7 +198,76 @@ test.describe('085 - Gap in the Armor Curse Effect', () => {
         const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-gap-in-armor');
         expect(hasCurse).toBe(true);
         
+        // Verify no removal message (curse persists)
+        // The encounterEffectMessage might be null or not contain removal text
+        if (state.game.encounterEffectMessage) {
+          expect(state.game.encounterEffectMessage).not.toContain('curse removed');
+        }
+        
         console.log('Curse persists after moving (as expected)');
+      }
+    });
+    
+    // STEP 8: Test curse removal when hero doesn't move
+    // Apply curse again, go back to villain phase
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      
+      // Set back to villain phase to apply curse again
+      store.dispatch({
+        type: 'game/setTurnPhase',
+        payload: 'villain-phase'
+      });
+      
+      store.dispatch({
+        type: 'game/setDrawnEncounter',
+        payload: 'gap-in-armor'
+      });
+    });
+    
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'visible' });
+    
+    // Accept curse again
+    await page.locator('[data-testid="encounter-continue"]').click();
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
+    
+    // Return to hero phase
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/endVillainPhase' });
+    });
+    
+    await page.waitForTimeout(300);
+    
+    // STEP 9: End Hero Phase WITHOUT moving (to trigger curse removal)
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/endHeroPhase' });
+    });
+    
+    await page.waitForTimeout(500);
+    
+    await screenshots.capture(page, 'curse-removed-did-not-move', {
+      programmaticCheck: async () => {
+        const state = await page.evaluate(() => {
+          const store = (window as any).__REDUX_STORE__;
+          return store.getState();
+        });
+        
+        // Verify we're in exploration phase now
+        expect(state.game.turnState.currentPhase).toBe('exploration-phase');
+        
+        // Verify curse was removed
+        const quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
+        const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-gap-in-armor');
+        expect(hasCurse).toBe(false);
+        
+        // Verify curse removal message was shown
+        expect(state.game.encounterEffectMessage).toBeTruthy();
+        expect(state.game.encounterEffectMessage).toContain('A Gap in the Armor curse removed');
+        expect(state.game.encounterEffectMessage).toContain('did not move');
+        
+        console.log('Curse removal message:', state.game.encounterEffectMessage);
       }
     });
   });
