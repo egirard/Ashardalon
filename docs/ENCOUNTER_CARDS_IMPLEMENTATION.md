@@ -304,7 +304,7 @@ To fully implement all encounter cards, the following systems would need to be a
   - `findClosestUnexploredEdge()` finds the nearest unexplored edge using Manhattan distance
   - All edge cases (no edges, no monsters, active player has monsters)
 - E2E test (073) demonstrates the complete effect lifecycle: activation, monster spawning, popup display, and verification
-- Implementation reference: `gameSlice.ts` lines 1522-1575, `encounters.ts` lines 859-882
+- Implementation reference: `gameSlice.ts` lines 1522-1575, `encounters.ts` lines 859-882 (findClosestUnexploredEdge)
 
 ### 3. Trap/Hazard System
 - Place markers on tiles
