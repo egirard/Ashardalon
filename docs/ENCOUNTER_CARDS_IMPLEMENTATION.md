@@ -41,7 +41,7 @@ These effect types display the card description and resolve to the discard pile,
 | ID | Name | Effect Summary | Implementation Status |
 |----|------|----------------|----------------------|
 | gap-in-armor | A Gap in the Armor | AC -4 until hero doesn't move | ⚠️ Display only (see issue: gap-in-armor-doc-update) |
-| bad-luck | Bad Luck | Draw extra encounter each turn | ⚠️ Display only (see issue: bad-luck-doc-update) |
+| bad-luck | Bad Luck | Draw extra encounter each turn | ✅ Fully Implemented (see issue: egirard/Ashardalon#52) |
 | bloodlust | Bloodlust | Take 1 damage at turn start | ✅ Fully Implemented (see issue: egirard/Ashardalon#53) |
 | cage | Cage | AC -2, cannot move, Roll 10+ to escape | ✅ Fully Implemented (see issue: egirard/Ashardalon#54) |
 | dragon-fear | Dragon Fear | Take 1 damage when moving to new tile | ✅ Fully Implemented (see issue: egirard/Ashardalon#55) |
@@ -51,12 +51,26 @@ These effect types display the card description and resolve to the discard pile,
 
 #### Implementation Notes
 
-Issues have been filed for the first five Curse cards to track future implementation work:
+Issues have been filed for the first two Curse cards to track future implementation work:
 - **A Gap in the Armor**: See issue `gap-in-armor-doc-update`
-- **Bad Luck**: See issue `bad-luck-doc-update`
+- ~~**Bad Luck**: See issue `bad-luck-doc-update`~~ ✅ **Fully Implemented** (see below)
 - ~~**Bloodlust**: See issue `bloodlust-doc-update`~~ ✅ **Fully Implemented** (see below)
 - ~~**Cage**: See issue `cage-doc-update`~~ ✅ **Fully Implemented** (see below)
 - ~~**Dragon Fear**: See issue `dragon-fear-doc-update`~~ ✅ **Fully Implemented** (see below)
+
+**Bad Luck** is now fully implemented:
+- When a hero has this curse and an encounter is drawn at the start of Villain Phase, they must draw an additional encounter
+- The extra encounter is drawn after the first encounter is resolved (dismissed)
+- A notification message displays: "{heroId} draws an extra encounter!" with "Bad Luck curse:" prefix
+- At the end of Villain Phase, the hero automatically rolls d20 to attempt curse removal (10+ removes the curse)
+- The removal attempt message displays the roll result and whether the curse was removed
+- If the first encounter itself requires another draw (e.g., "Hidden Treasure", "Deadly Poison"), the Bad Luck extra is drawn after that
+- The curse persists across turns until successfully removed
+- Implementation uses a `badLuckExtraEncounterPending` flag to track when an extra draw is needed
+- The flag is set in `endExplorationPhase` when encounter is drawn for a cursed hero
+- The flag is checked and cleared in `dismissEncounterCard` for all encounter types (environment, trap, hazard, curse, special, normal)
+- Comprehensive unit tests verify extra draw, no extra when not cursed, removal roll, and curse persistence
+- Implementation reference: issue egirard/Ashardalon#52
 
 **Bloodlust** is now fully implemented:
 - When a hero has this curse, they take 1 damage at the start of each Hero Phase (when `endVillainPhase` transitions to their turn)
@@ -228,14 +242,14 @@ Issues have been filed for the first five Curse cards to track future implementa
 
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
-| Curse | 8 | 6 | 2 |
+| Curse | 8 | 7 | 1 |
 | Environment | 6 | 0 | 6 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **23** | **30** |
+| **Total** | **53** | **24** | **29** |
 
 ## Features Not Yet Implemented
 
