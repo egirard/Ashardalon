@@ -228,13 +228,14 @@ describe('Gap in the Armor Curse', () => {
         seed: 42
       }));
 
-      // Apply both Gap in Armor and Dragon Fear curses
+      // Apply both Gap in Armor and Terrifying Roar curses
+      // (Terrifying Roar doesn't auto-remove at end of Hero Phase, only at end of Exploration Phase)
       state = {
         ...state,
         heroHp: state.heroHp.map(h => {
           if (h.heroId === 'quinn') {
             let statuses = applyStatusEffect(h.statuses ?? [], 'curse-gap-in-armor', 'gap-in-armor', 1);
-            statuses = applyStatusEffect(statuses, 'curse-dragon-fear', 'dragon-fear', 1);
+            statuses = applyStatusEffect(statuses, 'curse-terrifying-roar', 'terrifying-roar', 1);
             return { ...h, statuses };
           }
           return h;
@@ -244,7 +245,7 @@ describe('Gap in the Armor Curse', () => {
       const quinnHp = state.heroHp.find(h => h.heroId === 'quinn');
       
       expect(quinnHp?.statuses?.some(s => s.type === 'curse-gap-in-armor')).toBe(true);
-      expect(quinnHp?.statuses?.some(s => s.type === 'curse-dragon-fear')).toBe(true);
+      expect(quinnHp?.statuses?.some(s => s.type === 'curse-terrifying-roar')).toBe(true);
 
       // End hero phase without moving
       state = gameReducer(state, endHeroPhase());
@@ -254,8 +255,8 @@ describe('Gap in the Armor Curse', () => {
       // Gap in Armor should be removed
       expect(updatedQuinnHp?.statuses?.some(s => s.type === 'curse-gap-in-armor')).toBe(false);
       
-      // Dragon Fear should still be present (different removal condition)
-      expect(updatedQuinnHp?.statuses?.some(s => s.type === 'curse-dragon-fear')).toBe(true);
+      // Terrifying Roar should still be present (different removal condition)
+      expect(updatedQuinnHp?.statuses?.some(s => s.type === 'curse-terrifying-roar')).toBe(true);
     });
   });
 });
