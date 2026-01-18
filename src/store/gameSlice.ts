@@ -301,7 +301,6 @@ export interface GameState {
   showScenarioIntroduction: boolean;
   /** Whether an extra encounter should be drawn due to Bad Luck curse (set after first encounter) */
   badLuckExtraEncounterPending: boolean;
-  showScenarioIntroduction: boolean;
 }
 
 /**

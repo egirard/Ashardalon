@@ -27,8 +27,6 @@ describe('Bad Luck Curse', () => {
     const quinnHp = state.heroHp.find(h => h.heroId === 'quinn');
     expect(quinnHp?.statuses?.some(s => s.type === 'curse-bad-luck')).toBe(true);
     
-    console.log('After applying curse, flag:', state.badLuckExtraEncounterPending);
-    
     // Now trigger exploration phase end (which enters villain phase and draws encounter)
     state = {
       ...state,
@@ -41,9 +39,6 @@ describe('Bad Luck Curse', () => {
     
     state = gameReducer(state, endExplorationPhase());
     
-    console.log('After entering villain phase, flag:', state.badLuckExtraEncounterPending);
-    console.log('Drawn encounter:', state.drawnEncounter?.id);
-    
     // Should have drawn an encounter
     expect(state.drawnEncounter).not.toBeNull();
     
@@ -52,11 +47,7 @@ describe('Bad Luck Curse', () => {
     
     // Dismiss the first encounter
     const firstEncounterId = state.drawnEncounter?.id;
-    console.log('Dismissing first encounter:', firstEncounterId);
     state = gameReducer(state, dismissEncounterCard());
-    
-    console.log('After dismissing first, flag:', state.badLuckExtraEncounterPending);
-    console.log('Drawn encounter after dismiss:', state.drawnEncounter?.id);
     
     // Should have drawn a second encounter (extra from Bad Luck)
     expect(state.drawnEncounter).not.toBeNull();
