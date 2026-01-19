@@ -28,8 +28,8 @@ These effect types display the card description and resolve to the discard pile,
 
 | Effect Type | Description | Cards Count | Notes |
 |-------------|-------------|-------------|-------|
-| `curse` | Persistent debuff attached to hero | 8 cards | ⚠️ 1 of 8 fully functional (Wrath of the Enemy) |
-| `environment` | Persistent dungeon-wide effect | 6 cards | ✅ Implemented (2 of 6 cards fully functional) |
+| `curse` | Persistent debuff attached to hero | 8 cards | ✅ All 8 fully functional |
+| `environment` | Persistent dungeon-wide effect | 6 cards | ✅ 5 of 6 fully functional (1 requires multiplayer) |
 | `trap` | Persistent trap with triggered effects | 4 cards | Requires trap marker/trigger system |
 | `hazard` | Hazard marker with ongoing effects | 3 cards | Requires hazard marker system |
 | `special` | Complex effects (tile/monster manipulation) | 14 cards | Requires additional game logic |
@@ -168,12 +168,30 @@ These effect types display the card description and resolve to the discard pile,
 
 | ID | Name | Effect Summary | Implementation Status |
 |----|------|----------------|----------------------|
-| dragons-tribute | Dragon's Tribute | Draw 2 treasures, discard higher | ⚠️ Tracked, not enforced (requires treasure draw UI changes) |
+| dragons-tribute | Dragon's Tribute | Draw 2 treasures, discard higher | ✅ Fully Implemented |
 | hidden-snipers | Hidden Snipers | 1 damage when alone on tile | ✅ Fully Implemented |
 | high-alert | High Alert | Pass monster card to right each turn | ⚠️ Tracked, not enforced (requires multiplayer card passing) |
 | kobold-trappers | Kobold Trappers | -4 to trap disable rolls | ✅ Fully Implemented |
 | surrounded | Surrounded! | Spawn monster if hero has none | ✅ Fully Implemented |
 | walls-of-magma | Walls of Magma | 1 damage when adjacent to wall | ✅ Fully Implemented |
+
+#### Dragon's Tribute Implementation Notes
+
+**Dragon's Tribute** is now fully implemented:
+- When the environment is active, collecting a treasure token triggers a special two-treasure draw
+- The treasure drawing logic in `moveHero` checks if `activeEnvironmentId === 'dragons-tribute'`
+- If active, a second treasure is drawn via `drawTreasure()` and stored in `dragonsTributeSecondTreasure`
+- A custom UI component `DragonsTributeTreasureChoice.svelte` displays both treasures side-by-side
+- The UI highlights the higher-value treasure (based on `goldPrice`) with a "HIGHER" badge
+- The UI recommends keeping the lower-value treasure (as per game rules)
+- The player can select either treasure to keep via `selectDragonsTributeTreasure` action
+- The selected treasure remains in `drawnTreasure` for normal assignment flow
+- The discarded treasure is moved to the treasure deck's discard pile
+- After selection, the normal treasure assignment UI appears
+- Implementation files:
+  - gameSlice.ts: State management and treasure drawing logic
+  - DragonsTributeTreasureChoice.svelte: Two-treasure selection UI
+  - GameBoard.svelte: Integration of Dragon's Tribute component
 
 ### Event Cards - Damage Effects (2 cards)
 
@@ -283,13 +301,13 @@ These effect types display the card description and resolve to the discard pile,
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
 | Curse | 8 | 8 | 0 |
-| Environment | 6 | 4 | 2 |
+| Environment | 6 | 5 | 1 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 2 | 14 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **30** | **23** |
+| **Total** | **53** | **31** | **22** |
 
 ## Features Not Yet Implemented
 
@@ -309,8 +327,8 @@ To fully implement all encounter cards, the following systems would need to be a
 - ✅ Walls of Magma: Apply 1 damage to active hero when ending Hero Phase adjacent to wall
 - ✅ Surrounded!: Spawn monster on closest unexplored edge for heroes without monsters at end of Exploration Phase
 - ✅ Kobold Trappers: Apply -4 penalty to trap disable rolls
+- ✅ Dragon's Tribute: Draw 2 treasures, player chooses one to keep, discard the other
 - ⚠️ High Alert: Requires multiplayer card passing mechanism (not in current game state)
-- ⚠️ Dragon's Tribute: Requires treasure draw UI changes to draw 2 and choose
 
 #### Kobold Trappers Implementation Notes
 
