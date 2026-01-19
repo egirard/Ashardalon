@@ -52,6 +52,7 @@
     cancelMoveAfterAttack,
     selectHeroForMoveAfterAttack,
     assignTreasureToHero,
+    selectDragonsTributeTreasure,
     dismissTreasureCard,
     useTreasureItem,
     placeTreasureToken,
@@ -117,6 +118,7 @@
   import PoisonedDamageNotification from "./PoisonedDamageNotification.svelte";
   import PoisonRecoveryNotification from "./PoisonRecoveryNotification.svelte";
   import TreasureCard from "./TreasureCard.svelte";
+  import DragonsTributeTreasureChoice from "./DragonsTributeTreasureChoice.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
@@ -247,6 +249,7 @@
   let pendingHeroPlacement: PendingHeroPlacementState | null = $state(null);
   let pendingTreasurePlacement: import('../store/gameSlice').PendingTreasurePlacementState | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
+  let dragonsTributeSecondTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
   let incrementalMovement: IncrementalMovementState | null = $state(null);
   let undoSnapshot: UndoSnapshot | null = $state(null);
@@ -355,6 +358,7 @@
       pendingHeroPlacement = state.game.pendingHeroPlacement;
       pendingTreasurePlacement = state.game.pendingTreasurePlacement;
       drawnTreasure = state.game.drawnTreasure;
+      dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
       heroInventories = state.game.heroInventories;
       incrementalMovement = state.game.incrementalMovement;
       undoSnapshot = state.game.undoSnapshot;
@@ -420,6 +424,7 @@
     pendingHeroPlacement = state.game.pendingHeroPlacement;
     pendingTreasurePlacement = state.game.pendingTreasurePlacement;
     drawnTreasure = state.game.drawnTreasure;
+    dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
     heroInventories = state.game.heroInventories;
     incrementalMovement = state.game.incrementalMovement;
     undoSnapshot = state.game.undoSnapshot;
@@ -1798,6 +1803,11 @@
   // Handle dismissing/discarding the treasure card
   function handleDismissTreasure() {
     store.dispatch(dismissTreasureCard());
+  }
+
+  // Handle Dragon's Tribute treasure selection
+  function handleDragonsTributeSelect(keepFirst: boolean) {
+    store.dispatch(selectDragonsTributeTreasure({ keepFirst }));
   }
 
   // Handle hero placement selection
@@ -3599,7 +3609,15 @@
 
   <!-- Treasure Card Display (shown when treasure is drawn on monster defeat) -->
   <!-- Only show after combat result and defeat notification are dismissed -->
-  {#if drawnTreasure && !attackResult && defeatedMonsterXp === null}
+  <!-- Dragon's Tribute: Show special selection UI when two treasures are drawn -->
+  {#if drawnTreasure && dragonsTributeSecondTreasure && !attackResult && defeatedMonsterXp === null}
+    <DragonsTributeTreasureChoice
+      treasure1={drawnTreasure}
+      treasure2={dragonsTributeSecondTreasure}
+      onSelect={handleDragonsTributeSelect}
+      edge={getActivePlayerEdge()}
+    />
+  {:else if drawnTreasure && !attackResult && defeatedMonsterXp === null}
     <TreasureCard
       treasure={drawnTreasure}
       heroes={selectedHeroes.map(h => ({ id: h.id, name: h.name }))}
