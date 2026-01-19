@@ -2372,7 +2372,8 @@ export const gameSlice = createSlice({
           }
           
           // Check if we need to draw another encounter card (for special encounters like Deadly Poison)
-          if (shouldDrawAnotherEncounter(encounterId)) {
+          // Skip this for Hidden Treasure since the follow-up encounter is drawn after token placement
+          if (shouldDrawAnotherEncounter(encounterId) && encounterId !== 'hidden-treasure') {
             const { encounterId: nextEncounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
             state.encounterDeck = updatedDeck;
             
@@ -3488,6 +3489,17 @@ export const gameSlice = createSlice({
       // Clear the pending state
       state.pendingTreasurePlacement = null;
       state.encounterEffectMessage = `Treasure token placed at (${position.x}, ${position.y})`;
+      
+      // Draw the follow-up encounter card (Hidden Treasure requires drawing another encounter)
+      const { encounterId: nextEncounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+      state.encounterDeck = updatedDeck;
+      
+      if (nextEncounterId) {
+        const nextEncounter = getEncounterById(nextEncounterId);
+        if (nextEncounter) {
+          state.drawnEncounter = nextEncounter;
+        }
+      }
     },
     
     /**

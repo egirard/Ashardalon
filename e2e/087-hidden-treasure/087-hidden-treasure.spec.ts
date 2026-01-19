@@ -68,8 +68,39 @@ test.describe('087 - Hidden Treasure Encounter Card', () => {
       }
     });
     
-    // STEP 4: Accept the encounter card to place treasure token
+    // STEP 4: Accept the encounter card - this should prompt player to select a tile
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
+    
+    // Wait for encounter effect notification with the prompt
+    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
+    
+    await screenshots.capture(page, 'treasure-placement-prompt', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify pending treasure placement state is set
+        expect(storeState.game.pendingTreasurePlacement).not.toBeNull();
+        expect(storeState.game.pendingTreasurePlacement.encounterId).toBe('hidden-treasure');
+        
+        // Verify encounter effect message prompts the player
+        expect(storeState.game.encounterEffectMessage).toContain('Choose a tile');
+        
+        // Verify notification is visible
+        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toBeVisible();
+      }
+    });
+    
+    // Dismiss the encounter effect notification to reveal the selectable squares
+    await page.locator('[data-testid="dismiss-effect-notification"]').click();
+    
+    // Wait for treasure placement squares to become visible
+    await page.locator('[data-testid^="treasure-placement-square-"]').first().waitFor({ state: 'visible' });
+    
+    // STEP 5: Click on a valid square to place the treasure token
+    // Select a deterministic square (e.g., position 2, 6)
+    await page.locator('[data-testid="treasure-placement-square-2-6"]').click();
     
     // Hidden Treasure draws another encounter card automatically
     // Wait for any follow-up encounter card and dismiss it
@@ -101,7 +132,7 @@ test.describe('087 - Hidden Treasure Encounter Card', () => {
         
         const treasureToken = storeState.game.treasureTokens[0];
         expect(treasureToken.encounterId).toBe('hidden-treasure');
-        expect(treasureToken.position).toBeDefined();
+        expect(treasureToken.position).toEqual({ x: 2, y: 6 }); // The position we clicked
         
         // Verify token position does not have a hero on it
         const quinnPosition = storeState.game.heroTokens[0].position;
