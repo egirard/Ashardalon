@@ -275,6 +275,8 @@ export interface GameState {
   treasureDeck: TreasureDeck;
   /** Currently drawn treasure card awaiting assignment to a hero */
   drawnTreasure: TreasureCard | null;
+  /** Second treasure drawn for Dragon's Tribute (when environment is active) */
+  dragonsTributeSecondTreasure: TreasureCard | null;
   /** Hero inventories - items owned by each hero */
   heroInventories: Record<string, HeroInventory>;
   /** Whether treasure has been drawn this turn (only one treasure per turn) */
@@ -560,6 +562,7 @@ const initialState: GameState = {
   pendingHeroPlacement: null,
   treasureDeck: { drawPile: [], discardPile: [] },
   drawnTreasure: null,
+  dragonsTributeSecondTreasure: null,
   heroInventories: {},
   treasureDrawnThisTurn: false,
   incrementalMovement: null,
@@ -917,6 +920,7 @@ export const gameSlice = createSlice({
       // Initialize treasure deck and hero inventories
       state.treasureDeck = initializeTreasureDeck(randomFn);
       state.drawnTreasure = null;
+      state.dragonsTributeSecondTreasure = null;
       state.heroInventories = {};
       for (const heroId of heroIds) {
         state.heroInventories[heroId] = createHeroInventory(heroId);
@@ -1104,7 +1108,10 @@ export const gameSlice = createSlice({
         // Remove treasure token from board
         state.treasureTokens = state.treasureTokens.filter(t => t.id !== treasureToken.id);
         
-        // Draw a treasure card for the hero
+        // Check if Dragon's Tribute environment is active
+        const isDragonsTribute = state.activeEnvironmentId === 'dragons-tribute';
+        
+        // Draw treasure card(s) for the hero
         const { treasure, deck: updatedDeck } = drawTreasure(state.treasureDeck);
         state.treasureDeck = updatedDeck;
         
@@ -1112,8 +1119,20 @@ export const gameSlice = createSlice({
           state.drawnTreasure = treasure;
           state.treasureDrawnThisTurn = true;
           
+          // If Dragon's Tribute is active, draw a second treasure
+          if (isDragonsTribute) {
+            const { treasure: secondTreasure, deck: updatedDeck2 } = drawTreasure(state.treasureDeck);
+            state.treasureDeck = updatedDeck2;
+            
+            if (secondTreasure) {
+              state.dragonsTributeSecondTreasure = secondTreasure;
+            }
+          }
+          
           // Set message about collecting treasure
-          const message = `${heroId} collected treasure token!`;
+          const message = isDragonsTribute && state.dragonsTributeSecondTreasure
+            ? `${heroId} collected treasure token! (Dragon's Tribute: Draw 2, discard higher)`
+            : `${heroId} collected treasure token!`;
           if (state.encounterEffectMessage) {
             state.encounterEffectMessage += ` | ${message}`;
           } else {
@@ -1264,6 +1283,7 @@ export const gameSlice = createSlice({
       state.pendingMoveAfterAttack = null;
       state.treasureDeck = { drawPile: [], discardPile: [] };
       state.drawnTreasure = null;
+      state.dragonsTributeSecondTreasure = null;
       state.heroInventories = {};
       state.treasureDrawnThisTurn = false;
       state.incrementalMovement = null;
@@ -3747,6 +3767,30 @@ export const gameSlice = createSlice({
       state.drawnTreasure = null;
     },
     /**
+     * Select which treasure to keep when Dragon's Tribute is active (keep one, discard the other)
+     */
+    selectDragonsTributeTreasure: (state, action: PayloadAction<{ keepFirst: boolean }>) => {
+      const { keepFirst } = action.payload;
+      
+      if (!state.drawnTreasure || !state.dragonsTributeSecondTreasure) {
+        return;
+      }
+      
+      // Determine which treasure to discard
+      const treasureToDiscard = keepFirst ? state.dragonsTributeSecondTreasure : state.drawnTreasure;
+      
+      // Discard the higher-value treasure (or the one not selected by player)
+      state.treasureDeck = discardTreasure(state.treasureDeck, treasureToDiscard.id);
+      
+      // Keep the selected treasure as drawnTreasure
+      if (!keepFirst) {
+        state.drawnTreasure = state.dragonsTributeSecondTreasure;
+      }
+      
+      // Clear the second treasure
+      state.dragonsTributeSecondTreasure = null;
+    },
+    /**
      * Dismiss the treasure card without assigning it (put back in deck)
      */
     dismissTreasureCard: (state) => {
@@ -3754,6 +3798,11 @@ export const gameSlice = createSlice({
         // Put the treasure back in the discard pile
         state.treasureDeck = discardTreasure(state.treasureDeck, state.drawnTreasure.id);
         state.drawnTreasure = null;
+      }
+      // If Dragon's Tribute second treasure exists, discard it too
+      if (state.dragonsTributeSecondTreasure) {
+        state.treasureDeck = discardTreasure(state.treasureDeck, state.dragonsTributeSecondTreasure.id);
+        state.dragonsTributeSecondTreasure = null;
       }
     },
     /**
@@ -4182,6 +4231,7 @@ export const {
   cancelMoveAfterAttack,
   selectHeroForMoveAfterAttack,
   assignTreasureToHero,
+  selectDragonsTributeTreasure,
   dismissTreasureCard,
   useTreasureItem,
   setTreasureDeck,
