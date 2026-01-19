@@ -11,6 +11,7 @@ import {
   MonsterDeck,
   MonsterState,
   AttackResult,
+  TrapDisableResult,
   HeroHpState,
   AVAILABLE_HEROES,
   HeroTurnActions,
@@ -302,6 +303,8 @@ export interface GameState {
   badLuckExtraEncounterPending: boolean;
   /** Whether the current hero moved during this Hero Phase (for Gap in the Armor curse tracking) */
   heroMovedThisPhase: boolean;
+  /** Result of the most recent trap disable attempt (for displaying result dialog) */
+  trapDisableResult: TrapDisableResult | null;
 }
 
 /**
@@ -553,6 +556,7 @@ const initialState: GameState = {
   showScenarioIntroduction: false,
   badLuckExtraEncounterPending: false,
   heroMovedThisPhase: false,
+  trapDisableResult: null,
 };
 
 /**
@@ -1216,6 +1220,7 @@ export const gameSlice = createSlice({
       state.undoSnapshot = null;
       state.encounterEffectMessage = null;
       state.badLuckExtraEncounterPending = false;
+      state.trapDisableResult = null;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -2759,6 +2764,12 @@ export const gameSlice = createSlice({
       // (handled in the UI layer)
     },
     /**
+     * Dismiss the trap disable result display
+     */
+    dismissTrapDisableResult: (state) => {
+      state.trapDisableResult = null;
+    },
+    /**
      * Dismiss the monster defeat/XP notification
      */
     dismissDefeatNotification: (state) => {
@@ -3334,6 +3345,10 @@ export const gameSlice = createSlice({
       
       if (!isOnTile) return;
       
+      // Get trap encounter to get the name
+      const trapEncounter = getEncounterById(trap.encounterId);
+      const trapName = trapEncounter?.name || 'Trap';
+      
       // Roll d20 vs DC
       const roll = Math.floor(randomFn() * 20) + 1;
       
@@ -3342,6 +3357,16 @@ export const gameSlice = createSlice({
       const modifiedRoll = roll + koboldTrappersPenalty;
       
       const success = modifiedRoll >= trap.disableDC;
+      
+      // Store the result for display
+      state.trapDisableResult = {
+        roll,
+        penalty: koboldTrappersPenalty,
+        modifiedRoll,
+        disableDC: trap.disableDC,
+        success,
+        trapName,
+      };
       
       if (success) {
         // Remove the trap
@@ -4010,6 +4035,7 @@ export const {
   cancelEncounterCard,
   setAttackResult,
   dismissAttackResult,
+  dismissTrapDisableResult,
   dismissDefeatNotification,
   setMonsters,
   setMonsterDeck,

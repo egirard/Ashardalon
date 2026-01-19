@@ -21,6 +21,7 @@
     dismissEncounterResult,
     setAttackResult,
     dismissAttackResult,
+    dismissTrapDisableResult,
     dismissDefeatNotification,
     activateNextMonster,
     dismissMonsterAttackResult,
@@ -101,6 +102,7 @@
   import HazardMarker from "./HazardMarker.svelte";
   import BoardTokenMarker from "./BoardTokenMarker.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
+  import TrapDisableResultDisplay from "./TrapDisableResultDisplay.svelte";
   import MonsterMoveDisplay from "./MonsterMoveDisplay.svelte";
   import XPCounter from "./XPCounter.svelte";
   import HealingSurgeCounter from "./HealingSurgeCounter.svelte";
@@ -247,6 +249,7 @@
   let pendingMonsterChoice: PendingMonsterChoiceState | null = $state(null);
   let selectedTargetId: string | null = $state(null);
   let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
+  let trapDisableResult: import('../store/types').TrapDisableResult | null = $state(null);
   
   // Blade Barrier token placement state
   let pendingBladeBarrier: { 
@@ -353,6 +356,7 @@
       selectedTargetId = state.game.selectedTargetId;
       selectedTargetType = state.game.selectedTargetType;
       showScenarioIntroduction = state.game.showScenarioIntroduction;
+      trapDisableResult = state.game.trapDisableResult;
       
       // Force Svelte to process pending updates
       tick();
@@ -415,6 +419,7 @@
     selectedTargetId = state.game.selectedTargetId;
     selectedTargetType = state.game.selectedTargetType;
     showScenarioIntroduction = state.game.showScenarioIntroduction;
+    trapDisableResult = state.game.trapDisableResult;
 
     return unsubscribe;
   });
@@ -1592,6 +1597,11 @@
   // Handle selecting a hero for move-after-attack
   function handleSelectHeroForMoveAfterAttack(heroId: string) {
     store.dispatch(selectHeroForMoveAfterAttack(heroId));
+  }
+
+  // Handle dismissing the trap disable result
+  function handleDismissTrapDisableResult() {
+    store.dispatch(dismissTrapDisableResult());
   }
 
   // Get monster name from instance
@@ -3312,6 +3322,14 @@
         edge={getActivePlayerEdge()}
       />
     {/if}
+  {/if}
+
+  <!-- Trap Disable Result Display (shown after trap disable attempt) -->
+  {#if trapDisableResult}
+    <TrapDisableResultDisplay
+      result={trapDisableResult}
+      onDismiss={handleDismissTrapDisableResult}
+    />
   {/if}
 
   <!-- Combat Result Display (shown after attack) -->
