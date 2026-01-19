@@ -3336,7 +3336,12 @@ export const gameSlice = createSlice({
       
       // Roll d20 vs DC
       const roll = Math.floor(randomFn() * 20) + 1;
-      const success = roll >= trap.disableDC;
+      
+      // Apply Kobold Trappers environment penalty (-4 to trap disable rolls)
+      const koboldTrappersPenalty = state.activeEnvironmentId === 'kobold-trappers' ? -4 : 0;
+      const modifiedRoll = roll + koboldTrappersPenalty;
+      
+      const success = modifiedRoll >= trap.disableDC;
       
       if (success) {
         // Remove the trap
@@ -3717,6 +3722,12 @@ export const gameSlice = createSlice({
       state.boardTokens = action.payload;
     },
     /**
+     * Set traps directly (for testing purposes)
+     */
+    setTraps: (state, action: PayloadAction<TrapState[]>) => {
+      state.traps = action.payload;
+    },
+    /**
      * Apply a status effect to a hero
      */
     applyHeroStatus: (state, action: PayloadAction<{
@@ -4045,6 +4056,7 @@ export const {
   moveBoardToken,
   decrementBoardTokenCharges,
   setBoardTokens,
+  setTraps,
   applyHeroStatus,
   removeHeroStatus,
   clearHeroStatuses,
