@@ -68,11 +68,11 @@ test.describe('087 - Hidden Treasure Encounter Card', () => {
       }
     });
     
-    // STEP 4: Accept the encounter card - this should prompt player to select a tile
+    // STEP 4: Accept the encounter card - this should prompt player to select a tile (no modal)
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
     
-    // Wait for encounter effect notification with the prompt
-    await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
+    // Wait for treasure placement prompt to appear on the player card (non-modal)
+    await page.locator('[data-testid="treasure-placement-prompt"]').waitFor({ state: 'visible' });
     
     await screenshots.capture(page, 'treasure-placement-prompt', {
       programmaticCheck: async () => {
@@ -84,19 +84,14 @@ test.describe('087 - Hidden Treasure Encounter Card', () => {
         expect(storeState.game.pendingTreasurePlacement).not.toBeNull();
         expect(storeState.game.pendingTreasurePlacement.encounterId).toBe('hidden-treasure');
         
-        // Verify encounter effect message prompts the player
-        expect(storeState.game.encounterEffectMessage).toContain('Choose a tile');
+        // Verify prompt is visible on player card (NOT a modal)
+        await expect(page.locator('[data-testid="treasure-placement-prompt"]')).toBeVisible();
+        await expect(page.locator('[data-testid="treasure-placement-prompt"]')).toContainText('Choose a tile');
         
-        // Verify notification is visible
-        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toBeVisible();
+        // Verify selectable squares are visible
+        await expect(page.locator('[data-testid^="treasure-placement-square-"]').first()).toBeVisible();
       }
     });
-    
-    // Dismiss the encounter effect notification to reveal the selectable squares
-    await page.locator('[data-testid="dismiss-effect-notification"]').click();
-    
-    // Wait for treasure placement squares to become visible
-    await page.locator('[data-testid^="treasure-placement-square-"]').first().waitFor({ state: 'visible' });
     
     // STEP 5: Click on a valid square to place the treasure token
     // Select a deterministic square (e.g., position 2, 6)
@@ -143,24 +138,9 @@ test.describe('087 - Hidden Treasure Encounter Card', () => {
         
         // Verify token is visible on the game board
         await expect(page.locator('[data-testid="treasure-token-marker"]')).toBeVisible();
-      }
-    });
-    
-    // STEP 5: Verify treasure token remains on board and test is complete
-    // Note: Treasure collection happens automatically when hero moves to tile with token
-    // This is tested via the moveHero reducer logic which checks for treasure tokens
-    await screenshots.capture(page, 'test-complete-token-visible', {
-      programmaticCheck: async () => {
-        const storeState = await page.evaluate(() => {
-          return (window as any).__REDUX_STORE__.getState();
-        });
         
-        // Final verification that treasure token system is working
-        expect(storeState.game.treasureTokens).toHaveLength(1);
-        expect(storeState.game.treasureTokens[0].encounterId).toBe('hidden-treasure');
-        
-        // Verify token is still visible
-        await expect(page.locator('[data-testid="treasure-token-marker"]')).toBeVisible();
+        // Verify the prompt is no longer visible
+        await expect(page.locator('[data-testid="treasure-placement-prompt"]')).not.toBeVisible();
       }
     });
   });

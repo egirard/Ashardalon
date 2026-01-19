@@ -29,9 +29,11 @@
     activatingMonsterId?: string | null;
     /** Board position for orientation (top, bottom, left, right) */
     boardPosition?: 'top' | 'bottom' | 'left' | 'right';
+    /** Message to display for pending treasure placement */
+    treasurePlacementMessage?: string;
   }
 
-  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom' }: Props = $props();
+  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -215,6 +217,14 @@
           {/if}
         </button>
       {/each}
+    </div>
+  {/if}
+  
+  <!-- Treasure Placement Prompt (shown when player needs to select a square) -->
+  {#if treasurePlacementMessage}
+    <div class="treasure-placement-prompt" data-testid="treasure-placement-prompt">
+      <div class="prompt-icon">💎</div>
+      <div class="prompt-text">{treasurePlacementMessage}</div>
     </div>
   {/if}
 
@@ -689,5 +699,49 @@
     .ko-text {
       animation: none;
     }
+  }
+
+  /* Treasure Placement Prompt */
+  .treasure-placement-prompt {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    border: 2px solid #ffb74d;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 12px rgba(245, 124, 0, 0.4);
+    animation: pulse-prompt 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-prompt {
+    0%, 100% { 
+      transform: scale(1);
+      box-shadow: 0 4px 12px rgba(245, 124, 0, 0.4);
+    }
+    50% { 
+      transform: scale(1.02);
+      box-shadow: 0 6px 16px rgba(245, 124, 0, 0.6);
+    }
+  }
+
+  .prompt-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    animation: bounce-gem 1s ease-in-out infinite;
+  }
+
+  @keyframes bounce-gem {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .prompt-text {
+    flex: 1;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 </style>

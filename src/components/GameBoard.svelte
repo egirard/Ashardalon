@@ -3332,6 +3332,7 @@
             conditions={getStatusDisplayData(heroHpState.statuses ?? [])}
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition={edge}
+            treasurePlacementMessage={isHeroActive && pendingTreasurePlacement ? 'Choose a tile to place the treasure token' : undefined}
           />
           <!-- Turn Progress Card (shown only for active player) -->
           {#if isHeroActive}
