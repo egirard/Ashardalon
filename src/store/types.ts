@@ -272,6 +272,18 @@ export interface AttackResult {
 }
 
 /**
+ * Result of a trap disable attempt
+ */
+export interface TrapDisableResult {
+  roll: number;         // d20 result (1-20)
+  penalty: number;      // Penalty applied (e.g., -4 from Kobold Trappers)
+  modifiedRoll: number; // roll + penalty
+  disableDC: number;    // DC required to disable
+  success: boolean;     // Whether the trap was disabled
+  trapName: string;     // Name of the trap encounter
+}
+
+/**
  * Monster deck for drawing monsters during exploration
  */
 export interface MonsterDeck {

@@ -40,6 +40,14 @@ This test verifies the Kobold Trappers environment card effect:
 ![004 - Disable Attempt Failed with Penalty](086-kobold-trappers-trap-disable.spec.ts-snapshots/004-disable-attempt-failed-with-penalty-chromium-linux.png)
 - **Attempt 1**: Roll 13 with -4 penalty = 9 (modified roll)
 - **Result**: Failed (9 < DC 10)
+- **Trap Disable Result Dialog Displayed**:
+  - Shows "Disable Lava Flow" header
+  - Displays d20 roll: 13
+  - Shows penalty: -4
+  - Displays modified roll: 9
+  - Shows DC: 10
+  - Result text: "FAILED TO DISABLE"
+  - Kobold Trappers penalty notice at bottom showing "-4 to disable rolls"
 - Trap remains on the board
 - **Verification**: The -4 penalty correctly prevents a roll of 13 from meeting DC 10
 
@@ -47,6 +55,14 @@ This test verifies the Kobold Trappers environment card effect:
 ![005 - Disable Attempt Succeeded Despite Penalty](086-kobold-trappers-trap-disable.spec.ts-snapshots/005-disable-attempt-succeeded-despite-penalty-chromium-linux.png)
 - **Attempt 2**: Roll 14 with -4 penalty = 10 (modified roll)
 - **Result**: Success (10 >= DC 10)
+- **Trap Disable Result Dialog Displayed**:
+  - Shows "Disable Lava Flow" header
+  - Displays d20 roll: 14
+  - Shows penalty: -4
+  - Displays modified roll: 10
+  - Shows DC: 10
+  - Result text: "TRAP DISABLED!"
+  - Kobold Trappers penalty notice at bottom showing "-4 to disable rolls"
 - Trap is removed from the board
 - **Verification**: A sufficiently high roll (14) can still succeed despite the penalty
 
@@ -83,12 +99,32 @@ This test verifies the Kobold Trappers environment card effect:
    - Modified Roll: 13 - 4 = 9
    - Result: Failed (9 < 10)
    - Trap count remains 1
+   - **Trap Disable Result Dialog**:
+     - Dialog overlay is visible
+     - Shows trap name "Lava Flow"
+     - Displays roll value: 13
+     - Displays penalty value: -4
+     - Displays modified roll: 9
+     - Displays DC: 10
+     - Shows "FAILED TO DISABLE" result
+     - Shows Kobold Trappers penalty notice
+   - `trapDisableResult` state contains complete disable attempt data
 
 4. **Disable with Penalty (Roll 14)**:
    - Roll: 14, DC: 10, Penalty: -4
    - Modified Roll: 14 - 4 = 10
    - Result: Success (10 >= 10)
    - Trap count becomes 0
+   - **Trap Disable Result Dialog**:
+     - Dialog overlay is visible
+     - Shows trap name "Lava Flow"
+     - Displays roll value: 14
+     - Displays penalty value: -4
+     - Displays modified roll: 10
+     - Displays DC: 10
+     - Shows "TRAP DISABLED!" result
+     - Shows Kobold Trappers penalty notice
+   - `trapDisableResult` state contains complete disable attempt data
 
 5. **Disable without Penalty (Roll 10)**:
    - Roll: 10, DC: 10, Penalty: 0
@@ -100,7 +136,9 @@ This test verifies the Kobold Trappers environment card effect:
 
 ### Code Changes
 
-The implementation adds a Kobold Trappers penalty check in `gameSlice.ts`:
+The implementation adds:
+
+1. **Kobold Trappers penalty** in `gameSlice.ts`:
 
 ```typescript
 // Roll d20 vs DC
@@ -111,7 +149,32 @@ const koboldTrappersPenalty = state.activeEnvironmentId === 'kobold-trappers' ? 
 const modifiedRoll = roll + koboldTrappersPenalty;
 
 const success = modifiedRoll >= trap.disableDC;
+
+// Store the result for display
+state.trapDisableResult = {
+  roll,
+  penalty: koboldTrappersPenalty,
+  modifiedRoll,
+  disableDC: trap.disableDC,
+  success,
+  trapName,
+};
 ```
+
+2. **TrapDisableResultDisplay UI Component** (`TrapDisableResultDisplay.svelte`):
+   - Modal dialog showing trap disable attempt results
+   - Displays d20 roll, penalty, modified roll, and DC
+   - Shows success/failure status with visual feedback
+   - Highlights Kobold Trappers penalty when active
+   - Similar design to CombatResultDisplay for consistency
+
+3. **TrapDisableResult State Type**:
+   - `roll`: d20 result (1-20)
+   - `penalty`: Penalty applied (e.g., -4 from Kobold Trappers)
+   - `modifiedRoll`: roll + penalty
+   - `disableDC`: DC required to disable
+   - `success`: Whether the trap was disabled
+   - `trapName`: Name of the trap encounter
 
 ### Unit Tests
 
@@ -130,6 +193,14 @@ Five comprehensive unit tests verify:
 - [ ] Environment indicator displays the correct environment name and icon
 - [ ] Trap marker appears at hero's position when trap is placed
 - [ ] Trap marker is visually distinct and identifiable
+- [ ] **Trap Disable Result dialog appears after disable attempt**
+- [ ] **Dialog shows d20 roll value correctly**
+- [ ] **Dialog shows penalty value when Kobold Trappers is active**
+- [ ] **Dialog shows modified roll (roll + penalty)**
+- [ ] **Dialog shows DC requirement**
+- [ ] **Dialog shows success/failure status clearly**
+- [ ] **Kobold Trappers penalty notice is visible when environment active**
+- [ ] **Dialog can be dismissed by clicking X or clicking overlay**
 - [ ] Environment indicator disappears when environment is deactivated
 - [ ] All programmatic state checks pass for each step
 

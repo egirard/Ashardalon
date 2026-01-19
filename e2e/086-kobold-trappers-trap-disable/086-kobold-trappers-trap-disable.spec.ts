@@ -137,6 +137,9 @@ test.describe('086 - Kobold Trappers Trap Disable Penalty', () => {
       };
     });
     
+    // Wait for trap disable result dialog to appear
+    await page.locator('[data-testid="trap-disable-result-overlay"]').waitFor({ state: 'visible' });
+    
     await screenshots.capture(page, 'disable-attempt-failed-with-penalty', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -147,8 +150,28 @@ test.describe('086 - Kobold Trappers Trap Disable Penalty', () => {
         expect(storeState.game.traps).toHaveLength(1);
         expect(disableResult1.success).toBe(false);
         expect(disableResult1.modifiedRoll).toBeLessThan(disableResult1.dc);
+        
+        // Verify dialog is visible and shows correct information
+        await expect(page.locator('[data-testid="trap-disable-result-overlay"]')).toBeVisible();
+        await expect(page.locator('[data-testid="trap-info"]')).toContainText('Lava Flow');
+        await expect(page.locator('[data-testid="dice-roll"]')).toContainText('13');
+        await expect(page.locator('[data-testid="penalty-value"]')).toContainText('-4');
+        await expect(page.locator('[data-testid="modified-roll"]')).toContainText('9');
+        await expect(page.locator('[data-testid="disable-dc"]')).toContainText('10');
+        await expect(page.locator('[data-testid="result-text"]')).toContainText('FAILED');
+        
+        // Verify trap disable result is stored
+        expect(storeState.game.trapDisableResult).not.toBeNull();
+        expect(storeState.game.trapDisableResult.roll).toBe(13);
+        expect(storeState.game.trapDisableResult.penalty).toBe(-4);
+        expect(storeState.game.trapDisableResult.modifiedRoll).toBe(9);
+        expect(storeState.game.trapDisableResult.success).toBe(false);
       }
     });
+    
+    // Dismiss the trap disable result dialog
+    await page.locator('[data-testid="dismiss-trap-result"]').click();
+    await page.locator('[data-testid="trap-disable-result-overlay"]').waitFor({ state: 'hidden' });
     
     // STEP 6: Attempt to disable trap with roll of 14 (should succeed despite penalty)
     // Roll 14 - 4 = 10, which is >= DC 10, so it should succeed
@@ -180,6 +203,9 @@ test.describe('086 - Kobold Trappers Trap Disable Penalty', () => {
       };
     });
     
+    // Wait for trap disable result dialog to appear
+    await page.locator('[data-testid="trap-disable-result-overlay"]').waitFor({ state: 'visible' });
+    
     await screenshots.capture(page, 'disable-attempt-succeeded-despite-penalty', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -190,8 +216,28 @@ test.describe('086 - Kobold Trappers Trap Disable Penalty', () => {
         expect(storeState.game.traps).toHaveLength(0);
         expect(disableResult2.success).toBe(true);
         expect(disableResult2.modifiedRoll).toBeGreaterThanOrEqual(disableResult2.dc);
+        
+        // Verify dialog is visible and shows correct information
+        await expect(page.locator('[data-testid="trap-disable-result-overlay"]')).toBeVisible();
+        await expect(page.locator('[data-testid="trap-info"]')).toContainText('Lava Flow');
+        await expect(page.locator('[data-testid="dice-roll"]')).toContainText('14');
+        await expect(page.locator('[data-testid="penalty-value"]')).toContainText('-4');
+        await expect(page.locator('[data-testid="modified-roll"]')).toContainText('10');
+        await expect(page.locator('[data-testid="disable-dc"]')).toContainText('10');
+        await expect(page.locator('[data-testid="result-text"]')).toContainText('DISABLED');
+        
+        // Verify trap disable result is stored
+        expect(storeState.game.trapDisableResult).not.toBeNull();
+        expect(storeState.game.trapDisableResult.roll).toBe(14);
+        expect(storeState.game.trapDisableResult.penalty).toBe(-4);
+        expect(storeState.game.trapDisableResult.modifiedRoll).toBe(10);
+        expect(storeState.game.trapDisableResult.success).toBe(true);
       }
     });
+    
+    // Dismiss the trap disable result dialog
+    await page.locator('[data-testid="dismiss-trap-result"]').click();
+    await page.locator('[data-testid="trap-disable-result-overlay"]').waitFor({ state: 'hidden' });
     
     // STEP 7: Verify behavior without Kobold Trappers environment
     // First, place another trap
