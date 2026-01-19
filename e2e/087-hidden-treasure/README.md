@@ -3,18 +3,22 @@
 ## User Story
 
 As a player, when I draw the "Hidden Treasure" encounter card, I want the game to:
-1. Place a treasure token on a random tile that does not have any heroes on it
-2. Display the treasure token marker on the game board
-3. Allow me to collect the treasure by moving to that tile (tested in code)
-4. Draw another encounter card after accepting the Hidden Treasure card
+1. Prompt me to manually select a tile to place the treasure token
+2. Show me which tiles are valid (tiles without heroes) with visual indicators
+3. Place the treasure token on the tile I select
+4. Display the treasure token marker on the game board
+5. Allow me to collect the treasure by moving to that tile (tested in code)
+6. Draw another encounter card after placing the treasure token
 
 ## Test Coverage
 
 This E2E test verifies:
 - Hidden Treasure encounter card can be drawn
-- Treasure token is placed on a tile without heroes
-- Treasure token marker is visible on the game board
-- Token placement logic works correctly
+- Player receives a prompt to select a tile for treasure placement
+- Valid squares (tiles without heroes) are highlighted with gem icons
+- Player can click a highlighted square to place the treasure token
+- Treasure token marker is visible on the game board at the selected position
+- Follow-up encounter card is drawn after placement
 
 Note: Treasure collection is implemented in the `moveHero` reducer and automatically triggers when a hero moves to a tile containing a treasure token. The collection logic draws a treasure card and removes the token from the board.
 
@@ -35,13 +39,18 @@ Game board after starting - no treasure tokens present initially.
 
 The Hidden Treasure encounter card is displayed with its description: "Place 1 Treasure token on any tile that does not have a Hero on it."
 
-### 003 - Treasure Token Placed on Tile
-![003 - Treasure Token Placed](087-hidden-treasure.spec.ts-snapshots/003-treasure-token-placed-on-tile-chromium-linux.png)
+### 003 - Treasure Placement Prompt
+![003 - Treasure Placement Prompt](087-hidden-treasure.spec.ts-snapshots/003-treasure-placement-prompt-chromium-linux.png)
 
-After accepting the encounter card, a treasure token has been placed on a tile. The token marker is visible on the game board.
+After accepting the encounter card, the player receives a prompt message "Choose a tile to place the treasure token". Valid squares (tiles without heroes) are highlighted with gem (💎) icons.
 
-### 004 - Test Complete (Token Visible)
-![004 - Test Complete](087-hidden-treasure.spec.ts-snapshots/004-test-complete-token-visible-chromium-linux.png)
+### 004 - Treasure Token Placed on Tile
+![004 - Treasure Token Placed](087-hidden-treasure.spec.ts-snapshots/004-treasure-token-placed-on-tile-chromium-linux.png)
+
+After the player clicks a highlighted square, the treasure token has been placed on the selected tile. The token marker is visible on the game board.
+
+### 005 - Test Complete (Token Visible)
+![005 - Test Complete](087-hidden-treasure.spec.ts-snapshots/005-test-complete-token-visible-chromium-linux.png)
 
 Final state showing the treasure token remains on the board, ready to be collected by a hero who moves to that tile.
 
@@ -49,17 +58,25 @@ Final state showing the treasure token remains on the board, ready to be collect
 
 - [x] Hidden Treasure encounter card displays correctly
 - [x] Encounter card shows proper description and special effect type
-- [x] Treasure token is placed on a tile without heroes
+- [x] Player receives prompt message to select a tile
+- [x] Valid squares (tiles without heroes) are highlighted with gem icons
+- [x] Player can click a highlighted square to place treasure token
+- [x] Treasure token is placed on the selected tile
 - [x] Treasure token marker appears on the game board with treasure icon
-- [x] Token placement uses random tile selection logic
+- [x] Follow-up encounter card is drawn after placement
 - [x] System tracks treasure tokens in game state
 
 ## Implementation Notes
 
 **Treasure Token Placement:**
-- Uses `findValidTreasurePlacement()` function to select a random tile without heroes
-- Creates `TreasureTokenState` with unique ID, encounter ID, and position
+- Player-driven placement: prompts user to select a tile
+- Sets `pendingTreasurePlacement` state when Hidden Treasure is dismissed
+- Computes `validTreasurePlacementSquares` across all explored tiles (excluding tiles with heroes)
+- Displays gem (💎) icons on valid squares for visual feedback
+- `placeTreasureToken` reducer handles player's tile selection
+- Creates `TreasureTokenState` with unique ID, encounter ID, and selected position
 - Token is added to `game.treasureTokens` array in Redux state
+- Follow-up encounter card is drawn automatically after placement
 
 **Treasure Token Collection:**
 - Implemented in `moveHero` reducer (gameSlice.ts)
