@@ -42,17 +42,12 @@ The Hidden Treasure encounter card is displayed with its description: "Place 1 T
 ### 003 - Treasure Placement Prompt
 ![003 - Treasure Placement Prompt](087-hidden-treasure.spec.ts-snapshots/003-treasure-placement-prompt-chromium-linux.png)
 
-After accepting the encounter card, the player receives a prompt message "Choose a tile to place the treasure token". Valid squares (tiles without heroes) are highlighted with gem (💎) icons.
+After accepting the encounter card, the player sees a non-modal prompt on their player card: "Choose a tile to place the treasure token". Valid squares (tiles without heroes) are highlighted with gem (💎) icons.
 
 ### 004 - Treasure Token Placed on Tile
 ![004 - Treasure Token Placed](087-hidden-treasure.spec.ts-snapshots/004-treasure-token-placed-on-tile-chromium-linux.png)
 
-After the player clicks a highlighted square, the treasure token has been placed on the selected tile. The token marker is visible on the game board.
-
-### 005 - Test Complete (Token Visible)
-![005 - Test Complete](087-hidden-treasure.spec.ts-snapshots/005-test-complete-token-visible-chromium-linux.png)
-
-Final state showing the treasure token remains on the board, ready to be collected by a hero who moves to that tile.
+After the player clicks a highlighted square, the treasure token is placed on the selected tile. The token marker is now visible on the game board. No modal notification is shown - the player can immediately see the token.
 
 ## Manual Verification Checklist
 

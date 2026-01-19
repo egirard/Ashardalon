@@ -2141,7 +2141,7 @@ export const gameSlice = createSlice({
               encounterId: 'hidden-treasure',
               encounterName: 'Hidden Treasure'
             };
-            state.encounterEffectMessage = 'Choose a tile to place the treasure token';
+            // Note: No modal message - the player card will show the prompt
           }
           
           // Thief in the Dark: Active hero discards a treasure
@@ -3488,7 +3488,7 @@ export const gameSlice = createSlice({
       
       // Clear the pending state
       state.pendingTreasurePlacement = null;
-      state.encounterEffectMessage = `Treasure token placed at (${position.x}, ${position.y})`;
+      // Note: No modal message - the token is now visible on the board
       
       // Draw the follow-up encounter card (Hidden Treasure requires drawing another encounter)
       const { encounterId: nextEncounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
