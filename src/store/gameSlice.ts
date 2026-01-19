@@ -2125,8 +2125,7 @@ export const gameSlice = createSlice({
           else if (encounterId === 'hidden-treasure') {
             const treasurePosition = findValidTreasurePlacement(
               state.heroTokens,
-              state.dungeon,
-              state.randomSeed !== undefined ? createRandomFunction(state.randomSeed + state.treasureTokenInstanceCounter) : undefined
+              state.dungeon
             );
             
             if (treasurePosition) {
