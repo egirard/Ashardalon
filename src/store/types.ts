@@ -765,6 +765,19 @@ export interface HazardState {
 }
 
 /**
+ * Treasure token state - represents treasure tokens placed on tiles
+ * Heroes can collect these by moving onto the tile
+ */
+export interface TreasureTokenState {
+  /** Unique identifier for this treasure token instance */
+  id: string;
+  /** The encounter card ID that created this treasure token (e.g., 'hidden-treasure', 'occupied-lair') */
+  encounterId: string;
+  /** Position on the board (global coordinates) */
+  position: { x: number; y: number };
+}
+
+/**
  * Board token type - represents tokens created by power cards
  */
 export type BoardTokenType = 'blade-barrier' | 'flaming-sphere' | 'mirror-image' | 'wizard-eye';

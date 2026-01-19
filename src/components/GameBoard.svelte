@@ -100,6 +100,7 @@
   import EncounterResultPopup from "./EncounterResultPopup.svelte";
   import TrapMarker from "./TrapMarker.svelte";
   import HazardMarker from "./HazardMarker.svelte";
+  import TreasureTokenMarker from "./TreasureTokenMarker.svelte";
   import BoardTokenMarker from "./BoardTokenMarker.svelte";
   import CombatResultDisplay from "./CombatResultDisplay.svelte";
   import TrapDisableResultDisplay from "./TrapDisableResultDisplay.svelte";
@@ -236,6 +237,7 @@
   let showEnvironmentDetail: boolean = $state(false);
   let traps: import("../store/types").TrapState[] = $state([]);
   let hazards: import("../store/types").HazardState[] = $state([]);
+  let treasureTokens: import("../store/types").TreasureTokenState[] = $state([]);
   let boardTokens: import("../store/types").BoardTokenState[] = $state([]);
   let showActionSurgePrompt: boolean = $state(false);
   let multiAttackState: MultiAttackState | null = $state(null);
@@ -342,6 +344,7 @@
       activeEnvironmentId = state.game.activeEnvironmentId;
       traps = state.game.traps;
       hazards = state.game.hazards;
+      treasureTokens = state.game.treasureTokens;
       boardTokens = state.game.boardTokens;
       showActionSurgePrompt = state.game.showActionSurgePrompt;
       multiAttackState = state.game.multiAttackState;
@@ -405,6 +408,7 @@
     activeEnvironmentId = state.game.activeEnvironmentId;
     traps = state.game.traps;
     hazards = state.game.hazards;
+    treasureTokens = state.game.treasureTokens;
     boardTokens = state.game.boardTokens;
     showActionSurgePrompt = state.game.showActionSurgePrompt;
     multiAttackState = state.game.multiAttackState;
@@ -3028,6 +3032,17 @@
         {#each hazards as hazard (hazard.id)}
           <HazardMarker
             hazard={hazard}
+            cellSize={TILE_CELL_SIZE}
+            tileOffsetX={TOKEN_OFFSET_X}
+            tileOffsetY={TOKEN_OFFSET_Y}
+            tilePixelOffset={{ x: 0, y: 0 }}
+          />
+        {/each}
+        
+        <!-- Treasure token markers -->
+        {#each treasureTokens as treasureToken (treasureToken.id)}
+          <TreasureTokenMarker
+            treasureToken={treasureToken}
             cellSize={TILE_CELL_SIZE}
             tileOffsetX={TOKEN_OFFSET_X}
             tileOffsetY={TOKEN_OFFSET_Y}

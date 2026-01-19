@@ -24,6 +24,7 @@ import {
   EncounterCard,
   TrapState,
   HazardState,
+  TreasureTokenState,
   BoardTokenState,
   MONSTER_TACTICS,
 } from "./types";
@@ -94,8 +95,11 @@ import {
 import {
   createTrapInstance,
   createHazardInstance,
+  createTreasureTokenInstance,
   tileHasTrap,
   tileHasHazard,
+  findValidTreasurePlacement,
+  getTreasureTokensOnTile,
 } from "./trapsHazards";
 import { activateVillainPhaseTraps } from "./villainPhaseTraps";
 import { checkBladeBarrierDamage } from "./powerCardEffects";
@@ -245,10 +249,14 @@ export interface GameState {
   traps: TrapState[];
   /** Active hazards on the board */
   hazards: HazardState[];
+  /** Treasure tokens placed on tiles (collectible by heroes) */
+  treasureTokens: TreasureTokenState[];
   /** Counter for generating unique trap instance IDs */
   trapInstanceCounter: number;
   /** Counter for generating unique hazard instance IDs */
   hazardInstanceCounter: number;
+  /** Counter for generating unique treasure token instance IDs */
+  treasureTokenInstanceCounter: number;
   /** Board tokens placed by power cards (Blade Barrier, Flaming Sphere, etc.) */
   boardTokens: BoardTokenState[];
   /** Counter for generating unique board token instance IDs */
@@ -527,8 +535,10 @@ const initialState: GameState = {
   activeEnvironmentId: null,
   traps: [],
   hazards: [],
+  treasureTokens: [],
   trapInstanceCounter: 0,
   hazardInstanceCounter: 0,
+  treasureTokenInstanceCounter: 0,
   boardTokens: [],
   boardTokenInstanceCounter: 0,
   showActionSurgePrompt: false,
@@ -1068,6 +1078,33 @@ export const gameSlice = createSlice({
             if (checkPartyDefeat(state.heroHp, state.partyResources)) {
               state.partyDefeated = true;
             }
+          }
+        }
+      }
+      
+      // Check for treasure tokens on the destination tile
+      const treasureTokensOnTile = getTreasureTokensOnTile(position, state.treasureTokens);
+      if (treasureTokensOnTile.length > 0 && !state.treasureDrawnThisTurn) {
+        // Collect the first treasure token
+        const treasureToken = treasureTokensOnTile[0];
+        
+        // Remove treasure token from board
+        state.treasureTokens = state.treasureTokens.filter(t => t.id !== treasureToken.id);
+        
+        // Draw a treasure card for the hero
+        const { treasure, deck: updatedDeck } = drawTreasure(state.treasureDeck);
+        state.treasureDeck = updatedDeck;
+        
+        if (treasure) {
+          state.drawnTreasure = treasure;
+          state.treasureDrawnThisTurn = true;
+          
+          // Set message about collecting treasure
+          const message = `${heroId} collected treasure token!`;
+          if (state.encounterEffectMessage) {
+            state.encounterEffectMessage += ` | ${message}`;
+          } else {
+            state.encounterEffectMessage = message;
           }
         }
       }
@@ -2081,6 +2118,28 @@ export const gameSlice = createSlice({
             if (allHeroesDefeated) {
               state.defeatReason = `The party was overwhelmed by ${state.drawnEncounter.name}.`;
               state.currentScreen = "defeat";
+            }
+          }
+          
+          // Hidden Treasure: Place treasure token on a tile without heroes
+          else if (encounterId === 'hidden-treasure') {
+            const treasurePosition = findValidTreasurePlacement(
+              state.heroTokens,
+              state.dungeon,
+              state.randomSeed !== undefined ? createRandomFunction(state.randomSeed + state.treasureTokenInstanceCounter) : undefined
+            );
+            
+            if (treasurePosition) {
+              const treasureToken = createTreasureTokenInstance(
+                encounterId,
+                treasurePosition,
+                state.treasureTokenInstanceCounter
+              );
+              state.treasureTokens.push(treasureToken);
+              state.treasureTokenInstanceCounter++;
+              state.encounterEffectMessage = `Treasure token placed at (${treasurePosition.x}, ${treasurePosition.y})`;
+            } else {
+              state.encounterEffectMessage = 'No valid tile for treasure token (all tiles have heroes)';
             }
           }
           

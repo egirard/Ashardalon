@@ -1,6 +1,7 @@
 import type { 
   TrapState, 
-  HazardState, 
+  HazardState,
+  TreasureTokenState,
   EncounterCard, 
   Position,
   HeroHpState,
@@ -54,6 +55,21 @@ export function createHazardInstance(
 }
 
 /**
+ * Create a treasure token instance from an encounter card
+ */
+export function createTreasureTokenInstance(
+  encounterId: string,
+  position: Position,
+  instanceId: number
+): TreasureTokenState {
+  return {
+    id: `treasure-token-${instanceId}`,
+    encounterId,
+    position,
+  };
+}
+
+/**
  * Check if a tile already has a trap
  */
 export function tileHasTrap(position: Position, traps: TrapState[]): boolean {
@@ -72,6 +88,15 @@ export function tileHasHazard(position: Position, hazards: HazardState[]): boole
 }
 
 /**
+ * Check if a tile already has a treasure token
+ */
+export function tileHasTreasureToken(position: Position, treasureTokens: TreasureTokenState[]): boolean {
+  return treasureTokens.some(token => 
+    token.position.x === position.x && token.position.y === position.y
+  );
+}
+
+/**
  * Get all traps on a specific tile
  */
 export function getTrapsOnTile(position: Position, traps: TrapState[]): TrapState[] {
@@ -86,6 +111,15 @@ export function getTrapsOnTile(position: Position, traps: TrapState[]): TrapStat
 export function getHazardsOnTile(position: Position, hazards: HazardState[]): HazardState[] {
   return hazards.filter(hazard =>
     hazard.position.x === position.x && hazard.position.y === position.y
+  );
+}
+
+/**
+ * Get all treasure tokens on a specific tile
+ */
+export function getTreasureTokensOnTile(position: Position, treasureTokens: TreasureTokenState[]): TreasureTokenState[] {
+  return treasureTokens.filter(token =>
+    token.position.x === position.x && token.position.y === position.y
   );
 }
 
@@ -296,4 +330,51 @@ export function spreadLavaFlow(
   // Choose a random valid position
   const index = Math.floor(randomFn() * validPositions.length);
   return validPositions[index];
+}
+
+/**
+ * Find a valid tile position for treasure token placement
+ * Must be on an explored tile and not have any heroes on it
+ * @returns Position for treasure, or null if no valid position found
+ */
+export function findValidTreasurePlacement(
+  heroTokens: HeroToken[],
+  dungeon: DungeonState,
+  randomFn: () => number = Math.random
+): Position | null {
+  // Get all valid tile positions (any position on any explored tile)
+  const validPositions: Position[] = [];
+  
+  for (const tile of dungeon.tiles) {
+    if (tile.id === 'start-tile') {
+      // Start tile covers x: 1-3, y: 0-7
+      for (let x = START_TILE_MIN_X; x <= START_TILE_MAX_X; x++) {
+        for (let y = START_TILE_MIN_Y; y <= START_TILE_MAX_Y; y++) {
+          validPositions.push({ x, y });
+        }
+      }
+    } else {
+      // Regular tiles are 4x4
+      const col = tile.position.col;
+      const row = tile.position.row;
+      for (let x = col * 4; x <= col * 4 + 3; x++) {
+        for (let y = row * 4; y <= row * 4 + 3; y++) {
+          validPositions.push({ x, y });
+        }
+      }
+    }
+  }
+  
+  // Filter out positions with heroes
+  const positionsWithoutHeroes = validPositions.filter(pos => {
+    return !heroTokens.some(hero => 
+      hero.position.x === pos.x && hero.position.y === pos.y
+    );
+  });
+  
+  if (positionsWithoutHeroes.length === 0) return null;
+  
+  // Choose a random valid position
+  const index = Math.floor(randomFn() * positionsWithoutHeroes.length);
+  return positionsWithoutHeroes[index];
 }
