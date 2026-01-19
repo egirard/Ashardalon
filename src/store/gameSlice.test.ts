@@ -32,6 +32,8 @@ import gameReducer, {
   setMonsters,
   selectMonsterForEncounter,
   cancelMonsterChoice,
+  setActiveEnvironment,
+  setTraps,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -5375,6 +5377,160 @@ describe("gameSlice", () => {
       const quinnHp = state.heroHp.find(h => h.heroId === 'quinn');
       expect(quinnHp?.statuses.some(s => s.type === 'curse-cage')).toBe(true);
       // The actual movement prevention is tested in statusEffects.test.ts
+    });
+  });
+
+  describe('attemptDisableTrap', () => {
+    it('should disable trap on successful roll without environment', () => {
+      // Start game with Quinn
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn'],
+        seed: 12345,
+      }));
+
+      // Place a trap at Quinn's position
+      const quinnPos = state.heroTokens[0].position;
+      state = gameReducer(state, setTraps([{
+        id: 'trap-1',
+        encounterId: 'lava-flow',
+        position: quinnPos,
+        disableDC: 10,
+      }]));
+
+      // Roll 10 (0.45 * 20 = 9, +1 = 10) - should succeed
+      state = gameReducer(state, {
+        type: 'game/attemptDisableTrap',
+        payload: {
+          trapId: 'trap-1',
+          randomFn: () => 0.45,
+        }
+      });
+
+      // Trap should be removed
+      expect(state.traps).toHaveLength(0);
+    });
+
+    it('should fail to disable trap on low roll without environment', () => {
+      // Start game with Quinn
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn'],
+        seed: 12345,
+      }));
+
+      // Place a trap at Quinn's position
+      const quinnPos = state.heroTokens[0].position;
+      state = gameReducer(state, setTraps([{
+        id: 'trap-1',
+        encounterId: 'lava-flow',
+        position: quinnPos,
+        disableDC: 10,
+      }]));
+
+      // Roll 9 (0.40 * 20 = 8, +1 = 9) - should fail
+      state = gameReducer(state, {
+        type: 'game/attemptDisableTrap',
+        payload: {
+          trapId: 'trap-1',
+          randomFn: () => 0.40,
+        }
+      });
+
+      // Trap should remain
+      expect(state.traps).toHaveLength(1);
+    });
+
+    it('should apply -4 penalty with Kobold Trappers environment', () => {
+      // Start game with Quinn
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn'],
+        seed: 12345,
+      }));
+
+      // Activate Kobold Trappers environment
+      state = gameReducer(state, setActiveEnvironment('kobold-trappers'));
+
+      // Place a trap at Quinn's position
+      const quinnPos = state.heroTokens[0].position;
+      state = gameReducer(state, setTraps([{
+        id: 'trap-1',
+        encounterId: 'lava-flow',
+        position: quinnPos,
+        disableDC: 10,
+      }]));
+
+      // Roll 13 (0.60 * 20 = 12, +1 = 13)
+      // With -4 penalty: 13 - 4 = 9, which is < 10, so should fail
+      state = gameReducer(state, {
+        type: 'game/attemptDisableTrap',
+        payload: {
+          trapId: 'trap-1',
+          randomFn: () => 0.60,
+        }
+      });
+
+      // Trap should remain (failed due to penalty)
+      expect(state.traps).toHaveLength(1);
+    });
+
+    it('should succeed with high roll despite Kobold Trappers penalty', () => {
+      // Start game with Quinn
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn'],
+        seed: 12345,
+      }));
+
+      // Activate Kobold Trappers environment
+      state = gameReducer(state, setActiveEnvironment('kobold-trappers'));
+
+      // Place a trap at Quinn's position
+      const quinnPos = state.heroTokens[0].position;
+      state = gameReducer(state, setTraps([{
+        id: 'trap-1',
+        encounterId: 'lava-flow',
+        position: quinnPos,
+        disableDC: 10,
+      }]));
+
+      // Roll 14 (0.65 * 20 = 13, +1 = 14)
+      // With -4 penalty: 14 - 4 = 10, which is >= 10, so should succeed
+      state = gameReducer(state, {
+        type: 'game/attemptDisableTrap',
+        payload: {
+          trapId: 'trap-1',
+          randomFn: () => 0.65,
+        }
+      });
+
+      // Trap should be removed (succeeded despite penalty)
+      expect(state.traps).toHaveLength(0);
+    });
+
+    it('should not disable trap when hero is not on trap tile', () => {
+      // Start game with Quinn
+      let state = gameReducer(initialState, startGame({
+        heroIds: ['quinn'],
+        seed: 12345,
+      }));
+
+      // Place a trap at a different position
+      state = gameReducer(state, setTraps([{
+        id: 'trap-1',
+        encounterId: 'lava-flow',
+        position: { x: 99, y: 99 }, // Far from hero
+        disableDC: 10,
+      }]));
+
+      // Roll 20 (should succeed if on tile)
+      state = gameReducer(state, {
+        type: 'game/attemptDisableTrap',
+        payload: {
+          trapId: 'trap-1',
+          randomFn: () => 0.95,
+        }
+      });
+
+      // Trap should remain (hero not on tile)
+      expect(state.traps).toHaveLength(1);
     });
   });
 });
