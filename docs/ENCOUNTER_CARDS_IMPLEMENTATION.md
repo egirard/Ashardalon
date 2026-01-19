@@ -171,7 +171,7 @@ These effect types display the card description and resolve to the discard pile,
 | dragons-tribute | Dragon's Tribute | Draw 2 treasures, discard higher | ⚠️ Tracked, not enforced (requires treasure draw UI changes) |
 | hidden-snipers | Hidden Snipers | 1 damage when alone on tile | ✅ Fully Implemented |
 | high-alert | High Alert | Pass monster card to right each turn | ⚠️ Tracked, not enforced (requires multiplayer card passing) |
-| kobold-trappers | Kobold Trappers | -4 to trap disable rolls | ⚠️ Tracked, not enforced (traps not yet implemented) |
+| kobold-trappers | Kobold Trappers | -4 to trap disable rolls | ✅ Fully Implemented |
 | surrounded | Surrounded! | Spawn monster if hero has none | ✅ Fully Implemented |
 | walls-of-magma | Walls of Magma | 1 damage when adjacent to wall | ✅ Fully Implemented |
 
@@ -256,13 +256,13 @@ These effect types display the card description and resolve to the discard pile,
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
 | Curse | 8 | 8 | 0 |
-| Environment | 6 | 3 | 3 |
+| Environment | 6 | 4 | 2 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 1 | 15 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **28** | **25** |
+| **Total** | **53** | **29** | **24** |
 
 ## Features Not Yet Implemented
 
@@ -281,9 +281,33 @@ To fully implement all encounter cards, the following systems would need to be a
 - ✅ Hidden Snipers: Apply 1 damage to active hero when ending Hero Phase alone on tile
 - ✅ Walls of Magma: Apply 1 damage to active hero when ending Hero Phase adjacent to wall
 - ✅ Surrounded!: Spawn monster on closest unexplored edge for heroes without monsters at end of Exploration Phase
+- ✅ Kobold Trappers: Apply -4 penalty to trap disable rolls
 - ⚠️ High Alert: Requires multiplayer card passing mechanism (not in current game state)
 - ⚠️ Dragon's Tribute: Requires treasure draw UI changes to draw 2 and choose
-- ⚠️ Kobold Trappers: Requires trap system implementation
+
+#### Kobold Trappers Implementation Notes
+
+**Kobold Trappers** is now fully implemented:
+- When the environment is active, heroes take a -4 penalty to all trap disable rolls
+- The penalty is applied in the `attemptDisableTrap` reducer in `gameSlice.ts`
+- The implementation checks if `activeEnvironmentId === 'kobold-trappers'` before applying the penalty
+- Roll calculation: `modifiedRoll = d20Roll + koboldTrappersPenalty` where `koboldTrappersPenalty = -4` when active
+- A hero on the same tile as a trap can attempt to disable it by rolling d20 vs the trap's disable DC
+- With Kobold Trappers active, a DC 10 trap requires a roll of 14+ instead of 10+ to disable
+- The environment affects all trap types (Lava Flow, Poisoned Dart Trap, Rolling Boulder, Whirling Blades)
+- Comprehensive unit tests verify:
+  - Trap disables on successful roll without environment (roll 10 vs DC 10 succeeds)
+  - Trap remains on low roll without environment (roll 9 vs DC 10 fails)
+  - Kobold Trappers applies -4 penalty (roll 13 vs DC 10 fails: 13 - 4 = 9)
+  - High roll succeeds despite penalty (roll 14 vs DC 10 succeeds: 14 - 4 = 10)
+  - Hero must be on trap tile to attempt disable
+- E2E test (086) demonstrates:
+  - Environment activation and indicator display
+  - Trap placement at hero position with visual trap marker
+  - Disable attempt with roll 13 failing due to -4 penalty (modified roll 9 < DC 10)
+  - Disable attempt with roll 14 succeeding despite penalty (modified roll 10 >= DC 10)
+  - Comparison with no environment where roll 10 succeeds without penalty
+- Implementation reference: `gameSlice.ts` line 3338 (attemptDisableTrap action)
 
 #### Surrounded! Implementation Notes
 
@@ -306,11 +330,33 @@ To fully implement all encounter cards, the following systems would need to be a
 - E2E test (073) demonstrates the complete effect lifecycle: activation, monster spawning, popup display, and verification
 - Implementation reference: `gameSlice.ts` lines 1522-1575, `encounters.ts` lines 859-882 (findClosestUnexploredEdge)
 
-### 3. Trap/Hazard System
-- Place markers on tiles
-- Track trap state and triggers
-- Trigger effects during Villain Phase
-- Implement disable rolls (DC checks)
+### 3. Trap/Hazard System (Partially Implemented)
+- ✅ Place trap markers on tiles when trap encounter cards are drawn
+- ✅ Track trap state (position, disable DC, encounter ID)
+- ✅ Implement disable rolls (DC checks) with environment modifiers
+- ✅ Visual trap markers displayed on game board
+- ⚠️ Trap effects during Villain Phase (implemented for all 4 trap types in villainPhaseTraps.ts)
+- ⚠️ Interactive UI for trap disabling (currently accessible via Redux action dispatch)
+
+#### Trap System Implementation Notes
+
+**Trap Foundation** is now implemented:
+- Traps are automatically placed at the active hero's tile when trap encounter cards are drawn
+- Each trap has a unique ID, position, encounter type, and disable DC
+- The `attemptDisableTrap` action allows heroes to attempt disabling traps on their tile
+- Disable attempts use d20 rolls vs the trap's DC, with environment modifiers applied
+- Successful disables remove the trap from the game state
+- Failed disables leave the trap active
+- Trap markers are visually displayed on the game board using the TrapMarker component
+- Four trap types are defined in encounter cards:
+  - Lava Flow (DC 10): Spreads each turn, 1 damage to heroes on tile
+  - Poisoned Dart Trap (DC 10): Attack +8 each turn (2 damage + poisoned, miss: 1)
+  - Rolling Boulder (DC 10): Moves toward closest hero, 2 damage
+  - Whirling Blades (DC 10): Moves toward closest hero, Attack +8 (2 damage, miss: 1)
+- Trap activation during Villain Phase is implemented in `villainPhaseTraps.ts`
+- Kobold Trappers environment correctly applies -4 penalty to all trap disable attempts
+- Comprehensive unit tests verify trap creation, placement, disable mechanics, and environment interactions
+- E2E test (086) demonstrates complete trap lifecycle with Kobold Trappers penalty
 
 ### 4. Tile/Monster Manipulation
 - Filter and reorder monster deck
