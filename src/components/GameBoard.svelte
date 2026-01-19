@@ -54,6 +54,7 @@
     assignTreasureToHero,
     dismissTreasureCard,
     useTreasureItem,
+    placeTreasureToken,
     applyHealing,
     selectMonsterForEncounter,
     cancelMonsterChoice,
@@ -244,6 +245,7 @@
   let pendingMoveAttack: PendingMoveAttackState | null = $state(null);
   let pendingMoveAfterAttack: PendingMoveAfterAttackState | null = $state(null);
   let pendingHeroPlacement: PendingHeroPlacementState | null = $state(null);
+  let pendingTreasurePlacement: import('../store/gameSlice').PendingTreasurePlacementState | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
   let incrementalMovement: IncrementalMovementState | null = $state(null);
@@ -351,6 +353,7 @@
       pendingMoveAttack = state.game.pendingMoveAttack;
       pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
       pendingHeroPlacement = state.game.pendingHeroPlacement;
+      pendingTreasurePlacement = state.game.pendingTreasurePlacement;
       drawnTreasure = state.game.drawnTreasure;
       heroInventories = state.game.heroInventories;
       incrementalMovement = state.game.incrementalMovement;
@@ -415,6 +418,7 @@
     pendingMoveAttack = state.game.pendingMoveAttack;
     pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
     pendingHeroPlacement = state.game.pendingHeroPlacement;
+    pendingTreasurePlacement = state.game.pendingTreasurePlacement;
     drawnTreasure = state.game.drawnTreasure;
     heroInventories = state.game.heroInventories;
     incrementalMovement = state.game.incrementalMovement;
@@ -455,6 +459,26 @@
     // Get all squares on the tile where hero is being placed
     const squares = getTileSquares(pendingHeroPlacement.tileId, dungeon);
     return squares;
+  });
+  
+  // Get valid treasure placement squares when treasure placement is pending
+  let validTreasurePlacementSquares = $derived.by(() => {
+    if (!pendingTreasurePlacement) return [];
+    
+    // Get all squares on all explored tiles, excluding those with heroes
+    const allSquares: Position[] = [];
+    
+    for (const tile of dungeon.tiles) {
+      const tileSquares = getTileSquares(tile.id, dungeon);
+      allSquares.push(...tileSquares);
+    }
+    
+    // Filter out squares with heroes
+    return allSquares.filter(square => {
+      return !heroTokens.some(hero => 
+        hero.position.x === square.x && hero.position.y === square.y
+      );
+    });
   });
 
   // Auto-advance hero phase when valid action sequence is complete
@@ -1035,6 +1059,12 @@
 
   // Handle click on a valid movement square
   function handleMoveSquareClick(position: Position) {
+    // Check if we're in treasure placement mode
+    if (pendingTreasurePlacement) {
+      handleTreasurePlacementClick(position);
+      return;
+    }
+    
     // When in move-after-attack mode, move the selected hero instead of current hero
     let heroId: string;
     if (pendingMoveAfterAttack?.selectedHeroId) {
@@ -1055,6 +1085,11 @@
     // 1. Player attacks a monster, or
     // 2. Player cancels the charge, or
     // 3. Player runs out of movement points
+  }
+  
+  function handleTreasurePlacementClick(position: Position) {
+    // Dispatch action to place treasure token at selected position
+    store.dispatch(placeTreasureToken({ position }));
   }
 
   // Handle completing the current move action early
@@ -2961,6 +2996,33 @@
                 {/each}
               </div>
             {/if}
+          {/if}
+        {/if}
+
+        <!-- Treasure Placement Overlay (for Hidden Treasure encounter) -->
+        {#if pendingTreasurePlacement && validTreasurePlacementSquares.length > 0}
+          {@const startTile = dungeon.tiles.find(t => t.tileType === 'start')}
+          {#if startTile}
+            {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
+            <div
+              class="treasure-placement-overlay"
+              style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 15;"
+            >
+              {#each validTreasurePlacementSquares as square (square.x + '-' + square.y)}
+                {@const relX = square.x}
+                {@const relY = square.y}
+                <button
+                  class="selectable-square treasure-square"
+                  data-testid="treasure-placement-square-{square.x}-{square.y}"
+                  style="left: {startTilePos.x + TOKEN_OFFSET_X + relX * TILE_CELL_SIZE}px; top: {startTilePos.y + TOKEN_OFFSET_Y + relY * TILE_CELL_SIZE}px; width: {TILE_CELL_SIZE}px; height: {TILE_CELL_SIZE}px;"
+                  onclick={() => handleTreasurePlacementClick(square)}
+                >
+                  <div class="treasure-placement-indicator" aria-label="Place treasure here">
+                    💎
+                  </div>
+                </button>
+              {/each}
+            </div>
           {/if}
         {/if}
 
