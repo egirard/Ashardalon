@@ -301,6 +301,8 @@ export interface GameState {
   clericsShieldTarget: string | null;
   /** Pending monster choice: context and encounter ID for effects requiring monster selection */
   pendingMonsterChoice: PendingMonsterChoiceState | null;
+  /** Pending treasure placement: requires player to select a tile for treasure token */
+  pendingTreasurePlacement: PendingTreasurePlacementState | null;
   /** Selected target ID (for attack actions) - can be monster, trap, treasure, etc. */
   selectedTargetId: string | null;
   /** Selected target type (to differentiate between different targetable entity types) */
@@ -350,6 +352,16 @@ export interface PendingMonsterChoiceState {
   encounterName: string;
   /** Context for why the choice is needed (for UI display) */
   context: string;
+}
+
+/**
+ * State for tracking when player needs to place a treasure token
+ */
+export interface PendingTreasurePlacementState {
+  /** The encounter card that requires treasure placement */
+  encounterId: string;
+  /** The encounter card name for display */
+  encounterName: string;
 }
 
 /**
@@ -561,6 +573,7 @@ const initialState: GameState = {
   poisonRecoveryNotification: null,
   clericsShieldTarget: null,
   pendingMonsterChoice: null,
+  pendingTreasurePlacement: null,
   selectedTargetId: null,
   selectedTargetType: null,
   showScenarioIntroduction: false,
@@ -2121,25 +2134,14 @@ export const gameSlice = createSlice({
             }
           }
           
-          // Hidden Treasure: Place treasure token on a tile without heroes
+          // Hidden Treasure: Prompt player to place treasure token on a tile without heroes
           else if (encounterId === 'hidden-treasure') {
-            const treasurePosition = findValidTreasurePlacement(
-              state.heroTokens,
-              state.dungeon
-            );
-            
-            if (treasurePosition) {
-              const treasureToken = createTreasureTokenInstance(
-                encounterId,
-                treasurePosition,
-                state.treasureTokenInstanceCounter
-              );
-              state.treasureTokens.push(treasureToken);
-              state.treasureTokenInstanceCounter++;
-              state.encounterEffectMessage = `Treasure token placed at (${treasurePosition.x}, ${treasurePosition.y})`;
-            } else {
-              state.encounterEffectMessage = 'No valid tile for treasure token (all tiles have heroes)';
-            }
+            // Set pending treasure placement state to prompt player for selection
+            state.pendingTreasurePlacement = {
+              encounterId: 'hidden-treasure',
+              encounterName: 'Hidden Treasure'
+            };
+            state.encounterEffectMessage = 'Choose a tile to place the treasure token';
           }
           
           // Thief in the Dark: Active hero discards a treasure
@@ -3451,6 +3453,43 @@ export const gameSlice = createSlice({
     dismissEncounterResult: (state) => {
       state.encounterResult = null;
     },
+    
+    /**
+     * Place treasure token at the selected position (for Hidden Treasure encounter)
+     */
+    placeTreasureToken: (state, action: PayloadAction<{ position: Position }>) => {
+      const { position } = action.payload;
+      
+      if (!state.pendingTreasurePlacement) {
+        return; // No pending treasure placement
+      }
+      
+      const encounterId = state.pendingTreasurePlacement.encounterId;
+      
+      // Verify the position is valid (no hero on it)
+      const hasHero = state.heroTokens.some(hero => 
+        hero.position.x === position.x && hero.position.y === position.y
+      );
+      
+      if (hasHero) {
+        state.encounterEffectMessage = 'Cannot place treasure on a tile with a hero';
+        return;
+      }
+      
+      // Create and place the treasure token
+      const treasureToken = createTreasureTokenInstance(
+        encounterId,
+        position,
+        state.treasureTokenInstanceCounter
+      );
+      state.treasureTokens.push(treasureToken);
+      state.treasureTokenInstanceCounter++;
+      
+      // Clear the pending state
+      state.pendingTreasurePlacement = null;
+      state.encounterEffectMessage = `Treasure token placed at (${position.x}, ${position.y})`;
+    },
+    
     /**
      * Dismiss the exploration phase notification message
      * Note: Also clears recentlyPlacedTileId since both are part of the same exploration event.
@@ -4105,6 +4144,7 @@ export const {
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
   dismissEncounterResult,
+  placeTreasureToken,
   dismissExplorationPhaseMessage,
   dismissPoisonedDamageNotification,
   dismissPoisonRecoveryNotification,
