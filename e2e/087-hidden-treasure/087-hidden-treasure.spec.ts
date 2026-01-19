@@ -71,8 +71,24 @@ test.describe('087 - Hidden Treasure Encounter Card', () => {
     // STEP 4: Accept the encounter card to place treasure token
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
     
-    // Wait for treasure token to appear (marker should be visible)
-    await page.waitForTimeout(500); // Brief wait for token placement
+    // Hidden Treasure draws another encounter card automatically
+    // Wait for any follow-up encounter card and dismiss it
+    const followUpEncounter = page.locator('[data-testid="encounter-card"]');
+    try {
+      await followUpEncounter.waitFor({ state: 'visible', timeout: 2000 });
+      // If a follow-up encounter appeared, dismiss it
+      await page.locator('[data-testid="dismiss-encounter-card"]').click();
+    } catch (e) {
+      // No follow-up encounter appeared (which shouldn't happen for Hidden Treasure, but handle gracefully)
+    }
+    
+    // Wait for all encounter cards to be dismissed
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {
+      // Encounter card might already be hidden
+    });
+    
+    // Brief wait for UI to stabilize after dismissing encounters
+    await page.waitForTimeout(300);
     
     await screenshots.capture(page, 'treasure-token-placed-on-tile', {
       programmaticCheck: async () => {

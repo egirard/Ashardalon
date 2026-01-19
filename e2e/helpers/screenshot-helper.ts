@@ -9,19 +9,30 @@ import * as path from 'path';
 export const DETERMINISTIC_TIMESTAMP = 1234567890000;
 
 /**
- * Sets up deterministic game initialization by overriding Date.now().
+ * Sets up deterministic game initialization by overriding Date.now() and Math.random().
  * 
  * CRITICAL: Call this before starting any game to ensure:
  * - Consistent tile deck shuffling
  * - Consistent hero position assignments
+ * - Consistent random treasure token placement
  * - Deterministic screenshot comparisons
  * 
  * @param page - The Playwright page object
  */
 export async function setupDeterministicGame(page: Page): Promise<void> {
   await page.evaluate((timestamp) => {
+    // Override Date.now() for consistent timestamps
     Date.now = function() {
       return timestamp;
+    };
+    
+    // Override Math.random() for consistent random number generation
+    // Using a simple seeded random number generator (Linear Congruential Generator)
+    let seed = timestamp;
+    Math.random = function() {
+      // LCG parameters from Numerical Recipes
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
     };
   }, DETERMINISTIC_TIMESTAMP);
 }
