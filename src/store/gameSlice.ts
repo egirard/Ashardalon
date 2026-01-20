@@ -318,6 +318,10 @@ export interface GameState {
   heroMovedThisPhase: boolean;
   /** Result of the most recent trap disable attempt (for displaying result dialog) */
   trapDisableResult: TrapDisableResult | null;
+  /** Player-visible log entries for tracking game history and actions */
+  logEntries: import('./types').LogEntry[];
+  /** Counter for generating unique log entry IDs */
+  logEntryCounter: number;
 }
 
 /**
@@ -584,6 +588,8 @@ const initialState: GameState = {
   badLuckExtraEncounterPending: false,
   heroMovedThisPhase: false,
   trapDisableResult: null,
+  logEntries: [],
+  logEntryCounter: 0,
 };
 
 /**
@@ -934,6 +940,16 @@ export const gameSlice = createSlice({
 
       // Show scenario introduction on game start
       state.showScenarioIntroduction = true;
+
+      // Add "game started" log entry
+      const gameStartLogEntry: import('./types').LogEntry = {
+        id: state.logEntryCounter++,
+        timestamp: Date.now(),
+        type: 'game-event',
+        message: '🎮 Game Started',
+        details: `${heroIds.length} hero${heroIds.length > 1 ? 'es' : ''} begin their adventure into the Mountain. ${state.scenario.objective}`,
+      };
+      state.logEntries.push(gameStartLogEntry);
 
       state.currentScreen = "game-board";
     },
@@ -2889,6 +2905,29 @@ export const gameSlice = createSlice({
       state.trapDisableResult = null;
     },
     /**
+     * Add a log entry to the player-visible log
+     */
+    addLogEntry: (
+      state,
+      action: PayloadAction<{
+        type: import('./types').LogMessageType;
+        message: string;
+        details?: string;
+        heroId?: string;
+      }>,
+    ) => {
+      const { type, message, details, heroId } = action.payload;
+      const newEntry: import('./types').LogEntry = {
+        id: state.logEntryCounter++,
+        timestamp: Date.now(),
+        type,
+        message,
+        details,
+        heroId,
+      };
+      state.logEntries.push(newEntry);
+    },
+    /**
      * Dismiss the monster defeat/XP notification
      */
     dismissDefeatNotification: (state) => {
@@ -4295,5 +4334,6 @@ export const {
   deselectTarget,
   dismissScenarioIntroduction,
   showScenarioIntroductionModal,
+  addLogEntry,
 } = gameSlice.actions;
 export default gameSlice.reducer;

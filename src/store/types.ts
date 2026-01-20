@@ -1333,3 +1333,32 @@ export const INITIAL_ENCOUNTER_DECK: string[] = [
   'rolling-boulder',
   'whirling-blades',
 ];
+
+/**
+ * Type of log message for categorization and styling
+ */
+export type LogMessageType = 
+  | 'game-event'     // Game state changes (game start, turn start, phase changes)
+  | 'hero-action'    // Player actions (movement, attacks, item usage)
+  | 'combat'         // Combat results (hits, misses, damage)
+  | 'exploration'    // Exploration events (tiles placed, monsters spawned)
+  | 'encounter'      // Encounter card effects
+  | 'system';        // System messages and notifications
+
+/**
+ * Single log entry in the player-visible log
+ */
+export interface LogEntry {
+  /** Unique ID for this log entry */
+  id: number;
+  /** Timestamp when this entry was created */
+  timestamp: number;
+  /** Type of log message for categorization */
+  type: LogMessageType;
+  /** Main message text to display */
+  message: string;
+  /** Optional detailed information (shown when expanded or in detail view) */
+  details?: string;
+  /** Optional hero ID if this log is specific to a hero */
+  heroId?: string;
+}

@@ -5,12 +5,17 @@
   import { assetPath } from '../utils';
   import { HeartIcon, SkullIcon, SwordIcon, ShieldIcon, LightningIcon, DiceIcon, TargetIcon, StarIcon, XIcon } from './icons';
   import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
+  import LogViewer from './LogViewer.svelte';
+  import type { LogEntry } from '../store/types';
 
   // Condition type constant for consistency
   const DAZED_CONDITION = 'dazed';
 
   // State for selected card to show in detail view
   let selectedCardDetail: CardDetail | null = $state(null);
+
+  // State for showing log viewer
+  let showLogViewer = $state(false);
 
   interface Props {
     hero: Hero;
@@ -31,9 +36,11 @@
     boardPosition?: 'top' | 'bottom' | 'left' | 'right';
     /** Message to display for pending treasure placement */
     treasurePlacementMessage?: string;
+    /** Log entries for the game */
+    logEntries?: LogEntry[];
   }
 
-  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage }: Props = $props();
+  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage, logEntries = [] }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -150,6 +157,16 @@
   function handleDismissDetail() {
     selectedCardDetail = null;
   }
+
+  // Handle opening the log viewer
+  function handleOpenLog() {
+    showLogViewer = true;
+  }
+
+  // Handle closing the log viewer
+  function handleCloseLog() {
+    showLogViewer = false;
+  }
 </script>
 
 <div 
@@ -187,6 +204,14 @@
           Level 2 <StarIcon size={14} ariaLabel="Level 2" />
         </span>
       {/if}
+      <button 
+        class="view-log-button" 
+        onclick={handleOpenLog}
+        title="View game log"
+        data-testid="view-log-button"
+      >
+        📜
+      </button>
     </div>
     {#if isActive && turnPhase}
       <div class="turn-badge" data-testid="turn-badge">
@@ -327,6 +352,14 @@
 
 </div>
 
+<!-- Log Viewer (shown as overlay) -->
+{#if showLogViewer}
+  <LogViewer 
+    logEntries={logEntries}
+    onDismiss={handleCloseLog}
+  />
+{/if}
+
 <style>
   .player-card {
     position: relative;
@@ -408,6 +441,28 @@
     padding: 0.1rem 0.3rem;
     border-radius: 3px;
     width: fit-content;
+  }
+
+  .view-log-button {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .view-log-button:hover {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: rgba(255, 215, 0, 0.6);
+    transform: translateY(-1px);
+  }
+
+  .view-log-button:active {
+    transform: translateY(0);
   }
 
   .turn-badge {
