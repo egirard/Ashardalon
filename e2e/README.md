@@ -34,6 +34,7 @@ e2e/
 | [043-monster-move-dialog-orientation](043-monster-move-dialog-orientation/README.md) | Monster move dialog rotates to face controlling player |
 | [051-righteous-smite](051-righteous-smite/README.md) | Righteous Smite power card: area healing on hit or miss |
 | [072-command-card-relocation](072-command-card-relocation/README.md) | Command power card: Monster relocation system with two-step selection (monster → tile) |
+| [091-kobold-warren](091-kobold-warren/README.md) | Kobold Warren encounter: filter monster deck for reptiles |
 
 ## Running Tests
 
