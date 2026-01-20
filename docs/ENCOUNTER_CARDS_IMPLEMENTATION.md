@@ -170,10 +170,30 @@ These effect types display the card description and resolve to the discard pile,
 |----|------|----------------|----------------------|
 | dragons-tribute | Dragon's Tribute | Draw 2 treasures, discard higher | ✅ Fully Implemented |
 | hidden-snipers | Hidden Snipers | 1 damage when alone on tile | ✅ Fully Implemented |
-| high-alert | High Alert | Pass monster card to right each turn | ⚠️ Tracked, not enforced (requires multiplayer card passing) |
+| high-alert | High Alert | Pass monster card to right each turn | ✅ Fully Implemented |
 | kobold-trappers | Kobold Trappers | -4 to trap disable rolls | ✅ Fully Implemented |
 | surrounded | Surrounded! | Spawn monster if hero has none | ✅ Fully Implemented |
 | walls-of-magma | Walls of Magma | 1 damage when adjacent to wall | ✅ Fully Implemented |
+
+#### High Alert Implementation Notes
+
+**High Alert** is now fully implemented:
+- When the environment is active, at the end of each Villain Phase, the active hero passes one monster card to the player on their right
+- "Player on the right" is the next hero in turn order (wraps around to first player if last player is active)
+- Only the first monster controlled by the active hero is passed
+- If the active hero has no monsters, no passing occurs
+- In solo play (only one hero), no passing occurs (checked via `heroTokens.length > 1`)
+- The monster's `controllerId` field is updated to the next player's heroId
+- A notification message displays the passed monster: "High Alert: {heroId} passes {MonsterName} to {nextHeroId}"
+- The effect is applied in the `endVillainPhase` reducer in `gameSlice.ts`
+- Comprehensive unit tests verify all scenarios:
+  - Multiplayer monster passing to next player
+  - Wrapping from last player to first player
+  - Passing only one monster when hero controls multiple
+  - Solo player (no passing occurs)
+  - Active hero has no monsters (no error, no passing)
+  - Environment not active (no passing occurs)
+- Implementation reference: `gameSlice.ts` lines 1850-1887, `highAlertEnvironment.test.ts`
 
 #### Dragon's Tribute Implementation Notes
 
@@ -301,13 +321,13 @@ These effect types display the card description and resolve to the discard pile,
 | Category | Total Cards | Fully Implemented | Display Only |
 |----------|-------------|-------------------|--------------|
 | Curse | 8 | 8 | 0 |
-| Environment | 6 | 5 | 1 |
+| Environment | 6 | 6 | 0 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 2 | 14 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 0 | 4 |
-| **Total** | **53** | **31** | **22** |
+| **Total** | **53** | **32** | **21** |
 
 ## Features Not Yet Implemented
 
@@ -328,7 +348,7 @@ To fully implement all encounter cards, the following systems would need to be a
 - ✅ Surrounded!: Spawn monster on closest unexplored edge for heroes without monsters at end of Exploration Phase
 - ✅ Kobold Trappers: Apply -4 penalty to trap disable rolls
 - ✅ Dragon's Tribute: Draw 2 treasures, player chooses one to keep, discard the other
-- ⚠️ High Alert: Requires multiplayer card passing mechanism (not in current game state)
+- ✅ High Alert: Pass one monster card to the player on the right at end of Villain Phase
 
 #### Kobold Trappers Implementation Notes
 

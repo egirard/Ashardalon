@@ -27,6 +27,7 @@ import {
   TreasureTokenState,
   BoardTokenState,
   MONSTER_TACTICS,
+  MONSTERS,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
 import {
@@ -1846,6 +1847,43 @@ export const gameSlice = createSlice({
       
       // Clear action surge prompt
       state.showActionSurgePrompt = false;
+      
+      // High Alert environment effect: Pass one monster card to the player on the right
+      if (state.activeEnvironmentId === 'high-alert' && state.heroTokens.length > 1) {
+        const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+        if (currentHeroId) {
+          // Find monsters controlled by the current hero
+          const controlledMonsters = state.monsters.filter(m => m.controllerId === currentHeroId);
+          
+          if (controlledMonsters.length > 0) {
+            // Calculate the index of the player on the right (next player in turn order)
+            const rightPlayerIndex = (state.turnState.currentHeroIndex + 1) % state.heroTokens.length;
+            const rightPlayerId = state.heroTokens[rightPlayerIndex]?.heroId;
+            
+            if (rightPlayerId) {
+              // Pass the first monster to the player on the right
+              const monsterToPass = controlledMonsters[0];
+              const monsterIndex = state.monsters.findIndex(m => m.instanceId === monsterToPass.instanceId);
+              
+              if (monsterIndex !== -1) {
+                state.monsters[monsterIndex] = {
+                  ...state.monsters[monsterIndex],
+                  controllerId: rightPlayerId,
+                };
+                
+                // Add notification message
+                const monsterData = MONSTERS.find(m => m.id === monsterToPass.monsterId);
+                const monsterName = monsterData?.name ?? 'Monster';
+                const existingMessage = state.encounterEffectMessage;
+                const passMessage = `High Alert: ${currentHeroId} passes ${monsterName} to ${rightPlayerId}`;
+                state.encounterEffectMessage = existingMessage 
+                  ? `${existingMessage} | ${passMessage}`
+                  : passMessage;
+              }
+            }
+          }
+        }
+      }
       
       // Move to next hero
       state.turnState.currentHeroIndex = 
