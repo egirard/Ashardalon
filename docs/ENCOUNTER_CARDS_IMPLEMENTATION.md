@@ -250,7 +250,7 @@ These effect types display the card description and resolve to the discard pile,
 | duergar-outpost | Duergar Outpost | Filter monster deck for Devils | ✅ Fully Implemented |
 | hall-of-orcs | Hall of the Orcs | Filter monster deck for Orcs | ⚠️ Display only |
 | hidden-treasure | Hidden Treasure | Place treasure token | ✅ Fully Implemented |
-| kobold-warren | Kobold Warren | Filter monster deck for Reptiles | ⚠️ Display only |
+| kobold-warren | Kobold Warren | Filter monster deck for Reptiles | ✅ Fully Implemented |
 | lost | Lost | Shuffle tile deck | ⚠️ Display only |
 | occupied-lair | Occupied Lair | Place tile, monster, and treasure | ⚠️ Display only |
 | quick-advance | Quick Advance | Move a monster closer | ⚠️ Display only |
