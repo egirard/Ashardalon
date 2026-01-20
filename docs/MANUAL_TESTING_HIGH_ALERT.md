@@ -170,13 +170,12 @@ If you want to test High Alert without waiting to draw it:
 To quickly add monsters for testing:
 
 1. Open Redux DevTools
-2. Go to the "Dispatch" tab
-3. Dispatch a custom action to add a monster:
+2. Go to the "Dispatch" tab  
+3. Use the `setMonsters` action to add a monster. Note that this replaces all monsters, so you need to include existing monsters:
    ```javascript
    {
      type: 'game/setMonsters',
      payload: [
-       ...state.monsters,
        {
          monsterId: 'kobold',
          instanceId: 'test-kobold-1',
@@ -188,6 +187,7 @@ To quickly add monsters for testing:
      ]
    }
    ```
+   *Note: This will replace all existing monsters. To add a monster without removing others, first inspect the current `state.monsters` array and include those in the payload.*
 
 ### Verify Monster Controller
 
