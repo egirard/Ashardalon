@@ -35,6 +35,7 @@
     dismissPoisonRecoveryNotification,
     attemptPoisonRecovery,
     attemptCageEscape,
+    attemptDisableTrap,
     showPendingMonster,
     useVoluntaryActionSurge,
     skipActionSurge,
@@ -1651,6 +1652,38 @@
     store.dispatch(dismissTrapDisableResult());
   }
 
+  // Handle clicking on a trap marker to attempt disable
+  function handleTrapClick(trapId: string) {
+    const state = store.getState();
+    const gameState = state.game;
+    
+    // Only allow trap disabling during hero phase
+    if (gameState.turnState.currentPhase !== 'hero-phase') {
+      return;
+    }
+    
+    // Get the active hero's position
+    const activeHeroToken = gameState.heroTokens[gameState.turnState.currentHeroIndex];
+    if (!activeHeroToken) {
+      return;
+    }
+    
+    // Get the trap
+    const trap = gameState.traps.find(t => t.id === trapId);
+    if (!trap) {
+      return;
+    }
+    
+    // Check if the active hero is on the same tile as the trap
+    const heroOnTrapTile = areOnSameTile(activeHeroToken.position, trap.position, gameState.dungeon);
+    if (!heroOnTrapTile) {
+      return;
+    }
+    
+    // Dispatch the attemptDisableTrap action
+    store.dispatch(attemptDisableTrap({ trapId }));
+  }
+
   // Get monster name from instance
   function getMonsterName(monsterId: string): string {
     const monster = MONSTERS.find((m) => m.id === monsterId);
@@ -3094,12 +3127,16 @@
         
         <!-- Trap markers -->
         {#each traps as trap (trap.id)}
+          {@const activeHeroToken = heroTokens[turnState.currentHeroIndex]}
+          {@const canDisable = turnState.currentPhase === 'hero-phase' && activeHeroToken && areOnSameTile(activeHeroToken.position, trap.position, dungeon)}
           <TrapMarker
             trap={trap}
             cellSize={TILE_CELL_SIZE}
             tileOffsetX={TOKEN_OFFSET_X}
             tileOffsetY={TOKEN_OFFSET_Y}
             tilePixelOffset={{ x: 0, y: 0 }}
+            canDisable={canDisable}
+            onClick={handleTrapClick}
           />
         {/each}
         
