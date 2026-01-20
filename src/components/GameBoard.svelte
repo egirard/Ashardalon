@@ -257,6 +257,7 @@
   let selectedTargetId: string | null = $state(null);
   let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
   let trapDisableResult: import('../store/types').TrapDisableResult | null = $state(null);
+  let logEntries: import('../store/types').LogEntry[] = $state([]);
   
   // Blade Barrier token placement state
   let pendingBladeBarrier: { 
@@ -367,6 +368,7 @@
       selectedTargetType = state.game.selectedTargetType;
       showScenarioIntroduction = state.game.showScenarioIntroduction;
       trapDisableResult = state.game.trapDisableResult;
+      logEntries = state.game.logEntries;
       
       // Force Svelte to process pending updates
       tick();
@@ -433,6 +435,7 @@
     selectedTargetType = state.game.selectedTargetType;
     showScenarioIntroduction = state.game.showScenarioIntroduction;
     trapDisableResult = state.game.trapDisableResult;
+    logEntries = state.game.logEntries;
 
     return unsubscribe;
   });
@@ -3343,6 +3346,7 @@
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition={edge}
             treasurePlacementMessage={isHeroActive && pendingTreasurePlacement ? 'Choose a tile to place the treasure token' : undefined}
+            {logEntries}
           />
           <!-- Turn Progress Card (shown only for active player) -->
           {#if isHeroActive}
