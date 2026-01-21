@@ -3666,7 +3666,13 @@
     {@const heroId = pendingTreasureDiscard.heroId}
     {@const inventory = heroInventories[heroId]}
     {@const heroPosition = heroTokens.find(t => t.heroId === heroId)?.position}
-    {@const treasureCards = inventory?.items.map(item => getTreasureById(item.cardId)).filter(Boolean) || []}
+    {@const treasureCards = inventory?.items.map(item => {
+      const treasure = getTreasureById(item.cardId);
+      if (!treasure) {
+        console.error(`Treasure not found for cardId: ${item.cardId}`);
+      }
+      return treasure;
+    }).filter(Boolean) || []}
     {@const treasureTokensOnTile = heroPosition ? treasureTokens.filter(t => t.position.x === heroPosition.x && t.position.y === heroPosition.y) : []}
     <ThiefDiscardChoice
       treasureCards={treasureCards}
