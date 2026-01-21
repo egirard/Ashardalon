@@ -2218,21 +2218,44 @@ export const gameSlice = createSlice({
             // Note: No modal message - the player card will show the prompt
           }
           
-          // Thief in the Dark: Active hero discards a treasure
+          // Thief in the Dark: Active hero discards a treasure card or token
           else if (encounterId === 'thief-in-dark') {
             const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
-            if (activeHeroId) {
+            const activeHeroPosition = activeHeroToken?.position;
+            
+            if (activeHeroId && activeHeroPosition) {
               const inventory = state.heroInventories[activeHeroId];
+              
+              // Priority 1: Try to discard a treasure card
               if (inventory && inventory.items.length > 0) {
-                // Remove the first treasure item
                 const removedItem = inventory.items[0];
+                const treasureCard = getTreasureById(removedItem.cardId);
+                
+                // Add treasure card back to discard pile
+                state.treasureDeck = discardTreasure(state.treasureDeck, removedItem.cardId);
+                
+                // Remove from inventory
                 state.heroInventories[activeHeroId] = {
                   ...inventory,
                   items: inventory.items.slice(1),
                 };
-                state.encounterEffectMessage = `${activeHeroId} lost ${removedItem.name}`;
-              } else {
-                state.encounterEffectMessage = 'No treasure to lose';
+                
+                const treasureName = treasureCard?.name || `Treasure #${removedItem.cardId}`;
+                state.encounterEffectMessage = `${activeHeroId} lost ${treasureName}`;
+              }
+              // Priority 2: Try to discard a treasure token on hero's tile
+              else {
+                const treasureTokensOnTile = getTreasureTokensOnTile(activeHeroPosition, state.treasureTokens);
+                
+                if (treasureTokensOnTile.length > 0) {
+                  const removedToken = treasureTokensOnTile[0];
+                  state.treasureTokens = state.treasureTokens.filter(t => t.id !== removedToken.id);
+                  state.encounterEffectMessage = `${activeHeroId} lost a treasure token`;
+                }
+                // Priority 3: Hero has neither card nor token
+                else {
+                  state.encounterEffectMessage = `${activeHeroId} has no treasure - the thief gets nothing`;
+                }
               }
             }
           }
