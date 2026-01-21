@@ -330,10 +330,10 @@ These effect types display the card description and resolve to the discard pile,
 
 | ID | Name | Effect Summary | Disable DC | Implementation Status |
 |----|------|----------------|------------|----------------------|
-| lava-flow | Lava Flow | Spreads each turn, 1 damage | 10 | ⚠️ Display only |
-| poisoned-dart-trap | Poisoned Dart Trap | Attack +8 each turn (2 + Poisoned, miss: 1) | 10 | ⚠️ Display only |
-| rolling-boulder | Rolling Boulder | Moves toward hero, 2 damage | 10 | ⚠️ Display only |
-| whirling-blades | Whirling Blades | Moves toward hero, Attack +8 (2, miss: 1) | 10 | ⚠️ Display only |
+| lava-flow | Lava Flow | Spreads each turn, 1 damage | 10 | ✅ Fully Implemented |
+| poisoned-dart-trap | Poisoned Dart Trap | Attack +8 each turn (2 + Poisoned, miss: 1) | 10 | ✅ Fully Implemented |
+| rolling-boulder | Rolling Boulder | Moves toward hero, 2 damage | 10 | ✅ Fully Implemented |
+| whirling-blades | Whirling Blades | Moves toward hero, Attack +8 (2, miss: 1) | 10 | ✅ Fully Implemented |
 
 ## Implementation Summary
 
@@ -345,8 +345,8 @@ These effect types display the card description and resolve to the discard pile,
 | Event (Attack) | 14 | 14 | 0 |
 | Event (Special) | 16 | 3 | 13 |
 | Hazard | 3 | 0 | 3 |
-| Trap | 4 | 0 | 4 |
-| **Total** | **53** | **33** | **20** |
+| Trap | 4 | 4 | 0 |
+| **Total** | **53** | **37** | **16** |
 
 ## Features Not Yet Implemented
 
@@ -414,23 +414,36 @@ To fully implement all encounter cards, the following systems would need to be a
 - E2E test (073) demonstrates the complete effect lifecycle: activation, monster spawning, popup display, and verification
 - Implementation reference: `gameSlice.ts` lines 1522-1575, `encounters.ts` lines 859-882 (findClosestUnexploredEdge)
 
-### 3. Trap/Hazard System (Partially Implemented)
+### 3. Trap/Hazard System ✅ Fully Implemented (Traps)
 - ✅ Place trap markers on tiles when trap encounter cards are drawn
 - ✅ Track trap state (position, disable DC, encounter ID)
 - ✅ Implement disable rolls (DC checks) with environment modifiers
 - ✅ Visual trap markers displayed on game board
-- ⚠️ Trap effects during Villain Phase (implemented for all 4 trap types in villainPhaseTraps.ts)
-- ⚠️ Interactive UI for trap disabling (currently accessible via Redux action dispatch)
+- ✅ Interactive UI for trap disabling (click trap marker to attempt disable)
+- ✅ Trap effects during Villain Phase (implemented for all 4 trap types in villainPhaseTraps.ts)
 
 #### Trap System Implementation Notes
 
-**Trap Foundation** is now implemented:
+**Trap System** is now fully implemented:
 - Traps are automatically placed at the active hero's tile when trap encounter cards are drawn
 - Each trap has a unique ID, position, encounter type, and disable DC
-- The `attemptDisableTrap` action allows heroes to attempt disabling traps on their tile
+- **Interactive UI**: Players can click on trap markers to attempt to disable them
+  - Trap markers are clickable buttons (TrapMarker.svelte)
+  - Only clickable during Hero Phase when hero is on same tile as trap
+  - Visual feedback: hover effects, scale animation, "Click to disable" hint
+  - Keyboard accessible: Enter/Space keys work
+  - Proper ARIA labels for screen readers
+- The `attemptDisableTrap` action handles disable attempts
+  - Dispatched from GameBoard.svelte when trap marker is clicked
+  - Exported from gameSlice.ts for use in components
 - Disable attempts use d20 rolls vs the trap's DC, with environment modifiers applied
 - Successful disables remove the trap from the game state
 - Failed disables leave the trap active
+- Trap Disable Result Display (TrapDisableResultDisplay.svelte) shows:
+  - Dice roll value
+  - Environment penalties (e.g., Kobold Trappers -4)
+  - Modified roll vs DC
+  - Success/failure indicator
 - Trap markers are visually displayed on the game board using the TrapMarker component
 - Four trap types are defined in encounter cards:
   - Lava Flow (DC 10): Spreads each turn, 1 damage to heroes on tile
@@ -440,7 +453,14 @@ To fully implement all encounter cards, the following systems would need to be a
 - Trap activation during Villain Phase is implemented in `villainPhaseTraps.ts`
 - Kobold Trappers environment correctly applies -4 penalty to all trap disable attempts
 - Comprehensive unit tests verify trap creation, placement, disable mechanics, and environment interactions
-- E2E test (086) demonstrates complete trap lifecycle with Kobold Trappers penalty
+- E2E test (086) demonstrates complete trap lifecycle with Kobold Trappers penalty using Redux dispatch
+- **New**: E2E test (092) demonstrates interactive trap disable UI (in progress)
+- Implementation files:
+  - gameSlice.ts: attemptDisableTrap action and export
+  - GameBoard.svelte: handleTrapClick function and trap marker click handling
+  - TrapMarker.svelte: Interactive button component with visual states
+  - TrapDisableResultDisplay.svelte: Result display component
+  - villainPhaseTraps.ts: Trap activation logic
 
 ### 4. Tile/Monster Manipulation
 - Filter and reorder monster deck
