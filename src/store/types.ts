@@ -150,6 +150,9 @@ export interface MonsterCardTactics {
  * - kobold: ✅ FULLY IMPLEMENTED (attack-only behavior)
  * - snake: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * - cultist: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
+ * - orc-smasher: ✅ FULLY IMPLEMENTED (move-and-attack behavior)
+ * - grell: ⚠️ PARTIALLY IMPLEMENTED (multi-range attacks work, miss damage and dazed status implemented)
+ * - orc-archer: ⚠️ PARTIALLY IMPLEMENTED (multi-range attacks work, miss damage and dazed status implemented)
  * 
  * See docs/MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
  */
@@ -168,6 +171,26 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Dagger', attackBonus: 6, damage: 1, statusEffect: 'poisoned' },
     moveAttackRange: 1,
+  },
+  'orc-smasher': {
+    type: 'move-and-attack',
+    adjacentAttack: { name: 'Heavy Mace', attackBonus: 9, damage: 1 },
+    moveAttackRange: 1,
+    implementationNotes: 'Move-and-attack within 1 tile. No special effects.',
+  },
+  grell: {
+    type: 'ranged-attack',
+    adjacentAttack: { name: 'Venomous Bite', attackBonus: 7, damage: 1, statusEffect: 'poisoned', missDamage: 1 },
+    moveAttack: { name: 'Tentacles', attackBonus: 7, damage: 1, statusEffect: 'dazed', range: 1 },
+    moveAttackRange: 1,
+    implementationNotes: 'Adjacent: Venomous Bite (poisoned, miss: 1 damage). Within 1 tile: Tentacles (dazed).',
+  },
+  'orc-archer': {
+    type: 'ranged-attack',
+    adjacentAttack: { name: 'Punch', attackBonus: 6, damage: 1, statusEffect: 'dazed' },
+    moveAttack: { name: 'Arrow', attackBonus: 6, damage: 2, missDamage: 1, range: 2 },
+    moveAttackRange: 2,
+    implementationNotes: 'Adjacent: Punch (dazed). Within 2 tiles: Arrow (miss: 1 damage).',
   },
 };
 
