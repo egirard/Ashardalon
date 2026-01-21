@@ -82,6 +82,10 @@ test.describe('094 - Hall of the Orcs Encounter Card', () => {
         const orcMatch = message.match(/(\d+) Orcs? placed on top, (\d+) discarded/);
         expect(orcMatch).toBeTruthy();
         
+        if (!orcMatch) {
+          throw new Error('Failed to parse encounter effect message');
+        }
+        
         const orcsKept = parseInt(orcMatch[1], 10);
         const orcsDiscarded = parseInt(orcMatch[2], 10);
         
