@@ -76,6 +76,62 @@ Each monster in Wrath of Ashardalon has a card that defines:
 
 The following monsters have complex behaviors that require additional game systems to be implemented first.
 
+### Orc Smasher ✅
+**Status**: FULLY IMPLEMENTED
+
+| Stat | Value | Implemented |
+|------|-------|-------------|
+| AC | 15 | ✅ |
+| HP | 2 | ✅ |
+| XP | 2 | ✅ |
+| Attack | Heavy Mace +9 | ✅ |
+| Damage | 1 | ✅ |
+
+**Card Tactics**:
+| Rule | Status | Notes |
+|------|--------|-------|
+| Within 1 tile: Move adjacent AND attack | ✅ | Working |
+| Heavy Mace (+9, 1 damage) | ✅ | Working |
+| Otherwise, move 1 tile toward closest Hero | ✅ | Working |
+
+### Grell ⚠️
+**Status**: PARTIALLY IMPLEMENTED
+**Requires**: Area attack (not yet implemented)
+
+| Stat | Value | Implemented |
+|------|-------|-------------|
+| AC | 14 | ✅ |
+| HP | 1 | ✅ |
+| XP | 2 | ✅ |
+
+**Card Tactics**:
+| Rule | Status | Notes |
+|------|--------|-------|
+| Adjacent: Venomous Bite (Poisoned, miss: 1 damage) | ✅ | Working |
+| Within 1 tile: Tentacles (Dazed) | ✅ | Working - uses move-and-attack |
+| Different attacks at different ranges | ✅ | Working |
+
+**Implementation Notes**: The Grell's ranged attack system is now functional. It uses `adjacentAttack` for Venomous Bite when adjacent (with poisoned status and miss damage) and `moveAttack` for Tentacles when within 1 tile (with dazed status). The AI will automatically select the correct attack based on distance to hero.
+
+### Orc Archer ⚠️
+**Status**: PARTIALLY IMPLEMENTED
+**Requires**: Area attack (not yet implemented)
+
+| Stat | Value | Implemented |
+|------|-------|-------------|
+| AC | 13 | ✅ |
+| HP | 1 | ✅ |
+| XP | 1 | ✅ |
+
+**Card Tactics**:
+| Rule | Status | Notes |
+|------|--------|-------|
+| Adjacent: Punch (+6, 1 damage + Dazed) | ✅ | Working |
+| Within 2 tiles: Arrow (+6, 2 damage, miss: 1 damage) | ✅ | Working - uses move-and-attack |
+| 2-tile attack range | ✅ | Working |
+
+**Implementation Notes**: The Orc Archer's ranged attack system is now functional. It uses `adjacentAttack` for Punch when adjacent (with dazed status) and `moveAttack` for Arrow when within 2 tiles (with miss damage). The AI will automatically select the correct attack based on distance to hero.
+
 ### Cave Bear 📋
 **Requires**: Area-of-effect attacks, Dazed condition
 
@@ -141,18 +197,18 @@ The following monsters have complex behaviors that require additional game syste
 
 To fully implement all monsters, the following systems need to be built:
 
-### High Priority
-1. **Condition System**: Track Poisoned, Dazed states per hero
-2. **Miss Damage**: Allow attacks to deal damage on miss
+### Completed ✅
+1. **Condition System**: Track Poisoned, Dazed states per hero - COMPLETE
+2. **Miss Damage**: Allow attacks to deal damage on miss - COMPLETE
+3. **Multi-Range Attacks**: Different attacks at different ranges - COMPLETE
 
-### Medium Priority  
-3. **Area Attacks**: Attack multiple targets (same tile, within range)
-4. **Ranged Attacks**: Allow attacks at 2+ tile distance
+### High Priority
+1. **Area Attacks**: Attack multiple targets (same tile, within range)
 
 ### Low Priority
-5. **Monster Exploration**: Allow monsters to trigger tile exploration
-6. **Linked Monsters**: Track spawned monster groups for XP
-7. **Multi-monster Spawn**: Spawn additional monsters on placement
+2. **Monster Exploration**: Allow monsters to trigger tile exploration
+3. **Linked Monsters**: Track spawned monster groups for XP
+4. **Multi-monster Spawn**: Spawn additional monsters on placement
 
 ## Version History
 
