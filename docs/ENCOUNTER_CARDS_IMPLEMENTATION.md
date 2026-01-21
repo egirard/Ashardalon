@@ -248,7 +248,7 @@ These effect types display the card description and resolve to the discard pile,
 | ancient-spirits-blessing | Ancient Spirit's Blessing | Flip up a Daily Power | ⚠️ Display only |
 | deadly-poison | Deadly Poison | Poisoned heroes take 1 damage | ✅ Fully Implemented |
 | duergar-outpost | Duergar Outpost | Filter monster deck for Devils | ✅ Fully Implemented |
-| hall-of-orcs | Hall of the Orcs | Filter monster deck for Orcs | ⚠️ Display only |
+| hall-of-orcs | Hall of the Orcs | Filter monster deck for Orcs | ✅ Fully Implemented |
 | hidden-treasure | Hidden Treasure | Place treasure token | ✅ Fully Implemented |
 | kobold-warren | Kobold Warren | Filter monster deck for Reptiles | ✅ Fully Implemented |
 | lost | Lost | Shuffle tile deck | ⚠️ Display only |
@@ -344,6 +344,26 @@ These effect types display the card description and resolve to the discard pile,
   - Category mapping: encounters.ts (`getMonsterCategoryForEncounter`, `isMonsterDeckManipulationCard`)
   - Effect application: gameSlice.ts (lines 2128-2144 in `dismissEncounterCard` reducer)
   - Filtering logic: monsters.ts (`filterMonsterDeckByCategory`)
+
+#### Hall of the Orcs Implementation Notes
+
+**Hall of the Orcs** is now fully implemented:
+- When the encounter card is drawn and accepted, it filters the monster deck for Orc monsters
+- Uses `filterMonsterDeckByCategory()` function from monsters.ts to draw 5 monster cards
+- Orcs found are shuffled and placed on top of the draw pile
+- Non-Orc monsters are moved to the discard pile
+- Effect message displays the result: "Drew 5 monster cards. X Orcs placed on top, Y discarded."
+- The implementation checks if the encounter is a monster deck manipulation card via `isMonsterDeckManipulationCard()`
+- Category mapping is defined in `getMonsterCategoryForEncounter()` which maps 'hall-of-orcs' to 'orc'
+- Comprehensive unit tests verify the category mapping and filtering logic
+- E2E test (094) demonstrates the complete card lifecycle: draw encounter → display card → accept → filter deck → display result
+- **Note**: The current monster deck contains no Orc monsters (only kobold, snake, cultist), so the test verifies that all 5 cards are properly discarded when no matches are found
+- Implementation files:
+  - Card definition: types.ts (line 981)
+  - Category mapping: encounters.ts (`getMonsterCategoryForEncounter`, `isMonsterDeckManipulationCard`)
+  - Effect application: gameSlice.ts (lines 2144-2160 in `dismissEncounterCard` reducer)
+  - Filtering logic: monsters.ts (`filterMonsterDeckByCategory`)
+
 
 ### Hazard Cards (3 cards, #97-99)
 
