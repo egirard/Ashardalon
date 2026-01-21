@@ -3697,6 +3697,162 @@ describe("gameSlice", () => {
       expect(state.drawnEncounter).toBeNull();
       expect(state.encounterDeck.discardPile).toContain("wandering-monster");
     });
+
+    it("should heal a damaged monster when dismissing revel in destruction", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "revel-in-destruction",
+          name: "Revel in Destruction",
+          type: "event",
+          description: "Choose a damaged Monster. That Monster regains 1 Hit Point.",
+          effect: { type: "special", description: "Heal a damaged monster 1 HP." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsters: [
+          {
+            monsterId: "cultist",
+            instanceId: "cultist-0",
+            position: { x: 2, y: 3 },
+            currentHp: 1, // Cultist has max HP of 2
+            controllerId: "quinn",
+            tileId: "start-tile",
+          },
+        ],
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Monster should be healed by 1 HP
+      expect(state.monsters[0].currentHp).toBe(2);
+      expect(state.encounterEffectMessage).toContain("healed");
+      expect(state.encounterEffectMessage).toContain("1 → 2 HP");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("revel-in-destruction");
+    });
+
+    it("should show no damaged monsters message when all monsters at full HP", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "revel-in-destruction",
+          name: "Revel in Destruction",
+          type: "event",
+          description: "Choose a damaged Monster. That Monster regains 1 Hit Point.",
+          effect: { type: "special", description: "Heal a damaged monster 1 HP." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsters: [
+          {
+            monsterId: "cultist",
+            instanceId: "cultist-0",
+            position: { x: 2, y: 3 },
+            currentHp: 2, // Already at max HP
+            controllerId: "quinn",
+            tileId: "start-tile",
+          },
+        ],
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Monster HP should remain unchanged
+      expect(state.monsters[0].currentHp).toBe(2);
+      expect(state.encounterEffectMessage).toBe("No damaged monsters to heal");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("revel-in-destruction");
+    });
+
+    it("should show no damaged monsters message when no monsters in play", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "revel-in-destruction",
+          name: "Revel in Destruction",
+          type: "event",
+          description: "Choose a damaged Monster. That Monster regains 1 Hit Point.",
+          effect: { type: "special", description: "Heal a damaged monster 1 HP." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsters: [],
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // No monsters to heal
+      expect(state.monsters.length).toBe(0);
+      expect(state.encounterEffectMessage).toBe("No damaged monsters to heal");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("revel-in-destruction");
+    });
+
+    it("should cap healing at max HP for revel in destruction", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
+        drawnEncounter: {
+          id: "revel-in-destruction",
+          name: "Revel in Destruction",
+          type: "event",
+          description: "Choose a damaged Monster. That Monster regains 1 Hit Point.",
+          effect: { type: "special", description: "Heal a damaged monster 1 HP." },
+          imagePath: "test.png",
+        },
+        encounterDeck: { drawPile: [], discardPile: [] },
+        monsters: [
+          {
+            monsterId: "kobold",
+            instanceId: "kobold-0",
+            position: { x: 2, y: 3 },
+            currentHp: 1, // Kobold has max HP of 1
+            controllerId: "quinn",
+            tileId: "start-tile",
+          },
+        ],
+      });
+
+      const state = gameReducer(initialState, dismissEncounterCard());
+
+      // Kobold already at max HP, healing should do nothing
+      expect(state.monsters[0].currentHp).toBe(1);
+      expect(state.encounterEffectMessage).toBe("No damaged monsters to heal");
+      expect(state.drawnEncounter).toBeNull();
+      expect(state.encounterDeck.discardPile).toContain("revel-in-destruction");
+    });
   });
 
   describe("Scream of the Sentry", () => {
