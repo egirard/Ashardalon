@@ -29,15 +29,11 @@
   }
 
   function handleSelectCard(cardId: number) {
-    if (onSelect) {
-      onSelect(cardId, undefined);
-    }
+    onSelect(cardId, undefined);
   }
 
   function handleSelectToken(tokenId: string) {
-    if (onSelect) {
-      onSelect(undefined, tokenId);
-    }
+    onSelect(undefined, tokenId);
   }
 </script>
 
