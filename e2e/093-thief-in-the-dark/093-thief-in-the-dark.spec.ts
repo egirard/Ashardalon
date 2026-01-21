@@ -104,8 +104,24 @@ test.describe('093 - Thief in the Dark Encounter Card', () => {
       }
     });
     
-    // STEP 4: Dismiss encounter - should lose first treasure card (Potion of Healing)
+    // STEP 4: Dismiss encounter - should show selection modal (3 treasures available)
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
+    
+    // Wait for thief discard modal to appear
+    await page.locator('[data-testid="thief-discard-modal"]').waitFor({ state: 'visible' });
+    
+    await screenshots.capture(page, 'thief-discard-selection-modal', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="thief-discard-modal"]')).toBeVisible();
+        await expect(page.locator('[data-testid="thief-discard-title"]')).toContainText('Thief in the Dark');
+        // Verify 2 treasure cards + 1 treasure token = 3 options
+        await expect(page.locator('[data-testid^="treasure-card-option"]')).toHaveCount(2);
+        await expect(page.locator('[data-testid^="treasure-token-option"]')).toHaveCount(1);
+      }
+    });
+    
+    // STEP 5: Select to discard first treasure card (Potion of Healing)
+    await page.locator('[data-testid="select-treasure-card-0"]').click();
     
     // Wait for encounter effect message
     await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
@@ -131,7 +147,7 @@ test.describe('093 - Thief in the Dark Encounter Card', () => {
     // Dismiss the message
     await page.locator('[data-testid="dismiss-effect-notification"]').click();
     
-    // STEP 5: Draw "Thief in the Dark" again (second time)
+    // STEP 6: Draw "Thief in the Dark" again (second time)
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -148,30 +164,46 @@ test.describe('093 - Thief in the Dark Encounter Card', () => {
       }
     });
     
-    // STEP 6: Dismiss encounter - should lose second treasure card (Lucky Charm)
+    // STEP 7: Dismiss encounter - should show selection modal (2 treasures available)
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
+    
+    // Wait for thief discard modal to appear
+    await page.locator('[data-testid="thief-discard-modal"]').waitFor({ state: 'visible' });
+    
+    await screenshots.capture(page, 'thief-discard-selection-modal-second', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="thief-discard-modal"]')).toBeVisible();
+        // Verify 1 treasure card + 1 treasure token = 2 options
+        await expect(page.locator('[data-testid^="treasure-card-option"]')).toHaveCount(1);
+        await expect(page.locator('[data-testid^="treasure-token-option"]')).toHaveCount(1);
+      }
+    });
+    
+    // STEP 8: Select to discard treasure token
+    await page.locator('[data-testid="select-treasure-token-0"]').click();
     await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
     
-    await screenshots.capture(page, 'second-treasure-card-lost', {
+    await screenshots.capture(page, 'treasure-token-lost', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         
-        // Verify Quinn has no treasure cards left
-        expect(storeState.game.heroInventories.quinn.items).toHaveLength(0);
+        // Verify Quinn still has 1 treasure card (Lucky Charm)
+        expect(storeState.game.heroInventories.quinn.items).toHaveLength(1);
+        expect(storeState.game.heroInventories.quinn.items[0].cardId).toBe(147); // Lucky Charm
         
-        // Verify treasure token is still there
-        expect(storeState.game.treasureTokens).toHaveLength(1);
+        // Verify treasure token is now gone
+        expect(storeState.game.treasureTokens).toHaveLength(0);
         
-        // Verify message shows lost treasure
-        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toContainText('lost Lucky Charm');
+        // Verify message shows lost token
+        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toContainText('lost a treasure token');
       }
     });
     
     await page.locator('[data-testid="dismiss-effect-notification"]').click();
     
-    // STEP 7: Draw "Thief in the Dark" again (third time)
+    // STEP 9: Draw "Thief in the Dark" again (third time)
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -188,30 +220,30 @@ test.describe('093 - Thief in the Dark Encounter Card', () => {
       }
     });
     
-    // STEP 8: Dismiss encounter - should lose treasure token (no cards left)
+    // STEP 10: Dismiss encounter - should auto-discard last treasure card (only 1 treasure)
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
     await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
     
-    await screenshots.capture(page, 'treasure-token-lost', {
+    await screenshots.capture(page, 'last-treasure-card-lost', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         
-        // Verify Quinn still has no treasure cards
+        // Verify Quinn has no treasure cards left
         expect(storeState.game.heroInventories.quinn.items).toHaveLength(0);
         
-        // Verify treasure token is now gone
+        // Verify no treasure tokens
         expect(storeState.game.treasureTokens).toHaveLength(0);
         
-        // Verify message shows lost token
-        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toContainText('lost a treasure token');
+        // Verify message shows lost treasure
+        await expect(page.locator('[data-testid="encounter-effect-notification"]')).toContainText('lost Lucky Charm');
       }
     });
     
     await page.locator('[data-testid="dismiss-effect-notification"]').click();
     
-    // STEP 9: Draw "Thief in the Dark" again (fourth time)
+    // STEP 11: Draw "Thief in the Dark" again (fourth time)
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -228,7 +260,7 @@ test.describe('093 - Thief in the Dark Encounter Card', () => {
       }
     });
     
-    // STEP 10: Dismiss encounter - should get "thief gets nothing" message
+    // STEP 12: Dismiss encounter - should get "thief gets nothing" message
     await page.locator('[data-testid="dismiss-encounter-card"]').click();
     await page.locator('[data-testid="encounter-effect-notification"]').waitFor({ state: 'visible' });
     
