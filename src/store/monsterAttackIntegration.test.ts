@@ -128,7 +128,7 @@ describe('Monster Attack Integration', () => {
       };
 
       const heroTokens: HeroToken[] = [
-        { heroId: 'quinn', position: { x: 2, y: 5 } }, // Within 1 tile (3 squares away)
+        { heroId: 'quinn', position: { x: 2, y: 5 } }, // 3 squares away (within 1 tile = 4 squares)
       ];
 
       const heroHpMap = { quinn: 10 };
@@ -260,7 +260,7 @@ describe('Monster Attack Integration', () => {
       };
 
       const heroTokens: HeroToken[] = [
-        { heroId: 'quinn', position: { x: 2, y: 5 } }, // Within 1 tile (3 squares away)
+        { heroId: 'quinn', position: { x: 2, y: 5 } }, // 3 squares away (within 1 tile = 4 squares)
       ];
 
       const heroHpMap = { quinn: 10 };
@@ -298,7 +298,7 @@ describe('Monster Attack Integration', () => {
       };
 
       const heroTokens: HeroToken[] = [
-        { heroId: 'quinn', position: { x: 2, y: 7 } }, // Within 2 tiles (5 squares away)
+        { heroId: 'quinn', position: { x: 2, y: 7 } }, // 5 squares away (within 2 tiles = 8 squares)
       ];
 
       const heroHpMap = { quinn: 10 };
