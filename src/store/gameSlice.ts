@@ -4288,6 +4288,7 @@ export const {
   dismissPoisonRecoveryNotification,
   attemptPoisonRecovery,
   attemptCageEscape,
+  attemptDisableTrap,
   showPendingMonster,
   setHeroHp,
   dismissLevelUpNotification,
