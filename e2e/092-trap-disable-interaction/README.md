@@ -13,8 +13,10 @@ This test demonstrates the complete trap disable interaction lifecycle:
 3. **Draw Trap Card** - Transition to Villain Phase and draw Lava Flow trap encounter
 4. **Place Trap** - Accept encounter card to place trap marker on hero's tile
 5. **Return to Hero Phase** - Trap becomes clickable when hero is on same tile
-6. **Failed Disable Attempt** - Click trap marker with low roll (9 vs DC 10) - trap remains
-7. **Successful Disable Attempt** - Click trap marker with high roll (11 vs DC 10) - trap removed
+6. **Failed Disable Attempt** - Dispatch attemptDisableTrap with low roll (5 vs DC 10) - trap remains
+7. **Trap Still Active** - Verify trap marker is still visible and can be attempted again
+8. **Successful Disable Attempt** - Dispatch attemptDisableTrap with high roll (15 vs DC 10) - trap removed
+9. **Verify Trap Removed** - Confirm trap marker is no longer visible on board
 
 ## Screenshot Gallery
 
@@ -67,26 +69,34 @@ This test demonstrates the complete trap disable interaction lifecycle:
 **What to verify:**
 - Trap disable result dialog is visible
 - Shows "Lava Flow" trap name
-- Dice roll shows 9
+- Dice roll shows 5
 - DC shows 10
-- Modified roll shows 9
+- Modified roll shows 5
 - Result text shows "FAILED TO DISABLE"
 - Trap marker is still visible in background
 
-### 006 - Disable Attempt Succeeded (High Roll)
-![Screenshot 006](092-trap-disable-interaction.spec.ts-snapshots/006-disable-attempt-succeeded-high-roll-chromium-linux.png)
+### 006 - Trap Still Active After Failed Attempt
+![Screenshot 006](092-trap-disable-interaction.spec.ts-snapshots/006-trap-still-active-after-failed-attempt-chromium-linux.png)
+
+**What to verify:**
+- Trap marker is still visible on game board
+- Trap remains at Quinn's position
+- Quinn can attempt to disable again
+
+### 007 - Disable Attempt Succeeded (High Roll)
+![Screenshot 007](092-trap-disable-interaction.spec.ts-snapshots/007-disable-attempt-succeeded-high-roll-chromium-linux.png)
 
 **What to verify:**
 - Trap disable result dialog is visible
 - Shows "Lava Flow" trap name
-- Dice roll shows 11
+- Dice roll shows 15
 - DC shows 10
-- Modified roll shows 11
+- Modified roll shows 15
 - Result text shows "TRAP DISABLED!"
 - Success styling (green border/text)
 
-### 007 - Trap Removed from Board
-![Screenshot 007](092-trap-disable-interaction.spec.ts-snapshots/007-trap-removed-from-board-chromium-linux.png)
+### 008 - Trap Removed from Board
+![Screenshot 008](092-trap-disable-interaction.spec.ts-snapshots/008-trap-removed-from-board-chromium-linux.png)
 
 **What to verify:**
 - Trap marker is no longer visible

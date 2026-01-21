@@ -76,7 +76,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 5;
+    z-index: 15;
     background: none;
     border: none;
     padding: 0;
