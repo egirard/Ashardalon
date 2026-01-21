@@ -116,11 +116,11 @@ export async function selectDefaultPowerCards(page: Page, heroId: string): Promi
   await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
 
   // Power cards are automatically pre-selected when the hero is chosen
-  // Just verify the Done button is enabled and close the modal
-  await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
+  // Just verify the Close button is enabled and close the modal
+  await expect(page.locator('[data-testid="close-power-selection"]')).toBeEnabled();
 
   // Close modal
-  await page.locator('[data-testid="done-power-selection"]').click();
+  await page.locator('[data-testid="close-power-selection"]').click();
   await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 }
 
