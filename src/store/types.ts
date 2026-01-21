@@ -298,6 +298,8 @@ export const MONSTERS: Monster[] = [
   { id: 'kobold', name: 'Kobold Dragonshield', ac: 14, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_KoboldDragonshield.png', category: 'reptile sentry' },
   { id: 'snake', name: 'Snake', ac: 12, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_Snake.png', category: 'reptile' },
   { id: 'cultist', name: 'Cultist', ac: 13, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_Cultist.png', category: 'humanoid' },
+  { id: 'orc-archer', name: 'Orc Archer', ac: 13, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_OrcArcher.png', category: 'orc' },
+  { id: 'orc-smasher', name: 'Orc Smasher', ac: 15, hp: 2, maxHp: 2, xp: 2, imagePath: 'assets/Monster_OrcSmasher.png', category: 'orc' },
 ];
 
 /**
@@ -307,6 +309,8 @@ export const INITIAL_MONSTER_DECK: string[] = [
   'kobold', 'kobold', 'kobold',
   'snake', 'snake', 'snake',
   'cultist', 'cultist', 'cultist',
+  'orc-archer', 'orc-archer', 'orc-archer',
+  'orc-smasher', 'orc-smasher', 'orc-smasher',
 ];
 
 /**

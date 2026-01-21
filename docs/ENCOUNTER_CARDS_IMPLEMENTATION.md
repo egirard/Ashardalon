@@ -357,7 +357,7 @@ These effect types display the card description and resolve to the discard pile,
 - Category mapping is defined in `getMonsterCategoryForEncounter()` which maps 'hall-of-orcs' to 'orc'
 - Comprehensive unit tests verify the category mapping and filtering logic
 - E2E test (094) demonstrates the complete card lifecycle: draw encounter → display card → accept → filter deck → display result
-- **Note**: The current monster deck contains no Orc monsters (only kobold, snake, cultist), so the test verifies that all 5 cards are properly discarded when no matches are found
+- The monster deck now includes Orc monsters (Orc Archer and Orc Smasher), so the test verifies that matching orc cards are found and placed on top
 - Implementation files:
   - Card definition: types.ts (line 981)
   - Category mapping: encounters.ts (`getMonsterCategoryForEncounter`, `isMonsterDeckManipulationCard`)
