@@ -257,7 +257,7 @@ These effect types display the card description and resolve to the discard pile,
 | revel-in-destruction | Revel in Destruction | Heal a monster 1 HP | ⚠️ Display only |
 | scream-of-sentry | Scream of the Sentry | Place tile and monster near monster | ⚠️ Display only |
 | spotted | Spotted! | Filter deck, place tile and monster | ⚠️ Display only |
-| thief-in-dark | Thief in the Dark | Lose a treasure | ⚠️ Display only |
+| thief-in-dark | Thief in the Dark | Lose a treasure | ✅ Fully Implemented |
 | unnatural-corruption | Unnatural Corruption | Filter monster deck for Aberrants | ⚠️ Display only |
 | wandering-monster | Wandering Monster | Spawn monster on unexplored edge | ⚠️ Display only |
 | warp-in-time | Warp in Time | Pass monster cards right | ⚠️ Display only |
@@ -298,6 +298,33 @@ These effect types display the card description and resolve to the discard pile,
   - gameSlice.ts: Token placement in dismissEncounterCard, collection in moveHero
   - TreasureTokenMarker.svelte: Visual component for treasure tokens
   - GameBoard.svelte: Integration of treasure token rendering
+
+#### Thief in the Dark Implementation Notes
+
+**Thief in the Dark** is now fully implemented:
+- When the encounter card is drawn and accepted, it steals treasure from the active hero in priority order
+- **Priority 1**: If the hero has treasure cards in inventory, removes the first card
+  - The card is returned to the treasure deck discard pile via `discardTreasure()`
+  - Hero's inventory is updated by removing the first item from `items` array
+  - Effect message displays the specific treasure name lost (e.g., "quinn lost Potion of Healing")
+- **Priority 2**: If the hero has no cards but has treasure tokens on their tile:
+  - Uses `getTreasureTokensOnTile()` to find tokens at the hero's position
+  - Removes the first treasure token from `game.treasureTokens` array
+  - Effect message displays "quinn lost a treasure token"
+- **Priority 3**: If the hero has neither cards nor tokens:
+  - Effect message displays "quinn has no treasure - the thief gets nothing"
+  - No changes to game state
+- The implementation correctly handles the treasure card lookup using `getTreasureById()`
+- Treasure card ID is used to get the card's name for display in the message
+- E2E test (093) demonstrates all three scenarios in sequence:
+  - Test 1: Hero with 2 treasure cards loses cards one at a time
+  - Test 2: Hero with no cards but a treasure token loses the token
+  - Test 3: Hero with neither shows "thief gets nothing" message
+- Implementation files:
+  - gameSlice.ts: Thief in the Dark logic in dismissEncounterCard reducer
+  - treasure.ts: getTreasureById(), discardTreasure() functions
+  - trapsHazards.ts: getTreasureTokensOnTile() function
+  - EncounterEffectNotification.svelte: Displays the theft message
 
 #### Duergar Outpost Implementation Notes
 
