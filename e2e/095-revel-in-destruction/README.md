@@ -116,7 +116,7 @@ When reviewing these screenshots, verify:
 ### Code References
 - **Card Definition**: `src/store/types.ts` (line 1033)
 - **Effect Implementation**: `src/store/gameSlice.ts` (lines 2163-2177)
-- **Healing Function**: `src/store/monsters.ts` (`healMonster()` function)
+- **Healing Function**: `src/store/monsters.ts` (line 546, `healMonster()` function)
 - **Unit Tests**: `src/store/gameSlice.test.ts` (4 test cases added)
 
 ### Test Coverage

@@ -3813,7 +3813,7 @@ describe("gameSlice", () => {
       expect(state.encounterDeck.discardPile).toContain("revel-in-destruction");
     });
 
-    it("should cap healing at max HP for revel in destruction", () => {
+    it("should not heal monster already at max HP for revel in destruction", () => {
       const initialState = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
@@ -3838,7 +3838,7 @@ describe("gameSlice", () => {
             monsterId: "kobold",
             instanceId: "kobold-0",
             position: { x: 2, y: 3 },
-            currentHp: 1, // Kobold has max HP of 1
+            currentHp: 1, // Kobold has max HP of 1, so this is full HP (not damaged)
             controllerId: "quinn",
             tileId: "start-tile",
           },
@@ -3847,7 +3847,7 @@ describe("gameSlice", () => {
 
       const state = gameReducer(initialState, dismissEncounterCard());
 
-      // Kobold already at max HP, healing should do nothing
+      // Kobold at 1/1 HP is not damaged, so no healing occurs
       expect(state.monsters[0].currentHp).toBe(1);
       expect(state.encounterEffectMessage).toBe("No damaged monsters to heal");
       expect(state.drawnEncounter).toBeNull();
