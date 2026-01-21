@@ -55,6 +55,7 @@
     assignTreasureToHero,
     selectDragonsTributeTreasure,
     dismissTreasureCard,
+    selectThiefDiscard,
     useTreasureItem,
     placeTreasureToken,
     applyHealing,
@@ -120,6 +121,7 @@
   import PoisonRecoveryNotification from "./PoisonRecoveryNotification.svelte";
   import TreasureCard from "./TreasureCard.svelte";
   import DragonsTributeTreasureChoice from "./DragonsTributeTreasureChoice.svelte";
+  import ThiefDiscardChoice from "./ThiefDiscardChoice.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
@@ -144,6 +146,7 @@
   import { usePowerCard } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
+  import { getTreasureById } from "../store/treasure";
   import { getStatusDisplayData, isDazed, STATUS_EFFECT_DEFINITIONS, getModifiedAttackBonusWithCurses } from "../store/statusEffects";
   import { areOnSameTile } from "../store/encounters";
 
@@ -249,6 +252,7 @@
   let pendingMoveAfterAttack: PendingMoveAfterAttackState | null = $state(null);
   let pendingHeroPlacement: PendingHeroPlacementState | null = $state(null);
   let pendingTreasurePlacement: import('../store/gameSlice').PendingTreasurePlacementState | null = $state(null);
+  let pendingTreasureDiscard: import('../store/gameSlice').PendingTreasureDiscardState | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
   let dragonsTributeSecondTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
@@ -359,6 +363,7 @@
       pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
       pendingHeroPlacement = state.game.pendingHeroPlacement;
       pendingTreasurePlacement = state.game.pendingTreasurePlacement;
+      pendingTreasureDiscard = state.game.pendingTreasureDiscard;
       drawnTreasure = state.game.drawnTreasure;
       dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
       heroInventories = state.game.heroInventories;
@@ -426,6 +431,7 @@
     pendingMoveAfterAttack = state.game.pendingMoveAfterAttack;
     pendingHeroPlacement = state.game.pendingHeroPlacement;
     pendingTreasurePlacement = state.game.pendingTreasurePlacement;
+    pendingTreasureDiscard = state.game.pendingTreasureDiscard;
     drawnTreasure = state.game.drawnTreasure;
     dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
     heroInventories = state.game.heroInventories;
@@ -1844,6 +1850,11 @@
   // Handle Dragon's Tribute treasure selection
   function handleDragonsTributeSelect(keepFirst: boolean) {
     store.dispatch(selectDragonsTributeTreasure({ keepFirst }));
+  }
+
+  // Handle Thief in the Dark treasure discard selection
+  function handleThiefDiscardSelect(cardId?: number, tokenId?: string) {
+    store.dispatch(selectThiefDiscard({ cardId, tokenId }));
   }
 
   // Handle hero placement selection
@@ -3650,8 +3661,21 @@
 
   <!-- Treasure Card Display (shown when treasure is drawn on monster defeat) -->
   <!-- Only show after combat result and defeat notification are dismissed -->
+  <!-- Thief in the Dark: Show treasure discard selection when multiple treasures -->
+  {#if pendingTreasureDiscard}
+    {@const heroId = pendingTreasureDiscard.heroId}
+    {@const inventory = heroInventories[heroId]}
+    {@const heroPosition = heroTokens.find(t => t.heroId === heroId)?.position}
+    {@const treasureCards = inventory?.items.map(item => getTreasureById(item.cardId)).filter(Boolean) || []}
+    {@const treasureTokensOnTile = heroPosition ? treasureTokens.filter(t => t.position.x === heroPosition.x && t.position.y === heroPosition.y) : []}
+    <ThiefDiscardChoice
+      treasureCards={treasureCards}
+      treasureTokens={treasureTokensOnTile}
+      onSelect={handleThiefDiscardSelect}
+      edge={getActivePlayerEdge()}
+    />
+  {:else if drawnTreasure && dragonsTributeSecondTreasure && !attackResult && defeatedMonsterXp === null}
   <!-- Dragon's Tribute: Show special selection UI when two treasures are drawn -->
-  {#if drawnTreasure && dragonsTributeSecondTreasure && !attackResult && defeatedMonsterXp === null}
     <DragonsTributeTreasureChoice
       treasure1={drawnTreasure}
       treasure2={dragonsTributeSecondTreasure}
