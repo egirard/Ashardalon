@@ -254,7 +254,7 @@ These effect types display the card description and resolve to the discard pile,
 | lost | Lost | Shuffle tile deck | ⚠️ Display only |
 | occupied-lair | Occupied Lair | Place tile, monster, and treasure | ⚠️ Display only |
 | quick-advance | Quick Advance | Move a monster closer | ⚠️ Display only |
-| revel-in-destruction | Revel in Destruction | Heal a monster 1 HP | ⚠️ Display only |
+| revel-in-destruction | Revel in Destruction | Heal a monster 1 HP | ✅ Fully Implemented |
 | scream-of-sentry | Scream of the Sentry | Place tile and monster near monster | ⚠️ Display only |
 | spotted | Spotted! | Filter deck, place tile and monster | ⚠️ Display only |
 | thief-in-dark | Thief in the Dark | Lose a treasure | ✅ Fully Implemented |
@@ -326,6 +326,37 @@ These effect types display the card description and resolve to the discard pile,
   - trapsHazards.ts: getTreasureTokensOnTile() function
   - EncounterEffectNotification.svelte: Displays the theft message
 
+#### Revel in Destruction Implementation Notes
+
+**Revel in Destruction** is now fully implemented:
+- When the encounter card is drawn and accepted, it automatically heals the first damaged monster found
+- Uses `healMonster()` function from monsters.ts to apply 1 HP of healing
+- The healing is capped at the monster's maximum HP (cannot exceed max HP)
+- **Finding Damaged Monsters**: Iterates through `state.monsters` array to find first monster where `currentHp < maxHp`
+- **Healing Logic**: `damagedMonster.currentHp = healMonster(damagedMonster, 1)`
+- **Effect Message**: Displays monster name and HP change (e.g., "Cultist healed: 1 → 2 HP")
+- **No Damaged Monsters**: If no monster is damaged (all at full HP or no monsters), displays "No damaged monsters to heal"
+- After applying the effect, the card is discarded to the encounter discard pile
+- Comprehensive unit tests in gameSlice.test.ts verify:
+  - Healing a damaged monster by 1 HP
+  - Displaying correct HP change message
+  - Handling "no damaged monsters" case
+  - Handling "no monsters in play" case
+  - Capping healing at max HP
+- E2E test (095) demonstrates the complete card lifecycle:
+  - Draw encounter card
+  - Display card with description
+  - Heal damaged Cultist from 1 HP to 2 HP
+  - Show effect notification with HP change
+  - Discard card
+  - Test "no damaged monsters" scenario
+- Implementation files:
+  - Card definition: types.ts (line 1033)
+  - Effect application: gameSlice.ts (lines 2163-2177 in `dismissEncounterCard` reducer)
+  - Healing logic: monsters.ts (`healMonster` function)
+  - EncounterEffectNotification.svelte: Displays the healing message
+- Implementation reference: issue egirard/Ashardalon (implement-revel-in-destruction)
+
 #### Duergar Outpost Implementation Notes
 
 **Duergar Outpost** is now fully implemented:
@@ -390,10 +421,10 @@ These effect types display the card description and resolve to the discard pile,
 | Environment | 6 | 6 | 0 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
-| Event (Special) | 16 | 3 | 13 |
+| Event (Special) | 16 | 7 | 9 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 4 | 0 |
-| **Total** | **53** | **37** | **16** |
+| **Total** | **53** | **41** | **12** |
 
 ## Features Not Yet Implemented
 
