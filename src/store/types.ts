@@ -115,7 +115,7 @@ export type MonsterTacticType =
   | 'attack-only'           // If adjacent, attack. Otherwise move toward closest hero.
   | 'move-and-attack'       // If within range, move adjacent AND attack. Otherwise move.
   | 'explore-or-attack'     // If adjacent, attack. If on tile with unexplored edge and no heroes, explore. Otherwise move.
-  | 'ranged-attack';        // Complex ranged attack patterns (documented but not fully implemented)
+  | 'ranged-attack';        // Same as move-and-attack but used for monsters with different attacks at different ranges (e.g., Grell, Orc Archer)
 
 /**
  * Monster card tactics define the AI behavior for each monster type.
@@ -127,7 +127,7 @@ export interface MonsterCardTactics {
   /** Attack used when adjacent to hero */
   adjacentAttack: MonsterAttackOption;
   /** 
-   * Attack used when moving and attacking (for move-and-attack type)
+   * Attack used when moving and attacking (for move-and-attack and ranged-attack types)
    * If not specified, uses adjacentAttack after moving
    */
   moveAttack?: MonsterAttackOption;
@@ -151,8 +151,8 @@ export interface MonsterCardTactics {
  * - snake: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * - cultist: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * - orc-smasher: ✅ FULLY IMPLEMENTED (move-and-attack behavior)
- * - grell: ⚠️ PARTIALLY IMPLEMENTED (multi-range attacks work, miss damage and dazed status implemented)
- * - orc-archer: ⚠️ PARTIALLY IMPLEMENTED (multi-range attacks work, miss damage and dazed status implemented)
+ * - grell: ✅ FULLY IMPLEMENTED (multi-range attacks: Venomous Bite adjacent, Tentacles within 1 tile)
+ * - orc-archer: ✅ FULLY IMPLEMENTED (multi-range attacks: Punch adjacent, Arrow within 2 tiles)
  * 
  * See docs/MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
  */
