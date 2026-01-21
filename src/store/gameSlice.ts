@@ -2248,7 +2248,7 @@ export const gameSlice = createSlice({
               const hasTreasureTokens = treasureTokensOnTile.length > 0;
               
               // Priority 1: Treasure Cards - if multiple cards, show selection
-              if (hasTreasureCards && inventory.items.length > 1) {
+              if (inventory && inventory.items.length > 1) {
                 state.pendingTreasureDiscard = {
                   encounterId: 'thief-in-dark',
                   encounterName: 'Thief in the Dark',
