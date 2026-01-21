@@ -13,67 +13,67 @@ This test validates the complete "Thief in the Dark" encounter card mechanics by
 
 ### Screenshots
 
-![Screenshot 000 - Character Select](screenshots/000-character-select-screen-chromium-linux.png)
+![Screenshot 000 - Character Select](093-thief-in-the-dark.spec.ts-snapshots/000-character-select-screen-chromium-linux.png)
 
 **Initial State**: Character selection screen showing all available heroes.
 
 ---
 
-![Screenshot 001 - Game Started with Treasures](screenshots/001-game-started-with-treasures-chromium-linux.png)
+![Screenshot 001 - Game Started with Treasures](093-thief-in-the-dark.spec.ts-snapshots/001-game-started-with-treasures-chromium-linux.png)
 
 **Game Setup**: Quinn has been given 2 treasure cards (Potion of Healing and Lucky Charm) and has 1 treasure token on their tile.
 
 ---
 
-![Screenshot 002 - First Draw](screenshots/002-thief-in-dark-first-draw-chromium-linux.png)
+![Screenshot 002 - First Draw](093-thief-in-the-dark.spec.ts-snapshots/002-thief-in-dark-first-draw-chromium-linux.png)
 
 **First Encounter**: "Thief in the Dark" drawn for the first time. Quinn has 2 treasure cards and 1 treasure token.
 
 ---
 
-![Screenshot 003 - Treasure Card Lost](screenshots/003-treasure-card-lost-chromium-linux.png)
+![Screenshot 003 - Treasure Card Lost](093-thief-in-the-dark.spec.ts-snapshots/003-treasure-card-lost-chromium-linux.png)
 
 **First Loss**: The thief steals Quinn's first treasure card (Potion of Healing). Quinn now has 1 card (Lucky Charm) and 1 token remaining.
 
 ---
 
-![Screenshot 004 - Second Draw](screenshots/004-thief-in-dark-second-draw-chromium-linux.png)
+![Screenshot 004 - Second Draw](093-thief-in-the-dark.spec.ts-snapshots/004-thief-in-dark-second-draw-chromium-linux.png)
 
 **Second Encounter**: "Thief in the Dark" drawn again. Quinn has 1 treasure card and 1 treasure token.
 
 ---
 
-![Screenshot 005 - Second Treasure Card Lost](screenshots/005-second-treasure-card-lost-chromium-linux.png)
+![Screenshot 005 - Second Treasure Card Lost](093-thief-in-the-dark.spec.ts-snapshots/005-second-treasure-card-lost-chromium-linux.png)
 
 **Second Loss**: The thief steals Quinn's second treasure card (Lucky Charm). Quinn now has 0 cards but still has 1 token.
 
 ---
 
-![Screenshot 006 - Third Draw](screenshots/006-thief-in-dark-third-draw-chromium-linux.png)
+![Screenshot 006 - Third Draw](093-thief-in-the-dark.spec.ts-snapshots/006-thief-in-dark-third-draw-chromium-linux.png)
 
 **Third Encounter**: "Thief in the Dark" drawn again. Quinn has no treasure cards but has 1 treasure token.
 
 ---
 
-![Screenshot 007 - Treasure Token Lost](screenshots/007-treasure-token-lost-chromium-linux.png)
+![Screenshot 007 - Treasure Token Lost](093-thief-in-the-dark.spec.ts-snapshots/007-treasure-token-lost-chromium-linux.png)
 
 **Third Loss**: The thief steals Quinn's treasure token. Quinn now has no treasures left.
 
 ---
 
-![Screenshot 008 - Fourth Draw](screenshots/008-thief-in-dark-fourth-draw-chromium-linux.png)
+![Screenshot 008 - Fourth Draw](093-thief-in-the-dark.spec.ts-snapshots/008-thief-in-dark-fourth-draw-chromium-linux.png)
 
 **Fourth Encounter**: "Thief in the Dark" drawn again. Quinn has no treasure cards and no treasure tokens.
 
 ---
 
-![Screenshot 009 - Thief Gets Nothing](screenshots/009-thief-gets-nothing-chromium-linux.png)
+![Screenshot 009 - Thief Gets Nothing](093-thief-in-the-dark.spec.ts-snapshots/009-thief-gets-nothing-chromium-linux.png)
 
 **Fourth Result**: The thief gets nothing - Quinn has no treasures to steal.
 
 ---
 
-![Screenshot 010 - Final State](screenshots/010-final-state-chromium-linux.png)
+![Screenshot 010 - Final State](093-thief-in-the-dark.spec.ts-snapshots/010-final-state-chromium-linux.png)
 
 **Final State**: Game continues with Quinn having no treasures.
 
