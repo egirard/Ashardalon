@@ -480,19 +480,33 @@ export interface UndoSnapshot {
 /**
  * Helper function to apply status effect from monster attack if applicable
  * This helper eliminates code duplication between attack and move-and-attack cases
+ * 
+ * @param state Current game state
+ * @param monsterId Monster type ID
+ * @param monsterInstanceId Unique monster instance ID
+ * @param targetHeroId Hero ID that was attacked
+ * @param attackType Type of attack - 'adjacent' for adjacentAttack, 'move' for moveAttack
  */
 function applyMonsterAttackStatusEffect(
   state: GameState,
   monsterId: string,
   monsterInstanceId: string,
-  targetHeroId: string
+  targetHeroId: string,
+  attackType: 'adjacent' | 'move' = 'adjacent'
 ): void {
   const tactics = MONSTER_TACTICS[monsterId];
-  if (tactics?.adjacentAttack.statusEffect) {
+  if (!tactics) return;
+  
+  // Get the appropriate attack option based on attack type
+  const attackOption = attackType === 'move' && tactics.moveAttack 
+    ? tactics.moveAttack 
+    : tactics.adjacentAttack;
+  
+  if (attackOption?.statusEffect) {
     const heroHpIndex = state.heroHp.findIndex(h => h.heroId === targetHeroId);
     if (heroHpIndex !== -1) {
       const heroHp = state.heroHp[heroHpIndex];
-      const statusType = tactics.adjacentAttack.statusEffect as StatusEffectType;
+      const statusType = attackOption.statusEffect as StatusEffectType;
       state.heroHp[heroHpIndex] = {
         ...heroHp,
         statuses: applyStatusEffect(
@@ -502,6 +516,43 @@ function applyMonsterAttackStatusEffect(
           state.turnState.turnNumber
         ),
       };
+    }
+  }
+}
+
+/**
+ * Helper function to apply miss damage from monster attack if applicable
+ * Some monsters (like Grell, Orc Archer) deal damage even on a miss
+ * 
+ * @param state Current game state
+ * @param monsterId Monster type ID
+ * @param targetHeroId Hero ID that was attacked
+ * @param attackType Type of attack - 'adjacent' for adjacentAttack, 'move' for moveAttack
+ */
+function applyMonsterMissDamage(
+  state: GameState,
+  monsterId: string,
+  targetHeroId: string,
+  attackType: 'adjacent' | 'move' = 'adjacent'
+): void {
+  const tactics = MONSTER_TACTICS[monsterId];
+  if (!tactics) return;
+  
+  // Get the appropriate attack option based on attack type
+  const attackOption = attackType === 'move' && tactics.moveAttack 
+    ? tactics.moveAttack 
+    : tactics.adjacentAttack;
+  
+  if (attackOption?.missDamage && attackOption.missDamage > 0) {
+    const heroHp = state.heroHp.find(h => h.heroId === targetHeroId);
+    if (heroHp) {
+      heroHp.currentHp = Math.max(0, heroHp.currentHp - attackOption.missDamage);
+      
+      // Check for party defeat (all heroes at 0 HP)
+      const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+      if (allHeroesDefeated) {
+        state.currentScreen = "defeat";
+      }
     }
   }
 }
@@ -3432,7 +3483,12 @@ export const gameSlice = createSlice({
         
         // Apply status effect if the attack has one and hit
         if (result.result.isHit) {
-          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId);
+          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId, 'adjacent');
+        }
+        
+        // Apply miss damage if the attack missed but has miss damage
+        if (!result.result.isHit) {
+          applyMonsterMissDamage(state, monster.monsterId, result.targetId, 'adjacent');
         }
       } else if (result.type === 'move-and-attack') {
         // Handle move-and-attack: monster moves adjacent AND attacks in same turn
@@ -3486,7 +3542,12 @@ export const gameSlice = createSlice({
         
         // Apply status effect if the attack has one and hit
         if (result.result.isHit) {
-          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId);
+          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId, 'move');
+        }
+        
+        // Apply miss damage if the attack missed but has miss damage
+        if (!result.result.isHit) {
+          applyMonsterMissDamage(state, monster.monsterId, result.targetId, 'move');
         }
       }
       // Note: For result.type === 'none', no visual feedback is needed - monster couldn't act
