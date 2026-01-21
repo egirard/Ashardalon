@@ -76,18 +76,25 @@ test.describe('094 - Hall of the Orcs Encounter Card', () => {
         expect(storeState.game.encounterEffectMessage).toBeTruthy();
         expect(storeState.game.encounterEffectMessage).toContain('Drew 5 monster cards');
         
-        // Since there are no orcs in the current monster deck (only kobold, snake, cultist),
-        // all 5 drawn cards should be discarded and 0 orcs placed on top
-        expect(storeState.game.encounterEffectMessage).toContain('0 Orcs placed on top');
-        expect(storeState.game.encounterEffectMessage).toContain('5 discarded');
-
+        // With orcs now in the deck, some drawn cards may be orcs
+        // The message format is: "Drew 5 monster cards. X Orcs placed on top, Y discarded."
+        const message = storeState.game.encounterEffectMessage;
+        const orcMatch = message.match(/(\d+) Orcs? placed on top, (\d+) discarded/);
+        expect(orcMatch).toBeTruthy();
+        
+        const orcsKept = parseInt(orcMatch[1], 10);
+        const orcsDiscarded = parseInt(orcMatch[2], 10);
+        
+        // Total should equal 5 (cards drawn)
+        expect(orcsKept + orcsDiscarded).toBe(5);
+        
         const currentDeck = storeState.game.monsterDeck;
         
         // Verify 5 cards were drawn from the draw pile
-        expect(currentDeck.drawPile.length).toBe(initialDeckState.drawPileLength - 5);
+        expect(currentDeck.drawPile.length).toBe(initialDeckState.drawPileLength - 5 + orcsKept);
         
-        // Verify 5 cards were added to the discard pile (all non-orcs discarded)
-        expect(currentDeck.discardPile.length).toBe(initialDeckState.discardPileLength + 5);
+        // Verify non-orcs were added to the discard pile
+        expect(currentDeck.discardPile.length).toBe(initialDeckState.discardPileLength + orcsDiscarded);
       }
     });
 
@@ -98,7 +105,8 @@ test.describe('094 - Hall of the Orcs Encounter Card', () => {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="encounter-effect-notification"]')).toBeVisible();
         await expect(page.locator('[data-testid="effect-message"]')).toContainText('Drew 5 monster cards');
-        await expect(page.locator('[data-testid="effect-message"]')).toContainText('0 Orcs placed on top');
+        // The message should show orcs placed on top (exact count depends on deterministic draw)
+        await expect(page.locator('[data-testid="effect-message"]')).toContainText('placed on top');
       }
     });
 

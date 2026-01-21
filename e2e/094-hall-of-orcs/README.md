@@ -36,12 +36,12 @@ The "Hall of the Orcs" encounter card is displayed, showing the Orc filtering in
 ### 003 - Hall of the Orcs Effect Applied
 ![Screenshot 003](094-hall-of-orcs.spec.ts-snapshots/003-hall-of-orcs-effect-applied-chromium-linux.png)
 
-After accepting the encounter, the deck is filtered and the effect message updates. Since there are no Orcs in the current monster deck (only kobolds, snakes, and cultists), all 5 cards are discarded.
+After accepting the encounter, the deck is filtered and the effect message updates. Since Orc monsters are now in the deck (Orc Archer and Orc Smasher), some of the 5 drawn cards will be kept on top.
 
 ### 004 - Encounter Effect Notification
 ![Screenshot 004](094-hall-of-orcs.spec.ts-snapshots/004-encounter-effect-notification-chromium-linux.png)
 
-The encounter effect notification shows the filtering summary: "0 Orcs placed on top, 5 discarded."
+The encounter effect notification shows the filtering summary with the number of Orcs placed on top and non-Orcs discarded.
 
 ### 005 - Effect Complete
 ![Screenshot 005](094-hall-of-orcs.spec.ts-snapshots/005-effect-complete-chromium-linux.png)
@@ -55,7 +55,7 @@ Each screenshot includes programmatic checks:
 1. **Character Select**: Verifies the character select screen is visible
 2. **Game Started**: Verifies hero phase is active and the monster deck is initialized
 3. **Encounter Drawn**: Verifies the drawn encounter card and description
-4. **Effect Applied**: Verifies encounter effect message and filtered deck state (0 orcs found)
+4. **Effect Applied**: Verifies encounter effect message and filtered deck state (orcs found and placed on top)
 5. **Effect Notification**: Verifies encounter effect notification content
 6. **Effect Complete**: Verifies encounter card is dismissed and hero phase continues
 
@@ -75,4 +75,4 @@ Implementation lives in:
 
 ## Current Game State Note
 
-In the current implementation, the monster deck contains only kobolds (reptile/sentry), snakes (reptile), and cultists (humanoid). There are no Orc monsters in the deck yet. Therefore, this test verifies that the filtering mechanism works correctly by discarding all 5 drawn cards when no matching monsters are found, resulting in the message "0 Orcs placed on top, 5 discarded."
+The monster deck now contains kobolds (reptile/sentry), snakes (reptile), cultists (humanoid), Orc Archers (orc), and Orc Smashers (orc). When Hall of the Orcs is triggered, it draws 5 monster cards and filters for orcs. The Orc Archer and Orc Smasher cards that are drawn will be placed on top of the deck, while non-orc monsters are discarded.
