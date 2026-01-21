@@ -3674,9 +3674,10 @@
       return treasure;
     }).filter(Boolean) || []}
     {@const treasureTokensOnTile = heroPosition ? treasureTokens.filter(t => t.position.x === heroPosition.x && t.position.y === heroPosition.y) : []}
+    <!-- Show treasure cards if any exist, otherwise show tokens -->
     <ThiefDiscardChoice
-      treasureCards={treasureCards}
-      treasureTokens={treasureTokensOnTile}
+      treasureCards={treasureCards.length > 0 ? treasureCards : []}
+      treasureTokens={treasureCards.length > 0 ? [] : treasureTokensOnTile}
       onSelect={handleThiefDiscardSelect}
       edge={getActivePlayerEdge()}
     />

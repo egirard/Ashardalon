@@ -49,85 +49,73 @@
     <div class="header">
       <h2 class="title" data-testid="thief-discard-title">🗡️ Thief in the Dark</h2>
       <p class="instruction" data-testid="thief-discard-instruction">
-        Choose one treasure to discard. The thief steals it from you!
+        Choose an item to discard
       </p>
     </div>
 
     <div class="treasures">
       <!-- Treasure Cards -->
       {#each treasureCards as treasureCard, index}
-        <div class="treasure-option" data-testid="treasure-card-option-{index}">
-          <div class="treasure-card">
-            <div class="treasure-image-container">
-              <img
-                src={assetPath('assets/Token_TreasureTreasure.png')}
-                alt={treasureCard.name}
-                class="treasure-image"
-              />
-            </div>
-
-            <div class="treasure-info">
-              <h3 class="treasure-name" data-testid="treasure-card-{index}-name">{treasureCard.name}</h3>
-              
-              <div class="treasure-type">
-                <span class="type-badge">{getUsageText(treasureCard.usage)}</span>
-              </div>
-
-              <div class="treasure-value" data-testid="treasure-card-{index}-value">
-                <span class="gold-value">💰 {treasureCard.goldPrice.toLocaleString()} Gold</span>
-              </div>
-
-              <p class="treasure-description">{treasureCard.description}</p>
-
-              <div class="treasure-rule">
-                <strong>Rule:</strong> {treasureCard.rule}
-              </div>
-            </div>
+        <button
+          class="treasure-item clickable"
+          data-testid="treasure-card-option-{index}"
+          onclick={() => handleSelectCard(treasureCard.id)}
+        >
+          <div class="treasure-image-container">
+            <img
+              src={assetPath('assets/Token_TreasureTreasure.png')}
+              alt={treasureCard.name}
+              class="treasure-image"
+            />
           </div>
 
-          <button
-            class="select-button"
-            data-testid="select-treasure-card-{index}"
-            onclick={() => handleSelectCard(treasureCard.id)}
-          >
-            Discard This Card
-          </button>
-        </div>
+          <div class="treasure-info">
+            <h3 class="treasure-name" data-testid="treasure-card-{index}-name">{treasureCard.name}</h3>
+            
+            <div class="treasure-type">
+              <span class="type-badge">{getUsageText(treasureCard.usage)}</span>
+            </div>
+
+            <div class="treasure-value" data-testid="treasure-card-{index}-value">
+              <span class="gold-value">💰 {treasureCard.goldPrice.toLocaleString()} Gold</span>
+            </div>
+
+            <p class="treasure-description">{treasureCard.description}</p>
+
+            <div class="treasure-rule">
+              <strong>Rule:</strong> {treasureCard.rule}
+            </div>
+          </div>
+        </button>
       {/each}
 
       <!-- Treasure Tokens -->
       {#each treasureTokens as token, index}
-        <div class="treasure-option" data-testid="treasure-token-option-{index}">
-          <div class="treasure-card">
-            <div class="treasure-image-container">
-              <img
-                src={assetPath('assets/Token_TreasureTreasure.png')}
-                alt="Treasure Token"
-                class="treasure-image"
-              />
-            </div>
-
-            <div class="treasure-info">
-              <h3 class="treasure-name" data-testid="treasure-token-{index}-name">Treasure Token</h3>
-              
-              <div class="treasure-type">
-                <span class="type-badge">Token</span>
-              </div>
-
-              <p class="treasure-description">
-                A treasure token on your tile. Can be drawn later when a monster is defeated on this tile.
-              </p>
-            </div>
+        <button
+          class="treasure-item clickable"
+          data-testid="treasure-token-option-{index}"
+          onclick={() => handleSelectToken(token.id)}
+        >
+          <div class="treasure-image-container">
+            <img
+              src={assetPath('assets/Token_TreasureTreasure.png')}
+              alt="Treasure Token"
+              class="treasure-image"
+            />
           </div>
 
-          <button
-            class="select-button"
-            data-testid="select-treasure-token-{index}"
-            onclick={() => handleSelectToken(token.id)}
-          >
-            Discard This Token
-          </button>
-        </div>
+          <div class="treasure-info">
+            <h3 class="treasure-name" data-testid="treasure-token-{index}-name">Treasure Token</h3>
+            
+            <div class="treasure-type">
+              <span class="type-badge">Token</span>
+            </div>
+
+            <p class="treasure-description">
+              A treasure token on your tile. Can be drawn later when a monster is defeated on this tile.
+            </p>
+          </div>
+        </button>
       {/each}
     </div>
   </div>
@@ -216,13 +204,7 @@
     }
   }
 
-  .treasure-option {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .treasure-card {
+  .treasure-item {
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid #8b7355;
     border-radius: 12px;
@@ -230,7 +212,21 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    flex: 1;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .treasure-item.clickable:hover {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: #ff6b6b;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 107, 107, 0.3);
+  }
+
+  .treasure-item.clickable:active {
+    transform: translateY(-2px) scale(1.01);
   }
 
   .treasure-image-container {
@@ -307,24 +303,5 @@
 
   .treasure-rule strong {
     color: #ff6b6b;
-  }
-
-  .select-button {
-    width: 100%;
-    padding: 0.75rem;
-    background: linear-gradient(180deg, #5a3d2d 0%, #4a2d1d 100%);
-    color: #fff;
-    border: 2px solid #ff6b6b;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: all 0.2s ease;
-  }
-
-  .select-button:hover {
-    background: linear-gradient(180deg, #6a4d3d 0%, #5a3d2d 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
 </style>
