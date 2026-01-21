@@ -2220,7 +2220,7 @@ export const gameSlice = createSlice({
           
           // Thief in the Dark: Active hero discards a treasure card or token
           else if (encounterId === 'thief-in-dark') {
-            const activeHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+            const activeHeroId = activeHeroToken?.heroId;
             const activeHeroPosition = activeHeroToken?.position;
             
             if (activeHeroId && activeHeroPosition) {
@@ -2229,10 +2229,11 @@ export const gameSlice = createSlice({
               // Priority 1: Try to discard a treasure card
               if (inventory && inventory.items.length > 0) {
                 const removedItem = inventory.items[0];
-                const treasureCard = getTreasureById(removedItem.cardId);
+                const cardId = removedItem.cardId;
+                const treasureCard = getTreasureById(cardId);
                 
                 // Add treasure card back to discard pile
-                state.treasureDeck = discardTreasure(state.treasureDeck, removedItem.cardId);
+                state.treasureDeck = discardTreasure(state.treasureDeck, cardId);
                 
                 // Remove from inventory
                 state.heroInventories[activeHeroId] = {
@@ -2240,7 +2241,7 @@ export const gameSlice = createSlice({
                   items: inventory.items.slice(1),
                 };
                 
-                const treasureName = treasureCard?.name || `Treasure #${removedItem.cardId}`;
+                const treasureName = treasureCard?.name || `Treasure #${cardId}`;
                 state.encounterEffectMessage = `${activeHeroId} lost ${treasureName}`;
               }
               // Priority 2: Try to discard a treasure token on hero's tile
