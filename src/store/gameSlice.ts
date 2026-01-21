@@ -306,6 +306,8 @@ export interface GameState {
   pendingMonsterChoice: PendingMonsterChoiceState | null;
   /** Pending treasure placement: requires player to select a tile for treasure token */
   pendingTreasurePlacement: PendingTreasurePlacementState | null;
+  /** Pending treasure discard: requires player to select which treasure to discard */
+  pendingTreasureDiscard: PendingTreasureDiscardState | null;
   /** Selected target ID (for attack actions) - can be monster, trap, treasure, etc. */
   selectedTargetId: string | null;
   /** Selected target type (to differentiate between different targetable entity types) */
@@ -369,6 +371,18 @@ export interface PendingTreasurePlacementState {
   encounterId: string;
   /** The encounter card name for display */
   encounterName: string;
+}
+
+/**
+ * State for tracking when player needs to choose which treasure to discard
+ */
+export interface PendingTreasureDiscardState {
+  /** The encounter card that requires treasure discard */
+  encounterId: string;
+  /** The encounter card name for display */
+  encounterName: string;
+  /** The hero who must discard */
+  heroId: string;
 }
 
 /**
@@ -582,6 +596,7 @@ const initialState: GameState = {
   clericsShieldTarget: null,
   pendingMonsterChoice: null,
   pendingTreasurePlacement: null,
+  pendingTreasureDiscard: null,
   selectedTargetId: null,
   selectedTargetType: null,
   showScenarioIntroduction: false,
@@ -2225,38 +2240,55 @@ export const gameSlice = createSlice({
             
             if (activeHeroId && activeHeroPosition) {
               const inventory = state.heroInventories[activeHeroId];
+              const treasureTokensOnTile = getTreasureTokensOnTile(activeHeroPosition, state.treasureTokens);
               
-              // Priority 1: Try to discard a treasure card
-              if (inventory && inventory.items.length > 0) {
-                const removedItem = inventory.items[0];
-                const cardId = removedItem.cardId;
-                const treasureCard = getTreasureById(cardId);
-                
-                // Add treasure card back to discard pile
-                state.treasureDeck = discardTreasure(state.treasureDeck, cardId);
-                
-                // Remove from inventory
-                state.heroInventories[activeHeroId] = {
-                  ...inventory,
-                  items: inventory.items.slice(1),
+              // Check if hero has treasure cards
+              const hasTreasureCards = inventory && inventory.items.length > 0;
+              // Check if hero has treasure tokens on their tile
+              const hasTreasureTokens = treasureTokensOnTile.length > 0;
+              
+              // Calculate total number of treasures (cards + tokens)
+              const totalTreasures = (hasTreasureCards ? inventory.items.length : 0) + treasureTokensOnTile.length;
+              
+              // If hero has multiple treasures (cards + tokens), let them choose
+              if (totalTreasures > 1) {
+                state.pendingTreasureDiscard = {
+                  encounterId: 'thief-in-dark',
+                  encounterName: 'Thief in the Dark',
+                  heroId: activeHeroId,
                 };
-                
-                const treasureName = treasureCard?.name || `Treasure #${cardId}`;
-                state.encounterEffectMessage = `${activeHeroId} lost ${treasureName}`;
+                // Note: No modal message - the selection modal will handle the UI
               }
-              // Priority 2: Try to discard a treasure token on hero's tile
-              else {
-                const treasureTokensOnTile = getTreasureTokensOnTile(activeHeroPosition, state.treasureTokens);
-                
-                if (treasureTokensOnTile.length > 0) {
+              // If hero has exactly one treasure, auto-discard it
+              else if (totalTreasures === 1) {
+                // Priority 1: Try to discard a treasure card
+                if (hasTreasureCards) {
+                  const removedItem = inventory.items[0];
+                  const cardId = removedItem.cardId;
+                  const treasureCard = getTreasureById(cardId);
+                  
+                  // Add treasure card back to discard pile
+                  state.treasureDeck = discardTreasure(state.treasureDeck, cardId);
+                  
+                  // Remove from inventory
+                  state.heroInventories[activeHeroId] = {
+                    ...inventory,
+                    items: inventory.items.slice(1),
+                  };
+                  
+                  const treasureName = treasureCard?.name || `Treasure #${cardId}`;
+                  state.encounterEffectMessage = `${activeHeroId} lost ${treasureName}`;
+                }
+                // Priority 2: Discard treasure token
+                else if (hasTreasureTokens) {
                   const removedToken = treasureTokensOnTile[0];
                   state.treasureTokens = state.treasureTokens.filter(t => t.id !== removedToken.id);
                   state.encounterEffectMessage = `${activeHeroId} lost a treasure token`;
                 }
-                // Priority 3: Hero has neither card nor token
-                else {
-                  state.encounterEffectMessage = `${activeHeroId} has no treasure - the thief gets nothing`;
-                }
+              }
+              // Hero has no treasures
+              else {
+                state.encounterEffectMessage = `${activeHeroId} has no treasure - the thief gets nothing`;
               }
             }
           }
@@ -3907,6 +3939,58 @@ export const gameSlice = createSlice({
       }
     },
     /**
+     * Select which treasure to discard for Thief in the Dark
+     */
+    selectThiefDiscard: (state, action: PayloadAction<{ cardId?: number; tokenId?: string }>) => {
+      const { cardId, tokenId } = action.payload;
+      
+      if (!state.pendingTreasureDiscard) {
+        return;
+      }
+      
+      const heroId = state.pendingTreasureDiscard.heroId;
+      const inventory = state.heroInventories[heroId];
+      
+      // Discard treasure card
+      if (cardId !== undefined) {
+        if (!inventory) {
+          return;
+        }
+        
+        const itemIndex = inventory.items.findIndex(item => item.cardId === cardId);
+        if (itemIndex === -1) {
+          return;
+        }
+        
+        const treasureCard = getTreasureById(cardId);
+        
+        // Add treasure card back to discard pile
+        state.treasureDeck = discardTreasure(state.treasureDeck, cardId);
+        
+        // Remove from inventory
+        state.heroInventories[heroId] = {
+          ...inventory,
+          items: inventory.items.filter((_, index) => index !== itemIndex),
+        };
+        
+        const treasureName = treasureCard?.name || `Treasure #${cardId}`;
+        state.encounterEffectMessage = `${heroId} lost ${treasureName}`;
+      }
+      // Discard treasure token
+      else if (tokenId !== undefined) {
+        const token = state.treasureTokens.find(t => t.id === tokenId);
+        if (!token) {
+          return;
+        }
+        
+        state.treasureTokens = state.treasureTokens.filter(t => t.id !== tokenId);
+        state.encounterEffectMessage = `${heroId} lost a treasure token`;
+      }
+      
+      // Clear the pending state
+      state.pendingTreasureDiscard = null;
+    },
+    /**
      * Use a treasure item from a hero's inventory
      */
     useTreasureItem: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
@@ -4335,6 +4419,7 @@ export const {
   assignTreasureToHero,
   selectDragonsTributeTreasure,
   dismissTreasureCard,
+  selectThiefDiscard,
   useTreasureItem,
   setTreasureDeck,
   setHeroInventories,
