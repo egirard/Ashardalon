@@ -402,8 +402,8 @@ export function executeMonsterTurn(
     return { type: 'attack', targetId: adjacentHero.heroId, result };
   }
   
-  // Handle move-and-attack tactics
-  if (tacticType === 'move-and-attack') {
+  // Handle move-and-attack and ranged-attack tactics
+  if (tacticType === 'move-and-attack' || tacticType === 'ranged-attack') {
     const range = tactics?.moveAttackRange ?? 1;
     const heroInRange = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, range);
     
