@@ -28,6 +28,7 @@ import {
   BoardTokenState,
   MONSTER_TACTICS,
   MONSTERS,
+  ENCOUNTER_CANCEL_COST,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
 import {
@@ -1870,6 +1871,17 @@ export const gameSlice = createSlice({
                 state.badLuckExtraEncounterPending = true;
               }
             }
+            
+            // Log encounter draw
+            const canCancel = canCancelEncounter(state.partyResources);
+            const cancelInfo = canCancel ? ` (Cancel: ${ENCOUNTER_CANCEL_COST} XP)` : '';
+            state.logEntries.push({
+              id: state.logEntryCounter++,
+              timestamp: Date.now(),
+              type: 'encounter',
+              message: `Encounter: ${encounter.name} (${encounter.type})${cancelInfo}`,
+              details: encounter.flavorText,
+            });
           }
         }
       }
@@ -2095,10 +2107,21 @@ export const gameSlice = createSlice({
             state.drawnEncounter.id,
             state.activeEnvironmentId
           );
+          
+          // Log environment activation
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'encounter',
+            message: `Environment active: ${state.drawnEncounter.name}`,
+            details: state.drawnEncounter.effect.description,
+          });
+          
           // Environment cards are not discarded - they remain active
           // The old environment (if any) is implicitly replaced
         } else if (shouldPlaceTrapMarker(state.drawnEncounter)) {
           // Place trap marker on active hero's tile (if no trap already there)
+          let trapPlaced = false;
           if (activeHeroPosition && !tileHasTrap(activeHeroPosition, state.traps)) {
             const trap = createTrapInstance(
               state.drawnEncounter.id,
@@ -2108,7 +2131,19 @@ export const gameSlice = createSlice({
             );
             state.traps.push(trap);
             state.trapInstanceCounter++;
+            trapPlaced = true;
           }
+          
+          // Log trap placement
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'encounter',
+            message: trapPlaced 
+              ? `Trap placed: ${state.drawnEncounter.name}` 
+              : `Trap not placed (tile already has trap): ${state.drawnEncounter.name}`,
+            details: state.drawnEncounter.effect.description,
+          });
           
           // Discard the trap encounter card
           state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
@@ -2127,12 +2162,25 @@ export const gameSlice = createSlice({
                 state.drawnEncounter = encounter;
                 const currentHeroId = activeHeroToken?.heroId;
                 state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                
+                // Log Bad Luck extra encounter
+                const canCancel = canCancelEncounter(state.partyResources);
+                const cancelInfo = canCancel ? ` (Cancel: ${ENCOUNTER_CANCEL_COST} XP)` : '';
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'encounter',
+                  message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
+                  details: encounter.flavorText,
+                  heroId: currentHeroId,
+                });
                 return;
               }
             }
           }
         } else if (shouldPlaceHazardMarker(state.drawnEncounter)) {
           // Place hazard marker on active hero's tile (if no hazard already there)
+          let hazardPlaced = false;
           if (activeHeroPosition && !tileHasHazard(activeHeroPosition, state.hazards)) {
             const hazard = createHazardInstance(
               state.drawnEncounter.id,
@@ -2141,6 +2189,7 @@ export const gameSlice = createSlice({
             );
             state.hazards.push(hazard);
             state.hazardInstanceCounter++;
+            hazardPlaced = true;
           }
           
           // Get the current hero ID for active-hero effects
@@ -2156,6 +2205,38 @@ export const gameSlice = createSlice({
               state.dungeon
             );
             state.heroHp = heroHpList;
+            
+            // Log hazard placement and effects
+            if (results.length > 0) {
+              const targetSummaries = results.map(r => {
+                const parts = [];
+                if (r.wasHit !== undefined) {
+                  parts.push(r.wasHit ? 'Hit' : 'Miss');
+                }
+                if (r.damageTaken > 0) {
+                  parts.push(`${r.damageTaken} dmg`);
+                }
+                return `${r.heroName}: ${parts.join(', ')}`;
+              });
+              
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'encounter',
+                message: `Hazard: ${state.drawnEncounter.name} - ${targetSummaries.join('; ')}`,
+                details: state.drawnEncounter.effect.description,
+              });
+            } else {
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'encounter',
+                message: hazardPlaced 
+                  ? `Hazard placed: ${state.drawnEncounter.name}` 
+                  : `Hazard not placed (tile already has hazard): ${state.drawnEncounter.name}`,
+                details: state.drawnEncounter.effect.description,
+              });
+            }
             
             // Store results for popup display if there were any effects
             if (results.length > 0) {
@@ -2191,6 +2272,18 @@ export const gameSlice = createSlice({
                 state.drawnEncounter = encounter;
                 const currentHeroId = activeHeroToken?.heroId;
                 state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                
+                // Log Bad Luck extra encounter
+                const canCancel = canCancelEncounter(state.partyResources);
+                const cancelInfo = canCancel ? ` (Cancel: ${ENCOUNTER_CANCEL_COST} XP)` : '';
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'encounter',
+                  message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
+                  details: encounter.flavorText,
+                  heroId: currentHeroId,
+                });
                 return;
               }
             }
@@ -2610,6 +2703,18 @@ export const gameSlice = createSlice({
                   removedFromPlay: isTimeLeap ? true : (heroHp.removedFromPlay || false),
                 };
                 
+                // Log curse application
+                const curseName = state.drawnEncounter.name;
+                const logDetails = isTimeLeap ? `${activeHeroId} removed from play until next turn` : state.drawnEncounter.effect.description;
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'encounter',
+                  message: `Curse applied: ${curseName} on ${activeHeroId}`,
+                  details: logDetails,
+                  heroId: activeHeroId,
+                });
+                
                 if (isTimeLeap) {
                   state.encounterEffectMessage = `${activeHeroId} is removed from play until next turn!`;
                 }
@@ -2634,6 +2739,18 @@ export const gameSlice = createSlice({
                 state.drawnEncounter = encounter;
                 const currentHeroId = activeHeroToken?.heroId;
                 state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                
+                // Log Bad Luck extra encounter
+                const canCancel = canCancelEncounter(state.partyResources);
+                const cancelInfo = canCancel ? ` (Cancel: ${ENCOUNTER_CANCEL_COST} XP)` : '';
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'encounter',
+                  message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
+                  details: encounter.flavorText,
+                  heroId: currentHeroId,
+                });
                 return;
               }
             }
@@ -2652,6 +2769,40 @@ export const gameSlice = createSlice({
               state.dungeon
             );
             state.heroHp = heroHpList;
+            
+            // Log encounter effect
+            if (results.length > 0) {
+              const targetSummaries = results.map(r => {
+                const parts = [];
+                if (r.wasHit !== undefined) {
+                  parts.push(r.wasHit ? 'Hit' : 'Miss');
+                }
+                if (r.damageTaken > 0) {
+                  parts.push(`${r.damageTaken} dmg`);
+                }
+                if (r.statusesApplied && r.statusesApplied.length > 0) {
+                  parts.push(r.statusesApplied.join(', '));
+                }
+                return `${r.heroName}: ${parts.join(', ')}`;
+              });
+              
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'encounter',
+                message: `${state.drawnEncounter.name} - ${targetSummaries.join('; ')}`,
+                details: state.drawnEncounter.effect.description,
+              });
+            } else {
+              // No immediate effects (e.g., environment cards)
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'encounter',
+                message: `Resolved: ${state.drawnEncounter.name}`,
+                details: state.drawnEncounter.effect.description,
+              });
+            }
             
             // Store results for popup display if there were any effects
             if (results.length > 0) {
@@ -2687,6 +2838,18 @@ export const gameSlice = createSlice({
                 state.drawnEncounter = encounter;
                 const currentHeroId = activeHeroToken?.heroId;
                 state.encounterEffectMessage = `Bad Luck curse: ${currentHeroId} draws an extra encounter!`;
+                
+                // Log Bad Luck extra encounter
+                const canCancel = canCancelEncounter(state.partyResources);
+                const cancelInfo = canCancel ? ` (Cancel: ${ENCOUNTER_CANCEL_COST} XP)` : '';
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'encounter',
+                  message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
+                  details: encounter.flavorText,
+                  heroId: currentHeroId,
+                });
                 return;
               }
             }
@@ -2702,6 +2865,9 @@ export const gameSlice = createSlice({
      */
     cancelEncounterCard: (state) => {
       if (state.drawnEncounter && canCancelEncounter(state.partyResources)) {
+        const encounterName = state.drawnEncounter.name;
+        const xpBefore = state.partyResources.xp;
+        
         // Cancel encounter - deducts XP and discards the card without applying effect
         const result = cancelEncounter(
           state.drawnEncounter,
@@ -2712,6 +2878,14 @@ export const gameSlice = createSlice({
         state.partyResources = result.resources;
         state.encounterDeck = result.encounterDeck;
         state.drawnEncounter = null;
+        
+        // Log encounter cancellation
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'encounter',
+          message: `Cancelled: ${encounterName} (-${ENCOUNTER_CANCEL_COST} XP, ${result.resources.xp} remaining)`,
+        });
       }
     },
     /**
