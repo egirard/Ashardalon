@@ -98,6 +98,8 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     incrementalMovement: null,
     undoSnapshot: null,
     encounterEffectMessage: null,
+    logEntries: [],
+    logEntryCounter: 0,
     ...overrides,
   };
 }
