@@ -53,6 +53,7 @@ import {
   filterMonsterDeckByCategory,
   healMonster,
   drawMonsterFromBottom,
+  getBlackSquarePosition,
 } from "./monsters";
 import {
   executeMonsterTurn,
@@ -219,6 +220,13 @@ export interface GameState {
   villainPhaseMonsterIndex: number;
   /** ID of the monster that just moved but could not attack (for displaying move feedback) */
   monsterMoveActionId: string | null;
+  /** Monster exploration event: information about monster-triggered tile exploration */
+  monsterExplorationEvent: { 
+    monsterId: string; 
+    monsterName: string; 
+    direction: import('./types').Direction; 
+    tileType: string;
+  } | null;
   /** Hero turn actions tracking for enforcing valid turn structure */
   heroTurnActions: HeroTurnActions;
   /** Scenario state for MVP win/loss tracking */
@@ -604,6 +612,7 @@ const initialState: GameState = {
   monsterAttackerId: null,
   villainPhaseMonsterIndex: 0,
   monsterMoveActionId: null,
+  monsterExplorationEvent: null,
   heroTurnActions: { ...DEFAULT_HERO_TURN_ACTIONS },
   scenario: { ...DEFAULT_SCENARIO_STATE },
   partyResources: { ...DEFAULT_PARTY_RESOURCES },
@@ -3839,6 +3848,83 @@ export const gameSlice = createSlice({
           message: logMessage,
           details: logDetails,
         });
+      } else if (result.type === 'explore') {
+        // Handle monster-triggered exploration
+        // Draw a tile from the deck
+        const { drawnTile, remainingDeck } = drawTile(state.dungeon.tileDeck);
+        
+        if (drawnTile) {
+          // Place the new tile
+          const newTile = placeTile(result.edge, drawnTile, state.dungeon);
+          
+          if (newTile) {
+            // Update dungeon state
+            state.dungeon = updateDungeonAfterExploration(state.dungeon, result.edge, newTile);
+            state.dungeon.tileDeck = remainingDeck;
+            
+            // Get tile definition to check if it's a black tile
+            const tileDef = getTileDefinition(drawnTile);
+            const isBlackTile = tileDef?.isBlackTile ?? true;
+            
+            // Log the exploration
+            const monsterDef = getMonsterById(monster.monsterId);
+            const monsterName = monsterDef?.name ?? 'Monster';
+            const directionName = result.edge.direction.toUpperCase();
+            
+            state.logEntries.push({
+              id: state.logEntryCounter++,
+              timestamp: Date.now(),
+              type: 'exploration',
+              message: `${monsterName} explored ${directionName} edge`,
+              details: `Tile: ${drawnTile} (${isBlackTile ? 'Black' : 'White'} arrow)`,
+            });
+            
+            // Draw monster from deck (monsters always spawn on explored tiles)
+            const { monster: drawnMonsterId, deck: newMonsterDeck } = drawMonster(
+              state.monsterDeck,
+              randomFn
+            );
+            
+            if (drawnMonsterId) {
+              // Create monster instance on the black square
+              const blackSquarePos = getBlackSquarePosition(newTile.rotation);
+              const newMonsterInstance = createMonsterInstance(
+                drawnMonsterId,
+                blackSquarePos,
+                currentHeroId,
+                newTile.id,
+                state.monsterInstanceCounter
+              );
+              
+              if (newMonsterInstance) {
+                state.monsters.push(newMonsterInstance);
+                state.monsterInstanceCounter += 1;
+                
+                // Log monster spawn
+                const spawnedMonsterDef = getMonsterById(drawnMonsterId);
+                const spawnedMonsterName = spawnedMonsterDef?.name ?? drawnMonsterId;
+                
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'exploration',
+                  message: `${spawnedMonsterName} spawned on new tile`,
+                  details: `Monster appeared at position (${blackSquarePos.x}, ${blackSquarePos.y})`,
+                });
+              }
+              
+              state.monsterDeck = newMonsterDeck;
+            }
+            
+            // Store the monster exploration event for UI notification
+            state.monsterExplorationEvent = {
+              monsterId: monster.instanceId,
+              monsterName: monsterName,
+              direction: result.edge.direction,
+              tileType: drawnTile,
+            };
+          }
+        }
       }
       // Note: For result.type === 'none', no visual feedback is needed - monster couldn't act
 
@@ -3858,6 +3944,12 @@ export const gameSlice = createSlice({
      */
     dismissMonsterMoveAction: (state) => {
       state.monsterMoveActionId = null;
+    },
+    /**
+     * Dismiss the monster exploration event display
+     */
+    dismissMonsterExplorationEvent: (state) => {
+      state.monsterExplorationEvent = null;
     },
     /**
      * Activate all traps and hazards during villain phase
@@ -4758,6 +4850,7 @@ export const {
   activateNextMonster,
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
+  dismissMonsterExplorationEvent,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
   dismissEncounterResult,
