@@ -1,4 +1,4 @@
-import type { MonsterState, Position, HeroToken, DungeonState, AttackResult, MonsterAttack, MonsterCardTactics, MonsterAttackOption } from './types';
+import type { MonsterState, Position, HeroToken, DungeonState, AttackResult, MonsterAttack, MonsterCardTactics, MonsterAttackOption, TileEdge, Direction } from './types';
 import { MONSTER_ATTACKS, MONSTER_TACTICS } from './types';
 import { arePositionsAdjacent, rollD20 } from './combat';
 import { getAdjacentPositions, findTileAtPosition, getTileBounds } from './movement';
@@ -18,12 +18,13 @@ const DEFAULT_MONSTER_ATTACK: MonsterAttackOption = {
 };
 
 /**
- * Result of a monster's turn - either move, attack, move-and-attack, or no action
+ * Result of a monster's turn - either move, attack, move-and-attack, explore, or no action
  */
 export type MonsterAction =
   | { type: 'move'; destination: Position }
   | { type: 'attack'; targetId: string; result: AttackResult }
   | { type: 'move-and-attack'; destination: Position; targetId: string; result: AttackResult }
+  | { type: 'explore'; edge: TileEdge }
   | { type: 'none' };
 
 /**
@@ -369,6 +370,8 @@ export function resolveMonsterAttack(
  * - attack-only: If adjacent to hero, attack. Otherwise, move toward closest hero.
  * - move-and-attack: If within range (default 1 tile), move adjacent AND attack in same turn.
  *                    Otherwise, move toward closest hero.
+ * - explore-or-attack: If adjacent to hero, attack. If on tile with unexplored edge and no heroes, explore.
+ *                      Otherwise, move toward closest hero.
  * 
  * @param monster The monster taking the turn
  * @param heroTokens All hero tokens on the board
@@ -400,6 +403,22 @@ export function executeMonsterTurn(
     const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
     const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
     return { type: 'attack', targetId: adjacentHero.heroId, result };
+  }
+  
+  // Handle explore-or-attack behavior
+  if (tacticType === 'explore-or-attack') {
+    // Check if no heroes are on the monster's tile
+    const heroOnTile = isHeroOnMonsterTile(monster, heroTokens, dungeon);
+    
+    if (!heroOnTile) {
+      // Check for unexplored edge on the monster's tile
+      const unexploredEdge = findUnexploredEdgeOnMonsterTile(monster, dungeon);
+      
+      if (unexploredEdge) {
+        // Monster will explore this edge
+        return { type: 'explore', edge: unexploredEdge };
+      }
+    }
   }
   
   // Handle move-and-attack and ranged-attack tactics
@@ -538,4 +557,52 @@ export function findClosestMonsterNotOnTile(
   }
   
   return closestMonster;
+}
+
+/**
+ * Check if any hero is on the same tile as the monster.
+ * Used for explore-or-attack behavior to determine if monster should explore.
+ * 
+ * @param monster The monster to check
+ * @param heroTokens All hero tokens on the board
+ * @param dungeon Dungeon state
+ * @returns true if at least one hero is on the same tile as the monster
+ */
+export function isHeroOnMonsterTile(
+  monster: MonsterState,
+  heroTokens: HeroToken[],
+  dungeon: DungeonState
+): boolean {
+  const monsterTile = dungeon.tiles.find(t => t.id === monster.tileId);
+  if (!monsterTile) return false;
+  
+  for (const hero of heroTokens) {
+    const heroTile = findTileAtPosition(hero.position, dungeon);
+    if (heroTile && heroTile.id === monster.tileId) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Find an unexplored edge on the monster's tile.
+ * Used for explore-or-attack behavior.
+ * 
+ * @param monster The monster looking for an unexplored edge
+ * @param dungeon Dungeon state
+ * @returns The first unexplored edge on the monster's tile, or null if none
+ */
+export function findUnexploredEdgeOnMonsterTile(
+  monster: MonsterState,
+  dungeon: DungeonState
+): TileEdge | null {
+  // Find unexplored edges on the monster's tile
+  const unexploredEdges = dungeon.unexploredEdges.filter(
+    edge => edge.tileId === monster.tileId
+  );
+  
+  // Return the first unexplored edge (monster will automatically explore it)
+  return unexploredEdges.length > 0 ? unexploredEdges[0] : null;
 }

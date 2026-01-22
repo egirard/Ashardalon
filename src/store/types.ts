@@ -158,9 +158,9 @@ export interface MonsterCardTactics {
  */
 export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   kobold: {
-    type: 'attack-only', // See docs/MONSTER_CARD_IMPLEMENTATION.md for exploration behavior
+    type: 'explore-or-attack',
     adjacentAttack: { name: 'Sword', attackBonus: 7, damage: 1 },
-    implementationNotes: 'Kobold exploration behavior (draw tile when on tile with unexplored edge and no heroes) not yet implemented.',
+    implementationNotes: 'If adjacent to hero, attack. If on tile with unexplored edge and no heroes, explore. Otherwise, move toward hero.',
   },
   snake: {
     type: 'move-and-attack',
@@ -191,6 +191,11 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     moveAttack: { name: 'Arrow', attackBonus: 6, damage: 2, missDamage: 1, range: 2 },
     moveAttackRange: 2,
     implementationNotes: 'Adjacent: Punch (dazed). Within 2 tiles: Arrow (miss: 1 damage).',
+  },
+  'duergar-guard': {
+    type: 'explore-or-attack',
+    adjacentAttack: { name: 'Warhammer', attackBonus: 8, damage: 2 },
+    implementationNotes: 'If adjacent to hero, attack. If on tile with unexplored edge and no heroes, explore. Otherwise, move toward hero.',
   },
 };
 
@@ -323,6 +328,7 @@ export const MONSTERS: Monster[] = [
   { id: 'cultist', name: 'Cultist', ac: 13, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_Cultist.png', category: 'humanoid' },
   { id: 'orc-archer', name: 'Orc Archer', ac: 13, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_OrcArcher.png', category: 'orc' },
   { id: 'orc-smasher', name: 'Orc Smasher', ac: 15, hp: 2, maxHp: 2, xp: 2, imagePath: 'assets/Monster_OrcSmasher.png', category: 'orc' },
+  { id: 'duergar-guard', name: 'Duergar Guard', ac: 15, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_DuergarGuard.png', category: 'humanoid sentry' },
 ];
 
 /**
@@ -334,6 +340,7 @@ export const INITIAL_MONSTER_DECK: string[] = [
   'cultist', 'cultist', 'cultist',
   'orc-archer', 'orc-archer', 'orc-archer',
   'orc-smasher', 'orc-smasher', 'orc-smasher',
+  'duergar-guard', 'duergar-guard', 'duergar-guard',
 ];
 
 /**
