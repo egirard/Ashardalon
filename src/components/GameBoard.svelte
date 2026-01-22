@@ -116,6 +116,7 @@
   import HealingSurgeAnimation from "./HealingSurgeAnimation.svelte";
   import EncounterEffectNotification from "./EncounterEffectNotification.svelte";
   import ExplorationPhaseNotification from "./ExplorationPhaseNotification.svelte";
+  import MonsterExplorationNotification from "./MonsterExplorationNotification.svelte";
   import ActionSurgePrompt from "./ActionSurgePrompt.svelte";
   import PoisonedDamageNotification from "./PoisonedDamageNotification.svelte";
   import PoisonRecoveryNotification from "./PoisonRecoveryNotification.svelte";
@@ -229,6 +230,7 @@
   let healingSurgeHpRestored: number | null = $state(null);
   let encounterEffectMessage: string | null = $state(null);
   let explorationPhaseMessage: string | null = $state(null);
+  let monsterExplorationEvent: { monsterId: string; monsterName: string; direction: import('../store/types').Direction; tileType: string } | null = $state(null);
   let explorationPhase: import('../store/gameSlice').ExplorationPhaseState = $state({ step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null });
   let recentlyPlacedTileId: string | null = $state(null);
   let pendingMonsterDisplayId: string | null = $state(null);
@@ -343,6 +345,7 @@
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
       encounterEffectMessage = state.game.encounterEffectMessage;
       explorationPhaseMessage = state.game.explorationPhaseMessage;
+      monsterExplorationEvent = state.game.monsterExplorationEvent;
       explorationPhase = state.game.explorationPhase;
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
       pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
@@ -411,6 +414,7 @@
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     encounterEffectMessage = state.game.encounterEffectMessage;
     explorationPhaseMessage = state.game.explorationPhaseMessage;
+    monsterExplorationEvent = state.game.monsterExplorationEvent;
     explorationPhase = state.game.explorationPhase;
     recentlyPlacedTileId = state.game.recentlyPlacedTileId;
     pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
@@ -1772,6 +1776,11 @@
 
   function handleDismissExplorationPhaseMessage() {
     store.dispatch(dismissExplorationPhaseMessage());
+  }
+
+  // Handle dismissing monster exploration event notification
+  function handleDismissMonsterExplorationEvent() {
+    store.dispatch(dismissMonsterExplorationEvent());
   }
 
   // Handle dismissing the poisoned damage notification
@@ -3603,6 +3612,17 @@
     <ExplorationPhaseNotification
       message={explorationPhaseMessage}
       onDismiss={handleDismissExplorationPhaseMessage}
+      edge={getActivePlayerEdge()}
+    />
+  {/if}
+
+  <!-- Monster Exploration Notification (shown when monster triggers exploration) -->
+  {#if monsterExplorationEvent}
+    <MonsterExplorationNotification
+      monsterName={monsterExplorationEvent.monsterName}
+      direction={monsterExplorationEvent.direction}
+      tileType={monsterExplorationEvent.tileType}
+      onDismiss={handleDismissMonsterExplorationEvent}
       edge={getActivePlayerEdge()}
     />
   {/if}
