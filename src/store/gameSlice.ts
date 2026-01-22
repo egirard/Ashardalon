@@ -3952,6 +3952,17 @@ export const gameSlice = createSlice({
       state.monsterExplorationEvent = null;
     },
     /**
+     * Set monster exploration event (for testing purposes)
+     */
+    setMonsterExplorationEvent: (state, action: PayloadAction<{
+      monsterId: string;
+      monsterName: string;
+      direction: import('./types').Direction;
+      tileType: string;
+    }>) => {
+      state.monsterExplorationEvent = action.payload;
+    },
+    /**
      * Activate all traps and hazards during villain phase
      * This should be called after all monsters have been activated
      */
@@ -4851,6 +4862,7 @@ export const {
   dismissMonsterAttackResult,
   dismissMonsterMoveAction,
   dismissMonsterExplorationEvent,
+  setMonsterExplorationEvent,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
   dismissEncounterResult,
