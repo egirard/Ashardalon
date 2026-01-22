@@ -2767,6 +2767,36 @@ export const gameSlice = createSlice({
       // Always store the result with calculated damage for display consistency
       state.attackResult = { ...result, damage: actualDamage };
       
+      // Log the attack attempt
+      const attackerHero = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
+      const attackerName = attackerHero?.name ?? currentHeroId;
+      const targetMonster = state.monsters.find(m => m.instanceId === targetInstanceId);
+      const targetMonsterDef = targetMonster ? getMonsterById(targetMonster.monsterId) : null;
+      const targetName = targetMonsterDef?.name ?? 'Monster';
+      
+      // Build log message and details
+      const hitOrMiss = result.isHit ? 'Hit' : 'Miss';
+      const criticalText = result.isCritical ? ' (Critical!)' : '';
+      const logMessage = `${attackerName} attacks ${targetName}: ${hitOrMiss}!${criticalText}`;
+      
+      // Build detailed breakdown
+      let logDetails = `Roll: ${result.roll} + ${result.attackBonus} = ${result.total} vs AC ${result.targetAC}`;
+      if (result.isHit) {
+        logDetails += ` | Damage: ${actualDamage}`;
+        if (targetMonster && targetMonster.currentHp - actualDamage <= 0) {
+          logDetails += ' | Monster defeated!';
+        }
+      }
+      
+      state.logEntries.push({
+        id: state.logEntryCounter++,
+        timestamp: Date.now(),
+        type: 'combat',
+        message: logMessage,
+        details: logDetails,
+        heroId: currentHeroId,
+      });
+      
       // Apply damage if hit
       if (result.isHit && actualDamage > 0) {
         const monster = state.monsters.find(m => m.instanceId === targetInstanceId);
@@ -2863,6 +2893,18 @@ export const gameSlice = createSlice({
         
         // Set level up notification
         state.leveledUpHeroId = currentHeroId;
+        
+        // Log level up
+        const levelUpHero = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
+        const heroName = levelUpHero?.name ?? currentHeroId;
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'hero-action',
+          message: `${heroName} levels up to Level 2!`,
+          details: `Natural 20 rolled, 5 XP spent | HP: ${state.levelUpOldStats.maxHp} → ${levelUpResult.heroState.maxHp}, AC: ${state.levelUpOldStats.ac} → ${levelUpResult.heroState.ac}`,
+          heroId: currentHeroId,
+        });
       }
       
       // Check if this card has hit-or-miss effects
@@ -3467,6 +3509,21 @@ export const gameSlice = createSlice({
         state.monsterAttackTargetId = result.targetId;
         state.monsterAttackerId = monster.instanceId;
 
+        // Log the monster attack
+        const monsterDef = getMonsterById(monster.monsterId);
+        const monsterName = monsterDef?.name ?? 'Monster';
+        const targetHero = AVAILABLE_HEROES.find(h => h.id === result.targetId);
+        const targetName = targetHero?.name ?? result.targetId;
+        
+        const hitOrMiss = result.result.isHit ? 'Hit' : 'Miss';
+        const criticalText = result.result.isCritical ? ' (Critical!)' : '';
+        const logMessage = `${monsterName} attacks ${targetName}: ${hitOrMiss}!${criticalText}`;
+        
+        let logDetails = `Roll: ${result.result.roll} + ${result.result.attackBonus} = ${result.result.total} vs AC ${result.result.targetAC}`;
+        if (result.result.isHit && result.result.damage > 0) {
+          logDetails += ` | Damage: ${result.result.damage}`;
+        }
+
         // Apply damage to hero if hit
         if (result.result.isHit && result.result.damage > 0) {
           const heroHp = state.heroHp.find(h => h.heroId === result.targetId);
@@ -3484,12 +3541,34 @@ export const gameSlice = createSlice({
         // Apply status effect if the attack has one and hit
         if (result.result.isHit) {
           applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId, 'adjacent');
+          
+          // Check if status effect was applied for logging
+          const tactics = MONSTER_TACTICS[monster.monsterId];
+          const attackOption = tactics?.adjacentAttack;
+          if (attackOption?.statusEffect) {
+            logDetails += ` | Applied: ${attackOption.statusEffect}`;
+          }
         }
         
         // Apply miss damage if the attack missed but has miss damage
         if (!result.result.isHit) {
           applyMonsterMissDamage(state, monster.monsterId, result.targetId, 'adjacent');
+          
+          // Check if miss damage was applied for logging
+          const tactics = MONSTER_TACTICS[monster.monsterId];
+          const attackOption = tactics?.adjacentAttack;
+          if (attackOption?.missDamage && attackOption.missDamage > 0) {
+            logDetails += ` | Miss damage: ${attackOption.missDamage}`;
+          }
         }
+        
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'combat',
+          message: logMessage,
+          details: logDetails,
+        });
       } else if (result.type === 'move-and-attack') {
         // Handle move-and-attack: monster moves adjacent AND attacks in same turn
         // First, update monster position
@@ -3526,6 +3605,21 @@ export const gameSlice = createSlice({
         state.monsterAttackTargetId = result.targetId;
         state.monsterAttackerId = monster.instanceId;
 
+        // Log the monster attack (move-and-attack)
+        const monsterDef = getMonsterById(monster.monsterId);
+        const monsterName = monsterDef?.name ?? 'Monster';
+        const targetHero = AVAILABLE_HEROES.find(h => h.id === result.targetId);
+        const targetName = targetHero?.name ?? result.targetId;
+        
+        const hitOrMiss = result.result.isHit ? 'Hit' : 'Miss';
+        const criticalText = result.result.isCritical ? ' (Critical!)' : '';
+        const logMessage = `${monsterName} moves and attacks ${targetName}: ${hitOrMiss}!${criticalText}`;
+        
+        let logDetails = `Roll: ${result.result.roll} + ${result.result.attackBonus} = ${result.result.total} vs AC ${result.result.targetAC}`;
+        if (result.result.isHit && result.result.damage > 0) {
+          logDetails += ` | Damage: ${result.result.damage}`;
+        }
+
         // Apply damage to hero if hit
         if (result.result.isHit && result.result.damage > 0) {
           const heroHp = state.heroHp.find(h => h.heroId === result.targetId);
@@ -3543,12 +3637,34 @@ export const gameSlice = createSlice({
         // Apply status effect if the attack has one and hit
         if (result.result.isHit) {
           applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId, 'move');
+          
+          // Check if status effect was applied for logging
+          const tactics = MONSTER_TACTICS[monster.monsterId];
+          const attackOption = tactics?.moveAttack;
+          if (attackOption?.statusEffect) {
+            logDetails += ` | Applied: ${attackOption.statusEffect}`;
+          }
         }
         
         // Apply miss damage if the attack missed but has miss damage
         if (!result.result.isHit) {
           applyMonsterMissDamage(state, monster.monsterId, result.targetId, 'move');
+          
+          // Check if miss damage was applied for logging
+          const tactics = MONSTER_TACTICS[monster.monsterId];
+          const attackOption = tactics?.moveAttack;
+          if (attackOption?.missDamage && attackOption.missDamage > 0) {
+            logDetails += ` | Miss damage: ${attackOption.missDamage}`;
+          }
         }
+        
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'combat',
+          message: logMessage,
+          details: logDetails,
+        });
       }
       // Note: For result.type === 'none', no visual feedback is needed - monster couldn't act
 
@@ -3589,6 +3705,23 @@ export const gameSlice = createSlice({
         state.hazardInstanceCounter,
         randomFn
       );
+      
+      // Log trap activations if any traps exist
+      if (state.traps.length > 0) {
+        const trapNames = state.traps.map(trap => {
+          const encounter = getEncounterById(trap.encounterId);
+          return encounter?.name || 'Trap';
+        });
+        const uniqueTrapNames = [...new Set(trapNames)];
+        
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'combat',
+          message: `Villain Phase: Traps activated`,
+          details: `Active traps: ${uniqueTrapNames.join(', ')}`,
+        });
+      }
       
       state.heroHp = result.heroHp;
       state.traps = result.traps;
