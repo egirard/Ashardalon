@@ -1,12 +1,13 @@
 <script lang="ts">
   /**
    * Corner Controls Component
-   * Displays icon-only controls for Return to Character Select, Control Map, and Submit Feedback
+   * Displays icon-only controls for Return to Character Select, Control Map, Font Scale, and Submit Feedback
    * Positioned in corners (NW and SE) for accessibility from different player positions
    */
-  import { HomeIcon, MapIcon, BugIcon } from './icons';
+  import { HomeIcon, MapIcon, BugIcon, FontSizeIcon } from './icons';
   import html2canvas from 'html2canvas';
   import ConfirmationDialog from './ConfirmationDialog.svelte';
+  import FontScaleControls from './FontScaleControls.svelte';
   
   interface Props {
     position: 'nw' | 'se';
@@ -19,6 +20,9 @@
   
   // State for confirmation dialog
   let showConfirmation = $state(false);
+  
+  // State for font scale controls
+  let showFontScaleControls = $state(false);
   
   // Repository configuration for feedback
   const REPO_OWNER = 'egirard';
@@ -45,6 +49,21 @@
    */
   function handleCancelReset() {
     showConfirmation = false;
+  }
+  
+  /**
+   * Toggles font scale controls visibility
+   */
+  function handleToggleFontScale() {
+    showFontScaleControls = !showFontScaleControls;
+  }
+  
+  /**
+   * Handles font scale changes
+   */
+  function handleFontScaleChange(scale: number) {
+    // Update CSS custom property on document root
+    document.documentElement.style.setProperty('--ui-font-scale', scale.toString());
   }
   
   /**
@@ -248,6 +267,18 @@ ${screenshotSection}
   </button>
   
   <button
+    class="icon-button font-scale-button"
+    class:active={showFontScaleControls}
+    data-testid="corner-font-scale-button"
+    onclick={handleToggleFontScale}
+    aria-label="Adjust UI Scale"
+    aria-pressed={showFontScaleControls}
+    title="Adjust UI Scale"
+  >
+    <FontSizeIcon size={20} color="currentColor" ariaLabel="Adjust UI Scale" />
+  </button>
+  
+  <button
     class="icon-button feedback-button"
     data-testid="corner-feedback-button"
     onclick={handleFeedbackClick}
@@ -257,6 +288,13 @@ ${screenshotSection}
     <BugIcon size={20} color="currentColor" ariaLabel="Submit Feedback" />
   </button>
 </div>
+
+{#if showFontScaleControls}
+  <FontScaleControls 
+    {position}
+    onScaleChange={handleFontScaleChange}
+  />
+{/if}
 
 {#if showConfirmation}
   <ConfirmationDialog
@@ -336,6 +374,23 @@ ${screenshotSection}
   .map-button.active:hover {
     background: rgba(255, 165, 0, 0.8);
     border-color: #ffa500;
+  }
+  
+  /* Font scale button - green when inactive, teal when active */
+  .font-scale-button:hover {
+    border-color: #4caf50;
+    color: #66bb6a;
+  }
+  
+  .font-scale-button.active {
+    background: rgba(76, 175, 80, 0.6);
+    border-color: #4caf50;
+    color: #fff;
+  }
+  
+  .font-scale-button.active:hover {
+    background: rgba(76, 175, 80, 0.8);
+    border-color: #66bb6a;
   }
   
   /* Feedback button - purple */

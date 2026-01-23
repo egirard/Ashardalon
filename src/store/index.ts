@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import heroesReducer from './heroesSlice';
 import gameReducer from './gameSlice';
+import uiReducer from './uiSlice';
 
 export const store = configureStore({
   reducer: {
     heroes: heroesReducer,
     game: gameReducer,
+    ui: uiReducer,
   },
 });
 
