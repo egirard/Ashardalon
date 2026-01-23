@@ -6,78 +6,92 @@ As a player, when certain monsters (Kobold Dragonshield and Duergar Guard) end t
 
 ## Test Coverage
 
-This E2E test demonstrates the complete monster-triggered exploration flow with inline screenshots at every significant step:
+This E2E test demonstrates the complete **real** monster-triggered exploration flow using the actual game logic. The test triggers the `activateNextMonster` action which calls the monster AI, which then triggers exploration, places a new tile, and spawns a new monster.
 
 ### Test: Complete Monster Exploration Flow ✅
 
 **What it demonstrates:**
-1. Initial game board with start tile
-2. Duergar Guard positioned on the board
-3. **Monster exploration notification** when Duergar Guard explores
-4. **New monster spawned** after exploration
-5. **Final board state** showing both the original Duergar Guard and newly spawned monster
+1. Initial game board with start tile only
+2. Duergar Guard positioned on a tile with unexplored edges (hero on different tile)
+3. **Monster exploration notification** when Duergar Guard explores via real monster AI
+4. **New tile placed** to the north after exploration
+5. **New monster spawned** on the explored tile's black square
+6. **Final board state** showing multiple tiles and monsters
 
-**Status**: ✅ PASSING
+**Status**: ✅ PASSING (1 test, 11.0s)
 
 ## Screenshots - Complete Flow Documentation
 
-### Step 1: Initial Board with Start Tile
-The game begins with only the start tile visible on the board.
+### Step 1: Initial Board with Start Tile Only
+The game begins with only the start tile visible.
 
-![Initial board](096-monster-triggered-exploration.spec.ts-snapshots/000-initial-board-with-start-tile-chromium-linux.png)
+![Initial board](096-monster-triggered-exploration.spec.ts-snapshots/000-initial-board-with-start-tile-only-chromium-linux.png)
 
-### Step 2: Duergar Guard Positioned on Board
-A Duergar Guard monster is placed on the board, ready to explore when conditions are met.
+### Step 2: Duergar Guard on Tile with Unexplored Edges
+A second tile has been added to the north. The Duergar Guard is placed on this tile, which has unexplored edges to the north and east. The hero (Quinn) is on the start tile, so the Duergar Guard is alone on its tile.
 
-![Duergar Guard on board](096-monster-triggered-exploration.spec.ts-snapshots/001-duergar-guard-on-board-chromium-linux.png)
+![Duergar Guard positioned](096-monster-triggered-exploration.spec.ts-snapshots/001-duergar-guard-on-tile-with-unexplored-edges-chromium-linux.png)
 
 ### Step 3: Monster Exploration Notification ⭐
-**Key Feature**: The notification displays when the Duergar Guard triggers exploration, showing:
+**Key Feature**: When the Duergar Guard activates during the villain phase, the monster AI detects that it's alone on a tile with unexplored edges and triggers exploration. The notification displays:
 - Monster name: "Duergar Guard"
-- Direction explored: "North"  
+- Direction explored: "North"
 - Tile type: "Black arrow tile placed"
 
-The notification has a distinctive red/dark theme to differentiate it from hero-triggered exploration.
+![Exploration notification](096-monster-triggered-exploration.spec.ts-snapshots/002-monster-exploration-notification-chromium-linux.png)
 
-![Exploration notification](096-monster-triggered-exploration.spec.ts-snapshots/002-exploration-notification-duergar-guard-chromium-linux.png)
+### Step 4: New Tile Placed to North ⭐
+**Key Feature**: After the Duergar Guard's exploration, a new tile is automatically placed to the north of the Duergar Guard's tile. The dungeon has expanded from 2 tiles to 3 (or more) tiles.
 
-### Step 4: New Monster Spawned After Exploration ⭐
-**Key Feature**: After the Duergar Guard explores, a new monster (Kobold Dragonshield) spawns on the newly revealed tile. This screenshot shows both monsters now present on the board.
+![New tile placed](096-monster-triggered-exploration.spec.ts-snapshots/003-new-tile-placed-to-north-chromium-linux.png)
 
-![New monster spawned](096-monster-triggered-exploration.spec.ts-snapshots/003-new-monster-spawned-after-exploration-chromium-linux.png)
+### Step 5: New Monster Spawned on Explored Tile ⭐
+**Key Feature**: A new monster automatically spawned on the black square of the newly explored tile. This screenshot shows both:
+- The original Duergar Guard (on tile-2)
+- The newly spawned monster (on the explored tile to the north)
 
-### Step 5: Final Board with All Monsters ⭐
+![New monster spawned](096-monster-triggered-exploration.spec.ts-snapshots/004-new-monster-spawned-on-explored-tile-chromium-linux.png)
+
+### Step 6: Final Dungeon with All Tiles and Monsters ⭐
 **Key Feature**: The complete dungeon showing:
+- Multiple tiles (start tile + tile-2 + explored tile(s))
 - The original Duergar Guard (who triggered exploration)
-- The newly spawned Kobold Dragonshield (on the explored tile)
-- The expanded dungeon layout
+- The newly spawned monster (on the explored tile to the north)
+- The expanded dungeon layout clearly visible
 
-![Final board state](096-monster-triggered-exploration.spec.ts-snapshots/004-final-board-with-original-and-spawned-monsters-chromium-linux.png)
+![Final board state](096-monster-triggered-exploration.spec.ts-snapshots/005-final-dungeon-with-all-tiles-and-monsters-chromium-linux.png)
 
 ## Implementation Details
 
 ### What the Test Demonstrates
 
-✅ **Monster on Board**: Duergar Guard is visible before exploration  
+✅ **Duergar Guard on Tile with Unexplored Edges**: Guard positioned correctly before exploration  
+✅ **Real Monster AI Exploration**: Uses `activateNextMonster` to trigger actual exploration logic  
 ✅ **Exploration Notification**: Clear UI feedback when monster explores  
-✅ **New Monster Spawned**: Kobold appears after exploration  
-✅ **Multiple Monsters**: Both original and spawned monsters visible  
-✅ **Dungeon Expansion**: Visual representation of the growing dungeon
+✅ **New Tile Placed**: The explored tile is visible to the north  
+✅ **New Monster Spawned**: Monster appears on the newly explored tile's black square  
+✅ **Multiple Tiles Visible**: Dungeon expansion clearly shown  
+✅ **Multiple Monsters Visible**: Both original and spawned monsters present
 
 ### Technical Implementation
 
-The test uses the `setMonsterExplorationEvent` action to trigger the notification, demonstrating the UI component that appears during actual gameplay when a monster explores. The test validates:
+The test uses:
+1. **`addDungeonTiles` test helper action** - Sets up the initial 2-tile scenario
+2. **`activateNextMonster` action** - Triggers the real monster AI which:
+   - Executes `executeMonsterTurn()` from monsterAI.ts
+   - Returns `{ type: 'explore', edge: TileEdge }` when conditions are met
+   - Automatically places new tile and spawns monster
+   - Creates the `monsterExplorationEvent` for UI notification
 
-- Notification visibility and content
-- Monster state management
-- Visual representation of all game elements
+This is **not a simulation** - it's the actual game logic executing the full exploration flow.
 
 ### Core Features Verified
 
 1. **Automatic Exploration**: Monsters with `explore-or-attack` tactic explore when alone on a tile with unexplored edges
 2. **UI Notification**: Players see clear feedback about which monster explored and what tile was placed
-3. **Monster Spawning**: New monsters automatically spawn on explored tiles
-4. **State Management**: Game correctly tracks all monsters and tiles
+3. **Tile Placement**: New tiles are placed at the correct position
+4. **Monster Spawning**: New monsters automatically spawn on explored tiles' black squares
+5. **State Management**: Game correctly tracks all monsters and tiles
 
 ## Manual Verification Checklist
 
@@ -85,20 +99,25 @@ To manually verify this feature in gameplay:
 
 - [ ] Start a game and move hero to explore tiles until you have at least 2 tiles
 - [ ] Wait for a Kobold Dragonshield or Duergar Guard to spawn
-- [ ] Maneuver the game so the monster ends up on a tile without any heroes
+- [ ] Maneuver the game so the monster ends up alone on a tile with unexplored edges
 - [ ] Verify the monster triggers exploration during villain phase
 - [ ] Verify the exploration notification appears with correct monster name
-- [ ] Verify a new tile is placed automatically
-- [ ] Verify a monster spawns on the new tile
+- [ ] Verify a new tile is placed automatically at the explored edge
+- [ ] Verify a monster spawns on the new tile's black square
 - [ ] Test with hero on same tile - monster should move toward hero instead
 
 ## Test Results
 
 ```bash
 Running 1 test using 1 worker
-  1 passed (11.6s)
+  1 passed (11.0s)
 ```
 
 All screenshots captured with programmatic verification ensuring game state matches visual representation.
+
+## Known Behavior
+
+The test may sometimes explore multiple edges in succession depending on tile deck randomization and monster AI decisions. This is expected behavior - the test validates that **at least** one exploration occurs and produces the expected results.
+
 
 

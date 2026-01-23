@@ -3963,6 +3963,16 @@ export const gameSlice = createSlice({
       state.monsterExplorationEvent = action.payload;
     },
     /**
+     * Add tiles to dungeon (for testing purposes)
+     */
+    addDungeonTiles: (state, action: PayloadAction<{
+      tiles: PlacedTile[];
+      unexploredEdges: Array<{ tileId: string; direction: Direction }>;
+    }>) => {
+      state.dungeon.tiles = [...state.dungeon.tiles, ...action.payload.tiles];
+      state.dungeon.unexploredEdges = action.payload.unexploredEdges;
+    },
+    /**
      * Activate all traps and hazards during villain phase
      * This should be called after all monsters have been activated
      */
@@ -4863,6 +4873,7 @@ export const {
   dismissMonsterMoveAction,
   dismissMonsterExplorationEvent,
   setMonsterExplorationEvent,
+  addDungeonTiles,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
   dismissEncounterResult,
