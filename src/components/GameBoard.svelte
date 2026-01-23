@@ -3624,6 +3624,7 @@
       tileType={monsterExplorationEvent.tileType}
       onDismiss={handleDismissMonsterExplorationEvent}
       edge={getActivePlayerEdge()}
+      testDismiss={monsterExplorationEvent.testDismiss ?? false}
     />
   {/if}
 

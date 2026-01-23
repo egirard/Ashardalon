@@ -9,14 +9,20 @@
     tileType: string;
     onDismiss: () => void;
     edge?: EdgePosition;
+    testDismiss?: boolean; // Test-only prop to skip auto-dismiss
   }
 
-  let { monsterName, direction, tileType, onDismiss, edge = 'bottom' }: Props = $props();
+  let { monsterName, direction, tileType, onDismiss, edge = 'bottom', testDismiss = false }: Props = $props();
   
   // Auto-dismiss timing: visible for 2 seconds, then 1-second fade-out (3 seconds total)
   let fadeOut = $state(false);
   
   $effect(() => {
+    // Skip auto-dismiss in test mode
+    if (testDismiss) {
+      return;
+    }
+    
     // Wait 2 seconds, then start fade out
     const fadeTimer = setTimeout(() => {
       fadeOut = true;
@@ -45,6 +51,7 @@
   class="monster-exploration-notification" 
   class:fade-out={fadeOut}
   data-testid="monster-exploration-notification"
+  data-test-dismiss={testDismiss}
   style="transform: translate(-50%, -50%) rotate({getEdgeRotation(edge)}deg);"
 >
   <div class="notification-content">
