@@ -226,6 +226,7 @@ export interface GameState {
     monsterName: string; 
     direction: import('./types').Direction; 
     tileType: string;
+    testDismiss?: boolean;
   } | null;
   /** Hero turn actions tracking for enforcing valid turn structure */
   heroTurnActions: HeroTurnActions;
@@ -3959,6 +3960,7 @@ export const gameSlice = createSlice({
       monsterName: string;
       direction: import('./types').Direction;
       tileType: string;
+      testDismiss?: boolean;
     }>) => {
       state.monsterExplorationEvent = action.payload;
     },

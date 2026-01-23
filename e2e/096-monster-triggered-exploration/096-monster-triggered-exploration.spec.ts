@@ -135,11 +135,28 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
     
     await page.waitForTimeout(500);
     
-    // STEP 5: Check if monster exploration notification appeared
+    // STEP 5: Check if monster exploration notification appeared and capture it with test-dismiss mode
     const notificationVisible = await page.locator('[data-testid="monster-exploration-notification"]')
       .isVisible({ timeout: 1000 }).catch(() => false);
     
     if (notificationVisible) {
+      // Enable test-dismiss mode for the notification
+      await page.evaluate(() => {
+        const store = (window as any).__REDUX_STORE__;
+        const state = store.getState();
+        if (state.game.monsterExplorationEvent) {
+          store.dispatch({
+            type: 'game/setMonsterExplorationEvent',
+            payload: {
+              ...state.game.monsterExplorationEvent,
+              testDismiss: true
+            }
+          });
+        }
+      });
+      
+      await page.waitForTimeout(200);
+      
       await screenshots.capture(page, 'monster-exploration-notification', {
         programmaticCheck: async () => {
           const notification = page.locator('[data-testid="monster-exploration-notification"]');
@@ -151,23 +168,31 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
         }
       });
       
-      // Wait for notification to auto-dismiss (3 seconds) and a bit more for complete cleanup
-      await page.waitForTimeout(3800);
+      // Programmatically dismiss the notification
+      await page.evaluate(() => {
+        const store = (window as any).__REDUX_STORE__;
+        store.dispatch({ type: 'game/dismissMonsterExplorationEvent' });
+      });
       
-      // STEP 6: Verify new tile was placed and capture it (notification should be dismissed or auto-dismissed)
-      await screenshots.capture(page, 'new-tile-placed-after-notification-dismissed', {
+      await page.waitForTimeout(200);
+      
+      // STEP 6: Verify new tile was placed and capture it (notification is now dismissed)
+      await screenshots.capture(page, 'new-tile-placed-notification-dismissed', {
         programmaticCheck: async () => {
           const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+          
+          // Notification should be dismissed
+          expect(state.game.monsterExplorationEvent).toBeNull();
           
           // Should have more tiles now (start + tile-2 + explored tile(s))
           expect(state.game.dungeon.tiles.length).toBeGreaterThan(beforeExploration.tileCount);
         }
       });
       
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(200);
       
       // STEP 7: Verify new monster spawned on the new tile
-      await screenshots.capture(page, 'new-monster-visible-on-explored-tile', {
+      await screenshots.capture(page, 'new-monster-on-explored-tile', {
         programmaticCheck: async () => {
           const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
           
@@ -193,10 +218,10 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
         }
       });
       
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(200);
       
       // STEP 8: Final board showing complete dungeon with all tiles and monsters
-      await screenshots.capture(page, 'final-complete-dungeon-layout', {
+      await screenshots.capture(page, 'final-dungeon-all-tiles-and-monsters', {
         programmaticCheck: async () => {
           const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
           
