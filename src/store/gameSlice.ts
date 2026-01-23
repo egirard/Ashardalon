@@ -334,6 +334,8 @@ export interface GameState {
   logEntries: import('./types').LogEntry[];
   /** Counter for generating unique log entry IDs */
   logEntryCounter: number;
+  /** Test mode flag: when true, disables auto-dismiss on notifications for E2E testing */
+  testMode?: boolean;
 }
 
 /**
@@ -667,6 +669,7 @@ const initialState: GameState = {
   trapDisableResult: null,
   logEntries: [],
   logEntryCounter: 0,
+  testMode: false,
 };
 
 /**
@@ -3923,6 +3926,7 @@ export const gameSlice = createSlice({
               monsterName: monsterName,
               direction: result.edge.direction,
               tileType: drawnTile,
+              testDismiss: state.testMode, // Use testMode to control auto-dismiss in E2E tests
             };
           }
         }
@@ -3973,6 +3977,13 @@ export const gameSlice = createSlice({
     }>) => {
       state.dungeon.tiles = [...state.dungeon.tiles, ...action.payload.tiles];
       state.dungeon.unexploredEdges = action.payload.unexploredEdges;
+    },
+    /**
+     * Set test mode (for E2E testing purposes)
+     * When testMode is true, notifications will not auto-dismiss
+     */
+    setTestMode: (state, action: PayloadAction<boolean>) => {
+      state.testMode = action.payload;
     },
     /**
      * Activate all traps and hazards during villain phase
@@ -4876,6 +4887,7 @@ export const {
   dismissMonsterExplorationEvent,
   setMonsterExplorationEvent,
   addDungeonTiles,
+  setTestMode,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
   dismissEncounterResult,
