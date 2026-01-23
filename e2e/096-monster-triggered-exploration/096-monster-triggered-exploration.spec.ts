@@ -151,21 +151,23 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
         }
       });
       
-      // Wait for notification to dismiss
-      await page.waitForTimeout(3500);
+      // Wait for notification to auto-dismiss (3 seconds) and a bit more for complete cleanup
+      await page.waitForTimeout(3800);
       
-      // STEP 6: Verify new tile was placed and capture it
-      await screenshots.capture(page, 'new-tile-placed-to-north', {
+      // STEP 6: Verify new tile was placed and capture it (notification should be dismissed or auto-dismissed)
+      await screenshots.capture(page, 'new-tile-placed-after-notification-dismissed', {
         programmaticCheck: async () => {
           const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
           
-          // Should have 3 tiles now (start + tile-2 + explored tile)
+          // Should have more tiles now (start + tile-2 + explored tile(s))
           expect(state.game.dungeon.tiles.length).toBeGreaterThan(beforeExploration.tileCount);
         }
       });
       
+      await page.waitForTimeout(300);
+      
       // STEP 7: Verify new monster spawned on the new tile
-      await screenshots.capture(page, 'new-monster-spawned-on-explored-tile', {
+      await screenshots.capture(page, 'new-monster-visible-on-explored-tile', {
         programmaticCheck: async () => {
           const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
           
@@ -191,8 +193,10 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
         }
       });
       
-      // STEP 8: Final board showing all tiles and monsters
-      await screenshots.capture(page, 'final-dungeon-with-all-tiles-and-monsters', {
+      await page.waitForTimeout(300);
+      
+      // STEP 8: Final board showing complete dungeon with all tiles and monsters
+      await screenshots.capture(page, 'final-complete-dungeon-layout', {
         programmaticCheck: async () => {
           const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
           
