@@ -318,6 +318,9 @@ ${screenshotSection}
   .corner-nw {
     top: 0.5rem;
     left: 0.5rem;
+    /* Rotated 180deg to keep controls upright for players sitting at the top of the screen.
+       This is intentional for a 4-player tabletop game where players sit around the screen.
+       Players at the top edge see the NW controls as "their" SE controls (upright). */
     transform: rotate(180deg);
   }
   
