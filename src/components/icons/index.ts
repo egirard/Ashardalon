@@ -32,3 +32,4 @@ export { default as BugIcon } from './BugIcon.svelte';
 export { default as RotateArrowIcon } from './RotateArrowIcon.svelte';
 export { default as TileIcon } from './TileIcon.svelte';
 export { default as UndoIcon } from './UndoIcon.svelte';
+export { default as FontSizeIcon } from './FontSizeIcon.svelte';
