@@ -16,12 +16,18 @@
   
   let { position, onScaleChange }: Props = $props();
   
-  // Subscribe to font scale from Redux store
-  let fontScale = $derived(store.getState().ui.fontScale);
+  // Get current font scale from Redux store using $state rune
+  // This creates a reactive variable that updates when store changes
+  let fontScale = $state(store.getState().ui.fontScale);
   
-  // Update whenever store changes
-  store.subscribe(() => {
-    fontScale = store.getState().ui.fontScale;
+  // Subscribe to store changes using $effect
+  $effect(() => {
+    const unsubscribe = store.subscribe(() => {
+      fontScale = store.getState().ui.fontScale;
+    });
+    
+    // Cleanup subscription when component is destroyed
+    return () => unsubscribe();
   });
   
   function handleIncrease() {
