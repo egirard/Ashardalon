@@ -20,7 +20,7 @@ This test demonstrates the font scaling feature for player panels:
 ## Screenshots
 
 ### 000 - Default Scale (100%)
-![Screenshot 000](screenshots/000-default-scale-100-chromium-linux.png)
+![Screenshot 000](097-player-panel-font-scaling.spec.ts-snapshots/000-default-scale-100-chromium-linux.png)
 
 Initial game state with player panel at default 100% scale. The player card shows:
 - Hero name and portrait
@@ -29,7 +29,7 @@ Initial game state with player panel at default 100% scale. The player card show
 - Turn indicator showing it's Quinn's turn
 
 ### 001 - Font Scale Controls Visible
-![Screenshot 001](screenshots/001-font-scale-controls-visible-chromium-linux.png)
+![Screenshot 001](097-player-panel-font-scaling.spec.ts-snapshots/001-font-scale-controls-visible-chromium-linux.png)
 
 Font scale controls panel is opened after clicking the font scale button in the corner. The panel displays:
 - Current scale percentage (100%)
@@ -38,32 +38,32 @@ Font scale controls panel is opened after clicking the font scale button in the 
 - Clear visual indicators
 
 ### 002 - Increased Scale (130%)
-![Screenshot 002](screenshots/002-increased-scale-130-chromium-linux.png)
+![Screenshot 002](097-player-panel-font-scaling.spec.ts-snapshots/002-increased-scale-130-chromium-linux.png)
 
 UI scale increased to 130%, making the player panel noticeably larger. All text and UI elements scale proportionally while maintaining layout integrity.
 
 ### 003 - Decreased Scale (90%)
-![Screenshot 003](screenshots/003-decreased-scale-90-chromium-linux.png)
+![Screenshot 003](097-player-panel-font-scaling.spec.ts-snapshots/003-decreased-scale-90-chromium-linux.png)
 
 UI scale decreased to 90%, making the player panel smaller and more compact. Useful for players with large displays who want more screen space for the game board.
 
 ### 004 - Maximum Scale (150%)
-![Screenshot 004](screenshots/004-maximum-scale-150-chromium-linux.png)
+![Screenshot 004](097-player-panel-font-scaling.spec.ts-snapshots/004-maximum-scale-150-chromium-linux.png)
 
 Maximum UI scale at 150%, providing excellent readability for accessibility needs. The increase button becomes disabled at this limit.
 
 ### 005 - Minimum Scale (80%)
-![Screenshot 005](screenshots/005-minimum-scale-80-chromium-linux.png)
+![Screenshot 005](097-player-panel-font-scaling.spec.ts-snapshots/005-minimum-scale-80-chromium-linux.png)
 
 Minimum UI scale at 80%, offering maximum screen space while maintaining legibility. The decrease button becomes disabled at this limit.
 
 ### 006 - Reset to Default
-![Screenshot 006](screenshots/006-reset-to-default-chromium-linux.png)
+![Screenshot 006](097-player-panel-font-scaling.spec.ts-snapshots/006-reset-to-default-chromium-linux.png)
 
 Scale reset to 100% using the reset button. The reset button becomes disabled when at default scale.
 
 ### 007 - Controls Closed
-![Screenshot 007](screenshots/007-controls-closed-chromium-linux.png)
+![Screenshot 007](097-player-panel-font-scaling.spec.ts-snapshots/007-controls-closed-chromium-linux.png)
 
 Font scale controls panel closed, returning to the normal game view. The scale setting persists even after closing the controls.
 

@@ -68,8 +68,8 @@ test.describe('097 - Player Panel Font Scaling', () => {
     await page.locator('[data-testid="font-scale-increase"]').click();
     await page.locator('[data-testid="font-scale-increase"]').click();
 
-    // Wait a moment for CSS to apply
-    await page.waitForTimeout(300);
+    // Wait for CSS to apply and transitions to complete
+    await page.waitForTimeout(800);
 
     await screenshots.capture(page, 'increased-scale-130', {
       programmaticCheck: async () => {
@@ -90,8 +90,8 @@ test.describe('097 - Player Panel Font Scaling', () => {
     await page.locator('[data-testid="font-scale-decrease"]').click();
     await page.locator('[data-testid="font-scale-decrease"]').click();
 
-    // Wait a moment for CSS to apply
-    await page.waitForTimeout(300);
+    // Wait for CSS to apply and transitions to complete
+    await page.waitForTimeout(800);
 
     await screenshots.capture(page, 'decreased-scale-90', {
       programmaticCheck: async () => {
@@ -115,8 +115,8 @@ test.describe('097 - Player Panel Font Scaling', () => {
       await page.locator('[data-testid="font-scale-increase"]').click();
     }
 
-    // Wait a moment for CSS to apply
-    await page.waitForTimeout(300);
+    // Wait for CSS to apply and transitions to complete
+    await page.waitForTimeout(800);
 
     await screenshots.capture(page, 'maximum-scale-150', {
       programmaticCheck: async () => {
@@ -140,8 +140,8 @@ test.describe('097 - Player Panel Font Scaling', () => {
       await page.locator('[data-testid="font-scale-decrease"]').click();
     }
 
-    // Wait a moment for CSS to apply
-    await page.waitForTimeout(300);
+    // Wait for CSS to apply and transitions to complete
+    await page.waitForTimeout(800);
 
     await screenshots.capture(page, 'minimum-scale-80', {
       programmaticCheck: async () => {
@@ -162,8 +162,8 @@ test.describe('097 - Player Panel Font Scaling', () => {
     // STEP 8: Reset to default
     await page.locator('[data-testid="font-scale-reset"]').click();
 
-    // Wait a moment for CSS to apply
-    await page.waitForTimeout(300);
+    // Wait for CSS to apply and transitions to complete
+    await page.waitForTimeout(800);
 
     await screenshots.capture(page, 'reset-to-default', {
       programmaticCheck: async () => {
