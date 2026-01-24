@@ -10,6 +10,7 @@ import {
   INITIAL_TILE_DECK,
   MonsterDeck,
   MonsterState,
+  MonsterGroup,
   AttackResult,
   TrapDisableResult,
   HeroHpState,
@@ -55,6 +56,10 @@ import {
   healMonster,
   drawMonsterFromBottom,
   getBlackSquarePosition,
+  spawnMonstersWithBehavior,
+  createMonsterGroup,
+  isGroupDefeated,
+  removeMonsterFromGroup,
 } from "./monsters";
 import {
   executeMonsterTurn,
@@ -199,8 +204,12 @@ export interface GameState {
   monsterDeck: MonsterDeck;
   /** Active monsters on the board */
   monsters: MonsterState[];
+  /** Monster groups for tracking multi-monster spawns with collective XP */
+  monsterGroups: MonsterGroup[];
   /** Counter for generating unique monster instance IDs */
   monsterInstanceCounter: number;
+  /** Counter for generating unique monster group IDs */
+  monsterGroupCounter: number;
   /** ID of recently spawned monster (for displaying monster card) */
   recentlySpawnedMonsterId: string | null;
   /** Result of the most recent attack (for displaying combat result) */
@@ -613,7 +622,9 @@ const initialState: GameState = {
   dungeon: initializeDungeon(),
   monsterDeck: { drawPile: [], discardPile: [] },
   monsters: [],
+  monsterGroups: [],
   monsterInstanceCounter: 0,
+  monsterGroupCounter: 0,
   recentlySpawnedMonsterId: null,
   attackResult: null,
   attackTargetId: null,
@@ -1732,27 +1743,30 @@ export const gameSlice = createSlice({
                   const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
                   
                   if (drawnMonsterId) {
-                    // Get proper spawn position on the tile (black square or adjacent)
-                    const spawnPosition = getMonsterSpawnPosition(edgeTile, state.monsters);
+                    // Use spawn function to handle multi-monster spawns
+                    const spawnResult = spawnMonstersWithBehavior(
+                      drawnMonsterId,
+                      edgeTile,
+                      activeHeroId, // Monster is controlled by the active hero
+                      state.monsters,
+                      state.monsterInstanceCounter,
+                      state.monsterGroupCounter
+                    );
                     
-                    if (spawnPosition) {
-                      // Create monster instance at the spawn position
-                      const monsterInstance = createMonsterInstance(
-                        drawnMonsterId,
-                        spawnPosition,
-                        activeHeroId, // Monster is controlled by the active hero
-                        closestEdge.tileId,
-                        state.monsterInstanceCounter
-                      );
+                    if (spawnResult.monsters.length > 0) {
+                      // Add all spawned monsters to the board
+                      state.monsters.push(...spawnResult.monsters);
+                      state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+                      state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+                      state.monsterDeck = updatedMonsterDeck;
                       
-                      if (monsterInstance) {
-                        state.monsters.push(monsterInstance);
-                        state.monsterInstanceCounter += 1;
-                        state.monsterDeck = updatedMonsterDeck;
-                        
-                        // Set pending monster display to show the monster card popup
-                        state.pendingMonsterDisplayId = monsterInstance.instanceId;
+                      // Add group if multiple monsters spawned
+                      if (spawnResult.group) {
+                        state.monsterGroups.push(spawnResult.group);
                       }
+                      
+                      // Set pending monster display to show the first monster card popup
+                      state.pendingMonsterDisplayId = spawnResult.monsters[0].instanceId;
                     }
                   }
                 }
@@ -3011,17 +3025,61 @@ export const gameSlice = createSlice({
               // Log warning for debugging - monster ID should always exist in definitions
               console.warn(`Monster definition not found for ID: ${monster.monsterId}`);
             }
-            const xpGained = monsterDef?.xp ?? 0;
             
-            // Award XP to party
-            state.partyResources.xp += xpGained;
+            // Check if this monster is part of a group
+            const groupId = monster.groupId;
+            let xpGained = 0;
+            let monsterName = monsterDef?.name ?? monster.monsterId;
             
-            // Set notification data for UI
-            state.defeatedMonsterXp = xpGained;
-            state.defeatedMonsterName = monsterDef?.name ?? monster.monsterId;
+            if (groupId) {
+              // Monster is part of a group - check if all group members are defeated
+              const group = state.monsterGroups.find(g => g.groupId === groupId);
+              if (group) {
+                // Remove this monster from the group
+                const groupIndex = state.monsterGroups.findIndex(g => g.groupId === groupId);
+                if (groupIndex !== -1) {
+                  state.monsterGroups[groupIndex] = removeMonsterFromGroup(group, monster.instanceId);
+                }
+                
+                // Remove defeated monster from board first
+                state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
+                
+                // Check if all group members are now defeated
+                if (isGroupDefeated(group, state.monsters)) {
+                  // Award group XP
+                  xpGained = group.xp;
+                  monsterName = group.monsterName;
+                  
+                  // Remove the completed group
+                  state.monsterGroups = state.monsterGroups.filter(g => g.groupId !== groupId);
+                } else {
+                  // Group not fully defeated yet, no XP awarded
+                  xpGained = 0;
+                  monsterName = '';
+                }
+              } else {
+                // Group not found (should not happen), award individual XP as fallback
+                xpGained = monsterDef?.xp ?? 0;
+                state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
+              }
+            } else {
+              // Not part of a group, award XP immediately
+              xpGained = monsterDef?.xp ?? 0;
+              state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
+            }
             
-            // Remove defeated monster from board
-            state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
+            // Award XP to party (may be 0 if group not fully defeated)
+            if (xpGained > 0) {
+              state.partyResources.xp += xpGained;
+              
+              // Set notification data for UI
+              state.defeatedMonsterXp = xpGained;
+              state.defeatedMonsterName = monsterName;
+            } else if (groupId) {
+              // Group member defeated but not all members - show notification
+              state.defeatedMonsterXp = 0;
+              state.defeatedMonsterName = monsterDef?.name ?? monster.monsterId;
+            }
             
             // Discard the monster card
             state.monsterDeck = discardMonster(state.monsterDeck, monster.monsterId);

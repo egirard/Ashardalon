@@ -197,6 +197,12 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     adjacentAttack: { name: 'Warhammer', attackBonus: 8, damage: 2 },
     implementationNotes: 'If adjacent to hero, attack. If on tile with unexplored edge and no heroes, explore. Otherwise, move toward hero.',
   },
+  'legion-devil': {
+    type: 'move-and-attack',
+    adjacentAttack: { name: 'Claw', attackBonus: 6, damage: 1 },
+    moveAttackRange: 1,
+    implementationNotes: 'Move-and-attack within 1 tile. Spawns 2 additional Legion Devils when placed (3 total). XP awarded only when all 3 are defeated.',
+  },
 };
 
 /**
@@ -254,6 +260,16 @@ export interface HeroToken {
 export type MonsterCategory = 'devil' | 'orc' | 'reptile' | 'aberrant' | 'sentry' | 'beast' | 'humanoid';
 
 /**
+ * Configuration for spawning additional monsters when this monster is placed
+ */
+export interface SpawnBehavior {
+  /** Number of additional monsters to spawn (not including the original) */
+  count: number;
+  /** Monster ID to spawn (defaults to same monster type if not specified) */
+  monsterId?: string;
+}
+
+/**
  * Monster definition representing a monster type
  */
 export interface Monster {
@@ -270,6 +286,12 @@ export interface Monster {
    * Example: "reptile sentry" means the monster is both a reptile AND a sentry.
    */
   category: string;
+  /** 
+   * Optional spawn behavior for multi-monster spawns.
+   * If defined, additional monsters will spawn when this monster is placed.
+   * Example: Legion Devil spawns 2 additional Legion Devils (total of 3)
+   */
+  spawnBehavior?: SpawnBehavior;
 }
 
 /**
@@ -284,6 +306,25 @@ export interface MonsterState {
   tileId: string;        // Tile where the monster was spawned
   /** Active status effects on this monster */
   statuses?: import('./statusEffects').StatusEffect[];
+  /** 
+   * Group ID for monsters that spawn together.
+   * Monsters with the same groupId have collective XP tracking.
+   * XP is only awarded when ALL monsters in the group are defeated.
+   */
+  groupId?: string;
+}
+
+/**
+ * Monster group metadata for tracking multi-monster spawns
+ */
+export interface MonsterGroup {
+  groupId: string;
+  /** Monster IDs that are part of this group */
+  memberIds: string[];
+  /** XP to award when all members are defeated */
+  xp: number;
+  /** Monster type name for UI notifications */
+  monsterName: string;
 }
 
 /**
@@ -329,6 +370,17 @@ export const MONSTERS: Monster[] = [
   { id: 'orc-archer', name: 'Orc Archer', ac: 13, hp: 1, maxHp: 1, xp: 1, imagePath: 'assets/Monster_OrcArcher.png', category: 'orc' },
   { id: 'orc-smasher', name: 'Orc Smasher', ac: 15, hp: 2, maxHp: 2, xp: 2, imagePath: 'assets/Monster_OrcSmasher.png', category: 'orc' },
   { id: 'duergar-guard', name: 'Duergar Guard', ac: 15, hp: 2, maxHp: 2, xp: 1, imagePath: 'assets/Monster_DuergarGuard.png', category: 'humanoid sentry' },
+  { 
+    id: 'legion-devil', 
+    name: 'Legion Devil', 
+    ac: 12, 
+    hp: 1, 
+    maxHp: 1, 
+    xp: 2, 
+    imagePath: 'assets/Monster_LegionDevil.png', 
+    category: 'devil',
+    spawnBehavior: { count: 2 } // Spawns 2 additional Legion Devils (3 total)
+  },
 ];
 
 /**
@@ -341,6 +393,7 @@ export const INITIAL_MONSTER_DECK: string[] = [
   'orc-archer', 'orc-archer', 'orc-archer',
   'orc-smasher', 'orc-smasher', 'orc-smasher',
   'duergar-guard', 'duergar-guard', 'duergar-guard',
+  'legion-devil', 'legion-devil',
 ];
 
 /**
