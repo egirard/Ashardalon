@@ -1,4 +1,4 @@
-import type { MonsterDeck, Monster, MonsterState, Position, PlacedTile, DungeonState, MonsterCategory } from './types';
+import type { MonsterDeck, Monster, MonsterState, MonsterGroup, Position, PlacedTile, DungeonState, MonsterCategory } from './types';
 import { MONSTERS, INITIAL_MONSTER_DECK } from './types';
 
 /**
@@ -268,6 +268,111 @@ export function getMonsterSpawnPosition(
 }
 
 /**
+ * Result of spawning monsters with potential multi-spawn behavior
+ */
+export interface SpawnMonstersResult {
+  /** Newly created monster instances */
+  monsters: MonsterState[];
+  /** Monster group if multiple monsters were spawned together, null for single spawns */
+  group: MonsterGroup | null;
+  /** Updated monster instance counter */
+  monsterInstanceCounter: number;
+  /** Updated monster group counter (only incremented if group was created) */
+  monsterGroupCounter: number;
+}
+
+/**
+ * Spawn a monster and any additional monsters from spawn behavior.
+ * If the monster has spawn behavior, creates a monster group for collective XP tracking.
+ * 
+ * @param monsterId The monster type to spawn
+ * @param tile The tile where monsters will spawn
+ * @param controllerId The hero ID controlling these monsters
+ * @param existingMonsters Currently active monsters (to check for occupied positions)
+ * @param monsterInstanceCounter Current instance counter
+ * @param monsterGroupCounter Current group counter
+ * @returns Result containing spawned monsters, optional group, and updated counters
+ */
+export function spawnMonstersWithBehavior(
+  monsterId: string,
+  tile: PlacedTile,
+  controllerId: string,
+  existingMonsters: MonsterState[],
+  monsterInstanceCounter: number,
+  monsterGroupCounter: number
+): SpawnMonstersResult {
+  const monsterDef = getMonsterById(monsterId);
+  if (!monsterDef) {
+    return {
+      monsters: [],
+      group: null,
+      monsterInstanceCounter,
+      monsterGroupCounter,
+    };
+  }
+
+  const spawnedMonsters: MonsterState[] = [];
+  let currentCounter = monsterInstanceCounter;
+  
+  // Determine how many monsters to spawn total (1 + spawn behavior count)
+  const totalCount = 1 + (monsterDef.spawnBehavior?.count ?? 0);
+  const spawnMonsterType = monsterDef.spawnBehavior?.monsterId ?? monsterId;
+  
+  // Spawn all monsters
+  for (let i = 0; i < totalCount; i++) {
+    // Find spawn position (considering already spawned monsters in this batch)
+    const allMonsters = [...existingMonsters, ...spawnedMonsters];
+    const spawnPosition = getMonsterSpawnPosition(tile, allMonsters);
+    
+    if (!spawnPosition) {
+      // No valid spawn position for this monster - stop spawning
+      console.warn(`Could not find spawn position for monster ${i + 1}/${totalCount} on tile ${tile.id}`);
+      break;
+    }
+    
+    const newMonster = createMonsterInstance(
+      spawnMonsterType,
+      spawnPosition,
+      controllerId,
+      tile.id,
+      currentCounter
+    );
+    
+    if (newMonster) {
+      spawnedMonsters.push(newMonster);
+      currentCounter++;
+    }
+  }
+  
+  // Create group if multiple monsters were spawned
+  let group: MonsterGroup | null = null;
+  let newGroupCounter = monsterGroupCounter;
+  
+  if (spawnedMonsters.length > 1) {
+    const groupId = `group-${monsterGroupCounter}`;
+    group = createMonsterGroup(
+      groupId,
+      spawnedMonsters.map(m => m.instanceId),
+      monsterDef.xp,
+      monsterDef.name
+    );
+    newGroupCounter++;
+    
+    // Assign group ID to all spawned monsters
+    spawnedMonsters.forEach(monster => {
+      monster.groupId = groupId;
+    });
+  }
+  
+  return {
+    monsters: spawnedMonsters,
+    group,
+    monsterInstanceCounter: currentCounter,
+    monsterGroupCounter: newGroupCounter,
+  };
+}
+
+/**
  * Draw a monster from the bottom of the deck
  * Used by special encounter cards like Occupied Lair
  */
@@ -391,4 +496,55 @@ export function healMonster(
   }
   
   return Math.min(monster.currentHp + amount, monsterDef.maxHp);
+}
+
+/**
+ * Create a new monster group for tracking multi-monster spawns
+ * @param groupId Unique group identifier
+ * @param memberIds Array of monster instance IDs in this group
+ * @param xp Total XP to award when all members are defeated
+ * @param monsterName Monster type name for UI notifications
+ */
+export function createMonsterGroup(
+  groupId: string,
+  memberIds: string[],
+  xp: number,
+  monsterName: string
+): MonsterGroup {
+  return {
+    groupId,
+    memberIds,
+    xp,
+    monsterName,
+  };
+}
+
+/**
+ * Check if all monsters in a group have been defeated
+ * @param group The monster group to check
+ * @param monsters Current active monsters on the board
+ * @returns true if all group members have been defeated
+ */
+export function isGroupDefeated(
+  group: MonsterGroup,
+  monsters: MonsterState[]
+): boolean {
+  const activeMonsterIds = new Set(monsters.map(m => m.instanceId));
+  return group.memberIds.every(id => !activeMonsterIds.has(id));
+}
+
+/**
+ * Remove a monster from a group's member list
+ * @param group The monster group
+ * @param monsterId Instance ID of the monster to remove
+ * @returns Updated monster group
+ */
+export function removeMonsterFromGroup(
+  group: MonsterGroup,
+  monsterId: string
+): MonsterGroup {
+  return {
+    ...group,
+    memberIds: group.memberIds.filter(id => id !== monsterId),
+  };
 }
