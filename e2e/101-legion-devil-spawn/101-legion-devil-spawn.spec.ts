@@ -175,14 +175,45 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
           attackName: 'Longsword'
         }
       });
-      
-      // Clear the attack result
-      store.dispatch({
-        type: 'game/clearAttackResult'
-      });
     });
     
+    // Wait for attack result to appear and dismiss it
+    await page.waitForTimeout(500);
+    const attackResultOverlay = page.locator('[data-testid="combat-result-overlay"]');
+    if (await attackResultOverlay.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await attackResultOverlay.click();
+      await page.waitForTimeout(300);
+    }
+    
+    // Now wait for defeat notification to appear
     await page.waitForTimeout(300);
+    
+    // Capture screenshot WITH the defeat notification showing "+0 XP"
+    await screenshots.capture(page, 'one-devil-defeated-notification', {
+      programmaticCheck: async () => {
+        // Verify defeat notification is visible
+        await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible();
+        await expect(page.locator('[data-testid="xp-amount"]')).toHaveText('+0 XP');
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState().game;
+        });
+        
+        // Should have 2 Legion Devils remaining
+        const legionDevils = storeState.monsters.filter((m: any) => m.monsterId === 'legion-devil');
+        expect(legionDevils.length).toBe(2);
+        
+        // XP should still be 0 (group not fully defeated)
+        expect(storeState.partyResources.xp).toBe(0);
+      }
+    });
+    
+    // Dismiss the defeat notification
+    const defeatNotification = page.locator('[data-testid="dismiss-defeat-notification"]');
+    if (await defeatNotification.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await defeatNotification.click({ force: true });
+      await page.waitForTimeout(300);
+    }
 
     await screenshots.capture(page, 'one-devil-defeated-no-xp', {
       programmaticCheck: async () => {
@@ -244,13 +275,25 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
           attackName: 'Longsword'
         }
       });
-      
-      store.dispatch({
-        type: 'game/clearAttackResult'
-      });
     });
     
+    // Wait for attack result to appear and dismiss it
+    await page.waitForTimeout(500);
+    const attackResultOverlay2 = page.locator('[data-testid="combat-result-overlay"]');
+    if (await attackResultOverlay2.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await attackResultOverlay2.click();
+      await page.waitForTimeout(300);
+    }
+    
+    // Now wait for defeat notification to appear
     await page.waitForTimeout(300);
+    
+    // Dismiss the defeat notification
+    const defeatNotification2 = page.locator('[data-testid="dismiss-defeat-notification"]');
+    if (await defeatNotification2.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await defeatNotification2.click({ force: true });
+      await page.waitForTimeout(300);
+    }
 
     await screenshots.capture(page, 'two-devils-defeated-no-xp', {
       programmaticCheck: async () => {
@@ -312,13 +355,48 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
           attackName: 'Longsword'
         }
       });
-      
-      store.dispatch({
-        type: 'game/clearAttackResult'
-      });
     });
     
+    // Wait for attack result to appear and dismiss it
+    await page.waitForTimeout(500);
+    const attackResultOverlay3 = page.locator('[data-testid="combat-result-overlay"]');
+    if (await attackResultOverlay3.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await attackResultOverlay3.click();
+      await page.waitForTimeout(300);
+    }
+    
+    // Now wait for defeat notification to appear
     await page.waitForTimeout(300);
+    
+    // Capture screenshot WITH the defeat notification showing "+2 XP"
+    await screenshots.capture(page, 'all-devils-defeated-xp-notification', {
+      programmaticCheck: async () => {
+        // Verify defeat notification is visible showing XP awarded
+        await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible();
+        await expect(page.locator('[data-testid="xp-amount"]')).toHaveText('+2 XP');
+        
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState().game;
+        });
+        
+        // Should have NO Legion Devils remaining
+        const legionDevils = storeState.monsters.filter((m: any) => m.monsterId === 'legion-devil');
+        expect(legionDevils.length).toBe(0);
+        
+        // XP should NOW be awarded (2 points for the group)
+        expect(storeState.partyResources.xp).toBe(2);
+        
+        // Monster group should be removed
+        expect(storeState.monsterGroups.length).toBe(0);
+      }
+    });
+    
+    // Dismiss the defeat notification
+    const defeatNotification3 = page.locator('[data-testid="dismiss-defeat-notification"]');
+    if (await defeatNotification3.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await defeatNotification3.click({ force: true });
+      await page.waitForTimeout(300);
+    }
 
     await screenshots.capture(page, 'all-devils-defeated-xp-awarded', {
       programmaticCheck: async () => {
