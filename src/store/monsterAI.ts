@@ -18,12 +18,13 @@ const DEFAULT_MONSTER_ATTACK: MonsterAttackOption = {
 };
 
 /**
- * Result of a monster's turn - either move, attack, move-and-attack, explore, or no action
+ * Result of a monster's turn - either move, attack, move-and-attack, area-attack, explore, or no action
  */
 export type MonsterAction =
   | { type: 'move'; destination: Position }
   | { type: 'attack'; targetId: string; result: AttackResult }
   | { type: 'move-and-attack'; destination: Position; targetId: string; result: AttackResult }
+  | { type: 'area-attack'; targetIds: string[]; results: AttackResult[] }
   | { type: 'explore'; edge: TileEdge }
   | { type: 'none' };
 
@@ -364,6 +365,79 @@ export function resolveMonsterAttack(
 }
 
 /**
+ * Find all heroes on the same tile as the monster.
+ * Used for area attacks that target all heroes on the monster's tile.
+ * 
+ * @param monster The monster to check from
+ * @param heroTokens All hero tokens
+ * @param heroHpMap Map of hero IDs to HP (to filter out downed heroes)
+ * @param dungeon Dungeon state
+ * @returns Array of hero tokens on the same tile with HP > 0
+ */
+export function findAllHeroesOnSameTile(
+  monster: MonsterState,
+  heroTokens: HeroToken[],
+  heroHpMap: Record<string, number>,
+  dungeon: DungeonState
+): HeroToken[] {
+  // Get monster's global position
+  const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
+  if (!monsterGlobal) return [];
+  
+  // Find the tile the monster is on
+  const monsterTile = findTileAtPosition(monsterGlobal, dungeon);
+  if (!monsterTile) return [];
+  
+  // Filter heroes that are on the same tile and alive
+  return heroTokens.filter(hero => {
+    // Check if hero is alive
+    const hp = heroHpMap[hero.heroId];
+    if (hp === undefined || hp <= 0) return false;
+    
+    // Check if hero is on the same tile
+    const heroTile = findTileAtPosition(hero.position, dungeon);
+    if (!heroTile) return false;
+    
+    // Compare tile IDs (handles both regular tiles and start tile sub-tiles)
+    return monsterTile.id === heroTile.id;
+  });
+}
+
+/**
+ * Find all heroes within a certain tile distance of the monster.
+ * Used for area attacks that target all heroes within range.
+ * 
+ * @param monster The monster to check from
+ * @param heroTokens All hero tokens
+ * @param heroHpMap Map of hero IDs to HP (to filter out downed heroes)
+ * @param dungeon Dungeon state
+ * @param tileRange Number of tiles (0 = same tile, 1 = within 1 tile, etc.)
+ * @returns Array of hero tokens within range with HP > 0
+ */
+export function findAllHeroesWithinRange(
+  monster: MonsterState,
+  heroTokens: HeroToken[],
+  heroHpMap: Record<string, number>,
+  dungeon: DungeonState,
+  tileRange: number
+): HeroToken[] {
+  const maxSquareDistance = tileRange * SQUARES_PER_TILE;
+  const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
+  if (!monsterGlobal) return [];
+  
+  // Filter heroes that are within range and alive
+  return heroTokens.filter(hero => {
+    // Check if hero is alive
+    const hp = heroHpMap[hero.heroId];
+    if (hp === undefined || hp <= 0) return false;
+    
+    // Check if hero is within range using Manhattan distance
+    const distance = getManhattanDistance(monsterGlobal, hero.position);
+    return distance <= maxSquareDistance;
+  });
+}
+
+/**
  * Execute a monster's turn based on its card tactics.
  * 
  * Monster behavior types:
@@ -372,6 +446,7 @@ export function resolveMonsterAttack(
  *                    Otherwise, move toward closest hero.
  * - explore-or-attack: If adjacent to hero, attack. If on tile with unexplored edge and no heroes, explore.
  *                      Otherwise, move toward closest hero.
+ * - area-attack: Attacks all valid targets (heroes on tile or within range) simultaneously.
  * 
  * @param monster The monster taking the turn
  * @param heroTokens All hero tokens on the board
@@ -393,6 +468,49 @@ export function executeMonsterTurn(
   // Get monster tactics (default to attack-only behavior)
   const tactics = MONSTER_TACTICS[monster.monsterId];
   const tacticType = tactics?.type ?? 'attack-only';
+  
+  // Handle area-attack behavior first (Cave Bear, Gibbering Mouther)
+  if (tacticType === 'area-attack') {
+    const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
+    let targetHeroes: HeroToken[] = [];
+    
+    // Determine which heroes to target based on attack properties
+    if (attackOption.targetsAllOnTile) {
+      // Attack all heroes on the same tile (Cave Bear)
+      targetHeroes = findAllHeroesOnSameTile(monster, heroTokens, heroHpMap, dungeon);
+    } else if (attackOption.targetsAllInRange) {
+      // Attack all heroes within range (Gibbering Mouther)
+      const range = attackOption.range ?? 1;
+      targetHeroes = findAllHeroesWithinRange(monster, heroTokens, heroHpMap, dungeon, range);
+    }
+    
+    // If we have targets, execute area attack
+    if (targetHeroes.length > 0) {
+      const targetIds: string[] = [];
+      const results: AttackResult[] = [];
+      
+      // Roll attack for each hero
+      for (const hero of targetHeroes) {
+        const targetAC = heroAcMap[hero.heroId] ?? 10;
+        const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
+        targetIds.push(hero.heroId);
+        results.push(result);
+      }
+      
+      return { type: 'area-attack', targetIds, results };
+    }
+    
+    // No valid targets, move toward closest hero
+    const closest = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
+    if (closest) {
+      const moveTarget = findMoveTowardHero(monster, closest.hero.position, heroTokens, monsters, dungeon);
+      if (moveTarget) {
+        return { type: 'move', destination: moveTarget };
+      }
+    }
+    
+    return { type: 'none' };
+  }
   
   // First, check if already adjacent to a hero
   const adjacentHero = findAdjacentHero(monster, heroTokens, heroHpMap, dungeon);

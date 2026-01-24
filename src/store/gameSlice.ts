@@ -226,6 +226,10 @@ export interface GameState {
   monsterAttackTargetId: string | null;
   /** ID of the monster that performed the attack */
   monsterAttackerId: string | null;
+  /** Results of area attack (for displaying multiple combat results sequentially) */
+  monsterAreaAttackResults: AttackResult[] | null;
+  /** IDs of heroes targeted by area attack */
+  monsterAreaAttackTargetIds: string[] | null;
   /** Index of the monster currently being activated during villain phase */
   villainPhaseMonsterIndex: number;
   /** ID of the monster that just moved but could not attack (for displaying move feedback) */
@@ -633,6 +637,8 @@ const initialState: GameState = {
   monsterAttackResult: null,
   monsterAttackTargetId: null,
   monsterAttackerId: null,
+  monsterAreaAttackResults: null,
+  monsterAreaAttackTargetIds: null,
   villainPhaseMonsterIndex: 0,
   monsterMoveActionId: null,
   monsterExplorationEvent: null,
@@ -3968,6 +3974,65 @@ export const gameSlice = createSlice({
           message: logMessage,
           details: logDetails,
         });
+      } else if (result.type === 'area-attack') {
+        // Handle area attack: monster attacks all valid targets simultaneously
+        // Store results for sequential display to player
+        state.monsterAreaAttackResults = result.results;
+        state.monsterAreaAttackTargetIds = result.targetIds;
+        state.monsterAttackerId = monster.instanceId;
+        
+        // Process all attacks immediately (damage, status effects)
+        const monsterDef = getMonsterById(monster.monsterId);
+        const monsterName = monsterDef?.name ?? 'Monster';
+        const tactics = MONSTER_TACTICS[monster.monsterId];
+        const attackOption = tactics?.adjacentAttack;
+        
+        for (let i = 0; i < result.targetIds.length; i++) {
+          const targetId = result.targetIds[i];
+          const attackResult = result.results[i];
+          
+          // Apply damage to hero if hit
+          if (attackResult.isHit && attackResult.damage > 0) {
+            const heroHp = state.heroHp.find(h => h.heroId === targetId);
+            if (heroHp) {
+              heroHp.currentHp = Math.max(0, heroHp.currentHp - attackResult.damage);
+            }
+          }
+          
+          // Apply status effect if the attack has one and hit
+          if (attackResult.isHit) {
+            applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, targetId, 'adjacent');
+          }
+          
+          // Log each attack
+          const targetHero = AVAILABLE_HEROES.find(h => h.id === targetId);
+          const targetName = targetHero?.name ?? targetId;
+          const hitOrMiss = attackResult.isHit ? 'Hit' : 'Miss';
+          const criticalText = attackResult.isCritical ? ' (Critical!)' : '';
+          const logMessage = `${monsterName} area attacks ${targetName}: ${hitOrMiss}!${criticalText}`;
+          
+          let logDetails = `Roll: ${attackResult.roll} + ${attackResult.attackBonus} = ${attackResult.total} vs AC ${attackResult.targetAC}`;
+          if (attackResult.isHit && attackResult.damage > 0) {
+            logDetails += ` | Damage: ${attackResult.damage}`;
+          }
+          if (attackResult.isHit && attackOption?.statusEffect) {
+            logDetails += ` | Applied: ${attackOption.statusEffect}`;
+          }
+          
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'combat',
+            message: logMessage,
+            details: logDetails,
+          });
+        }
+        
+        // Check for party defeat (all heroes at 0 HP)
+        const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+        if (allHeroesDefeated) {
+          state.currentScreen = "defeat";
+        }
       } else if (result.type === 'explore') {
         // Handle monster-triggered exploration
         // Draw a tile from the deck
