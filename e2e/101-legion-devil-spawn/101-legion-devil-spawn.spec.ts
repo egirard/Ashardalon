@@ -182,11 +182,13 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
     const attackResultOverlay = page.locator('[data-testid="combat-result-overlay"]');
     if (await attackResultOverlay.isVisible({ timeout: 2000 }).catch(() => false)) {
       await attackResultOverlay.click();
-      await page.waitForTimeout(300);
     }
     
-    // Now wait for defeat notification to appear
-    await page.waitForTimeout(300);
+    // Wait a bit for the combat result to start dismissing
+    await page.waitForTimeout(1000);
+    
+    // Now wait for defeat notification to appear (it should appear after combat result dismisses)
+    await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible({ timeout: 3000 });
     
     // Capture screenshot WITH the defeat notification showing "+0 XP"
     await screenshots.capture(page, 'one-devil-defeated-notification', {
@@ -208,15 +210,20 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
       }
     });
     
-    // Dismiss the defeat notification
-    const defeatNotification = page.locator('[data-testid="dismiss-defeat-notification"]');
-    if (await defeatNotification.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await defeatNotification.click({ force: true });
-      await page.waitForTimeout(300);
-    }
+    // Dismiss the defeat notification using Redux action
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/dismissDefeatNotification' });
+    });
+    
+    // Wait for defeat notification to be completely gone
+    await expect(page.locator('[data-testid="defeat-notification"]')).not.toBeVisible({ timeout: 2000 });
 
     await screenshots.capture(page, 'one-devil-defeated-no-xp', {
       programmaticCheck: async () => {
+        // Verify defeat notification is NOT visible
+        await expect(page.locator('[data-testid="defeat-notification"]')).not.toBeVisible();
+        
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState().game;
         });
@@ -282,21 +289,28 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
     const attackResultOverlay2 = page.locator('[data-testid="combat-result-overlay"]');
     if (await attackResultOverlay2.isVisible({ timeout: 2000 }).catch(() => false)) {
       await attackResultOverlay2.click();
-      await page.waitForTimeout(300);
     }
     
-    // Now wait for defeat notification to appear
-    await page.waitForTimeout(300);
+    // Wait a bit for the combat result to start dismissing
+    await page.waitForTimeout(1000);
     
-    // Dismiss the defeat notification
-    const defeatNotification2 = page.locator('[data-testid="dismiss-defeat-notification"]');
-    if (await defeatNotification2.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await defeatNotification2.click({ force: true });
-      await page.waitForTimeout(300);
-    }
+    // Wait for defeat notification to appear (it should appear after combat result dismisses)
+    await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible({ timeout: 3000 });
+    
+    // Dismiss the defeat notification using Redux action
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/dismissDefeatNotification' });
+    });
+    
+    // Wait for defeat notification to be completely gone
+    await expect(page.locator('[data-testid="defeat-notification"]')).not.toBeVisible({ timeout: 2000 });
 
     await screenshots.capture(page, 'two-devils-defeated-no-xp', {
       programmaticCheck: async () => {
+        // Verify defeat notification is NOT visible
+        await expect(page.locator('[data-testid="defeat-notification"]')).not.toBeVisible();
+        
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState().game;
         });
@@ -362,11 +376,13 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
     const attackResultOverlay3 = page.locator('[data-testid="combat-result-overlay"]');
     if (await attackResultOverlay3.isVisible({ timeout: 2000 }).catch(() => false)) {
       await attackResultOverlay3.click();
-      await page.waitForTimeout(300);
     }
     
-    // Now wait for defeat notification to appear
-    await page.waitForTimeout(300);
+    // Wait a bit for the combat result to start dismissing
+    await page.waitForTimeout(1000);
+    
+    // Wait for defeat notification to appear (it should appear after combat result dismisses)
+    await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible({ timeout: 3000 });
     
     // Capture screenshot WITH the defeat notification showing "+2 XP"
     await screenshots.capture(page, 'all-devils-defeated-xp-notification', {
@@ -391,15 +407,20 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
       }
     });
     
-    // Dismiss the defeat notification
-    const defeatNotification3 = page.locator('[data-testid="dismiss-defeat-notification"]');
-    if (await defeatNotification3.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await defeatNotification3.click({ force: true });
-      await page.waitForTimeout(300);
-    }
+    // Dismiss the defeat notification using Redux action
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/dismissDefeatNotification' });
+    });
+    
+    // Wait for defeat notification to be completely gone
+    await expect(page.locator('[data-testid="defeat-notification"]')).not.toBeVisible({ timeout: 2000 });
 
     await screenshots.capture(page, 'all-devils-defeated-xp-awarded', {
       programmaticCheck: async () => {
+        // Verify defeat notification is NOT visible
+        await expect(page.locator('[data-testid="defeat-notification"]')).not.toBeVisible();
+        
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState().game;
         });
