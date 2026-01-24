@@ -1396,3 +1396,33 @@ export interface LogEntry {
   /** Optional hero ID if this log is specific to a hero */
   heroId?: string;
 }
+
+/**
+ * Types of pending monster decisions that require player input
+ */
+export type PendingMonsterDecisionType = 
+  | 'choose-hero-target'      // Multiple heroes at same distance for movement/targeting
+  | 'choose-adjacent-target'  // Multiple adjacent heroes for attack
+  | 'choose-move-destination' // Multiple valid move positions
+  | 'choose-spawn-position';  // Multiple valid spawn positions
+
+/**
+ * Pending monster decision state - requires player to make a choice during villain phase
+ */
+export interface PendingMonsterDecision {
+  /** Unique ID for this decision */
+  decisionId: string;
+  /** Type of decision required */
+  type: PendingMonsterDecisionType;
+  /** Monster instance ID making the decision */
+  monsterId: string;
+  /** Available options for selection */
+  options: {
+    /** Hero IDs if choosing hero target */
+    heroIds?: string[];
+    /** Positions if choosing location */
+    positions?: Position[];
+  };
+  /** Context for the decision (e.g., "attack", "movement", "spawn") */
+  context: string;
+}
