@@ -162,7 +162,7 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
       
       // Update the monster group by removing this member
       const updatedGroups = state.game.monsterGroups.map((g: any) => {
-        if (g.id === firstDevil.groupId) {
+        if (g.groupId === firstDevil.groupId) {
           return {
             ...g,
             memberIds: g.memberIds.filter((id: string) => id !== firstDevil.instanceId)
@@ -245,9 +245,9 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
     // STEP 4: Defeat second Legion Devil
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      const state = store.getState().game;
+      const state = store.getState();
       
-      const secondDevil = state.monsters.find((m: any) => m.monsterId === 'legion-devil');
+      const secondDevil = state.game.monsters.find((m: any) => m.monsterId === 'legion-devil');
       if (!secondDevil) return;
       
       // Reset hero turn actions to allow another attack
@@ -277,7 +277,7 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
       
       // Update the monster group by removing this member
       const updatedGroups2 = state.game.monsterGroups.map((g: any) => {
-        if (g.id === secondDevilToDefeat.groupId) {
+        if (g.groupId === secondDevilToDefeat.groupId) {
           return {
             ...g,
             memberIds: g.memberIds.filter((id: string) => id !== secondDevilToDefeat.instanceId)
@@ -340,9 +340,9 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
     // STEP 5: Defeat the LAST Legion Devil - this should award XP
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      const state = store.getState().game;
+      const state = store.getState();
       
-      const lastDevil = state.monsters.find((m: any) => m.monsterId === 'legion-devil');
+      const lastDevil = state.game.monsters.find((m: any) => m.monsterId === 'legion-devil');
       if (!lastDevil) return;
       
       // Reset hero turn actions to allow another attack
@@ -365,7 +365,7 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
       if (!lastDevilToDefeat) return;
       
       // Get the group to award XP
-      const lastGroup = state.game.monsterGroups.find((g: any) => g.id === lastDevilToDefeat.groupId);
+      const lastGroup = state.game.monsterGroups.find((g: any) => g.groupId === lastDevilToDefeat.groupId);
       const xpToAward = lastGroup ? lastGroup.xp : 0;
       
       // Remove the monster from the monsters array
@@ -377,7 +377,7 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
       // Remove the group entirely (last member defeated)
       store.dispatch({
         type: 'game/setMonsterGroups',
-        payload: state.game.monsterGroups.filter((g: any) => g.id !== lastDevilToDefeat.groupId)
+        payload: state.game.monsterGroups.filter((g: any) => g.groupId !== lastDevilToDefeat.groupId)
       });
       
       // Award XP
