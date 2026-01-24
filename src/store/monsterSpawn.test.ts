@@ -30,7 +30,7 @@ describe('Legion Devil Multi-Monster Spawn', () => {
       0   // monsterGroupCounter
     );
 
-    // Should spawn 3 monsters (1 + 2 from spawnBehavior)
+    // Legion Devil spawns 3 total (1 + 2 from spawnBehavior)
     expect(result.monsters).toHaveLength(3);
     
     // All should be Legion Devils

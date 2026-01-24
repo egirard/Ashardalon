@@ -326,7 +326,7 @@ export function spawnMonstersWithBehavior(
     
     if (!spawnPosition) {
       // No valid spawn position for this monster - stop spawning
-      console.warn(`Could not find spawn position for monster ${i + 1}/${totalCount} on tile ${tile.id}`);
+      console.warn(`[Multi-Spawn] Could not find valid spawn position for monster ${i + 1}/${totalCount} (${spawnMonsterType}) on tile ${tile.id}. This may result in fewer monsters spawned than expected. Remaining monsters will not spawn.`);
       break;
     }
     

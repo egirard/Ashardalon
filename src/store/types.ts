@@ -201,7 +201,7 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Claw', attackBonus: 6, damage: 1 },
     moveAttackRange: 1,
-    implementationNotes: 'Move-and-attack within 1 tile. Spawns 2 additional Legion Devils when placed (3 total). XP awarded only when all 3 are defeated.',
+    implementationNotes: 'Move-and-attack within 1 tile. Multi-spawn: Spawns 2 additional Legion Devils (3 total). XP: Awarded only when all 3 are defeated.',
   },
 };
 
