@@ -3672,6 +3672,40 @@ export const gameSlice = createSlice({
       state.turnState.currentPhase = action.payload;
     },
     /**
+     * Set monster groups directly (for testing purposes)
+     */
+    setMonsterGroups: (state, action: PayloadAction<MonsterGroup[]>) => {
+      state.monsterGroups = action.payload;
+    },
+    /**
+     * Increment monster instance counter (for testing purposes)
+     */
+    incrementMonsterCounter: (state, action: PayloadAction<number>) => {
+      state.monsterInstanceCounter += action.payload;
+    },
+    /**
+     * Increment monster group counter (for testing purposes)
+     */
+    incrementGroupCounter: (state, action: PayloadAction<number>) => {
+      state.monsterGroupCounter += action.payload;
+    },
+    /**
+     * Set current phase directly (for testing purposes)
+     */
+    setCurrentPhase: (state, action: PayloadAction<TurnPhase>) => {
+      state.turnState.currentPhase = action.payload;
+    },
+    /**
+     * Clear attack result (for testing purposes)
+     */
+    clearAttackResult: (state) => {
+      state.attackResult = null;
+      state.attackTargetId = null;
+      state.attackName = null;
+      state.defeatedMonsterXp = null;
+      state.defeatedMonsterName = null;
+    },
+    /**
      * Activate the next monster in the villain phase.
      * The monster will either move toward the closest hero or attack if adjacent.
      */
@@ -5014,6 +5048,11 @@ export const {
   dismissDefeatNotification,
   setMonsters,
   setMonsterDeck,
+  setMonsterGroups,
+  incrementMonsterCounter,
+  incrementGroupCounter,
+  setCurrentPhase,
+  clearAttackResult,
   setDrawnEncounter,
   setTurnPhase,
   activateNextMonster,
