@@ -3063,6 +3063,7 @@ export const gameSlice = createSlice({
                 }
               } else {
                 // Group not found (should not happen), award individual XP as fallback
+                console.error(`[XP Award] Monster ${monster.instanceId} has groupId ${groupId} but group not found. This indicates a data consistency issue. Awarding individual XP as fallback.`);
                 xpGained = monsterDef?.xp ?? 0;
                 state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
               }
@@ -3072,15 +3073,14 @@ export const gameSlice = createSlice({
               state.monsters = state.monsters.filter(m => m.instanceId !== targetInstanceId);
             }
             
-            // Award XP to party (may be 0 if group not fully defeated)
+            // Set defeat notification for UI
             if (xpGained > 0) {
+              // Full XP awarded (individual monster or completed group)
               state.partyResources.xp += xpGained;
-              
-              // Set notification data for UI
               state.defeatedMonsterXp = xpGained;
               state.defeatedMonsterName = monsterName;
             } else if (groupId) {
-              // Group member defeated but not all members - show notification
+              // Group member defeated but group not complete - show partial defeat notification
               state.defeatedMonsterXp = 0;
               state.defeatedMonsterName = monsterDef?.name ?? monster.monsterId;
             }
