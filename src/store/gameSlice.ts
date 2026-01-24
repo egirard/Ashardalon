@@ -29,6 +29,7 @@ import {
   MONSTER_TACTICS,
   MONSTERS,
   ENCOUNTER_CANCEL_COST,
+  PendingMonsterDecision,
 } from "./types";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
 import {
@@ -337,9 +338,13 @@ export interface GameState {
   /** Test mode flag: when true, disables auto-dismiss on notifications for E2E testing */
   testMode?: boolean;
   /** Pending monster decision: requires player to choose target/position during villain phase */
-  pendingMonsterDecision: import('./types').PendingMonsterDecision | null;
+  pendingMonsterDecision: PendingMonsterDecision | null;
   /** Whether villain phase is paused waiting for player input on monster decision */
   villainPhasePaused: boolean;
+  /** Selected hero target from monster decision (to be used by villain phase AI) */
+  monsterDecisionSelectedHero: string | null;
+  /** Selected position from monster decision (to be used by villain phase AI) */
+  monsterDecisionSelectedPosition: Position | null;
 }
 
 /**
@@ -676,6 +681,8 @@ const initialState: GameState = {
   testMode: false,
   pendingMonsterDecision: null,
   villainPhasePaused: false,
+  monsterDecisionSelectedHero: null,
+  monsterDecisionSelectedPosition: null,
 };
 
 /**
@@ -4848,7 +4855,7 @@ export const gameSlice = createSlice({
     /**
      * Prompt for monster decision - pauses villain phase and shows selection UI
      */
-    promptMonsterDecision: (state, action: PayloadAction<import('./types').PendingMonsterDecision>) => {
+    promptMonsterDecision: (state, action: PayloadAction<PendingMonsterDecision>) => {
       state.pendingMonsterDecision = action.payload;
       state.villainPhasePaused = true;
     },
@@ -4861,12 +4868,14 @@ export const gameSlice = createSlice({
       // Verify this matches the pending decision
       if (state.pendingMonsterDecision?.decisionId === decisionId) {
         // Store the selected target for the monster AI to use
-        // The villain phase will resume and use this selection
+        state.monsterDecisionSelectedHero = targetHeroId;
+        
+        // Clear the decision and resume villain phase
         state.pendingMonsterDecision = null;
         state.villainPhasePaused = false;
         
-        // TODO: The villain phase needs to be resumed with the selected hero
-        // For now, we'll need to add this to the monster action execution flow
+        // TODO: The villain phase needs to continue execution using the stored selection
+        // The next monster activation should use state.monsterDecisionSelectedHero
       }
     },
     /**
@@ -4878,10 +4887,14 @@ export const gameSlice = createSlice({
       // Verify this matches the pending decision
       if (state.pendingMonsterDecision?.decisionId === decisionId) {
         // Store the selected position for the monster AI to use
+        state.monsterDecisionSelectedPosition = position;
+        
+        // Clear the decision and resume villain phase
         state.pendingMonsterDecision = null;
         state.villainPhasePaused = false;
         
-        // TODO: The villain phase needs to be resumed with the selected position
+        // TODO: The villain phase needs to continue execution using the stored selection
+        // The next monster activation should use state.monsterDecisionSelectedPosition
       }
     },
     /**
@@ -4890,6 +4903,8 @@ export const gameSlice = createSlice({
     cancelMonsterDecision: (state) => {
       state.pendingMonsterDecision = null;
       state.villainPhasePaused = false;
+      state.monsterDecisionSelectedHero = null;
+      state.monsterDecisionSelectedPosition = null;
     },
     /**
      * Dismiss the scenario introduction modal

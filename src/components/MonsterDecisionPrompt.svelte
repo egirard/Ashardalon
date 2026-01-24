@@ -1,6 +1,7 @@
 <script lang="ts">
   import { store } from '../store';
   import type { PendingMonsterDecision } from '../store/types';
+  import { MONSTERS } from '../store/types';
   
   export let decision: PendingMonsterDecision;
   
@@ -21,14 +22,14 @@
     });
   }
   
-  // Get monster name for display
+  // Get monster name for display using centralized monster definitions
   $: monsterName = (() => {
     const state = store.getState();
     const monster = state.game.monsters.find(m => m.instanceId === decision.monsterId);
     if (monster) {
-      // Find monster definition
-      const monsterDef = { kobold: 'Kobold', snake: 'Snake', cultist: 'Cultist' }[monster.monsterId] || monster.monsterId;
-      return monsterDef;
+      // Look up monster definition from centralized MONSTERS array
+      const monsterDef = MONSTERS.find(m => m.id === monster.monsterId);
+      return monsterDef?.name || monster.monsterId;
     }
     return 'Monster';
   })();
