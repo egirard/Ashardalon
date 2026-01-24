@@ -3349,6 +3349,13 @@ export const gameSlice = createSlice({
       state.defeatedMonsterName = null;
     },
     /**
+     * Set defeat notification (for testing only)
+     */
+    setDefeatNotification: (state, action: PayloadAction<{ xp: number; monsterName: string }>) => {
+      state.defeatedMonsterXp = action.payload.xp;
+      state.defeatedMonsterName = action.payload.monsterName;
+    },
+    /**
      * Dismiss the level up notification
      */
     dismissLevelUpNotification: (state) => {
@@ -5046,6 +5053,7 @@ export const {
   dismissAttackResult,
   dismissTrapDisableResult,
   dismissDefeatNotification,
+  setDefeatNotification,
   setMonsters,
   setMonsterDeck,
   setMonsterGroups,
