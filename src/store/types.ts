@@ -115,7 +115,8 @@ export type MonsterTacticType =
   | 'attack-only'           // If adjacent, attack. Otherwise move toward closest hero.
   | 'move-and-attack'       // If within range, move adjacent AND attack. Otherwise move.
   | 'explore-or-attack'     // If adjacent, attack. If on tile with unexplored edge and no heroes, explore. Otherwise move.
-  | 'ranged-attack';        // Same as move-and-attack but used for monsters with different attacks at different ranges (e.g., Grell, Orc Archer)
+  | 'ranged-attack'         // Same as move-and-attack but used for monsters with different attacks at different ranges (e.g., Grell, Orc Archer)
+  | 'area-attack';          // Attacks all valid targets (heroes on tile or within range) simultaneously
 
 /**
  * Monster card tactics define the AI behavior for each monster type.
@@ -153,6 +154,8 @@ export interface MonsterCardTactics {
  * - orc-smasher: ✅ FULLY IMPLEMENTED (move-and-attack behavior)
  * - grell: ✅ FULLY IMPLEMENTED (multi-range attacks: Venomous Bite adjacent, Tentacles within 1 tile)
  * - orc-archer: ✅ FULLY IMPLEMENTED (multi-range attacks: Punch adjacent, Arrow within 2 tiles)
+ * - cave-bear: ✅ FULLY IMPLEMENTED (area attack: Frenzy of Claws attacks all heroes on same tile)
+ * - gibbering-mouther: ✅ FULLY IMPLEMENTED (area attack: Gibbering attacks all heroes within 1 tile)
  * 
  * See docs/MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
  */
@@ -202,6 +205,17 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     adjacentAttack: { name: 'Claw', attackBonus: 6, damage: 1 },
     moveAttackRange: 1,
     implementationNotes: 'Move-and-attack within 1 tile. Multi-spawn: Spawns 2 additional Legion Devils (3 total). XP: Awarded only when all 3 are defeated.',
+  },
+  'cave-bear': {
+    type: 'area-attack',
+    adjacentAttack: { name: 'Frenzy of Claws', attackBonus: 8, damage: 2, targetsAllOnTile: true, statusEffect: 'dazed' },
+    implementationNotes: 'Attacks all heroes on the same tile with Frenzy of Claws. Applies Dazed status on hit.',
+  },
+  'gibbering-mouther': {
+    type: 'area-attack',
+    adjacentAttack: { name: 'Gibbering', attackBonus: 7, damage: 1, range: 1, targetsAllInRange: true, statusEffect: 'dazed' },
+    moveAttackRange: 1,
+    implementationNotes: 'Attacks all heroes within 1 tile with Gibbering. Applies Dazed status on hit.',
   },
 };
 
@@ -381,6 +395,8 @@ export const MONSTERS: Monster[] = [
     category: 'devil',
     spawnBehavior: { count: 2 } // Spawns 2 additional Legion Devils (3 total)
   },
+  { id: 'cave-bear', name: 'Cave Bear', ac: 14, hp: 3, maxHp: 3, xp: 2, imagePath: 'assets/Monster_CaveBear.png', category: 'beast' },
+  { id: 'gibbering-mouther', name: 'Gibbering Mouther', ac: 11, hp: 2, maxHp: 2, xp: 2, imagePath: 'assets/Monster_GibberingMouther.png', category: 'aberrant' },
 ];
 
 /**
@@ -394,6 +410,8 @@ export const INITIAL_MONSTER_DECK: string[] = [
   'orc-smasher', 'orc-smasher', 'orc-smasher',
   'duergar-guard', 'duergar-guard', 'duergar-guard',
   'legion-devil', 'legion-devil',
+  'cave-bear', 'cave-bear', 'cave-bear',
+  'gibbering-mouther', 'gibbering-mouther', 'gibbering-mouther',
 ];
 
 /**
