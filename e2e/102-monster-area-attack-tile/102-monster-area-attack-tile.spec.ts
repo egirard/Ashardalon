@@ -151,24 +151,41 @@ test.describe('102 - Monster Area Attack on All Heroes on Tile', () => {
       }
     });
     
-    // STEP 4: Manually transition to villain phase (preventing encounter draw)
-    // Empty encounter deck to prevent encounter cards during phase transition
+    // STEP 4: Transition to villain phase
+    // Note: Encounter cards may appear during phase transitions, we'll dismiss them
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
-      // Directly empty the encounter deck by mutating state
-      // This is a test-only approach to prevent encounter card popups
-      const state = store.getState().game;
-      state.encounterDeck.drawPile = [];
-      state.encounterDeck.discardPile = [];
-      
       // End hero phase
       store.dispatch({ type: 'game/endHeroPhase' });
-      // End exploration phase (this is when encounter would normally be drawn)
+      // End exploration phase
       store.dispatch({ type: 'game/endExplorationPhase' });
     });
     
-    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
+    // Wait for phase transition
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase', { timeout: 5000 });
+    
+    // Dismiss any encounter cards that appeared
+    let encountersDismissed = 0;
+    for (let i = 0; i < 5; i++) {
+      const hasEncounterCard = await page.locator('[data-testid="encounter-card"]')
+        .isVisible({ timeout: 500 })
+        .catch(() => false);
+      
+      if (hasEncounterCard) {
+        await page.keyboard.press('Enter');
+        encountersDismissed++;
+        await page.waitForTimeout(1500); // Longer wait for card animation and any chain effects
+      } else {
+        break;
+      }
+    }
+    
+    // Ensure encounter cards are fully dismissed before taking screenshot
+    await expect(page.locator('[data-testid="encounter-card"]')).not.toBeVisible({ timeout: 3000 }).catch(() => {});
+    
+    // Additional wait to ensure UI has settled
+    await page.waitForTimeout(1000);
     
     await screenshots.capture(page, 'villain-phase-ready', {
       programmaticCheck: async () => {
