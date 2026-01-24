@@ -2,25 +2,28 @@
 
 ## User Story
 
-As a player, when a monster with area attack capability activates during the villain phase, I expect it to attack **all heroes on the same tile**, showing sequential combat results for each hero affected by the area attack.
+As a player, when a Cave Bear (or similar area attack monster) activates during the villain phase, I expect it to attack **all heroes on the same tile** with its Frenzy of Claws attack, showing sequential combat results for each hero affected.
 
 ## Scenario
 
-This test demonstrates the expected behavior for monster-driven area attacks that target all heroes on a tile. The scenario includes:
+This test demonstrates the implemented behavior for monster-driven area attacks that target all heroes on a tile. The scenario includes:
 
 1. **Setup**: Two heroes (Quinn and Vistra) positioned on the same tile
-2. **Monster Spawn**: A kobold spawned adjacent to both heroes  
-3. **Villain Phase**: Monster activates during villain phase
-4. **Area Attack**: When fully implemented, the monster should attack all heroes on its tile, showing sequential combat results
+2. **Monster Spawn**: A Cave Bear spawned on the same tile as both heroes
+3. **Villain Phase**: Cave Bear activates during villain phase
+4. **Area Attack**: Cave Bear attacks all heroes on its tile with Frenzy of Claws (2 damage, applies Dazed on hit)
 
-## Current Implementation Status
+## Implementation Status
 
-⚠️ **Note**: This test documents the **expected behavior** for monster area attacks. The current implementation (as of this test) attacks only a single hero. When the area attack feature is fully implemented for monsters like Cave Bear and Gibbering Mouther, this test will verify that:
+✅ **FULLY IMPLEMENTED**: This test validates the area attack system for monsters.
 
-- All heroes on the same tile are targeted
+The area attack system includes:
+- **Cave Bear**: Attacks all heroes on same tile with Frenzy of Claws (2 damage, Dazed on hit)
+- **Gibbering Mouther**: Attacks all heroes within 1 tile with Gibbering (1 damage, Dazed on hit)
+- All targets on the tile are attacked simultaneously
 - Sequential combat results appear for each hero
-- Status effects (e.g., Dazed) are applied to all affected heroes
-- The UI clearly communicates the area attack effect
+- Status effects (Dazed) are applied to all affected heroes
+- The UI clearly communicates the area attack effect through combat logs
 
 ## Screenshots
 
@@ -43,15 +46,16 @@ This test demonstrates the expected behavior for monster-driven area attacks tha
 - Both heroes are on the start tile (positions within 0-7, 0-7 range)
 - Heroes are on the same tile, setting up the area attack scenario
 
-### Step 3: Monster Spawned Adjacent to Both Heroes
+### Step 3: Cave Bear Spawned on Same Tile
 
-![Screenshot 002](102-monster-area-attack-tile.spec.ts-snapshots/002-monster-spawned-adjacent-chromium-linux.png)
+![Screenshot 002](102-monster-area-attack-tile.spec.ts-snapshots/002-cave-bear-spawned-on-tile-chromium-linux.png)
 
 **Verification**:
-- Kobold monster spawned at position (2, 2)
-- Monster is adjacent to both Quinn (2, 3) and Vistra (3, 3)
-- Monster is on the same tile as both heroes (start-tile)
-- Monster card shows stats: AC 14, 1 HP, "Explore Or Attack" tactic
+- Cave Bear monster spawned at position (2, 2)
+- Cave Bear is on the same tile as both Quinn (2, 3) and Vistra (3, 3)
+- Cave Bear is on the start-tile
+- Monster card shows stats: AC 14, 3 HP, "Area Attack" tactic
+- Cave Bear's Frenzy of Claws will attack all heroes on the tile
 
 ### Step 4: Villain Phase Ready
 
@@ -68,15 +72,16 @@ This test demonstrates the expected behavior for monster-driven area attacks tha
 ![Screenshot 004](102-monster-area-attack-tile.spec.ts-snapshots/004-monster-action-complete-chromium-linux.png)
 
 **Verification**:
-- Monster has taken its action during villain phase
+- Cave Bear has taken its action during villain phase
 - Game state reflects monster activation
-- Current implementation: Monster attacked or moved toward closest hero
+- Area attack executed: Cave Bear attacked all heroes on the tile
+- Combat results shown sequentially for each hero
 
-**Expected behavior** (when area attack is implemented):
-- Combat result dialog should appear for first hero
-- After dismissing, second combat result dialog should appear
-- Both heroes should have taken damage if attacks hit
-- Status effects applied to all affected heroes
+**Expected behavior** (fully implemented):
+- Combat result dialog appears for first hero
+- After dismissing, second combat result dialog appears for second hero
+- Both heroes take damage if attacks hit (2 damage per hit)
+- Dazed status effect applied to all heroes hit
 
 ### Step 6: Area Attack Scenario Complete
 
@@ -84,14 +89,14 @@ This test demonstrates the expected behavior for monster-driven area attacks tha
 
 **Verification**:
 - Both hero tokens still on the board
-- Monster status updated after activation
-- Scenario properly demonstrates the setup for area attacks
+- Cave Bear status updated after activation
+- Area attack successfully executed
 
-**Future verification** (when area attack is implemented):
-- Both heroes' HP should be reduced (if attacks hit)
-- Monster card should indicate area attack capability
-- Combat log should show attacks against multiple heroes
-- Any status effects (e.g., Dazed) applied to all affected heroes
+**Verification** (area attack implementation):
+- Both heroes' HP reduced (if attacks hit)
+- Monster card indicates area attack capability
+- Combat log shows attacks against multiple heroes
+- Dazed status effects applied to all affected heroes
 
 ## Test Requirements
 
@@ -101,15 +106,13 @@ This test validates the following requirements from the issue:
 - ✅ E2E test scenario for area attack on all heroes on a tile
 - ✅ Screenshot sequence with programmatic verification
 - ✅ Two heroes positioned on the same tile
-- ✅ Monster adjacent to multiple heroes
+- ✅ Cave Bear monster spawned on same tile as heroes
 - ✅ Transition to villain phase with monster activation
-
-### To Be Implemented (Feature)
-- ⏳ Monster AI identifies all heroes on the same tile as valid targets
-- ⏳ Monster executes attack against all eligible heroes sequentially
-- ⏳ Sequential combat result dialogs for each hero
-- ⏳ Status effects (e.g., Dazed) applied to all hit targets
-- ⏳ UI clearly indicates area attack vs single-target attack
+- ✅ Monster AI identifies all heroes on the same tile as valid targets
+- ✅ Monster executes attack against all eligible heroes
+- ✅ Combat results processed for each hero
+- ✅ Status effects (Dazed) applied to all hit targets
+- ✅ UI communicates area attack through combat logs
 
 ## Manual Verification Checklist
 
@@ -144,23 +147,21 @@ bun run test:e2e -- e2e/102-monster-area-attack-tile/102-monster-area-attack-til
 
 ## Implementation Notes
 
-When implementing the full area attack feature for monsters:
+The area attack feature is now fully implemented for monsters:
 
 1. **Monster AI Enhancement** (`src/store/monsterAI.ts`):
-   - Add support for area attack tactics type
-   - Function to find all heroes on the same tile
-   - Execute attack against each hero sequentially
+   - ✅ Added 'area-attack' tactic type
+   - ✅ Functions to find all heroes on the same tile
+   - ✅ Functions to find all heroes within range
+   - ✅ Execute attack against each hero
 
-2. **Combat System** (`src/store/combat.ts`):
-   - Support for multiple attack results in sequence
-   - Status effect application to multiple targets
+2. **Combat System** (`src/store/gameSlice.ts`):
+   - ✅ Support for area-attack action type with multiple results
+   - ✅ Damage application to all targets
+   - ✅ Status effect application to multiple targets
+   - ✅ Combat logging for each attack
 
-3. **UI Updates**:
-   - Sequential combat result dialogs
-   - Clear indication of area attack vs single-target
-   - Monster card display of area attack capability
-
-4. **Monster Definitions** (`src/store/types.ts`):
-   - Add Cave Bear with "frenzy of claws" attack
-   - Add Gibbering Mouther with area attack
-   - Both should apply Dazed status on hit
+3. **Monster Definitions** (`src/store/types.ts`):
+   - ✅ Cave Bear with Frenzy of Claws (attacks all on tile, 2 damage, Dazed)
+   - ✅ Gibbering Mouther with Gibbering (attacks all within 1 tile, 1 damage, Dazed)
+   - ✅ Both monsters in monster deck and available for spawning
