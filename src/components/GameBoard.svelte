@@ -63,6 +63,10 @@
     cancelMonsterChoice,
     selectTarget,
     deselectTarget,
+    promptMonsterDecision,
+    selectMonsterTarget,
+    selectMonsterPosition,
+    cancelMonsterDecision,
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
@@ -124,6 +128,7 @@
   import DragonsTributeTreasureChoice from "./DragonsTributeTreasureChoice.svelte";
   import ThiefDiscardChoice from "./ThiefDiscardChoice.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
+  import MonsterDecisionPrompt from "./MonsterDecisionPrompt.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import TurnProgressCard from "./TurnProgressCard.svelte";
@@ -261,6 +266,7 @@
   let incrementalMovement: IncrementalMovementState | null = $state(null);
   let undoSnapshot: UndoSnapshot | null = $state(null);
   let pendingMonsterChoice: PendingMonsterChoiceState | null = $state(null);
+  let pendingMonsterDecision: import('../store/types').PendingMonsterDecision | null = $state(null);
   let selectedTargetId: string | null = $state(null);
   let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
   let trapDisableResult: import('../store/types').TrapDisableResult | null = $state(null);
@@ -373,6 +379,7 @@
       incrementalMovement = state.game.incrementalMovement;
       undoSnapshot = state.game.undoSnapshot;
       pendingMonsterChoice = state.game.pendingMonsterChoice;
+      pendingMonsterDecision = state.game.pendingMonsterDecision;
       selectedTargetId = state.game.selectedTargetId;
       selectedTargetType = state.game.selectedTargetType;
       showScenarioIntroduction = state.game.showScenarioIntroduction;
@@ -442,6 +449,7 @@
     incrementalMovement = state.game.incrementalMovement;
     undoSnapshot = state.game.undoSnapshot;
     pendingMonsterChoice = state.game.pendingMonsterChoice;
+    pendingMonsterDecision = state.game.pendingMonsterDecision;
     selectedTargetId = state.game.selectedTargetId;
     selectedTargetType = state.game.selectedTargetType;
     showScenarioIntroduction = state.game.showScenarioIntroduction;
@@ -3730,6 +3738,11 @@
       onCancel={handleCancelMonsterChoice}
       edge={getActivePlayerEdge()}
     />
+  {/if}
+
+  <!-- Monster Decision Prompt (shown when monster AI needs player to choose target/position) -->
+  {#if pendingMonsterDecision}
+    <MonsterDecisionPrompt decision={pendingMonsterDecision} />
   {/if}
 
   <!-- Scenario Introduction (shown when map is first displayed or when clicking objective panel) -->
