@@ -151,13 +151,20 @@ test.describe('102 - Monster Area Attack on All Heroes on Tile', () => {
       }
     });
     
-    // STEP 4: Manually transition to villain phase (skipping encounter draw for focused test)
-    // This allows us to focus specifically on monster area attack behavior
+    // STEP 4: Manually transition to villain phase (preventing encounter draw)
+    // Empty encounter deck to prevent encounter cards during phase transition
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
+      
+      // Directly empty the encounter deck by mutating state
+      // This is a test-only approach to prevent encounter card popups
+      const state = store.getState().game;
+      state.encounterDeck.drawPile = [];
+      state.encounterDeck.discardPile = [];
+      
       // End hero phase
       store.dispatch({ type: 'game/endHeroPhase' });
-      // Skip exploration phase (no tile draw)
+      // End exploration phase (this is when encounter would normally be drawn)
       store.dispatch({ type: 'game/endExplorationPhase' });
     });
     
