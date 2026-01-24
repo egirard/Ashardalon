@@ -860,32 +860,31 @@ function handleScreamOfSentryEffect(state: GameState, chosenMonster: MonsterStat
         if (newMonsterId) {
           const newMonsterDef = getMonsterById(newMonsterId);
           
-          // Get spawn position on the new tile
-          const spawnPosition = getMonsterSpawnPosition(newTile, state.monsters);
+          // Use spawn function to handle multi-monster spawns
+          const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+          const spawnResult = spawnMonstersWithBehavior(
+            newMonsterId,
+            newTile,
+            activeHeroToken?.heroId || state.heroTokens[0].heroId,
+            state.monsters,
+            state.monsterInstanceCounter,
+            state.monsterGroupCounter
+          );
           
-          if (spawnPosition) {
-            const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+          if (spawnResult.monsters.length > 0) {
+            state.monsters.push(...spawnResult.monsters);
+            state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+            state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+            state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
             
-            // Create the new monster instance
-            const newMonster = createMonsterInstance(
-              newMonsterId,
-              spawnPosition,
-              activeHeroToken?.heroId || state.heroTokens[0].heroId,
-              newTile.id,
-              state.monsterInstanceCounter
-            );
-            
-            if (newMonster) {
-              state.monsters.push(newMonster);
-              state.monsterInstanceCounter++;
-              state.recentlySpawnedMonsterId = newMonster.instanceId;
-              
-              state.encounterEffectMessage = `Tile placed near ${monsterDef?.name || 'monster'}, ${newMonsterDef?.name || 'monster'} spawned`;
-            } else {
-              state.encounterEffectMessage = 'Failed to create monster';
+            // Add group if multiple monsters spawned
+            if (spawnResult.group) {
+              state.monsterGroups.push(spawnResult.group);
             }
+            
+            state.encounterEffectMessage = `Tile placed near ${monsterDef?.name || 'monster'}, ${newMonsterDef?.name || 'monster'} spawned`;
           } else {
-            state.encounterEffectMessage = 'No valid spawn position on new tile';
+            state.encounterEffectMessage = 'Failed to create monster';
           }
         } else {
           state.encounterEffectMessage = 'No monsters in deck to spawn';
@@ -1657,42 +1656,46 @@ export const gameSlice = createSlice({
       const newTile = state.dungeon.tiles.find(t => t.id === state.recentlyPlacedTileId);
       
       if (newTile) {
-        // Get spawn position (black square, or adjacent if occupied)
-        const monsterPosition = getMonsterSpawnPosition(newTile, state.monsters);
+        // Use spawn function to handle multi-monster spawns
+        const spawnResult = spawnMonstersWithBehavior(
+          drawnMonster,
+          newTile,
+          currentToken.heroId,
+          state.monsters,
+          state.monsterInstanceCounter,
+          state.monsterGroupCounter
+        );
         
-        if (monsterPosition) {
-          const monsterInstance = createMonsterInstance(
-            drawnMonster,
-            monsterPosition,
-            currentToken.heroId,
-            newTile.id,
-            state.monsterInstanceCounter
+        if (spawnResult.monsters.length > 0) {
+          state.monsters.push(...spawnResult.monsters);
+          state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+          state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+          
+          // Add group if multiple monsters spawned
+          if (spawnResult.group) {
+            state.monsterGroups.push(spawnResult.group);
+          }
+          
+          // Set pending monster display for first monster
+          state.pendingMonsterDisplayId = spawnResult.monsters[0].instanceId;
+          
+          // Check for Blade Barrier tokens at spawn position of first monster
+          const bladeBarrierCheck = checkBladeBarrierDamage(
+            spawnResult.monsters[0].position,
+            state.boardTokens || []
           );
           
-          if (monsterInstance) {
-            state.monsters.push(monsterInstance);
-            state.monsterInstanceCounter += 1;
-            // Set pending monster display for animation
-            state.pendingMonsterDisplayId = monsterInstance.instanceId;
-            
-            // Check for Blade Barrier tokens at spawn position
-            const bladeBarrierCheck = checkBladeBarrierDamage(
-              monsterInstance.position,
-              state.boardTokens || []
-            );
-            
-            if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
-              // Deal 1 damage to the monster
-              const monster = state.monsters.find(m => m.instanceId === monsterInstance.instanceId);
-              if (monster) {
-                monster.currentHp = Math.max(0, monster.currentHp - 1);
-              }
-              
-              // Remove the blade barrier token
-              state.boardTokens = state.boardTokens.filter(
-                token => token.id !== bladeBarrierCheck.tokenToRemove
-              );
+          if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+            // Deal 1 damage to the monster
+            const monster = state.monsters.find(m => m.instanceId === spawnResult.monsters[0].instanceId);
+            if (monster) {
+              monster.currentHp = Math.max(0, monster.currentHp - 1);
             }
+            
+            // Remove the blade barrier token
+            state.boardTokens = state.boardTokens.filter(
+              token => token.id !== bladeBarrierCheck.tokenToRemove
+            );
           }
         }
       }
@@ -2500,29 +2503,30 @@ export const gameSlice = createSlice({
                     // Get the first tile with unexplored edge (could be improved to find closest)
                     const spawnTile = tilesWithUnexploredEdges[0];
                     if (spawnTile) {
-                      // Get spawn position on the tile (black square or adjacent)
-                      const spawnPosition = getMonsterSpawnPosition(spawnTile, state.monsters);
+                      // Use spawn function to handle multi-monster spawns
+                      const spawnResult = spawnMonstersWithBehavior(
+                        monsterId,
+                        spawnTile,
+                        activeHeroToken.heroId,
+                        state.monsters,
+                        state.monsterInstanceCounter,
+                        state.monsterGroupCounter
+                      );
                       
-                      if (spawnPosition) {
-                        // Create monster instance
-                        const monster = createMonsterInstance(
-                          monsterId,
-                          spawnPosition,
-                          activeHeroToken.heroId,
-                          spawnTile.id,
-                          state.monsterInstanceCounter
-                        );
+                      if (spawnResult.monsters.length > 0) {
+                        state.monsters.push(...spawnResult.monsters);
+                        state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+                        state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+                        state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
                         
-                        if (monster) {
-                          state.monsters.push(monster);
-                          state.monsterInstanceCounter++;
-                          state.recentlySpawnedMonsterId = monster.instanceId;
-                          state.encounterEffectMessage = `${monsterDef.name} spawned`;
-                        } else {
-                          state.encounterEffectMessage = 'Failed to create monster';
+                        // Add group if multiple monsters spawned
+                        if (spawnResult.group) {
+                          state.monsterGroups.push(spawnResult.group);
                         }
+                        
+                        state.encounterEffectMessage = `${monsterDef.name} spawned`;
                       } else {
-                        state.encounterEffectMessage = 'No valid spawn position on tile';
+                        state.encounterEffectMessage = 'Failed to create monster';
                       }
                     } else {
                       state.encounterEffectMessage = 'No tile found with unexplored edge';
@@ -3961,19 +3965,25 @@ export const gameSlice = createSlice({
             );
             
             if (drawnMonsterId) {
-              // Create monster instance on the black square
-              const blackSquarePos = getBlackSquarePosition(newTile.rotation);
-              const newMonsterInstance = createMonsterInstance(
+              // Use spawn function to handle multi-monster spawns
+              const spawnResult = spawnMonstersWithBehavior(
                 drawnMonsterId,
-                blackSquarePos,
+                newTile,
                 currentHeroId,
-                newTile.id,
-                state.monsterInstanceCounter
+                state.monsters,
+                state.monsterInstanceCounter,
+                state.monsterGroupCounter
               );
               
-              if (newMonsterInstance) {
-                state.monsters.push(newMonsterInstance);
-                state.monsterInstanceCounter += 1;
+              if (spawnResult.monsters.length > 0) {
+                state.monsters.push(...spawnResult.monsters);
+                state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+                state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+                
+                // Add group if multiple monsters spawned
+                if (spawnResult.group) {
+                  state.monsterGroups.push(spawnResult.group);
+                }
                 
                 // Log monster spawn
                 const spawnedMonsterDef = getMonsterById(drawnMonsterId);
