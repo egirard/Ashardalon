@@ -2235,6 +2235,22 @@
     pendingBladeBarrier = null;
   }
 
+  // ========== Monster Decision Handlers ==========
+  
+  function handleMonsterDecisionPositionClicked(position: Position) {
+    if (!pendingMonsterDecision) return;
+    if (pendingMonsterDecision.type !== 'choose-move-destination' && pendingMonsterDecision.type !== 'choose-spawn-position') return;
+    
+    // Dispatch the selection
+    store.dispatch({
+      type: 'game/selectMonsterPosition',
+      payload: {
+        decisionId: pendingMonsterDecision.decisionId,
+        position
+      }
+    });
+  }
+
   // ========== Flaming Sphere Handlers ==========
   
   function handleFlamingSphereSquareClicked(position: Position) {
@@ -3111,6 +3127,33 @@
                 >
                   <div class="treasure-placement-indicator" aria-label="Place treasure here">
                     💎
+                  </div>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        {/if}
+
+        <!-- Monster Decision Position Overlay (for move destination selection) -->
+        {#if pendingMonsterDecision && (pendingMonsterDecision.type === 'choose-move-destination' || pendingMonsterDecision.type === 'choose-spawn-position') && pendingMonsterDecision.options.positions}
+          {@const startTile = dungeon.tiles.find(t => t.tileType === 'start')}
+          {#if startTile}
+            {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
+            <div
+              class="monster-decision-overlay"
+              style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: 15;"
+            >
+              {#each pendingMonsterDecision.options.positions as square (square.x + '-' + square.y)}
+                {@const relX = square.x}
+                {@const relY = square.y}
+                <button
+                  class="selectable-square monster-decision-square"
+                  data-testid="monster-decision-position-{square.x}-{square.y}"
+                  style="left: {startTilePos.x + TOKEN_OFFSET_X + relX * TILE_CELL_SIZE}px; top: {startTilePos.y + TOKEN_OFFSET_Y + relY * TILE_CELL_SIZE}px; width: {TILE_CELL_SIZE}px; height: {TILE_CELL_SIZE}px;"
+                  onclick={() => handleMonsterDecisionPositionClicked(square)}
+                >
+                  <div class="monster-decision-indicator" aria-label="Move monster here">
+                    🎯
                   </div>
                 </button>
               {/each}
@@ -4589,5 +4632,36 @@
     bottom: 5%;
     right: 5%;
     z-index: 2;
+  }
+
+  /* Monster Decision specific square styling */
+  .selectable-square.monster-decision-square {
+    background: rgba(255, 215, 0, 0.4);
+    border-color: rgba(255, 215, 0, 0.9);
+    animation: monster-decision-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes monster-decision-pulse {
+    0%, 100% {
+      border-color: rgba(255, 215, 0, 0.9);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    50% {
+      border-color: rgba(255, 215, 0, 1);
+      box-shadow: 0 0 25px rgba(255, 215, 0, 1), inset 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+  }
+
+  .selectable-square.monster-decision-square:hover {
+    background: rgba(255, 215, 0, 0.6);
+    border-color: rgba(255, 215, 0, 1);
+    animation: none;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 1), inset 0 0 15px rgba(255, 215, 0, 0.6);
+  }
+
+  .monster-decision-indicator {
+    font-size: 2rem;
+    text-align: center;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
   }
 </style>
