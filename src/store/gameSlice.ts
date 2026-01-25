@@ -70,6 +70,7 @@ import {
   getMonsterGlobalPosition,
   findMoveTowardHero,
   resolveMonsterAttackWithStats,
+  DEFAULT_MONSTER_ATTACK,
 } from "./monsterAI";
 import {
   canLevelUp,
@@ -5174,7 +5175,7 @@ export const gameSlice = createSlice({
               // Adjacent attack - execute attack immediately
               const targetAC = heroAcMap[targetHeroId] ?? 10;
               const tactics = MONSTER_TACTICS[monster.monsterId];
-              const attackOption = tactics?.adjacentAttack ?? { name: 'Attack', attackBonus: 5, damage: 1 };
+              const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
               const attackResult = resolveMonsterAttackWithStats(attackOption, targetAC, Math.random);
               
               // Store the attack result

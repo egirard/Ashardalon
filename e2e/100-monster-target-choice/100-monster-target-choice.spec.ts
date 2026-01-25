@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame, disableAnimations } from '../helpers/screenshot-helper';
 
 test.describe('100 - Monster Target Choice', () => {
   test('Player can choose which hero a monster should target when multiple heroes are equidistant', async ({ page }) => {
@@ -108,16 +108,7 @@ test.describe('100 - Monster Target Choice', () => {
     await page.locator('[data-testid="monster-decision-prompt"]').waitFor({ state: 'visible' });
     
     // Disable animations for stable screenshots
-    await page.addStyleTag({
-      content: `
-        * {
-          animation-duration: 0s !important;
-          animation-delay: 0s !important;
-          transition-duration: 0s !important;
-          transition-delay: 0s !important;
-        }
-      `
-    });
+    await disableAnimations(page);
     
     // STEP 3: Capture screenshot showing the monster decision prompt
     await screenshots.capture(page, '001-monster-decision-prompt', {

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame, disableAnimations } from '../helpers/screenshot-helper';
 
 test.describe('101 - Monster Move Destination Choice', () => {
   test('Player can choose which destination square a monster should move to when multiple equidistant options exist', async ({ page }) => {
@@ -66,16 +66,7 @@ test.describe('101 - Monster Move Destination Choice', () => {
     });
     
     // Disable animations for stable screenshots
-    await page.addStyleTag({
-      content: `
-        * {
-          animation-duration: 0s !important;
-          animation-delay: 0s !important;
-          transition-duration: 0s !important;
-          transition-delay: 0s !important;
-        }
-      `
-    });
+    await disableAnimations(page);
     
     // Wait for the decision prompt to appear
     await page.locator('[data-testid="monster-decision-prompt"]').waitFor({ state: 'visible' });
