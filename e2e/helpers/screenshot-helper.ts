@@ -9,6 +9,24 @@ import * as path from 'path';
 export const DETERMINISTIC_TIMESTAMP = 1234567890000;
 
 /**
+ * Disables all CSS animations and transitions for stable screenshots.
+ * 
+ * @param page - The Playwright page object
+ */
+export async function disableAnimations(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: `
+      * {
+        animation-duration: 0s !important;
+        animation-delay: 0s !important;
+        transition-duration: 0s !important;
+        transition-delay: 0s !important;
+      }
+    `
+  });
+}
+
+/**
  * Sets up deterministic game initialization by overriding Date.now() and Math.random().
  * 
  * CRITICAL: Call this before starting any game to ensure:

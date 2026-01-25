@@ -11,7 +11,7 @@ const SQUARES_PER_TILE = 4;
 /**
  * Default monster attack stats used when no tactics or attacks are defined.
  */
-const DEFAULT_MONSTER_ATTACK: MonsterAttackOption = {
+export const DEFAULT_MONSTER_ATTACK: MonsterAttackOption = {
   name: 'Attack',
   attackBonus: 5,
   damage: 1,
