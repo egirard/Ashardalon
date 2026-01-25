@@ -79,8 +79,20 @@ This test demonstrates the complete lifecycle of the Wandering Monster encounter
 - `recentlySpawnedMonsterId` is set
 - Spawned monster has valid position coordinates
 
-### Screenshot 005: Monster on Board
-![Screenshot 005](screenshots/005-monster-on-board-chromium-linux.png)
+### Screenshot 005: Message Dismissed
+![Screenshot 005](screenshots/005-message-dismissed-chromium-linux.png)
+
+**What to verify:**
+- Encounter effect message has been cleared
+- Monster remains on the board
+- Game state is clean and ready for next action
+
+**Programmatic checks:**
+- `encounterEffectMessage` is null
+- Monster count is greater than initial count
+
+### Screenshot 006: Monster on Board
+![Screenshot 006](screenshots/006-monster-on-board-chromium-linux.png)
 
 **What to verify:**
 - Monster token is visible on the game board
@@ -93,8 +105,8 @@ This test demonstrates the complete lifecycle of the Wandering Monster encounter
 - At least one monster exists in game state
 - Monster has valid position on the board
 
-### Screenshot 006: Complete Lifecycle
-![Screenshot 006](screenshots/006-complete-lifecycle-chromium-linux.png)
+### Screenshot 007: Complete Lifecycle
+![Screenshot 007](screenshots/007-complete-lifecycle-chromium-linux.png)
 
 **What to verify:**
 - Encounter card lifecycle completed successfully

@@ -56,6 +56,7 @@
     selectDragonsTributeTreasure,
     dismissTreasureCard,
     selectThiefDiscard,
+    selectTileForMonsterSpawn,
     useTreasureItem,
     placeTreasureToken,
     applyHealing,
@@ -260,6 +261,7 @@
   let pendingHeroPlacement: PendingHeroPlacementState | null = $state(null);
   let pendingTreasurePlacement: import('../store/gameSlice').PendingTreasurePlacementState | null = $state(null);
   let pendingTreasureDiscard: import('../store/gameSlice').PendingTreasureDiscardState | null = $state(null);
+  let pendingMonsterSpawn: import('../store/gameSlice').PendingMonsterSpawnState | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
   let dragonsTributeSecondTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
@@ -373,6 +375,7 @@
       pendingHeroPlacement = state.game.pendingHeroPlacement;
       pendingTreasurePlacement = state.game.pendingTreasurePlacement;
       pendingTreasureDiscard = state.game.pendingTreasureDiscard;
+      pendingMonsterSpawn = state.game.pendingMonsterSpawn;
       drawnTreasure = state.game.drawnTreasure;
       dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
       heroInventories = state.game.heroInventories;
@@ -443,6 +446,7 @@
     pendingHeroPlacement = state.game.pendingHeroPlacement;
     pendingTreasurePlacement = state.game.pendingTreasurePlacement;
     pendingTreasureDiscard = state.game.pendingTreasureDiscard;
+    pendingMonsterSpawn = state.game.pendingMonsterSpawn;
     drawnTreasure = state.game.drawnTreasure;
     dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
     heroInventories = state.game.heroInventories;
@@ -506,6 +510,12 @@
         hero.position.x === square.x && hero.position.y === square.y
       );
     });
+  });
+
+  // Get valid tiles for monster spawn when monster spawn is pending
+  let validMonsterSpawnTiles = $derived.by(() => {
+    if (!pendingMonsterSpawn) return [];
+    return pendingMonsterSpawn.availableTileIds;
   });
 
   // Auto-advance hero phase when valid action sequence is complete
@@ -2454,6 +2464,11 @@
   function handleMonsterRelocationCancel() {
     pendingMonsterRelocation = null;
   }
+
+  function handleMonsterSpawnTileClicked(tileId: string) {
+    // Dispatch action to spawn monster on selected tile
+    store.dispatch(selectTileForMonsterSpawn({ tileId }));
+  }
   
   // Helper function to get selectable monsters for relocation
   function getSelectableMonsters(): string[] {
@@ -2901,7 +2916,8 @@
           {@const isTileSelectableForBladeBarrier = selectableTiles.some(t => t.id === tile.id)}
           {@const isTileSelectableForRelocation = pendingMonsterRelocation?.step === 'tile-selection' && 
                                                    getSelectableTilesForRelocation().includes(tile.id)}
-          {@const isTileSelectable = isTileSelectableForBladeBarrier || isTileSelectableForRelocation}
+          {@const isTileSelectableForMonsterSpawn = validMonsterSpawnTiles.includes(tile.id)}
+          {@const isTileSelectable = isTileSelectableForBladeBarrier || isTileSelectableForRelocation || isTileSelectableForMonsterSpawn}
           {@const hasSelectableSquares = pendingBladeBarrier && pendingBladeBarrier.step === 'square-selection' && pendingBladeBarrier.selectedTileId === tile.id}
           <div
             class="placed-tile"
@@ -2919,6 +2935,8 @@
                 handleBladeBarrierTileSelected(tile.id, e);
               } else if (isTileSelectableForRelocation) {
                 handleMonsterRelocationTileClicked(tile.id);
+              } else if (isTileSelectableForMonsterSpawn) {
+                handleMonsterSpawnTileClicked(tile.id);
               }
             }}
             role={isTileSelectable ? "button" : undefined}
@@ -3411,6 +3429,7 @@
             onUseTreasureItem={(cardId) => handleUseTreasureItem(hero.id, cardId)}
             boardPosition={edge}
             treasurePlacementMessage={isHeroActive && pendingTreasurePlacement ? 'Choose a tile to place the treasure token' : undefined}
+            monsterSpawnMessage={isHeroActive && pendingMonsterSpawn ? `Choose a tile to spawn ${pendingMonsterSpawn.monsterName}` : undefined}
             {logEntries}
           />
           <!-- Turn Progress Card (shown only for active player) -->

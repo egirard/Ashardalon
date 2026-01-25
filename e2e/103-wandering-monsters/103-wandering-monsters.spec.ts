@@ -112,7 +112,7 @@ test.describe('103 - Wandering Monsters Event Card', () => {
     // Wait for encounter card to disappear
     await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
     
-    // Wait a moment for the monster spawn to complete
+    // Wait for monster spawn to complete
     await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'monster-spawned', {
@@ -148,7 +148,32 @@ test.describe('103 - Wandering Monsters Event Card', () => {
       }
     });
     
-    // STEP 6: Verify monster is visible on the game board
+    // STEP 6: Dismiss the encounter effect message
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/dismissEncounterEffectMessage'
+      });
+    });
+    
+    // Wait for message to be dismissed
+    await page.waitForTimeout(200);
+    
+    await screenshots.capture(page, 'message-dismissed', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
+        // Verify the encounter effect message is cleared
+        expect(storeState.game.encounterEffectMessage).toBeNull();
+        
+        // Verify we have monsters on the board
+        expect(storeState.game.monsters.length).toBeGreaterThan(0);
+      }
+    });
+    
+    // STEP 7: Verify monster is visible on the game board
     await screenshots.capture(page, 'monster-on-board', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -163,7 +188,7 @@ test.describe('103 - Wandering Monsters Event Card', () => {
       }
     });
     
-    // STEP 7: Verify complete lifecycle - card drawn, effect executed, card discarded
+    // STEP 8: Verify complete lifecycle - card drawn, effect executed, card discarded
     await screenshots.capture(page, 'complete-lifecycle', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {

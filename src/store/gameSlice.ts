@@ -332,6 +332,8 @@ export interface GameState {
   pendingTreasurePlacement: PendingTreasurePlacementState | null;
   /** Pending treasure discard: requires player to select which treasure to discard */
   pendingTreasureDiscard: PendingTreasureDiscardState | null;
+  /** Pending monster spawn: requires player to select tile for monster spawn (Wandering Monster) */
+  pendingMonsterSpawn: PendingMonsterSpawnState | null;
   /** Selected target ID (for attack actions) - can be monster, trap, treasure, etc. */
   selectedTargetId: string | null;
   /** Selected target type (to differentiate between different targetable entity types) */
@@ -417,6 +419,20 @@ export interface PendingTreasureDiscardState {
   encounterName: string;
   /** The hero who must discard */
   heroId: string;
+}
+
+/**
+ * State for tracking when player needs to select a tile for monster spawn
+ */
+export interface PendingMonsterSpawnState {
+  /** The drawn monster ID to spawn */
+  monsterId: string;
+  /** The monster name for display */
+  monsterName: string;
+  /** The hero who is spawning the monster */
+  heroId: string;
+  /** Available tiles with unexplored edges */
+  availableTileIds: string[];
 }
 
 /**
@@ -687,6 +703,7 @@ const initialState: GameState = {
   pendingMonsterChoice: null,
   pendingTreasurePlacement: null,
   pendingTreasureDiscard: null,
+  pendingMonsterSpawn: null,
   selectedTargetId: null,
   selectedTargetType: null,
   showScenarioIntroduction: false,
@@ -2489,7 +2506,7 @@ export const gameSlice = createSlice({
             }
           }
           
-          // Wandering Monster: Draw a monster and place on closest unexplored edge
+          // Wandering Monster: Draw a monster and prompt player to select tile
           else if (encounterId === 'wandering-monster') {
             const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
             if (activeHeroToken) {
@@ -2500,42 +2517,53 @@ export const gameSlice = createSlice({
               if (monsterId) {
                 const monsterDef = getMonsterById(monsterId);
                 if (monsterDef) {
-                  // Find a tile with an unexplored edge (prefer closer to active hero)
+                  // Find all tiles with unexplored edges
                   const tilesWithUnexploredEdges = state.dungeon.unexploredEdges.map(edge => 
                     state.dungeon.tiles.find(t => t.id === edge.tileId)
                   ).filter((t, i, arr) => t && arr.findIndex(tile => tile?.id === t.id) === i); // Deduplicate
                   
                   if (tilesWithUnexploredEdges.length > 0) {
-                    // Get the first tile with unexplored edge (could be improved to find closest)
-                    const spawnTile = tilesWithUnexploredEdges[0];
-                    if (spawnTile) {
-                      // Use spawn function to handle multi-monster spawns
-                      const spawnResult = spawnMonstersWithBehavior(
-                        monsterId,
-                        spawnTile,
-                        activeHeroToken.heroId,
-                        state.monsters,
-                        state.monsterInstanceCounter,
-                        state.monsterGroupCounter
-                      );
-                      
-                      if (spawnResult.monsters.length > 0) {
-                        state.monsters.push(...spawnResult.monsters);
-                        state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
-                        state.monsterGroupCounter = spawnResult.monsterGroupCounter;
-                        state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
+                    const availableTileIds = tilesWithUnexploredEdges.map(t => t!.id);
+                    
+                    // If only one tile available, spawn directly
+                    if (availableTileIds.length === 1) {
+                      const spawnTile = tilesWithUnexploredEdges[0];
+                      if (spawnTile) {
+                        // Use spawn function to handle multi-monster spawns
+                        const spawnResult = spawnMonstersWithBehavior(
+                          monsterId,
+                          spawnTile,
+                          activeHeroToken.heroId,
+                          state.monsters,
+                          state.monsterInstanceCounter,
+                          state.monsterGroupCounter
+                        );
                         
-                        // Add group if multiple monsters spawned
-                        if (spawnResult.group) {
-                          state.monsterGroups.push(spawnResult.group);
+                        if (spawnResult.monsters.length > 0) {
+                          state.monsters.push(...spawnResult.monsters);
+                          state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+                          state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+                          state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
+                          
+                          // Add group if multiple monsters spawned
+                          if (spawnResult.group) {
+                            state.monsterGroups.push(spawnResult.group);
+                          }
+                          
+                          state.encounterEffectMessage = `${monsterDef.name} spawned`;
+                        } else {
+                          state.encounterEffectMessage = 'Failed to create monster';
                         }
-                        
-                        state.encounterEffectMessage = `${monsterDef.name} spawned`;
-                      } else {
-                        state.encounterEffectMessage = 'Failed to create monster';
                       }
                     } else {
-                      state.encounterEffectMessage = 'No tile found with unexplored edge';
+                      // Multiple tiles available - prompt player to select
+                      state.pendingMonsterSpawn = {
+                        monsterId,
+                        monsterName: monsterDef.name,
+                        heroId: activeHeroToken.heroId,
+                        availableTileIds,
+                      };
+                      // Don't set encounterEffectMessage yet - will be set when tile is selected
                     }
                   } else {
                     state.encounterEffectMessage = 'No tiles with unexplored edges';
@@ -4675,6 +4703,53 @@ export const gameSlice = createSlice({
       state.pendingTreasureDiscard = null;
     },
     /**
+     * Select a tile to spawn a wandering monster
+     */
+    selectTileForMonsterSpawn: (state, action: PayloadAction<{ tileId: string }>) => {
+      const { tileId } = action.payload;
+      
+      if (!state.pendingMonsterSpawn) {
+        return;
+      }
+      
+      const { monsterId, monsterName, heroId } = state.pendingMonsterSpawn;
+      
+      // Find the selected tile
+      const spawnTile = state.dungeon.tiles.find(t => t.id === tileId);
+      if (!spawnTile) {
+        return;
+      }
+      
+      // Spawn the monster on the selected tile
+      const spawnResult = spawnMonstersWithBehavior(
+        monsterId,
+        spawnTile,
+        heroId,
+        state.monsters,
+        state.monsterInstanceCounter,
+        state.monsterGroupCounter
+      );
+      
+      if (spawnResult.monsters.length > 0) {
+        state.monsters.push(...spawnResult.monsters);
+        state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+        state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+        state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
+        
+        // Add group if multiple monsters spawned
+        if (spawnResult.group) {
+          state.monsterGroups.push(spawnResult.group);
+        }
+        
+        state.encounterEffectMessage = `${monsterName} spawned`;
+      } else {
+        state.encounterEffectMessage = 'Failed to create monster';
+      }
+      
+      // Clear the pending state
+      state.pendingMonsterSpawn = null;
+    },
+    /**
      * Use a treasure item from a hero's inventory
      */
     useTreasureItem: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
@@ -5168,6 +5243,7 @@ export const {
   selectDragonsTributeTreasure,
   dismissTreasureCard,
   selectThiefDiscard,
+  selectTileForMonsterSpawn,
   useTreasureItem,
   setTreasureDeck,
   setHeroInventories,

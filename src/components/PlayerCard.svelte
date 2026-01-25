@@ -36,11 +36,13 @@
     boardPosition?: 'top' | 'bottom' | 'left' | 'right';
     /** Message to display for pending treasure placement */
     treasurePlacementMessage?: string;
+    /** Message to display for pending monster spawn */
+    monsterSpawnMessage?: string;
     /** Log entries for the game */
     logEntries?: LogEntry[];
   }
 
-  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage, logEntries = [] }: Props = $props();
+  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage, monsterSpawnMessage, logEntries = [] }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -250,6 +252,14 @@
     <div class="treasure-placement-prompt" data-testid="treasure-placement-prompt">
       <div class="prompt-icon">💎</div>
       <div class="prompt-text">{treasurePlacementMessage}</div>
+    </div>
+  {/if}
+  
+  <!-- Monster Spawn Prompt (shown when player needs to select a tile) -->
+  {#if monsterSpawnMessage}
+    <div class="monster-spawn-prompt" data-testid="monster-spawn-prompt">
+      <div class="prompt-icon">👹</div>
+      <div class="prompt-text">{monsterSpawnMessage}</div>
     </div>
   {/if}
 
@@ -767,6 +777,19 @@
     align-items: center;
     gap: calc(0.85rem * var(--ui-font-scale));
     box-shadow: 0 4px 12px rgba(245, 124, 0, 0.4);
+    animation: pulse-prompt 2s ease-in-out infinite;
+  }
+
+  .monster-spawn-prompt {
+    background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+    border: 2px solid #ef5350;
+    border-radius: 8px;
+    padding: calc(0.85rem * var(--ui-font-scale));
+    margin: calc(0.6rem * var(--ui-font-scale)) 0;
+    display: flex;
+    align-items: center;
+    gap: calc(0.85rem * var(--ui-font-scale));
+    box-shadow: 0 4px 12px rgba(183, 28, 28, 0.4);
     animation: pulse-prompt 2s ease-in-out infinite;
   }
 
