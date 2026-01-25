@@ -42,7 +42,7 @@ test.describe('103 - Wandering Monsters Event Card', () => {
       }
     });
     
-    // STEP 2: Set up game state - place a tile to create unexplored edges
+    // STEP 2: Set up game state - place additional tiles to create multiple tiles with unexplored edges
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
@@ -52,10 +52,37 @@ test.describe('103 - Wandering Monsters Event Card', () => {
         payload: { heroId: 'quinn', position: { x: 2, y: 3 } }
       });
       
-      // Place an exploration tile to ensure we have unexplored edges
-      // The start tile already has unexplored edges, but let's verify state
+      // Add a second tile to the dungeon (north of start tile)
+      // This will give us 2 tiles with unexplored edges, triggering the tile selection UI
       const state = store.getState();
-      console.log('Unexplored edges:', state.game.dungeon.unexploredEdges);
+      const newTile = {
+        id: 'tile-1',
+        tileType: 'cave-1',
+        position: { row: -1, col: 0 },
+        rotation: 0,
+        edges: {
+          north: 'unexplored' as const,
+          south: 'explored' as const,
+          east: 'unexplored' as const,
+          west: 'unexplored' as const,
+        },
+      };
+      
+      // Combine existing unexplored edges with new ones
+      const allUnexploredEdges = [
+        ...state.game.dungeon.unexploredEdges,
+        { tileId: 'tile-1', direction: 'north' as const },
+        { tileId: 'tile-1', direction: 'east' as const },
+        { tileId: 'tile-1', direction: 'west' as const },
+      ];
+      
+      store.dispatch({
+        type: 'game/addDungeonTiles',
+        payload: {
+          tiles: [newTile],
+          unexploredEdges: allUnexploredEdges,
+        }
+      });
     });
     
     await screenshots.capture(page, 'game-ready-for-encounter', {
@@ -67,6 +94,13 @@ test.describe('103 - Wandering Monsters Event Card', () => {
         expect(storeState.game.heroTokens[0].position).toEqual({ x: 2, y: 3 });
         // Verify we have unexplored edges for monster spawning
         expect(storeState.game.dungeon.unexploredEdges.length).toBeGreaterThan(0);
+        // Verify we have 2 tiles (start tile + tile-1)
+        expect(storeState.game.dungeon.tiles.length).toBe(2);
+        // Verify we have multiple tiles with unexplored edges
+        const tilesWithUnexploredEdges = new Set(
+          storeState.game.dungeon.unexploredEdges.map((e: any) => e.tileId)
+        );
+        expect(tilesWithUnexploredEdges.size).toBeGreaterThan(1);
       }
     });
     
@@ -106,16 +140,16 @@ test.describe('103 - Wandering Monsters Event Card', () => {
       }
     });
     
-    // STEP 5: Accept the encounter card (spawns monster)
+    // STEP 5: Accept the encounter card (triggers tile selection UI)
     await page.locator('[data-testid="encounter-continue"]').click();
     
     // Wait for encounter card to disappear
     await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
     
-    // Wait for monster spawn to complete
+    // Wait for tile selection state to be set
     await page.waitForTimeout(500);
     
-    await screenshots.capture(page, 'monster-spawned', {
+    await screenshots.capture(page, 'tile-selection-prompt', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="encounter-card"]')).not.toBeVisible();
         
@@ -123,9 +157,54 @@ test.describe('103 - Wandering Monsters Event Card', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         
+        // Verify tile selection state is set
+        expect(storeState.game.pendingMonsterSpawn).not.toBeNull();
+        expect(storeState.game.pendingMonsterSpawn.availableTileIds.length).toBeGreaterThan(1);
+        
+        // Verify monster was drawn from deck but not yet spawned
+        expect(storeState.game.monsterDeck).toBeDefined();
+        
+        // Monster should NOT be spawned yet
+        const currentMonsterCount = storeState.game.monsters.length;
+        expect(currentMonsterCount).toBe(initialMonsterCount);
+      }
+    });
+    
+    // Verify tile selection prompt is visible
+    await expect(page.locator('[data-testid="monster-spawn-prompt"]')).toBeVisible();
+    
+    // STEP 6: Select a tile to spawn the monster
+    // Get the first available tile ID and click on it
+    const selectedTileId = await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      const state = store.getState();
+      return state.game.pendingMonsterSpawn.availableTileIds[0];
+    });
+    
+    // Select a tile by dispatching the action directly
+    await page.evaluate((tileId) => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/selectTileForMonsterSpawn',
+        payload: { tileId }
+      });
+    }, selectedTileId);
+    
+    // Wait for monster spawn to complete
+    await page.waitForTimeout(500);
+    
+    await screenshots.capture(page, 'monster-spawned-on-selected-tile', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        
         // Verify monster was spawned
         const newMonsterCount = storeState.game.monsters.length;
         expect(newMonsterCount).toBeGreaterThan(initialMonsterCount);
+        
+        // Verify pending monster spawn state is cleared
+        expect(storeState.game.pendingMonsterSpawn).toBeNull();
         
         // Verify monster deck was updated (a card was drawn)
         expect(storeState.game.monsterDeck).toBeDefined();
@@ -145,10 +224,13 @@ test.describe('103 - Wandering Monsters Event Card', () => {
         expect(spawnedMonster.position).toBeDefined();
         expect(spawnedMonster.position.x).toBeGreaterThanOrEqual(0);
         expect(spawnedMonster.position.y).toBeGreaterThanOrEqual(0);
+        
+        // Verify the monster was spawned on the selected tile
+        expect(spawnedMonster.tileId).toBe(selectedTileId);
       }
     });
     
-    // STEP 6: Dismiss the encounter effect message
+    // STEP 7: Dismiss the encounter effect message
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -173,7 +255,7 @@ test.describe('103 - Wandering Monsters Event Card', () => {
       }
     });
     
-    // STEP 7: Verify monster is visible on the game board
+    // STEP 8: Verify monster is visible on the game board
     await screenshots.capture(page, 'monster-on-board', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -188,7 +270,7 @@ test.describe('103 - Wandering Monsters Event Card', () => {
       }
     });
     
-    // STEP 8: Verify complete lifecycle - card drawn, effect executed, card discarded
+    // STEP 9: Verify complete lifecycle - card drawn, tile selected, monster spawned, card discarded
     await screenshots.capture(page, 'complete-lifecycle', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
