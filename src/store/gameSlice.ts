@@ -68,6 +68,8 @@ import {
   findClosestMonsterNotOnTile,
   findPositionAdjacentToHero,
   getMonsterGlobalPosition,
+  findMoveTowardHero,
+  resolveMonsterAttackWithStats,
 } from "./monsterAI";
 import {
   canLevelUp,
@@ -3807,6 +3809,14 @@ export const gameSlice = createSlice({
         randomFn
       );
 
+      // Check if the monster needs player choice (e.g., multiple equidistant heroes or destinations)
+      if (result.type === 'needs-choice') {
+        // Pause villain phase and show decision prompt
+        state.pendingMonsterDecision = result.decision;
+        state.villainPhasePaused = true;
+        return;
+      }
+
       if (result.type === 'move') {
         // Update monster position
         const monsterToMove = state.monsters.find(m => m.instanceId === monster.instanceId);
@@ -5116,6 +5126,8 @@ export const gameSlice = createSlice({
       
       // Verify this matches the pending decision
       if (state.pendingMonsterDecision?.decisionId === decisionId) {
+        const decision = state.pendingMonsterDecision;
+        
         // Store the selected target for the monster AI to use
         state.monsterDecisionSelectedHero = targetHeroId;
         
@@ -5123,8 +5135,111 @@ export const gameSlice = createSlice({
         state.pendingMonsterDecision = null;
         state.villainPhasePaused = false;
         
-        // TODO: The villain phase needs to continue execution using the stored selection
-        // The next monster activation should use state.monsterDecisionSelectedHero
+        // Re-execute the monster turn with the selected hero
+        // This will allow the monster to continue its action using the selected target
+        const monster = state.monsters.find(m => m.instanceId === decision.monsterId);
+        if (monster) {
+          // Build hero HP and AC maps (AC includes item bonuses)
+          const heroHpMap: Record<string, number> = {};
+          const heroAcMap: Record<string, number> = {};
+          for (const hp of state.heroHp) {
+            heroHpMap[hp.heroId] = hp.currentHp;
+          }
+          for (const token of state.heroTokens) {
+            const hero = AVAILABLE_HEROES.find(h => h.id === token.heroId);
+            if (hero) {
+              let totalAC = calculateTotalAC(hero.ac, state.heroInventories[token.heroId]);
+              
+              // Apply Cleric's Shield bonus (+2 AC) if this hero is the target
+              if (state.clericsShieldTarget === token.heroId) {
+                totalAC += 2;
+              }
+              
+              heroAcMap[token.heroId] = totalAC;
+            }
+          }
+          
+          // Filter out heroes that are removed from play
+          const activeHeroTokens = state.heroTokens.filter(token => {
+            const heroHp = state.heroHp.find(hp => hp.heroId === token.heroId);
+            return !heroHp?.removedFromPlay;
+          });
+          
+          // Get the selected hero token
+          const selectedHeroToken = activeHeroTokens.find(h => h.heroId === targetHeroId);
+          
+          if (selectedHeroToken) {
+            // Execute action based on decision context
+            if (decision.context === 'attack' || decision.type === 'choose-adjacent-target') {
+              // Adjacent attack - execute attack immediately
+              const targetAC = heroAcMap[targetHeroId] ?? 10;
+              const tactics = MONSTER_TACTICS[monster.monsterId];
+              const attackOption = tactics?.adjacentAttack ?? { name: 'Attack', attackBonus: 5, damage: 1 };
+              const attackResult = resolveMonsterAttackWithStats(attackOption, targetAC, Math.random);
+              
+              // Store the attack result
+              state.monsterAttackResult = attackResult;
+              state.monsterAttackTargetId = targetHeroId;
+              state.monsterAttackerId = monster.instanceId;
+              
+              // Apply damage if hit
+              if (attackResult.isHit && attackResult.damage > 0) {
+                const heroHp = state.heroHp.find(h => h.heroId === targetHeroId);
+                if (heroHp) {
+                  heroHp.currentHp = Math.max(0, heroHp.currentHp - attackResult.damage);
+                  
+                  // Check for party defeat
+                  const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+                  if (allHeroesDefeated) {
+                    state.currentScreen = "defeat";
+                  }
+                }
+              }
+              
+              // Apply status effect if hit
+              if (attackResult.isHit) {
+                applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, targetHeroId, 'adjacent');
+              }
+              
+              // Apply miss damage if missed
+              if (!attackResult.isHit) {
+                applyMonsterMissDamage(state, monster.monsterId, targetHeroId, 'adjacent');
+              }
+              
+              // Increment monster index to continue to next monster
+              state.villainPhaseMonsterIndex++;
+            } else {
+              // Movement targeting - find move toward selected hero
+              const moveTarget = findMoveTowardHero(monster, selectedHeroToken.position, activeHeroTokens, state.monsters, state.dungeon);
+              
+              if (moveTarget && !('needsChoice' in moveTarget)) {
+                // Execute the move
+                const newTileId = findTileForGlobalPosition(moveTarget, state.dungeon);
+                if (newTileId) {
+                  const localPos = globalToLocalPosition(moveTarget, newTileId, state.dungeon);
+                  if (localPos) {
+                    monster.position = localPos;
+                    monster.tileId = newTileId;
+                    
+                    // Check for Blade Barrier
+                    const bladeBarrierCheck = checkBladeBarrierDamage(moveTarget, state.boardTokens || []);
+                    if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+                      monster.currentHp = Math.max(0, monster.currentHp - 1);
+                      state.boardTokens = state.boardTokens.filter(token => token.id !== bladeBarrierCheck.tokenToRemove);
+                    }
+                  }
+                }
+                state.monsterMoveActionId = monster.instanceId;
+                
+                // Increment monster index to continue to next monster
+                state.villainPhaseMonsterIndex++;
+              }
+            }
+          }
+        }
+        
+        // Clear the selected hero
+        state.monsterDecisionSelectedHero = null;
       }
     },
     /**
@@ -5135,6 +5250,8 @@ export const gameSlice = createSlice({
       
       // Verify this matches the pending decision
       if (state.pendingMonsterDecision?.decisionId === decisionId) {
+        const decision = state.pendingMonsterDecision;
+        
         // Store the selected position for the monster AI to use
         state.monsterDecisionSelectedPosition = position;
         
@@ -5142,8 +5259,43 @@ export const gameSlice = createSlice({
         state.pendingMonsterDecision = null;
         state.villainPhasePaused = false;
         
-        // TODO: The villain phase needs to continue execution using the stored selection
-        // The next monster activation should use state.monsterDecisionSelectedPosition
+        // Execute the move action with the selected position
+        const monster = state.monsters.find(m => m.instanceId === decision.monsterId);
+        if (monster) {
+          // Find which tile the destination is on
+          const newTileId = findTileForGlobalPosition(position, state.dungeon);
+          if (newTileId) {
+            // Convert global position to local tile position
+            const localPos = globalToLocalPosition(position, newTileId, state.dungeon);
+            if (localPos) {
+              monster.position = localPos;
+              monster.tileId = newTileId;
+              
+              // Check for Blade Barrier tokens at destination
+              const bladeBarrierCheck = checkBladeBarrierDamage(
+                position,
+                state.boardTokens || []
+              );
+              
+              if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+                // Deal 1 damage to the monster
+                monster.currentHp = Math.max(0, monster.currentHp - 1);
+                
+                // Remove the blade barrier token
+                state.boardTokens = state.boardTokens.filter(
+                  token => token.id !== bladeBarrierCheck.tokenToRemove
+                );
+              }
+            }
+          }
+          state.monsterMoveActionId = monster.instanceId;
+          
+          // Increment monster index to continue to next monster
+          state.villainPhaseMonsterIndex++;
+        }
+        
+        // Clear the selected position
+        state.monsterDecisionSelectedPosition = null;
       }
     },
     /**
