@@ -259,7 +259,7 @@ These effect types display the card description and resolve to the discard pile,
 | spotted | Spotted! | Filter deck, place tile and monster | ⚠️ Display only |
 | thief-in-dark | Thief in the Dark | Lose a treasure | ✅ Fully Implemented |
 | unnatural-corruption | Unnatural Corruption | Filter monster deck for Aberrants | ⚠️ Display only |
-| wandering-monster | Wandering Monster | Spawn monster on unexplored edge | ⚠️ Display only |
+| wandering-monster | Wandering Monster | Spawn monster on unexplored edge | ✅ Fully Implemented |
 | warp-in-time | Warp in Time | Pass monster cards right | ⚠️ Display only |
 
 #### Deadly Poison Implementation Notes
@@ -395,6 +395,32 @@ These effect types display the card description and resolve to the discard pile,
   - Effect application: gameSlice.ts (lines 2144-2160 in `dismissEncounterCard` reducer)
   - Filtering logic: monsters.ts (`filterMonsterDeckByCategory`)
 
+#### Wandering Monster Implementation Notes
+
+**Wandering Monster** is now fully implemented:
+- When the encounter card is drawn and accepted, it draws a monster from the monster deck
+- Finds all tiles with unexplored edges in the dungeon
+- Spawns the drawn monster on a tile with an unexplored edge (currently uses first available tile)
+- Uses `spawnMonstersWithBehavior()` to handle multi-monster spawns (e.g., Kobold Skirmisher spawns 3 kobolds)
+- Updates monster instance counter and group counter automatically
+- Sets `recentlySpawnedMonsterId` to highlight the newly spawned monster
+- Effect message displays the result: "[Monster Name] spawned" or error messages for edge cases
+- Handles edge cases:
+  - No monsters in deck: "No monsters available in deck"
+  - No tiles with unexplored edges: "No tiles with unexplored edges"
+  - Monster spawning failure: "Failed to create monster"
+- Comprehensive unit tests verify:
+  - Monster is drawn from deck
+  - Monster spawns on tile with unexplored edge
+  - Deck state is updated (draw pile decremented)
+  - Error handling for empty deck scenario
+- E2E test (103) demonstrates the complete card lifecycle: draw encounter → display card → accept → spawn monster → verify placement
+- Implementation files:
+  - Card definition: types.ts (line 1005)
+  - Effect application: gameSlice.ts (lines 2094-2126 in `dismissEncounterCard` reducer)
+  - Monster spawning: monsters.ts (`spawnMonstersWithBehavior`)
+  - Deck manipulation: monsters.ts (`drawMonster`)
+
 
 ### Hazard Cards (3 cards, #97-99)
 
@@ -421,10 +447,10 @@ These effect types display the card description and resolve to the discard pile,
 | Environment | 6 | 6 | 0 |
 | Event (Damage) | 2 | 2 | 0 |
 | Event (Attack) | 14 | 14 | 0 |
-| Event (Special) | 16 | 7 | 9 |
+| Event (Special) | 16 | 8 | 8 |
 | Hazard | 3 | 0 | 3 |
 | Trap | 4 | 4 | 0 |
-| **Total** | **53** | **41** | **12** |
+| **Total** | **53** | **42** | **11** |
 
 ## Features Not Yet Implemented
 
