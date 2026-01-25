@@ -201,6 +201,11 @@ To fully implement all monsters, the following systems need to be built:
 1. **Condition System**: Track Poisoned, Dazed states per hero - COMPLETE
 2. **Miss Damage**: Allow attacks to deal damage on miss - COMPLETE
 3. **Multi-Range Attacks**: Different attacks at different ranges - COMPLETE
+4. **Player Choice for Monster Movement**: When monsters have multiple valid movement/targeting options, prompt player to choose - COMPLETE
+   - Multiple equidistant heroes for targeting
+   - Multiple adjacent heroes for attack selection
+   - Multiple equidistant move destinations
+   - Multiple positions adjacent to target (for move-and-attack)
 
 ### High Priority
 1. **Area Attacks**: Attack multiple targets (same tile, within range)
@@ -210,8 +215,33 @@ To fully implement all monsters, the following systems need to be built:
 3. **Linked Monsters**: Track spawned monster groups for XP
 4. **Multi-monster Spawn**: Spawn additional monsters on placement
 
+## Monster AI Behavior Patterns
+
+### Automatic (No Player Choice Needed)
+- Single closest hero → Monster automatically moves toward it
+- Single adjacent hero → Monster automatically attacks it
+- Single valid move destination → Monster automatically moves there
+
+### Player Choice Required (Implemented ✅)
+When monsters encounter ambiguous situations, the game pauses the villain phase and prompts the player:
+
+1. **Multiple Equidistant Heroes**: When 2+ heroes are at the same distance, player selects which hero the monster should target for movement
+2. **Multiple Adjacent Heroes**: When monster is adjacent to 2+ heroes, player selects which hero to attack
+3. **Multiple Move Destinations**: When monster has 2+ equidistant moves toward target, player selects destination square (highlighted with golden border and target indicator 🎯)
+4. **Multiple Adjacent Positions (Move-and-Attack)**: When monster with move-and-attack can reach multiple positions adjacent to hero, player selects final position
+
+**UI Implementation:**
+- `MonsterDecisionPrompt` modal displays available options
+- Valid destination squares highlighted on game board with golden pulsing animation
+- Click on highlighted square or hero button to make selection
+- Villain phase automatically continues after selection
+
+**Affects All Monsters:**
+Every monster can potentially encounter these situations depending on board state and hero positioning. The system is universal and applies to all monster types.
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2024 | Initial implementation with Kobold, Snake, Cultist |
+| 2.0 | 2026-01 | Added player choice system for ambiguous monster movement/targeting |
