@@ -2,19 +2,21 @@
 
 ## User Story
 
-As a player, when I draw the "Wandering Monster" encounter card, the game should:
+As a player, when I draw the "Wandering Monster" encounter card with multiple tiles having unexplored edges, the game should:
 1. Display the encounter card with its description
 2. Upon accepting the card, draw a monster from the monster deck
-3. Spawn that monster on a tile that has an unexplored edge
-4. Update the monster deck to reflect the drawn monster
-5. Discard the encounter card to the discard pile
-6. Display appropriate messages about the spawned monster
+3. **Prompt me to select which tile to spawn the monster on**
+4. **Highlight all tiles with unexplored edges**
+5. Spawn the monster on the selected tile
+6. Update the monster deck to reflect the drawn monster
+7. Discard the encounter card to the discard pile
+8. Display appropriate messages about the spawned monster
 
 ## Test Sequence
 
-This test demonstrates the complete lifecycle of the Wandering Monster encounter card, verifying that the card properly spawns a monster on the game board.
+This test demonstrates the complete lifecycle of the Wandering Monster encounter card with tile selection UI, verifying that players can choose where to spawn the monster when multiple tiles are available.
 
-### Screenshot 000: Character Select Screen
+###Screenshot 000: Character Select Screen
 ![Screenshot 000](screenshots/000-character-select-screen-chromium-linux.png)
 
 **What to verify:**
@@ -36,16 +38,19 @@ This test demonstrates the complete lifecycle of the Wandering Monster encounter
 - Dungeon has unexplored edges available
 - Game is in playable state
 
-### Screenshot 002: Game Ready for Encounter
+### Screenshot 002: Game Ready for Encounter  
 ![Screenshot 002](screenshots/002-game-ready-for-encounter-chromium-linux.png)
 
 **What to verify:**
 - Quinn is positioned at coordinates (2, 3)
+- **A second tile has been added to create multiple tiles with unexplored edges**
+- Both tiles are visible on the board
 - Game state is stable and ready for encounter
-- Unexplored edges still present on tiles
 
 **Programmatic checks:**
 - Quinn's position is set correctly
+- 2 tiles exist in the dungeon (start-tile and tile-1)
+- Multiple tiles have unexplored edges (triggers tile selection UI)
 - Unexplored edges count is greater than 0
 
 ### Screenshot 003: Wandering Monster Card Displayed
@@ -63,24 +68,41 @@ This test demonstrates the complete lifecycle of the Wandering Monster encounter
 - `drawnEncounter.type` is 'event'
 - `drawnEncounter.effect.type` is 'special'
 
-### Screenshot 004: Monster Spawned
-![Screenshot 004](screenshots/004-monster-spawned-chromium-linux.png)
+### Screenshot 004: Tile Selection Prompt
+![Screenshot 004](screenshots/004-tile-selection-prompt-chromium-linux.png)
 
 **What to verify:**
+- **Red prompt message "Choose a tile to spawn Snake" appears over Quinn's player card**
+- **Both tiles (start-tile and tile-1) are highlighted with selection overlay**
 - Encounter card has been dismissed
-- A monster has been spawned on the board
+- Monster has been drawn from deck but NOT yet spawned
+- Game awaits player tile selection
+
+**Programmatic checks:**
+- `pendingMonsterSpawn` state is set with available tile IDs
+- `pendingMonsterSpawn.availableTileIds.length > 1` (multiple tiles available)
+- Monster count equals initial count (not spawned yet)
+- Monster deck was updated (card drawn)
+
+### Screenshot 005: Monster Spawned on Selected Tile
+![Screenshot 005](screenshots/005-monster-spawned-on-selected-tile-chromium-linux.png)
+
+**What to verify:**
+- Tile selection prompt has disappeared
+- A monster has been spawned on the selected tile
 - The spawned monster is visible on a tile
 - Effect message displays "[Monster Name] spawned"
 
 **Programmatic checks:**
 - Monster count increased from initial count
-- Monster deck was updated (card drawn)
+- `pendingMonsterSpawn` state is cleared (null)
 - `encounterEffectMessage` contains "spawned"
 - `recentlySpawnedMonsterId` is set
 - Spawned monster has valid position coordinates
+- Monster's `tileId` matches the selected tile
 
-### Screenshot 005: Message Dismissed
-![Screenshot 005](screenshots/005-message-dismissed-chromium-linux.png)
+### Screenshot 006: Message Dismissed
+![Screenshot 006](screenshots/006-message-dismissed-chromium-linux.png)
 
 **What to verify:**
 - Encounter effect message has been cleared
@@ -91,8 +113,8 @@ This test demonstrates the complete lifecycle of the Wandering Monster encounter
 - `encounterEffectMessage` is null
 - Monster count is greater than initial count
 
-### Screenshot 006: Monster on Board
-![Screenshot 006](screenshots/006-monster-on-board-chromium-linux.png)
+### Screenshot 007: Monster on Board
+![Screenshot 007](screenshots/007-monster-on-board-chromium-linux.png)
 
 **What to verify:**
 - Monster token is visible on the game board
@@ -107,6 +129,25 @@ This test demonstrates the complete lifecycle of the Wandering Monster encounter
 
 ### Screenshot 007: Complete Lifecycle
 ![Screenshot 007](screenshots/007-complete-lifecycle-chromium-linux.png)
+
+**What to verify:**
+- Encounter card lifecycle completed successfully
+### Screenshot 007: Monster on Board
+![Screenshot 007](screenshots/007-monster-on-board-chromium-linux.png)
+
+**What to verify:**
+- Monster token is visible on the game board
+- Monster is positioned on the selected tile
+- Game continues normally after monster spawn
+- Encounter card is no longer displayed
+
+**Programmatic checks:**
+- `drawnEncounter` is null (card dismissed)
+- At least one monster exists in game state
+- Monster has valid position on the board
+
+### Screenshot 008: Complete Lifecycle
+![Screenshot 008](screenshots/008-complete-lifecycle-chromium-linux.png)
 
 **What to verify:**
 - Encounter card lifecycle completed successfully
@@ -125,9 +166,13 @@ When reviewing this test, verify:
 
 - [ ] Character selection works correctly with bottom-edge hero selection
 - [ ] Game starts with deterministic state (consistent screenshots)
+- [ ] **Second tile is added creating multiple tiles with unexplored edges**
 - [ ] Encounter card displays with correct name and description
 - [ ] Encounter card shows appropriate icon for event type
-- [ ] Monster spawns on a tile when card is accepted
+- [ ] **Tile selection prompt "Choose a tile to spawn [Monster]" appears**
+- [ ] **Both tiles are highlighted as selectable**
+- [ ] **Player can select a tile (programmatically in test)**
+- [ ] Monster spawns on the selected tile when tile is chosen
 - [ ] Monster appears at a valid position on the board
 - [ ] Monster deck is updated (card drawn from deck)
 - [ ] Encounter card is properly discarded after use
