@@ -1,4 +1,4 @@
-import type { MonsterState, Position, HeroToken, DungeonState, AttackResult, MonsterAttack, MonsterCardTactics, MonsterAttackOption, TileEdge, Direction } from './types';
+import type { MonsterState, Position, HeroToken, DungeonState, AttackResult, MonsterAttack, MonsterCardTactics, MonsterAttackOption, TileEdge, Direction, PendingMonsterDecision } from './types';
 import { MONSTER_ATTACKS, MONSTER_TACTICS } from './types';
 import { arePositionsAdjacent, rollD20 } from './combat';
 import { getAdjacentPositions, findTileAtPosition, getTileBounds } from './movement';
@@ -18,7 +18,7 @@ const DEFAULT_MONSTER_ATTACK: MonsterAttackOption = {
 };
 
 /**
- * Result of a monster's turn - either move, attack, move-and-attack, area-attack, explore, or no action
+ * Result of a monster's turn - either move, attack, move-and-attack, area-attack, explore, needs-choice, or no action
  */
 export type MonsterAction =
   | { type: 'move'; destination: Position }
@@ -26,6 +26,7 @@ export type MonsterAction =
   | { type: 'move-and-attack'; destination: Position; targetId: string; result: AttackResult }
   | { type: 'area-attack'; targetIds: string[]; results: AttackResult[] }
   | { type: 'explore'; edge: TileEdge }
+  | { type: 'needs-choice'; decision: PendingMonsterDecision }
   | { type: 'none' };
 
 /**
@@ -52,6 +53,7 @@ export function getManhattanDistance(pos1: Position, pos2: Position): number {
 /**
  * Find the closest hero to a monster using BFS pathfinding.
  * Returns null if no hero is reachable or all heroes are downed (0 HP).
+ * If multiple heroes are equidistant, returns all of them with needsChoice flag.
  * 
  * @param monster The monster looking for a target
  * @param heroTokens All hero tokens on the board
@@ -63,7 +65,7 @@ export function findClosestHero(
   heroTokens: HeroToken[],
   heroHpMap: Record<string, number>,
   dungeon: DungeonState
-): { hero: HeroToken; distance: number } | null {
+): { hero: HeroToken; distance: number } | { heroes: HeroToken[]; distance: number; needsChoice: true } | null {
   // Get monster's global position
   const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
   if (!monsterGlobal) return null;
@@ -81,7 +83,7 @@ export function findClosestHero(
   const queue: { pos: Position; distance: number }[] = [{ pos: monsterGlobal, distance: 0 }];
   visited.add(`${monsterGlobal.x},${monsterGlobal.y}`);
   
-  let closestHero: { hero: HeroToken; distance: number } | null = null;
+  const heroDistances = new Map<string, number>();
   
   while (queue.length > 0) {
     const current = queue.shift()!;
@@ -89,14 +91,14 @@ export function findClosestHero(
     // Check if any hero is at this position
     for (const hero of aliveHeroes) {
       if (hero.position.x === current.pos.x && hero.position.y === current.pos.y) {
-        if (!closestHero || current.distance < closestHero.distance) {
-          closestHero = { hero, distance: current.distance };
+        if (!heroDistances.has(hero.heroId)) {
+          heroDistances.set(hero.heroId, current.distance);
         }
       }
     }
     
-    // If we've found the closest hero, stop (BFS guarantees shortest path)
-    if (closestHero && closestHero.distance < current.distance) {
+    // Continue until we've found all heroes or searched far enough
+    if (heroDistances.size === aliveHeroes.length) {
       break;
     }
     
@@ -111,19 +113,44 @@ export function findClosestHero(
     }
   }
   
-  return closestHero;
+  if (heroDistances.size === 0) return null;
+  
+  // Find the minimum distance
+  const minDistance = Math.min(...Array.from(heroDistances.values()));
+  
+  // Get all heroes at the minimum distance
+  const closestHeroes = aliveHeroes.filter(hero => {
+    const distance = heroDistances.get(hero.heroId);
+    return distance === minDistance;
+  });
+  
+  // If multiple heroes at same distance, return them all with needsChoice flag
+  if (closestHeroes.length > 1) {
+    return {
+      heroes: closestHeroes,
+      distance: minDistance,
+      needsChoice: true
+    };
+  }
+  
+  // Single closest hero
+  return {
+    hero: closestHeroes[0],
+    distance: minDistance
+  };
 }
 
 /**
  * Check if a monster is adjacent to any hero.
- * Returns the first adjacent hero found.
+ * Returns the first adjacent hero found, or all adjacent heroes if multiple exist.
+ * If multiple heroes are adjacent, returns them all with needsChoice flag.
  */
 export function findAdjacentHero(
   monster: MonsterState,
   heroTokens: HeroToken[],
   heroHpMap: Record<string, number>,
   dungeon: DungeonState
-): HeroToken | null {
+): HeroToken | { heroes: HeroToken[]; needsChoice: true } | null {
   const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
   if (!monsterGlobal) return null;
   
@@ -133,13 +160,25 @@ export function findAdjacentHero(
     return hp !== undefined && hp > 0;
   });
   
+  const adjacentHeroes: HeroToken[] = [];
+  
   for (const hero of aliveHeroes) {
     if (arePositionsAdjacent(monsterGlobal, hero.position)) {
-      return hero;
+      adjacentHeroes.push(hero);
     }
   }
   
-  return null;
+  if (adjacentHeroes.length === 0) return null;
+  
+  // If multiple adjacent heroes, return them all with needsChoice flag
+  if (adjacentHeroes.length > 1) {
+    return {
+      heroes: adjacentHeroes,
+      needsChoice: true
+    };
+  }
+  
+  return adjacentHeroes[0];
 }
 
 /**
@@ -155,7 +194,7 @@ export function findAdjacentHero(
  * @param heroHpMap Map of hero IDs to HP
  * @param dungeon Dungeon state
  * @param tileRange Number of tiles (1 = same or adjacent tile)
- * @returns The closest hero within range, or null if none
+ * @returns The closest hero within range (or multiple if equidistant), or null if none
  */
 export function findHeroWithinTileRange(
   monster: MonsterState,
@@ -163,13 +202,24 @@ export function findHeroWithinTileRange(
   heroHpMap: Record<string, number>,
   dungeon: DungeonState,
   tileRange: number
-): { hero: HeroToken; distance: number } | null {
+): { hero: HeroToken; distance: number } | { heroes: HeroToken[]; distance: number; needsChoice: true } | null {
   // "Within N tiles" means within N * SQUARES_PER_TILE squares of movement
   const maxSquareDistance = tileRange * SQUARES_PER_TILE;
   
   const closest = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
   
-  if (closest && closest.distance <= maxSquareDistance) {
+  if (!closest) return null;
+  
+  if ('needsChoice' in closest && closest.needsChoice) {
+    // Multiple heroes at same distance - check if they're within range
+    if (closest.distance <= maxSquareDistance) {
+      return closest;
+    }
+    return null;
+  }
+  
+  // Single hero - check if within range
+  if (closest.distance <= maxSquareDistance) {
     return closest;
   }
   
@@ -180,13 +230,14 @@ export function findHeroWithinTileRange(
  * Find a position adjacent to the hero that the monster can move to.
  * This is used for move-and-attack behavior where the monster needs to
  * end up adjacent to the hero.
+ * If multiple positions are equidistant to the monster, returns all of them with needsChoice flag.
  * 
  * @param monster The monster that wants to move
  * @param targetHero The hero to move adjacent to
  * @param heroTokens All hero tokens (for collision checking)
  * @param monsters All monsters (for collision checking)
  * @param dungeon Dungeon state for bounds checking
- * @returns A position adjacent to the hero, or null if none available
+ * @returns A position adjacent to the hero (or multiple if equidistant), or null if none available
  */
 export function findPositionAdjacentToHero(
   monster: MonsterState,
@@ -194,7 +245,7 @@ export function findPositionAdjacentToHero(
   heroTokens: HeroToken[],
   monsters: MonsterState[],
   dungeon: DungeonState
-): Position | null {
+): Position | { positions: Position[]; needsChoice: true } | null {
   const heroPos = targetHero.position;
   
   // Get positions adjacent to the hero
@@ -224,24 +275,34 @@ export function findPositionAdjacentToHero(
   const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
   if (!monsterGlobal) return validPositions[0];
   
-  // Return the position closest to the monster's current position (shortest move)
-  let bestPos = validPositions[0];
-  let bestDistance = getManhattanDistance(bestPos, monsterGlobal);
+  // Find the minimum distance to monster's current position
+  const distances = validPositions.map(pos => ({
+    pos,
+    distance: getManhattanDistance(pos, monsterGlobal)
+  }));
   
-  for (const pos of validPositions) {
-    const distance = getManhattanDistance(pos, monsterGlobal);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestPos = pos;
-    }
+  const minDistance = Math.min(...distances.map(d => d.distance));
+  
+  // Get all positions at the minimum distance (closest to monster)
+  const bestPositions = distances
+    .filter(d => d.distance === minDistance)
+    .map(d => d.pos);
+  
+  // If multiple positions at same distance, return them all with needsChoice flag
+  if (bestPositions.length > 1) {
+    return {
+      positions: bestPositions,
+      needsChoice: true
+    };
   }
   
-  return bestPos;
+  return bestPositions[0];
 }
 
 /**
  * Find the best position for a monster to move toward a target hero.
  * Returns the adjacent position that minimizes distance to the target.
+ * If multiple positions are equidistant, returns all of them with needsChoice flag.
  */
 export function findMoveTowardHero(
   monster: MonsterState,
@@ -249,7 +310,7 @@ export function findMoveTowardHero(
   heroTokens: HeroToken[],
   monsters: MonsterState[],
   dungeon: DungeonState
-): Position | null {
+): Position | { positions: Position[]; needsChoice: true } | null {
   const monsterGlobal = getMonsterGlobalPosition(monster, dungeon);
   if (!monsterGlobal) return null;
   
@@ -275,19 +336,28 @@ export function findMoveTowardHero(
   
   if (validPositions.length === 0) return null;
   
-  // Find the position that minimizes distance to target
-  let bestPos = validPositions[0];
-  let bestDistance = getManhattanDistance(bestPos, targetPos);
+  // Find the minimum distance to target among all valid positions
+  const distances = validPositions.map(pos => ({
+    pos,
+    distance: getManhattanDistance(pos, targetPos)
+  }));
   
-  for (const pos of validPositions) {
-    const distance = getManhattanDistance(pos, targetPos);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestPos = pos;
-    }
+  const minDistance = Math.min(...distances.map(d => d.distance));
+  
+  // Get all positions at the minimum distance
+  const bestPositions = distances
+    .filter(d => d.distance === minDistance)
+    .map(d => d.pos);
+  
+  // If multiple positions at same distance, return them all with needsChoice flag
+  if (bestPositions.length > 1) {
+    return {
+      positions: bestPositions,
+      needsChoice: true
+    };
   }
   
-  return bestPos;
+  return bestPositions[0];
 }
 
 /**
@@ -503,8 +573,40 @@ export function executeMonsterTurn(
     // No valid targets, move toward closest hero
     const closest = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
     if (closest) {
+      // Check if multiple heroes at same distance (needs player choice for targeting)
+      if ('needsChoice' in closest && closest.needsChoice) {
+        return {
+          type: 'needs-choice',
+          decision: {
+            decisionId: `monster-${monster.instanceId}-target-${Date.now()}`,
+            type: 'choose-hero-target',
+            monsterId: monster.instanceId,
+            options: {
+              heroIds: closest.heroes.map(h => h.heroId)
+            },
+            context: 'movement'
+          }
+        };
+      }
+      
       const moveTarget = findMoveTowardHero(monster, closest.hero.position, heroTokens, monsters, dungeon);
       if (moveTarget) {
+        // Check if multiple move destinations (needs player choice)
+        if ('needsChoice' in moveTarget && moveTarget.needsChoice) {
+          return {
+            type: 'needs-choice',
+            decision: {
+              decisionId: `monster-${monster.instanceId}-move-${Date.now()}`,
+              type: 'choose-move-destination',
+              monsterId: monster.instanceId,
+              options: {
+                positions: moveTarget.positions
+              },
+              context: 'movement'
+            }
+          };
+        }
+        
         return { type: 'move', destination: moveTarget };
       }
     }
@@ -516,7 +618,23 @@ export function executeMonsterTurn(
   const adjacentHero = findAdjacentHero(monster, heroTokens, heroHpMap, dungeon);
   
   if (adjacentHero) {
-    // Attack the adjacent hero
+    // Check if multiple adjacent heroes (needs player choice)
+    if ('needsChoice' in adjacentHero && adjacentHero.needsChoice) {
+      return {
+        type: 'needs-choice',
+        decision: {
+          decisionId: `monster-${monster.instanceId}-adjacent-target-${Date.now()}`,
+          type: 'choose-adjacent-target',
+          monsterId: monster.instanceId,
+          options: {
+            heroIds: adjacentHero.heroes.map(h => h.heroId)
+          },
+          context: 'attack'
+        }
+      };
+    }
+    
+    // Single adjacent hero - attack them
     const targetAC = heroAcMap[adjacentHero.heroId] ?? 10;
     const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
     const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
@@ -545,6 +663,22 @@ export function executeMonsterTurn(
     const heroInRange = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, range);
     
     if (heroInRange) {
+      // Check if multiple heroes at same distance (needs player choice for targeting)
+      if ('needsChoice' in heroInRange && heroInRange.needsChoice) {
+        return {
+          type: 'needs-choice',
+          decision: {
+            decisionId: `monster-${monster.instanceId}-target-${Date.now()}`,
+            type: 'choose-hero-target',
+            monsterId: monster.instanceId,
+            options: {
+              heroIds: heroInRange.heroes.map(h => h.heroId)
+            },
+            context: 'move-and-attack'
+          }
+        };
+      }
+      
       // Find a position adjacent to the hero that we can move to
       const moveTarget = findPositionAdjacentToHero(
         monster, 
@@ -555,6 +689,22 @@ export function executeMonsterTurn(
       );
       
       if (moveTarget) {
+        // Check if multiple move destinations (needs player choice)
+        if ('needsChoice' in moveTarget && moveTarget.needsChoice) {
+          return {
+            type: 'needs-choice',
+            decision: {
+              decisionId: `monster-${monster.instanceId}-move-${Date.now()}`,
+              type: 'choose-move-destination',
+              monsterId: monster.instanceId,
+              options: {
+                positions: moveTarget.positions
+              },
+              context: 'move-and-attack'
+            }
+          };
+        }
+        
         // Can move adjacent and attack in the same turn
         const targetAC = heroAcMap[heroInRange.hero.heroId] ?? 10;
         const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
@@ -575,6 +725,22 @@ export function executeMonsterTurn(
           dungeon
         );
         if (moveCloser) {
+          // Check if multiple move destinations (needs player choice)
+          if ('needsChoice' in moveCloser && moveCloser.needsChoice) {
+            return {
+              type: 'needs-choice',
+              decision: {
+                decisionId: `monster-${monster.instanceId}-move-${Date.now()}`,
+                type: 'choose-move-destination',
+                monsterId: monster.instanceId,
+                options: {
+                  positions: moveCloser.positions
+                },
+                context: 'movement'
+              }
+            };
+          }
+          
           return { type: 'move', destination: moveCloser };
         }
       }
@@ -588,14 +754,46 @@ export function executeMonsterTurn(
     return { type: 'none' };
   }
   
+  // Check if multiple heroes at same distance (needs player choice for targeting)
+  if ('needsChoice' in closest && closest.needsChoice) {
+    return {
+      type: 'needs-choice',
+      decision: {
+        decisionId: `monster-${monster.instanceId}-target-${Date.now()}`,
+        type: 'choose-hero-target',
+        monsterId: monster.instanceId,
+        options: {
+          heroIds: closest.heroes.map(h => h.heroId)
+        },
+        context: 'movement'
+      }
+    };
+  }
+  
   // Find the best position to move toward the hero
   const moveTarget = findMoveTowardHero(monster, closest.hero.position, heroTokens, monsters, dungeon);
   
-  if (moveTarget) {
-    return { type: 'move', destination: moveTarget };
+  if (!moveTarget) {
+    return { type: 'none' };
   }
   
-  return { type: 'none' };
+  // Check if multiple move destinations (needs player choice)
+  if ('needsChoice' in moveTarget && moveTarget.needsChoice) {
+    return {
+      type: 'needs-choice',
+      decision: {
+        decisionId: `monster-${monster.instanceId}-move-${Date.now()}`,
+        type: 'choose-move-destination',
+        monsterId: monster.instanceId,
+        options: {
+          positions: moveTarget.positions
+        },
+        context: 'movement'
+      }
+    };
+  }
+  
+  return { type: 'move', destination: moveTarget };
 }
 
 /**
