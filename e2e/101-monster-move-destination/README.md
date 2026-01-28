@@ -9,7 +9,7 @@ This test verifies that the game prompts the player to choose a destination squa
 ## Test Steps
 
 ### Screenshot 001: Monster Decision Prompt Displayed
-![Monster Decision Prompt](./101-monster-move-destination.spec.ts-snapshots/000-001-monster-move-decision-prompt-chromium-linux.png)
+![Monster Decision Prompt](101-monster-move-destination.spec.ts-snapshots/000-001-monster-move-decision-prompt-chromium-linux.png)
 
 **What to verify:**
 - Monster decision prompt modal is visible
@@ -24,7 +24,7 @@ This test verifies that the game prompts the player to choose a destination squa
 - Multiple positions are available in `options.positions`
 
 ### Screenshot 002: Highlighted Destination Squares
-![Highlighted Destinations](./101-monster-move-destination.spec.ts-snapshots/001-002-highlighted-destinations-chromium-linux.png)
+![Highlighted Destinations](101-monster-move-destination.spec.ts-snapshots/001-002-highlighted-destinations-chromium-linux.png)
 
 **What to verify:**
 - Multiple squares on the game board are highlighted with golden borders
@@ -37,7 +37,7 @@ This test verifies that the game prompts the player to choose a destination squa
 - Count of `.selectable-square.monster-decision-square` elements is greater than 1
 
 ### Screenshot 003: Monster Moved to Selected Position
-![Monster Moved](./101-monster-move-destination.spec.ts-snapshots/002-003-monster-moved-chromium-linux.png)
+![Monster Moved](101-monster-move-destination.spec.ts-snapshots/002-003-monster-moved-chromium-linux.png)
 
 **What to verify:**
 - The monster decision prompt has disappeared
