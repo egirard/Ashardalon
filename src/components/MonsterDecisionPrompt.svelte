@@ -15,13 +15,6 @@
     });
   }
   
-  function selectPosition(position: { x: number; y: number }) {
-    store.dispatch({
-      type: 'game/selectMonsterPosition',
-      payload: { decisionId: decision.decisionId, position }
-    });
-  }
-  
   // Get monster name for display using centralized monster definitions
   $: monsterName = (() => {
     const state = store.getState();
@@ -69,19 +62,8 @@
     {/if}
     
     {#if decision.type === 'choose-move-destination' || decision.type === 'choose-spawn-position'}
-      <div class="position-options">
-        <p class="hint">Click on a highlighted square on the map</p>
-        {#if decision.options.positions}
-          {#each decision.options.positions as position}
-            <button 
-              class="position-button"
-              data-testid="monster-decision-position-{position.x}-{position.y}"
-              on:click={() => selectPosition(position)}
-            >
-              ({position.x}, {position.y})
-            </button>
-          {/each}
-        {/if}
+      <div class="position-hint">
+        <p class="hint-text">Click on a highlighted square on the map</p>
       </div>
     {/if}
   </div>
@@ -120,13 +102,17 @@
     margin-bottom: 20px;
   }
   
-  .hero-options, .position-options {
+  .hero-options {
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
   
-  .hero-button, .position-button {
+  .position-hint {
+    margin-top: 10px;
+  }
+  
+  .hero-button {
     padding: 12px 24px;
     font-size: 16px;
     background: linear-gradient(135deg, #2a4a7a, #1a3a5a);
@@ -137,21 +123,22 @@
     transition: all 0.2s ease;
   }
   
-  .hero-button:hover, .position-button:hover {
+  .hero-button:hover {
     background: linear-gradient(135deg, #3a5a8a, #2a4a6a);
     border-color: #6a9aca;
     transform: scale(1.05);
     box-shadow: 0 0 15px rgba(106, 154, 202, 0.5);
   }
   
-  .hero-button:active, .position-button:active {
+  .hero-button:active {
     transform: scale(0.98);
   }
   
-  .hint {
-    font-size: 14px;
-    color: #aaaaaa;
+  .hint-text {
+    font-size: 16px;
+    color: #ffd700;
     font-style: italic;
-    margin-bottom: 10px;
+    margin: 0;
+    text-align: center;
   }
 </style>
