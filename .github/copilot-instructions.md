@@ -19,10 +19,10 @@ When writing E2E tests, follow [E2E_TEST_GUIDELINES.md](../docs/E2E_TEST_GUIDELI
 - **User stories**: Each test tells a complete user story
 - **Screenshot sequences**: Capture screenshots at each step
 - **Human verification**: Link all screenshots in the test's README.md
-- **Image links in READMEs**: Use `./` prefix for relative paths
-  - ✅ Correct: `./test-name.spec.ts-snapshots/000-001-screenshot-chromium-linux.png`
-  - ❌ Wrong: `test-name.spec.ts-snapshots/000-001-screenshot-chromium-linux.png` (no prefix)
-  - The `./` prefix ensures GitHub's markdown renderer correctly resolves image paths in subdirectory READMEs
+- **Image links in READMEs**: Use bare relative paths (no prefix)
+  - ✅ Correct: `test-name.spec.ts-snapshots/000-001-screenshot-chromium-linux.png`
+  - ❌ Wrong: `./test-name.spec.ts-snapshots/000-001-screenshot-chromium-linux.png` (with ./ prefix)
+  - Most E2E tests in the repository use bare paths without prefix for GitHub markdown compatibility
 
 Example E2E test structure:
 ```typescript
@@ -38,5 +38,5 @@ test.describe('001 - Character Selection', () => {
 Example README.md with correct image links:
 ```markdown
 ## Screenshot 001
-![Initial Screen](./001-test-name.spec.ts-snapshots/000-001-initial-screen-chromium-linux.png)
+![Initial Screen](001-test-name.spec.ts-snapshots/000-001-initial-screen-chromium-linux.png)
 ```
