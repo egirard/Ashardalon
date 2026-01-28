@@ -300,29 +300,29 @@ Create `e2e/###-<testname>/README.md` documenting:
 
 **IMPORTANT: Image Link Format for GitHub Markdown**
 
-When linking to screenshot images in E2E test READMEs, use **relative paths with `./` prefix**:
+When linking to screenshot images in E2E test READMEs, use **bare relative paths without any prefix**:
 
 ```markdown
 ✅ CORRECT:
-![Screenshot 000](./test-name.spec.ts-snapshots/000-001-description-chromium-linux.png)
-
-❌ INCORRECT (missing ./ prefix):
 ![Screenshot 000](test-name.spec.ts-snapshots/000-001-description-chromium-linux.png)
+
+❌ INCORRECT:
+![Screenshot 000](./test-name.spec.ts-snapshots/000-001-description-chromium-linux.png)
 ![Screenshot 000](/e2e/test-name/test-name.spec.ts-snapshots/000-001-description-chromium-linux.png)
 ```
 
 **Why this matters:**
-- The `./` prefix ensures GitHub's markdown renderer correctly resolves paths in subdirectory READMEs
-- Without `./`, GitHub may fail to render the images in some contexts
+- Most E2E tests in the repository use bare paths (no prefix) successfully
+- This pattern ensures consistent GitHub markdown rendering across different views (file browser, PR diffs, etc.)
 - Playwright generates snapshot directories named `test-name.spec.ts-snapshots/` by default
 
 **Example README with correct image links:**
 ```markdown
 ## Screenshot 001: Initial Screen
-![Initial Screen](./101-my-test.spec.ts-snapshots/000-001-initial-screen-chromium-linux.png)
+![Initial Screen](101-my-test.spec.ts-snapshots/000-001-initial-screen-chromium-linux.png)
 
 ## Screenshot 002: After Action
-![After Action](./101-my-test.spec.ts-snapshots/001-002-after-action-chromium-linux.png)
+![After Action](101-my-test.spec.ts-snapshots/001-002-after-action-chromium-linux.png)
 ```
 
 This allows users to view all screenshots directly in the README without navigating to other files.
