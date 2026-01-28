@@ -3804,7 +3804,7 @@
 
   <!-- Monster Decision Prompt (shown when monster AI needs player to choose target/position) -->
   {#if pendingMonsterDecision}
-    <MonsterDecisionPrompt decision={pendingMonsterDecision} />
+    <MonsterDecisionPrompt decision={pendingMonsterDecision} edge={getActivePlayerEdge()} />
   {/if}
 
   <!-- Scenario Introduction (shown when map is first displayed or when clicking objective panel) -->

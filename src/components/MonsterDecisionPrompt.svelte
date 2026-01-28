@@ -1,9 +1,12 @@
 <script lang="ts">
   import { store } from '../store';
   import type { PendingMonsterDecision } from '../store/types';
+  import type { EdgePosition } from '../store/heroesSlice';
   import { MONSTERS } from '../store/types';
+  import { getEdgeRotation } from '../utils';
   
   export let decision: PendingMonsterDecision;
+  export let edge: EdgePosition = 'bottom';
   
   // Get hero names for display
   $: heroes = decision.options.heroIds || [];
@@ -42,7 +45,15 @@
   })();
 </script>
 
-<div class="monster-decision-prompt" data-testid="monster-decision-prompt">
+<div 
+  class="monster-decision-prompt"
+  class:edge-top={edge === 'top'}
+  class:edge-bottom={edge === 'bottom'}
+  class:edge-left={edge === 'left'}
+  class:edge-right={edge === 'right'}
+  data-testid="monster-decision-prompt"
+  style="transform: rotate({getEdgeRotation(edge)}deg);"
+>
   <div class="prompt-content">
     <h3>Monster Decision Required</h3>
     <p class="prompt-text">{promptText}</p>
@@ -72,9 +83,6 @@
 <style>
   .monster-decision-prompt {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     background: linear-gradient(135deg, rgba(20, 20, 40, 0.98), rgba(40, 20, 60, 0.98));
     border: 3px solid #ffd700;
     padding: 30px;
@@ -83,6 +91,39 @@
     z-index: 2000;
     min-width: 400px;
     max-width: 600px;
+    /* transform is set inline to include rotation */
+  }
+  
+  /* Bottom edge - at bottom center (default) */
+  .monster-decision-prompt.edge-bottom {
+    bottom: 20px;
+    left: 50%;
+    transform-origin: center bottom;
+    margin-left: calc(-200px); /* Half of min-width */
+  }
+  
+  /* Top edge - at top center */
+  .monster-decision-prompt.edge-top {
+    top: 20px;
+    left: 50%;
+    transform-origin: center top;
+    margin-left: calc(-200px); /* Half of min-width */
+  }
+  
+  /* Left edge - at left center */
+  .monster-decision-prompt.edge-left {
+    left: 20px;
+    top: 50%;
+    transform-origin: left center;
+    margin-top: calc(-100px);
+  }
+  
+  /* Right edge - at right center */
+  .monster-decision-prompt.edge-right {
+    right: 20px;
+    top: 50%;
+    transform-origin: right center;
+    margin-top: calc(-100px);
   }
   
   .prompt-content {
