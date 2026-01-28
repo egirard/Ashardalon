@@ -327,6 +327,8 @@ ${screenshotSection}
   .corner-se {
     bottom: 0.5rem;
     right: 0.5rem;
+    /* Margin to prevent overlap with game state panel (board-controls) */
+    margin-bottom: 10rem;
   }
   
   .icon-button {
