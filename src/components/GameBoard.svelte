@@ -4118,7 +4118,8 @@
   /* Board controls container */
   .board-controls {
     position: absolute;
-    bottom: 0.5rem;
+    /* Positioned higher to prevent overlap with corner controls at the bottom */
+    bottom: 11rem;
     right: 0.5rem;
     display: flex;
     flex-direction: column;
