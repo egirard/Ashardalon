@@ -149,6 +149,10 @@ export function getTileMonsterSpawnPosition(): Position {
  * 
  * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
  * @returns The scorch mark position in local tile coordinates
+ * 
+ * @note This function maintains the name "getBlackSquarePosition" for backward compatibility,
+ * but "scorch mark" is the official rulebook terminology. Use getScorchMarkPosition() alias
+ * for new code that emphasizes official terminology.
  */
 export function getBlackSquarePosition(rotation: number): Position {
   // Normalize rotation to 0, 90, 180, or 270
