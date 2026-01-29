@@ -40,7 +40,7 @@ And I see a notification showing which monster explored and what tile was placed
 ![Final Dungeon](./096-monster-triggered-exploration.spec.ts-snapshots/003-final-expanded-dungeon-after-exploration-chromium-linux.png)
 - Notification dismissed (programmatically for testing)
 - New tile visible to the east (dungeon expanded from 2 to 3+ tiles)
-- New monster spawned on explored tile's black square
+- New monster spawned on explored tile's scorch mark
 - Both Duergar Guard and spawned monster visible on separate tiles
 - Complete dungeon layout showing successful exploration
 
@@ -54,7 +54,7 @@ This test uses **actual game logic**, not simulation:
 - Game logic automatically:
   - Draws tile from deck
   - Places tile at explored edge
-  - Spawns monster on new tile's black square
+  - Spawns monster on new tile's scorch mark
   - Creates notification event
 
 ### Programmatic Notification Control
@@ -83,7 +83,7 @@ Due to Svelte 5 reactivity with Redux subscriptions, the test uses `style.displa
 ✅ Notification displays with correct monster name, direction, and tile type  
 ✅ Notification uses distinct red/dark theme  
 ✅ New tile is placed at explored edge  
-✅ New monster spawns on explored tile's black square  
+✅ New monster spawns on explored tile's scorch mark  
 ✅ Spawned monster is on different tile from exploring monster  
 ✅ Dungeon expands correctly  
 ✅ Test mode prevents auto-dismiss for screenshot capture  
