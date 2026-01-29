@@ -131,33 +131,37 @@ export function getTileMonsterSpawnPosition(): Position {
 }
 
 /**
- * Get the black square position on a tile based on its rotation.
+ * Get the scorch mark position on a tile based on its rotation.
  * 
- * In Wrath of Ashardalon, the black spot is a dark circular marking on the tile
- * where monsters spawn. In the default tile orientation (arrow pointing south),
- * the black spot is located at position (2, 1) - in the upper-right quadrant.
+ * In Wrath of Ashardalon, the scorch mark (also called "black square" or "spawn marker")
+ * is a dark circular marking on the tile where monsters spawn when a dungeon tile is
+ * initially revealed. According to the official rules for "placing a monster", the monster
+ * figure is positioned on the scorch mark of the newly revealed tile.
  * 
- * As the tile rotates, the black spot position rotates with it:
- * - 0° (arrow points south): black spot at (2, 1)
- * - 90° (arrow points west): black spot at (2, 2) - rotated 90° clockwise
- * - 180° (arrow points north): black spot at (1, 2) - rotated 180°
- * - 270° (arrow points east): black spot at (1, 1) - rotated 270° clockwise
+ * In the default tile orientation (arrow pointing south), the scorch mark is located at 
+ * position (2, 1) - in the upper-right quadrant.
+ * 
+ * As the tile rotates, the scorch mark position rotates with it:
+ * - 0° (arrow points south): scorch mark at (2, 1)
+ * - 90° (arrow points west): scorch mark at (2, 2) - rotated 90° clockwise
+ * - 180° (arrow points north): scorch mark at (1, 2) - rotated 180°
+ * - 270° (arrow points east): scorch mark at (1, 1) - rotated 270° clockwise
  * 
  * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
- * @returns The black spot position in local tile coordinates
+ * @returns The scorch mark position in local tile coordinates
  */
 export function getBlackSquarePosition(rotation: number): Position {
   // Normalize rotation to 0, 90, 180, or 270
   const normalizedRotation = ((rotation % 360) + 360) % 360;
   
-  // In the default orientation (0°, arrow pointing south), the black spot is at (2, 1)
+  // In the default orientation (0°, arrow pointing south), the scorch mark is at (2, 1)
   // When the tile rotates, we need to rotate this position accordingly
   // Rotation formula for 90° clockwise around center (1.5, 1.5):
   // new_x = 3 - old_y, new_y = old_x
   
   switch (normalizedRotation) {
     case 0:
-      // Arrow points south, black spot at (2, 1)
+      // Arrow points south, scorch mark at (2, 1)
       return { x: 2, y: 1 };
     case 90:
       // Arrow points west, rotated 90° clockwise: (2, 1) -> (2, 2)
@@ -172,6 +176,20 @@ export function getBlackSquarePosition(rotation: number): Position {
       // Fallback to center for unexpected rotations
       return { x: TILE_CENTER, y: TILE_CENTER };
   }
+}
+
+/**
+ * Get the scorch mark position on a tile (alias for getBlackSquarePosition).
+ * 
+ * This is the official game terminology for the spawn marker where monsters are placed
+ * when a new dungeon tile is revealed, as referenced in the rulebook section on
+ * "placing a monster".
+ * 
+ * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
+ * @returns The scorch mark position in local tile coordinates
+ */
+export function getScorchMarkPosition(rotation: number): Position {
+  return getBlackSquarePosition(rotation);
 }
 
 /**
@@ -233,10 +251,12 @@ export function isPositionOccupiedByMonster(
 /**
  * Get the spawn position for a monster on a tile.
  * 
- * According to the rules:
- * 1. Monsters spawn on the black square of the tile
- * 2. If the black square is occupied, spawn on an adjacent open square
+ * According to the official rules for "placing a monster":
+ * 1. Monsters spawn on the scorch mark of the tile (the dark circular marking)
+ * 2. If the scorch mark is occupied, spawn on an adjacent open square
  * 3. If no adjacent square is available, return null (no valid spawn position)
+ * 
+ * This function implements the initial monster placement logic when a new dungeon tile is revealed.
  * 
  * @param tile - The placed tile where the monster will spawn
  * @param monsters - Array of all monsters currently on the board
@@ -246,16 +266,16 @@ export function getMonsterSpawnPosition(
   tile: PlacedTile,
   monsters: MonsterState[]
 ): Position | null {
-  // Get the black square position based on tile rotation
-  const blackSquare = getBlackSquarePosition(tile.rotation);
+  // Get the scorch mark position based on tile rotation (also known as black square)
+  const scorchMark = getBlackSquarePosition(tile.rotation);
   
-  // Check if the black square is available
-  if (!isPositionOccupiedByMonster(blackSquare, tile.id, monsters)) {
-    return blackSquare;
+  // Check if the scorch mark is available
+  if (!isPositionOccupiedByMonster(scorchMark, tile.id, monsters)) {
+    return scorchMark;
   }
   
-  // Black square is occupied, find an adjacent open square
-  const adjacentPositions = getAdjacentTilePositions(blackSquare);
+  // Scorch mark is occupied, find an adjacent open square
+  const adjacentPositions = getAdjacentTilePositions(scorchMark);
   
   for (const pos of adjacentPositions) {
     if (!isPositionOccupiedByMonster(pos, tile.id, monsters)) {

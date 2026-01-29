@@ -56,6 +56,7 @@ import {
   healMonster,
   drawMonsterFromBottom,
   getBlackSquarePosition,
+  getScorchMarkPosition,
   spawnMonstersWithBehavior,
   createMonsterGroup,
   isGroupDefeated,
