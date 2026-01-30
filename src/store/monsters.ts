@@ -138,14 +138,15 @@ export function getTileMonsterSpawnPosition(): Position {
  * initially revealed. According to the official rules for "placing a monster", the monster
  * figure is positioned on the scorch mark of the newly revealed tile.
  * 
+ * The scorch mark appears in the lower-left area of physical tiles in the default orientation.
  * In the default tile orientation (arrow pointing south), the scorch mark is located at 
- * position (2, 1) - in the upper-right quadrant.
+ * position (1, 2) - in the lower-left quadrant.
  * 
  * As the tile rotates, the scorch mark position rotates with it:
- * - 0° (arrow points south): scorch mark at (2, 1)
- * - 90° (arrow points west): scorch mark at (2, 2) - rotated 90° clockwise
- * - 180° (arrow points north): scorch mark at (1, 2) - rotated 180°
- * - 270° (arrow points east): scorch mark at (1, 1) - rotated 270° clockwise
+ * - 0° (arrow points south): scorch mark at (1, 2) - lower-left
+ * - 90° (arrow points west): scorch mark at (1, 1) - rotated 90° clockwise, now upper-left
+ * - 180° (arrow points north): scorch mark at (2, 1) - rotated 180°, now upper-right
+ * - 270° (arrow points east): scorch mark at (2, 2) - rotated 270° clockwise, now lower-right
  * 
  * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
  * @returns The scorch mark position in local tile coordinates
@@ -158,24 +159,24 @@ export function getBlackSquarePosition(rotation: number): Position {
   // Normalize rotation to 0, 90, 180, or 270
   const normalizedRotation = ((rotation % 360) + 360) % 360;
   
-  // In the default orientation (0°, arrow pointing south), the scorch mark is at (2, 1)
+  // In the default orientation (0°, arrow pointing south), the scorch mark is at (1, 2) - lower-left
   // When the tile rotates, we need to rotate this position accordingly
   // Rotation formula for 90° clockwise around center (1.5, 1.5):
-  // new_x = 3 - old_y, new_y = old_x
+  // For point (x, y), rotating 90° clockwise: new_x = 3 - y, new_y = x
   
   switch (normalizedRotation) {
     case 0:
-      // Arrow points south, scorch mark at (2, 1)
-      return { x: 2, y: 1 };
-    case 90:
-      // Arrow points west, rotated 90° clockwise: (2, 1) -> (2, 2)
-      return { x: 2, y: 2 };
-    case 180:
-      // Arrow points north, rotated 180°: (2, 1) -> (1, 2)
+      // Arrow points south, scorch mark at (1, 2) - lower-left quadrant
       return { x: 1, y: 2 };
-    case 270:
-      // Arrow points east, rotated 270° clockwise: (2, 1) -> (1, 1)
+    case 90:
+      // Arrow points west, rotated 90° clockwise: (1, 2) -> (1, 1) - upper-left
       return { x: 1, y: 1 };
+    case 180:
+      // Arrow points north, rotated 180°: (1, 2) -> (2, 1) - upper-right
+      return { x: 2, y: 1 };
+    case 270:
+      // Arrow points east, rotated 270° clockwise: (1, 2) -> (2, 2) - lower-right
+      return { x: 2, y: 2 };
     default:
       // Fallback to center for unexpected rotations
       return { x: TILE_CENTER, y: TILE_CENTER };

@@ -85,9 +85,9 @@ test.describe('008 - Spawn Monster on Exploration', () => {
         
         // IMPORTANT: Verify monster spawns at scorch mark position
         // When exploring north (placing tile north), tile has 0° rotation (arrow points south)
-        // Scorch mark is at local position (2, 1) - the dark circular marking on the tile
+        // Scorch mark is at local position (1, 2) - the dark circular marking in lower-left area
         const monster = storeState.game.monsters[0];
-        expect(monster.position).toEqual({ x: 2, y: 1 });
+        expect(monster.position).toEqual({ x: 1, y: 2 });
       }
     });
 
@@ -115,7 +115,7 @@ test.describe('008 - Spawn Monster on Exploration', () => {
         expect(storeState.game.monsters).toHaveLength(1);
         
         // Verify monster is still at scorch mark position
-        expect(storeState.game.monsters[0].position).toEqual({ x: 2, y: 1 });
+        expect(storeState.game.monsters[0].position).toEqual({ x: 1, y: 2 });
         
         // Verify we're in exploration phase
         await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');

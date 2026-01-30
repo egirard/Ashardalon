@@ -28,18 +28,18 @@ Verifies that no monster spawns when the hero ends their turn in the center of a
 
 ## Scorch Mark Positioning
 
-According to the official Wrath of Ashardalon rules for "placing a monster", when a new dungeon tile is revealed, the monster figure is positioned on the **scorch mark** of that tile. The scorch mark (also known as "black spot" or "spawn marker") is the dark circular marking visible on each dungeon tile.
+According to the official Wrath of Ashardalon rules for "placing a monster", when a new dungeon tile is revealed, the monster figure is positioned on the **scorch mark** of that tile. The scorch mark (also known as "black spot" or "spawn marker") is the dark circular marking visible on each dungeon tile, typically appearing in the lower-left area of the tile in its default orientation.
 
-In the default tile orientation (arrow pointing south), the scorch mark is at position (2, 1).
+In the default tile orientation (arrow pointing south), the scorch mark is at position (1, 2) - lower-left quadrant.
 
 As the tile rotates, the scorch mark position rotates with it:
 
-| Tile Rotation | Arrow Direction | Scorch Mark Position |
-|---------------|-----------------|----------------------|
-| 0°            | South           | (2, 1)               |
-| 90°           | West            | (2, 2)               |
-| 180°          | North           | (1, 2)               |
-| 270°          | East            | (1, 1)               |
+| Tile Rotation | Arrow Direction | Scorch Mark Position | Quadrant     |
+|---------------|-----------------|----------------------|--------------|
+| 0°            | South           | (1, 2)               | Lower-left   |
+| 90°           | West            | (1, 1)               | Upper-left   |
+| 180°          | North           | (2, 1)               | Upper-right  |
+| 270°          | East            | (2, 2)               | Lower-right  |
 
 **Fallback Logic**: If the scorch mark is occupied by another monster or obstacle, the monster will spawn at an adjacent open square, checking positions in order: North, South, East, West, Northeast, Northwest, Southeast, Southwest.
 
@@ -53,7 +53,7 @@ Hero is positioned at the north edge, ready to trigger exploration.
 ### 001 - Monster spawns at scorch mark with card display
 ![Screenshot 001](008-monster-spawn.spec.ts-snapshots/001-monster-spawns-at-scorch-mark-chromium-linux.png)
 
-After ending the hero phase, a new tile is placed and a monster spawns at the scorch mark position (2, 1). The monster card is displayed showing the monster's name and stats (AC, HP, XP).
+After ending the hero phase, a new tile is placed and a monster spawns at the scorch mark position (1, 2) - lower-left quadrant. The monster card is displayed showing the monster's name and stats (AC, HP, XP).
 
 ### 002 - Monster token visible at scorch mark position
 ![Screenshot 002](008-monster-spawn.spec.ts-snapshots/002-monster-at-scorch-mark-dismissed-chromium-linux.png)

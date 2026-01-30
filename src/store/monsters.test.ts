@@ -253,36 +253,36 @@ describe('monsters', () => {
   });
 
   describe('getBlackSquarePosition', () => {
-    it('should return black spot at (2, 1) for 0° rotation (arrow points south)', () => {
+    it('should return scorch mark at (1, 2) for 0° rotation (arrow points south)', () => {
       const position = getBlackSquarePosition(0);
-      expect(position).toEqual({ x: 2, y: 1 });
-    });
-
-    it('should return black spot at (2, 2) for 90° rotation (arrow points west)', () => {
-      const position = getBlackSquarePosition(90);
-      expect(position).toEqual({ x: 2, y: 2 });
-    });
-
-    it('should return black spot at (1, 2) for 180° rotation (arrow points north)', () => {
-      const position = getBlackSquarePosition(180);
       expect(position).toEqual({ x: 1, y: 2 });
     });
 
-    it('should return black spot at (1, 1) for 270° rotation (arrow points east)', () => {
-      const position = getBlackSquarePosition(270);
+    it('should return scorch mark at (1, 1) for 90° rotation (arrow points west)', () => {
+      const position = getBlackSquarePosition(90);
       expect(position).toEqual({ x: 1, y: 1 });
+    });
+
+    it('should return scorch mark at (2, 1) for 180° rotation (arrow points north)', () => {
+      const position = getBlackSquarePosition(180);
+      expect(position).toEqual({ x: 2, y: 1 });
+    });
+
+    it('should return scorch mark at (2, 2) for 270° rotation (arrow points east)', () => {
+      const position = getBlackSquarePosition(270);
+      expect(position).toEqual({ x: 2, y: 2 });
     });
 
     it('should handle negative rotations', () => {
       // -90° should be equivalent to 270°
       const position = getBlackSquarePosition(-90);
-      expect(position).toEqual({ x: 1, y: 1 });
+      expect(position).toEqual({ x: 2, y: 2 });
     });
 
     it('should handle rotations > 360°', () => {
       // 450° should be equivalent to 90°
       const position = getBlackSquarePosition(450);
-      expect(position).toEqual({ x: 2, y: 2 });
+      expect(position).toEqual({ x: 1, y: 1 });
     });
 
     it('should return center for unexpected rotation values', () => {
@@ -358,12 +358,12 @@ describe('monsters', () => {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
         position: { col: 0, row: -1 },
-        rotation: 0, // Arrow points south, black spot at (2, 1)
+        rotation: 0, // Arrow points south, scorch mark at (1, 2)
         edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
       };
       
       const position = getMonsterSpawnPosition(tile, []);
-      expect(position).toEqual({ x: 2, y: 1 });
+      expect(position).toEqual({ x: 1, y: 2 });
     });
 
     it('should return adjacent position when black spot is occupied', () => {
@@ -371,24 +371,24 @@ describe('monsters', () => {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
         position: { col: 0, row: -1 },
-        rotation: 0, // Arrow points south, black spot at (2, 1)
+        rotation: 0, // Arrow points south, scorch mark at (1, 2)
         edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
       };
       
       const monsters: MonsterState[] = [
-        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
       ];
       
       const position = getMonsterSpawnPosition(tile, monsters);
       
-      // Should be adjacent to black spot (2, 1)
+      // Should be adjacent to scorch mark (1, 2)
       expect(position).not.toBeNull();
-      expect(position).not.toEqual({ x: 2, y: 1 });
+      expect(position).not.toEqual({ x: 1, y: 2 });
       
       // Verify it's actually adjacent
       if (position) {
-        const dx = Math.abs(position.x - 2);
-        const dy = Math.abs(position.y - 1);
+        const dx = Math.abs(position.x - 1);
+        const dy = Math.abs(position.y - 2);
         expect(dx <= 1 && dy <= 1 && (dx > 0 || dy > 0)).toBe(true);
       }
     });
@@ -398,22 +398,22 @@ describe('monsters', () => {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
         position: { col: 0, row: -1 },
-        rotation: 0, // Arrow points south, black spot at (2, 1)
+        rotation: 0, // Arrow points south, scorch mark at (1, 2)
         edges: { north: 'unexplored', south: 'open', east: 'unexplored', west: 'unexplored' },
       };
       
-      // Occupy the black spot and all adjacent positions
+      // Occupy the scorch mark and all adjacent positions
       const monsters: MonsterState[] = [
-        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        // Adjacent positions to (2, 1)
-        { monsterId: 'kobold', instanceId: 'kobold-1', position: { x: 2, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'kobold', instanceId: 'kobold-2', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'kobold', instanceId: 'kobold-3', position: { x: 3, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'kobold', instanceId: 'kobold-4', position: { x: 1, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'kobold', instanceId: 'kobold-5', position: { x: 1, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'kobold', instanceId: 'kobold-6', position: { x: 3, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'kobold', instanceId: 'kobold-7', position: { x: 1, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'kobold', instanceId: 'kobold-8', position: { x: 3, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        // Adjacent positions to (1, 2)
+        { monsterId: 'kobold', instanceId: 'kobold-1', position: { x: 1, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-2', position: { x: 1, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-3', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-4', position: { x: 0, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-5', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-6', position: { x: 0, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-7', position: { x: 2, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+        { monsterId: 'kobold', instanceId: 'kobold-8', position: { x: 0, y: 3 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
       ];
       
       const position = getMonsterSpawnPosition(tile, monsters);
@@ -421,17 +421,17 @@ describe('monsters', () => {
     });
 
     it('should work with different tile rotations', () => {
-      // Test with 180° rotation - black spot at (1, 2)
+      // Test with 180° rotation - scorch mark at (2, 1)
       const tile: PlacedTile = {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
         position: { col: 0, row: 1 },
-        rotation: 180, // Arrow points north, black spot at (1, 2)
+        rotation: 180, // Arrow points north, scorch mark at (2, 1)
         edges: { north: 'open', south: 'unexplored', east: 'unexplored', west: 'unexplored' },
       };
       
       const position = getMonsterSpawnPosition(tile, []);
-      expect(position).toEqual({ x: 1, y: 2 });
+      expect(position).toEqual({ x: 2, y: 1 });
     });
 
     it('should not be affected by monsters on other tiles', () => {
@@ -445,12 +445,12 @@ describe('monsters', () => {
       
       // Monster on a different tile at the same local position
       const monsters: MonsterState[] = [
-        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-2' },
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 1, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-2' },
       ];
       
       const position = getMonsterSpawnPosition(tile, monsters);
-      // Should still return black spot since monster is on different tile
-      expect(position).toEqual({ x: 2, y: 1 });
+      // Should still return scorch mark since monster is on different tile
+      expect(position).toEqual({ x: 1, y: 2 });
     });
   });
 
