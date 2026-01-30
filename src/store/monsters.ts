@@ -161,8 +161,7 @@ export function getBlackSquarePosition(rotation: number): Position {
   
   // In the default orientation (0°, arrow pointing south), the scorch mark is at (1, 2) - lower-left
   // When the tile rotates, we need to rotate this position accordingly
-  // Rotation formula for 90° clockwise around center (1.5, 1.5):
-  // For point (x, y), rotating 90° clockwise: new_x = 3 - y, new_y = x
+  // The positions are precomputed for each rotation angle for clarity and performance
   
   switch (normalizedRotation) {
     case 0:

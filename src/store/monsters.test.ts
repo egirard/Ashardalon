@@ -353,7 +353,7 @@ describe('monsters', () => {
   });
 
   describe('getMonsterSpawnPosition', () => {
-    it('should return black spot position when it is unoccupied', () => {
+    it('should return scorch mark position when it is unoccupied', () => {
       const tile: PlacedTile = {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
@@ -366,7 +366,7 @@ describe('monsters', () => {
       expect(position).toEqual({ x: 1, y: 2 });
     });
 
-    it('should return adjacent position when black spot is occupied', () => {
+    it('should return adjacent position when scorch mark is occupied', () => {
       const tile: PlacedTile = {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',

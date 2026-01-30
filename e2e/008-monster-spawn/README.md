@@ -10,7 +10,7 @@
 
 1. **Given** Quinn just placed a new tile through exploration (exploring north edge)
 2. **Then** a monster token appears on the new tile at the scorch mark position
-3. **And** the monster is at position (2, 1) - the dark circular marking on the tile
+3. **And** the monster is at position (1, 2) - the dark circular marking in the lower-left area
 4. **And** I see a monster card displayed showing the monster's name
 5. **And** the monster card shows AC and HP values
 
