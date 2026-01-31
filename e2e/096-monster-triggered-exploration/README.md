@@ -16,19 +16,19 @@ And I see a notification showing which monster explored and what tile was placed
 ## Test Flow
 
 ### Step 1: Initial Game Board
-![Initial Board](./096-monster-triggered-exploration.spec.ts-snapshots/000-initial-board-with-start-tile-only-chromium-linux.png)
+![Initial Board](096-monster-triggered-exploration.spec.ts-snapshots/000-initial-board-with-start-tile-only-chromium-linux.png)
 - Game starts with Quinn on the start tile
 - Dungeon contains only the start tile
 
 ### Step 2: Duergar Guard Positioned
-![Duergar Guard on Tile](./096-monster-triggered-exploration.spec.ts-snapshots/001-duergar-guard-on-tile-with-unexplored-edges-chromium-linux.png)
+![Duergar Guard on Tile](096-monster-triggered-exploration.spec.ts-snapshots/001-duergar-guard-on-tile-with-unexplored-edges-chromium-linux.png)
 - A second tile (tile-2) is placed north of start tile
 - Duergar Guard is positioned on tile-2 with unexplored edges
 - Quinn (hero) is on the start tile, separate from the guard
 - This sets up the exploration condition: monster alone on tile with unexplored edge
 
 ### Step 3: Monster Exploration Notification
-![Exploration Notification](./096-monster-triggered-exploration.spec.ts-snapshots/002-monster-exploration-notification-chromium-linux.png)
+![Exploration Notification](096-monster-triggered-exploration.spec.ts-snapshots/002-monster-exploration-notification-chromium-linux.png)
 - Villain phase is activated
 - Duergar Guard's turn executes via real monster AI
 - Monster AI detects: unexplored edge + no heroes on tile
@@ -37,7 +37,7 @@ And I see a notification showing which monster explored and what tile was placed
 - Red/dark theme distinguishes from hero-triggered exploration
 
 ### Step 4: Final Expanded Dungeon
-![Final Dungeon](./096-monster-triggered-exploration.spec.ts-snapshots/003-final-expanded-dungeon-after-exploration-chromium-linux.png)
+![Final Dungeon](096-monster-triggered-exploration.spec.ts-snapshots/003-final-expanded-dungeon-after-exploration-chromium-linux.png)
 - Notification dismissed (programmatically for testing)
 - New tile visible to the east (dungeon expanded from 2 to 3+ tiles)
 - New monster spawned on explored tile's scorch mark
