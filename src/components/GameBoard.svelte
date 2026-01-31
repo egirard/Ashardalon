@@ -78,7 +78,7 @@
   } from "../store/gameSlice";
   import type { EdgePosition } from "../store/heroesSlice";
   import { getTileSquares } from "../store/powerCardEffects";
-  import { TargetIcon, CheckIcon } from './icons';
+  import { TargetIcon, CheckIcon, FireIcon } from './icons';
   import type {
     HeroToken,
     Hero,
@@ -156,6 +156,7 @@
   import { getTreasureById } from "../store/treasure";
   import { getStatusDisplayData, isDazed, STATUS_EFFECT_DEFINITIONS, getModifiedAttackBonusWithCurses } from "../store/statusEffects";
   import { areOnSameTile } from "../store/encounters";
+  import { getScorchMarkPosition } from "../store/monsters";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -273,6 +274,7 @@
   let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
   let trapDisableResult: import('../store/types').TrapDisableResult | null = $state(null);
   let logEntries: import('../store/types').LogEntry[] = $state([]);
+  let showScorchMarks: boolean = $state(false);
   
   // Blade Barrier token placement state
   let pendingBladeBarrier: { 
@@ -388,6 +390,7 @@
       showScenarioIntroduction = state.game.showScenarioIntroduction;
       trapDisableResult = state.game.trapDisableResult;
       logEntries = state.game.logEntries;
+      showScorchMarks = state.ui.showScorchMarks;
       
       // Force Svelte to process pending updates
       tick();
@@ -459,6 +462,7 @@
     showScenarioIntroduction = state.game.showScenarioIntroduction;
     trapDisableResult = state.game.trapDisableResult;
     logEntries = state.game.logEntries;
+    showScorchMarks = state.ui.showScorchMarks;
 
     return unsubscribe;
   });
@@ -2982,6 +2986,19 @@
                 subTileId={edge.subTileId}
               />
             {/each}
+
+            {#if showScorchMarks && tile.tileType !== 'start'}
+              {@const scorchMark = getScorchMarkPosition(tile.rotation)}
+              {@const scorchLeft = TOKEN_OFFSET_X + (scorchMark.x + 0.5) * TILE_CELL_SIZE}
+              {@const scorchTop = TOKEN_OFFSET_Y + (scorchMark.y + 0.5) * TILE_CELL_SIZE}
+              <div
+                class="scorch-mark-overlay"
+                data-testid="scorch-mark-overlay"
+                style="left: {scorchLeft}px; top: {scorchTop}px;"
+              >
+                <FireIcon size={20} ariaLabel="Scorch mark" />
+              </div>
+            {/if}
           </div>
         {/each}
 
@@ -4063,6 +4080,22 @@
   .movement-overlay-container {
     position: absolute;
     z-index: 5;
+  }
+
+  .scorch-mark-overlay {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 6;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 87, 34, 0.2);
+    border: 2px solid rgba(255, 87, 34, 0.8);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    box-shadow: 0 0 12px rgba(255, 87, 34, 0.6);
   }
 
   .placement-overlay-container {

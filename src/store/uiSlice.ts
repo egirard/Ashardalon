@@ -7,10 +7,13 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export interface UIState {
   /** Font scale multiplier for UI elements (0.8 to 1.5) */
   fontScale: number;
+  /** Whether to display diagnostic scorch mark overlays on tiles */
+  showScorchMarks: boolean;
 }
 
 const initialState: UIState = {
   fontScale: 1.0, // Default 100% scale
+  showScorchMarks: false,
 };
 
 const uiSlice = createSlice({
@@ -46,8 +49,14 @@ const uiSlice = createSlice({
     decreaseFontScale(state) {
       state.fontScale = Math.max(0.8, state.fontScale - 0.1);
     },
+    /**
+     * Toggle diagnostic scorch mark overlay visibility.
+     */
+    toggleScorchMarks(state) {
+      state.showScorchMarks = !state.showScorchMarks;
+    },
   },
 });
 
-export const { setFontScale, resetFontScale, increaseFontScale, decreaseFontScale } = uiSlice.actions;
+export const { setFontScale, resetFontScale, increaseFontScale, decreaseFontScale, toggleScorchMarks } = uiSlice.actions;
 export default uiSlice.reducer;

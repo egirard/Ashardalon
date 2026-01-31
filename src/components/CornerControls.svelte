@@ -4,10 +4,12 @@
    * Displays icon-only controls for Return to Character Select, Control Map, Font Scale, and Submit Feedback
    * Positioned in corners (NW and SE) for accessibility from different player positions
    */
-  import { HomeIcon, MapIcon, BugIcon, FontSizeIcon } from './icons';
+  import { HomeIcon, MapIcon, BugIcon, FireIcon, FontSizeIcon } from './icons';
   import html2canvas from 'html2canvas';
   import ConfirmationDialog from './ConfirmationDialog.svelte';
   import FontScaleControls from './FontScaleControls.svelte';
+  import { store } from '../store';
+  import { toggleScorchMarks } from '../store/uiSlice';
   
   interface Props {
     position: 'nw' | 'se';
@@ -23,6 +25,16 @@
   
   // State for font scale controls
   let showFontScaleControls = $state(false);
+
+  // Diagnostic toggle state
+  let showScorchMarks = $state(store.getState().ui.showScorchMarks);
+
+  $effect(() => {
+    const unsubscribe = store.subscribe(() => {
+      showScorchMarks = store.getState().ui.showScorchMarks;
+    });
+    return () => unsubscribe();
+  });
   
   // Repository configuration for feedback
   const REPO_OWNER = 'egirard';
@@ -56,6 +68,10 @@
    */
   function handleToggleFontScale() {
     showFontScaleControls = !showFontScaleControls;
+  }
+
+  function handleToggleScorchMarks() {
+    store.dispatch(toggleScorchMarks());
   }
   
   /**
@@ -277,6 +293,18 @@ ${screenshotSection}
   >
     <FontSizeIcon size={20} color="currentColor" ariaLabel="Adjust UI Scale" />
   </button>
+
+  <button
+    class="icon-button scorch-toggle-button"
+    class:active={showScorchMarks}
+    data-testid="corner-scorch-toggle-button"
+    onclick={handleToggleScorchMarks}
+    aria-label="Toggle scorch mark diagnostics"
+    aria-pressed={showScorchMarks}
+    title="Toggle scorch mark diagnostics"
+  >
+    <FireIcon size={20} color="currentColor" ariaLabel="Scorch mark diagnostics" />
+  </button>
   
   <button
     class="icon-button feedback-button"
@@ -394,6 +422,23 @@ ${screenshotSection}
   .font-scale-button.active:hover {
     background: rgba(76, 175, 80, 0.8);
     border-color: #66bb6a;
+  }
+
+  /* Scorch mark toggle - ember when inactive, bright fire when active */
+  .scorch-toggle-button:hover {
+    border-color: #ff7043;
+    color: #ff8a65;
+  }
+
+  .scorch-toggle-button.active {
+    background: rgba(255, 87, 34, 0.7);
+    border-color: #ff5722;
+    color: #fff;
+  }
+
+  .scorch-toggle-button.active:hover {
+    background: rgba(255, 87, 34, 0.85);
+    border-color: #ff7043;
   }
   
   /* Feedback button - purple */
