@@ -2369,7 +2369,114 @@ export const gameSlice = createSlice({
             state.encounterEffectMessage = `Bottom tile moved to top of deck (${deckSize} tiles remaining)`;
           }
           
-          // Monster deck manipulation cards
+          // Spotted!: Filter deck for Sentries, place tile, spawn monster
+          else if (encounterId === 'spotted') {
+            // Part 1: Filter monster deck for Sentries
+            const category = getMonsterCategoryForEncounter(encounterId);
+            if (category) {
+              const result = filterMonsterDeckByCategory(
+                state.monsterDeck,
+                category,
+                5
+              );
+              state.monsterDeck = result.deck;
+              
+              // Build message about deck filtering
+              const kept = 5 - result.discardedMonsters.length;
+              const discarded = result.discardedMonsters.length;
+              const categoryName = category.charAt(0).toUpperCase() + category.slice(1) + (kept !== 1 ? 's' : '');
+              let effectMessage = `Drew 5 monster cards. ${kept} ${categoryName} placed on top, ${discarded} discarded.`;
+              
+              // Part 2: Find closest unexplored edge to active hero
+              const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+              const activeHeroTile = state.dungeon.tiles.find(t => t.id === activeHeroToken?.tileId);
+              
+              if (activeHeroTile && state.dungeon.unexploredEdges.length > 0) {
+                // Find closest unexplored edge based on tile distance
+                let closestEdge = state.dungeon.unexploredEdges[0];
+                let closestDistance = Infinity;
+                
+                for (const edge of state.dungeon.unexploredEdges) {
+                  const edgeTile = state.dungeon.tiles.find(t => t.id === edge.tileId);
+                  if (edgeTile) {
+                    // Calculate Manhattan distance between tiles
+                    const dx = Math.abs(edgeTile.position.x - activeHeroTile.position.x);
+                    const dy = Math.abs(edgeTile.position.y - activeHeroTile.position.y);
+                    const distance = dx + dy;
+                    
+                    if (distance < closestDistance) {
+                      closestDistance = distance;
+                      closestEdge = edge;
+                    }
+                  }
+                }
+                
+                // Part 3: Draw tile from bottom of deck
+                const { drawnTile, remainingDeck } = drawTileFromBottom(state.dungeon.tileDeck);
+                
+                if (drawnTile) {
+                  state.dungeon.tileDeck = remainingDeck;
+                  
+                  // Place the tile at the closest unexplored edge
+                  const newTile = placeTile(closestEdge, drawnTile, state.dungeon);
+                  
+                  if (newTile) {
+                    // Add the new tile to the dungeon
+                    state.dungeon.tiles.push(newTile);
+                    
+                    // Update unexplored edges
+                    state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
+                    
+                    // Part 4: Draw and spawn a monster on the new tile
+                    const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+                    state.monsterDeck = updatedMonsterDeck;
+                    
+                    if (newMonsterId) {
+                      const newMonsterDef = getMonsterById(newMonsterId);
+                      
+                      // Use spawn function to handle multi-monster spawns
+                      const spawnResult = spawnMonstersWithBehavior(
+                        newMonsterId,
+                        newTile,
+                        activeHeroToken?.heroId || state.heroTokens[0].heroId,
+                        state.monsters,
+                        state.monsterInstanceCounter,
+                        state.monsterGroupCounter
+                      );
+                      
+                      if (spawnResult.monsters.length > 0) {
+                        state.monsters.push(...spawnResult.monsters);
+                        state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+                        state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+                        state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
+                        
+                        // Add group if multiple monsters spawned
+                        if (spawnResult.group) {
+                          state.monsterGroups.push(spawnResult.group);
+                        }
+                        
+                        effectMessage += ` Tile placed, ${newMonsterDef?.name || 'monster'} spawned.`;
+                      } else {
+                        effectMessage += ' Tile placed, but failed to spawn monster.';
+                      }
+                    } else {
+                      effectMessage += ' Tile placed, but no monsters in deck.';
+                    }
+                  } else {
+                    effectMessage += ' Failed to place tile.';
+                  }
+                } else {
+                  effectMessage += ' No tiles in deck to place.';
+                }
+              } else {
+                effectMessage += ' No unexplored edges available.';
+              }
+              
+              state.encounterEffectMessage = effectMessage;
+            }
+          }
+          
+          // Other monster deck manipulation cards (Hall of Orcs, Duergar Outpost, etc.)
           else if (isMonsterDeckManipulationCard(encounterId)) {
             const category = getMonsterCategoryForEncounter(encounterId);
             if (category) {
