@@ -2384,7 +2384,7 @@ export const gameSlice = createSlice({
               // Build message about deck filtering
               const kept = 5 - result.discardedMonsters.length;
               const discarded = result.discardedMonsters.length;
-              const categoryName = category.charAt(0).toUpperCase() + category.slice(1) + (kept !== 1 ? 's' : '');
+              const categoryName = category.charAt(0).toUpperCase() + category.slice(1) + (kept === 1 ? '' : 's');
               let effectMessage = `Drew 5 monster cards. ${kept} ${categoryName} placed on top, ${discarded} discarded.`;
               
               // Part 2: Find closest unexplored edge to active hero
@@ -2434,11 +2434,14 @@ export const gameSlice = createSlice({
                     if (newMonsterId) {
                       const newMonsterDef = getMonsterById(newMonsterId);
                       
+                      // Determine controller hero ID with fallback
+                      const controllerHeroId = activeHeroToken?.heroId || (state.heroTokens.length > 0 ? state.heroTokens[0].heroId : 'quinn');
+                      
                       // Use spawn function to handle multi-monster spawns
                       const spawnResult = spawnMonstersWithBehavior(
                         newMonsterId,
                         newTile,
-                        activeHeroToken?.heroId || state.heroTokens[0].heroId,
+                        controllerHeroId,
                         state.monsters,
                         state.monsterInstanceCounter,
                         state.monsterGroupCounter

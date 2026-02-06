@@ -323,7 +323,7 @@ These effect types display the card description and resolve to the discard pile,
   - If monster deck is empty after tile placement, reports "Tile placed, but no monsters in deck"
   - If monster spawn fails, reports "Tile placed, but failed to spawn monster"
 - Success message combines all effects: "Drew 5 monster cards. X Sentries placed on top, Y discarded. Tile placed, [monster name] spawned."
-- Implementation reference: issue egirard/Ashardalon (this PR)
+- Implementation reference: commit deedbdf
 - Implementation files:
   - gameSlice.ts: Full card logic in dismissEncounterCard reducer
   - encounters.ts: getMonsterCategoryForEncounter(), isMonsterDeckManipulationCard(), isTileDeckManipulationCard()
