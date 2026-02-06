@@ -256,7 +256,7 @@ These effect types display the card description and resolve to the discard pile,
 | quick-advance | Quick Advance | Move a monster closer | ⚠️ Display only |
 | revel-in-destruction | Revel in Destruction | Heal a monster 1 HP | ✅ Fully Implemented |
 | scream-of-sentry | Scream of the Sentry | Place tile and monster near monster | ⚠️ Display only |
-| spotted | Spotted! | Filter deck, place tile and monster | ⚠️ Display only |
+| spotted | Spotted! | Filter deck, place tile and monster | ✅ Fully Implemented |
 | thief-in-dark | Thief in the Dark | Lose a treasure | ✅ Fully Implemented |
 | unnatural-corruption | Unnatural Corruption | Filter monster deck for Aberrants | ⚠️ Display only |
 | wandering-monster | Wandering Monster | Spawn monster on unexplored edge | ✅ Fully Implemented |
@@ -298,6 +298,38 @@ These effect types display the card description and resolve to the discard pile,
   - gameSlice.ts: Token placement in dismissEncounterCard, collection in moveHero
   - TreasureTokenMarker.svelte: Visual component for treasure tokens
   - GameBoard.svelte: Integration of treasure token rendering
+
+#### Spotted! Implementation Notes
+
+**Spotted!** is now fully implemented:
+- When the encounter card is drawn and dismissed, it performs three sequential actions:
+  1. **Filter Monster Deck for Sentries**: Draws 5 monster cards, discards non-Sentry monsters, shuffles remaining Sentries on top
+     - Uses `filterMonsterDeckByCategory()` with 'sentry' category
+     - Effect message reports: "Drew 5 monster cards. X Sentries placed on top, Y discarded"
+  2. **Place Tile from Bottom**: Places a tile from the bottom of the tile deck next to the closest unexplored edge to the active hero
+     - Uses `findTileAtPosition()` to locate the active hero's tile
+     - Calculates Manhattan distance to all unexplored edges to find the closest
+     - Uses `drawTileFromBottom()` to get the bottom tile from the deck
+     - Uses `placeTile()` to place the new tile at the closest unexplored edge
+     - Updates the dungeon with `updateDungeonAfterExploration()` to refresh unexplored edges
+  3. **Spawn Monster**: Draws a monster from the deck and spawns it on the newly placed tile
+     - Uses `drawMonster()` to get a random monster from the deck
+     - Uses `spawnMonstersWithBehavior()` to spawn the monster on the new tile with proper placement logic
+     - Handles multi-monster spawns (e.g., Kobold Swarm) automatically
+     - Sets `recentlySpawnedMonsterId` for UI highlighting
+- The implementation properly handles edge cases:
+  - If no unexplored edges are available, reports "No unexplored edges available"
+  - If tile deck is empty, reports "No tiles in deck to place"
+  - If monster deck is empty after tile placement, reports "Tile placed, but no monsters in deck"
+  - If monster spawn fails, reports "Tile placed, but failed to spawn monster"
+- Success message combines all effects: "Drew 5 monster cards. X Sentries placed on top, Y discarded. Tile placed, [monster name] spawned."
+- Implementation reference: issue egirard/Ashardalon (this PR)
+- Implementation files:
+  - gameSlice.ts: Full card logic in dismissEncounterCard reducer
+  - encounters.ts: getMonsterCategoryForEncounter(), isMonsterDeckManipulationCard(), isTileDeckManipulationCard()
+  - monsters.ts: filterMonsterDeckByCategory(), drawMonster(), spawnMonstersWithBehavior()
+  - exploration.ts: drawTileFromBottom(), placeTile(), updateDungeonAfterExploration()
+  - movement.ts: findTileAtPosition()
 
 #### Thief in the Dark Implementation Notes
 
