@@ -2389,7 +2389,7 @@ export const gameSlice = createSlice({
               
               // Part 2: Find closest unexplored edge to active hero
               const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
-              const activeHeroTile = state.dungeon.tiles.find(t => t.id === activeHeroToken?.tileId);
+              const activeHeroTile = activeHeroToken ? findTileAtPosition(activeHeroToken.position, state.dungeon) : null;
               
               if (activeHeroTile && state.dungeon.unexploredEdges.length > 0) {
                 // Find closest unexplored edge based on tile distance
@@ -2473,6 +2473,9 @@ export const gameSlice = createSlice({
               }
               
               state.encounterEffectMessage = effectMessage;
+            } else {
+              // Fallback if category is not found
+              state.encounterEffectMessage = 'Monster category not found for Spotted! card';
             }
           }
           
