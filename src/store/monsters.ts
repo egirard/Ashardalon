@@ -184,7 +184,10 @@ export function getScorchMarkPosition(tileType: string, rotation: number): Posit
   
   if (!tileDef) {
     // Fallback: use old default position if tile type not found
-    console.warn(`Tile type ${tileType} not found, using fallback scorch mark position`);
+    console.warn(
+      `Tile type "${tileType}" not found in TILE_DEFINITIONS. ` +
+      `Using fallback scorch mark position. Valid tile types are defined in src/store/types.ts`
+    );
     return getBlackSquarePosition(rotation);
   }
   
@@ -202,7 +205,9 @@ export function getScorchMarkPosition(tileType: string, rotation: number): Posit
  * had their scorch mark at (1, 2) in default orientation. It is kept for backward
  * compatibility but should not be used for new code.
  * 
- * @deprecated Use getScorchMarkPosition(tileType, rotation) instead
+ * @deprecated Since version 1.0.0 - Use getScorchMarkPosition(tileType, rotation) instead.
+ *             This function will be removed in a future version.
+ *             Example: getScorchMarkPosition(tile.tileType, tile.rotation)
  * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
  * @returns The scorch mark position in local tile coordinates
  * 
