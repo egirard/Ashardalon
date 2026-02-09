@@ -38,27 +38,19 @@ Game has started with Quinn selected. The start tile is visible and the hero is 
 The "Spotted!" encounter card is displayed, showing its description and effects.
 
 ### Screenshot 003: Effect Applied
-*(To be generated once test is fully working)*
+![Effect Applied](105-spotted-event-card.spec.ts-snapshots/003-spotted-effect-applied-chromium-linux.png)
 
-After dismissing the encounter card, the effect message shows:
-- Number of Sentry monsters kept vs. discarded
-- Confirmation that a tile was placed
-- Name of the monster that was spawned
+After dismissing the encounter card, the effect has been applied. The monster deck has been filtered for Sentries, a tile has been placed, and a monster has been spawned.
 
-### Screenshot 004: Effect Notification
-*(To be generated once test is fully working)*
+### Screenshot 004: New Tile Visible
+![New Tile Visible](105-spotted-event-card.spec.ts-snapshots/004-new-tile-visible-chromium-linux.png)
 
-The encounter effect notification popup displays the complete effect message.
+The newly placed tile is visible on the game board next to an unexplored edge, placed at the location closest to the active hero.
 
-### Screenshot 005: New Tile Visible
-*(To be generated once test is fully working)*
+### Screenshot 005: Spawned Monster Visible
+![Spawned Monster Visible](105-spotted-event-card.spec.ts-snapshots/005-spawned-monster-visible-chromium-linux.png)
 
-The newly placed tile is visible on the game board next to an unexplored edge.
-
-### Screenshot 006: Spawned Monster Visible
-*(To be generated once test is fully working)*
-
-The spawned monster is visible on the new tile.
+The spawned monster is visible on the newly placed tile. The game continues normally after the card effect has been fully executed.
 
 ## Manual Verification Checklist
 
