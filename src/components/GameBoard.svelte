@@ -2988,7 +2988,7 @@
             {/each}
 
             {#if showScorchMarks && tile.tileType !== 'start'}
-              {@const scorchMark = getScorchMarkPosition(tile.rotation)}
+              {@const scorchMark = getScorchMarkPosition(tile.tileType, tile.rotation)}
               {@const scorchLeft = TOKEN_OFFSET_X + (scorchMark.x + 0.5) * TILE_CELL_SIZE}
               {@const scorchTop = TOKEN_OFFSET_Y + (scorchMark.y + 0.5) * TILE_CELL_SIZE}
               <div
