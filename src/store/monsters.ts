@@ -1,5 +1,5 @@
 import type { MonsterDeck, Monster, MonsterState, MonsterGroup, Position, PlacedTile, DungeonState, MonsterCategory } from './types';
-import { MONSTERS, INITIAL_MONSTER_DECK } from './types';
+import { MONSTERS, INITIAL_MONSTER_DECK, TILE_DEFINITIONS } from './types';
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -131,23 +131,78 @@ export function getTileMonsterSpawnPosition(): Position {
 }
 
 /**
- * Get the scorch mark position on a tile based on its rotation.
+ * Rotate a position based on a tile's rotation.
+ * When a tile rotates, positions on the tile rotate with it.
+ * This function converts a position in default orientation to its rotated equivalent.
+ * 
+ * @param pos - The position in default orientation (rotation 0)
+ * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
+ * @returns The rotated position in local tile coordinates
+ */
+export function rotatePosition(pos: Position, rotation: number): Position {
+  // Normalize rotation to 0, 90, 180, or 270
+  const normalizedRotation = ((rotation % 360) + 360) % 360;
+  
+  // For a 4x4 grid (0-3), rotation works as follows:
+  // 90° clockwise: (x, y) -> (3-y, x)
+  // 180°: (x, y) -> (3-x, 3-y)
+  // 270° clockwise: (x, y) -> (y, 3-x)
+  
+  switch (normalizedRotation) {
+    case 0:
+      return pos;
+    case 90:
+      return { x: 3 - pos.y, y: pos.x };
+    case 180:
+      return { x: 3 - pos.x, y: 3 - pos.y };
+    case 270:
+      return { x: pos.y, y: 3 - pos.x };
+    default:
+      // Fallback to original position for unexpected rotations
+      return pos;
+  }
+}
+
+/**
+ * Get the scorch mark position on a tile based on its type and rotation.
  * 
  * In Wrath of Ashardalon, the scorch mark (also called "black square" or "spawn marker")
  * is a dark circular marking on the tile where monsters spawn when a dungeon tile is
  * initially revealed. According to the official rules for "placing a monster", the monster
  * figure is positioned on the scorch mark of the newly revealed tile.
  * 
- * The scorch mark appears in the lower-left area of physical tiles in the default orientation.
- * In the default tile orientation (arrow pointing south), the scorch mark is located at 
- * position (1, 2) - in the lower-left quadrant.
+ * Each tile type has a unique scorch mark position in its default orientation.
+ * The scorch mark position rotates with the tile when the tile is rotated.
  * 
- * As the tile rotates, the scorch mark position rotates with it:
- * - 0° (arrow points south): scorch mark at (1, 2) - lower-left
- * - 90° (arrow points west): scorch mark at (1, 1) - rotated 90° clockwise, now upper-left
- * - 180° (arrow points north): scorch mark at (2, 1) - rotated 180°, now upper-right
- * - 270° (arrow points east): scorch mark at (2, 2) - rotated 270° clockwise, now lower-right
+ * @param tileType - The tile's type (e.g., 'tile-black-2exit-a')
+ * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
+ * @returns The scorch mark position in local tile coordinates after rotation
+ */
+export function getScorchMarkPosition(tileType: string, rotation: number): Position {
+  // Look up the tile definition to get its default scorch mark position
+  const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType);
+  
+  if (!tileDef) {
+    // Fallback: use old default position if tile type not found
+    console.warn(`Tile type ${tileType} not found, using fallback scorch mark position`);
+    return getBlackSquarePosition(rotation);
+  }
+  
+  // Get the scorch mark position in default orientation
+  const defaultPosition = tileDef.scorchMarkPosition;
+  
+  // Rotate the position based on the tile's rotation
+  return rotatePosition(defaultPosition, rotation);
+}
+
+/**
+ * Get the scorch mark position on a tile based on its rotation (deprecated).
  * 
+ * This function uses the old hardcoded scorch mark position that assumed all tiles
+ * had their scorch mark at (1, 2) in default orientation. It is kept for backward
+ * compatibility but should not be used for new code.
+ * 
+ * @deprecated Use getScorchMarkPosition(tileType, rotation) instead
  * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
  * @returns The scorch mark position in local tile coordinates
  * 
@@ -180,20 +235,6 @@ export function getBlackSquarePosition(rotation: number): Position {
       // Fallback to center for unexpected rotations
       return { x: TILE_CENTER, y: TILE_CENTER };
   }
-}
-
-/**
- * Get the scorch mark position on a tile (alias for getBlackSquarePosition).
- * 
- * This is the official game terminology for the spawn marker where monsters are placed
- * when a new dungeon tile is revealed, as referenced in the rulebook section on
- * "placing a monster".
- * 
- * @param rotation - The tile's rotation in degrees (0, 90, 180, or 270)
- * @returns The scorch mark position in local tile coordinates
- */
-export function getScorchMarkPosition(rotation: number): Position {
-  return getBlackSquarePosition(rotation);
 }
 
 /**
@@ -270,8 +311,8 @@ export function getMonsterSpawnPosition(
   tile: PlacedTile,
   monsters: MonsterState[]
 ): Position | null {
-  // Get the scorch mark position based on tile rotation (also known as black square)
-  const scorchMark = getBlackSquarePosition(tile.rotation);
+  // Get the scorch mark position based on tile type and rotation
+  const scorchMark = getScorchMarkPosition(tile.tileType, tile.rotation);
   
   // Check if the scorch mark is available
   if (!isPositionOccupiedByMonster(scorchMark, tile.id, monsters)) {
