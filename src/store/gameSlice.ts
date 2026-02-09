@@ -2476,9 +2476,21 @@ export const gameSlice = createSlice({
               }
               
               state.encounterEffectMessage = effectMessage;
+              
+              // Discard the encounter card and clear drawn encounter
+              if (state.drawnEncounter) {
+                state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+                state.drawnEncounter = null;
+              }
             } else {
               // Fallback if category is not found
               state.encounterEffectMessage = 'Monster category not found for Spotted! card';
+              
+              // Discard the encounter card even if there's an error
+              if (state.drawnEncounter) {
+                state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+                state.drawnEncounter = null;
+              }
             }
           }
           
