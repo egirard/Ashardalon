@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TileSet xmlns="tileset" version="1">
+
+<!-- =========================================
+     =========   Declare Tile Types  ========= 
+     ========================================= -->
+
+   <TileType type="6">Chamber Tiles</TileType>
+
+
+<!-- =========================================
+     ==============  End Tiles  ==============
+     ========================================= -->
+
+   <Tile name="Dire Chamber Back" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_Back.png</Tile>
+   <Tile name="Dire Chamber Start Tile" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_StartTile.png</Tile>
+   <Tile name="Dire Chamber Entrance" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_Entrance.png</Tile>
+   <Tile name="Dire Chamber Large Chamber" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_LargeChamber.png</Tile>
+   <Tile name="Dire Chamber 1" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_01.png</Tile>
+   <Tile name="Dire Chamber 2" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_02.png</Tile>
+   <Tile name="Dire Chamber 3" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_03.png</Tile>
+   <Tile name="Dire Chamber 4" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_DireChamber_04.png</Tile>
+
+   <Tile name="Horrid Chamber Back" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_Back.png</Tile>
+   <Tile name="Horrid Chamber Start Tile" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_StartTile.png</Tile>
+   <Tile name="Horrid Chamber Entrance" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_Entrance.png</Tile>
+   <Tile name="Horrid Chamber Large Chamber" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_LargeChamber.png</Tile>
+   <Tile name="Horrid Chamber 1" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_01.png</Tile>
+   <Tile name="Horrid Chamber 2" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_02.png</Tile>
+   <Tile name="Horrid Chamber 3" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_03.png</Tile>
+   <Tile name="Horrid Chamber 4" sort="10" type="6" maxcount="1" warn="true">Ashardalon\Tile_HorridChamber_04.png</Tile>
+
+</TileSet>
