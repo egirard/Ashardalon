@@ -197,10 +197,18 @@ ${screenshotSection}
       // This ensures newly placed tiles are fully visible
       await waitForAnimations(getGameBoardContainer());
 
+      // Use windowWidth/windowHeight to ensure proper viewport capture
+      // This helps html2canvas correctly handle CSS transforms and flexbox positioning
       const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
         scale: 1,
         logging: false,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        x: window.scrollX,
+        y: window.scrollY,
       });
 
       const userAgent = navigator.userAgent;

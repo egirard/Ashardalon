@@ -141,10 +141,18 @@ ${screenshotSection}
       await waitForAnimations(getGameBoardContainer());
 
       // Capture the entire page as a screenshot
+      // Use windowWidth/windowHeight to ensure proper viewport capture
+      // This helps html2canvas correctly handle CSS transforms and flexbox positioning
       const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
         scale: 1, // Use 1:1 scale to keep file size reasonable
         logging: false,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        x: window.scrollX,
+        y: window.scrollY,
       });
 
       // Get system information
