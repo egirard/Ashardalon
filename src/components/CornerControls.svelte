@@ -6,7 +6,7 @@
    */
   import { HomeIcon, MapIcon, BugIcon, FireIcon, FontSizeIcon } from './icons';
   import html2canvas from 'html2canvas';
-  import { waitForAnimations } from '../utils/animationHelpers';
+  import { waitForAnimations, getGameBoardContainer } from '../utils/animationHelpers';
   import ConfirmationDialog from './ConfirmationDialog.svelte';
   import FontScaleControls from './FontScaleControls.svelte';
   import { store } from '../store';
@@ -195,8 +195,7 @@ ${screenshotSection}
     try {
       // Wait for any ongoing animations to complete before capturing
       // This ensures newly placed tiles are fully visible
-      const gameBoard = document.querySelector('[data-testid="game-board"]') as HTMLElement;
-      await waitForAnimations(gameBoard || document.body);
+      await waitForAnimations(getGameBoardContainer());
 
       const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
