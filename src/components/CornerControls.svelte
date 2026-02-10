@@ -199,16 +199,21 @@ ${screenshotSection}
 
       // Use windowWidth/windowHeight to ensure proper viewport capture
       // This helps html2canvas correctly handle CSS transforms and flexbox positioning
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+      
       const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
         scale: 1,
         logging: false,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        x: window.scrollX,
-        y: window.scrollY,
+        windowWidth: viewportWidth,
+        windowHeight: viewportHeight,
+        width: viewportWidth,
+        height: viewportHeight,
+        x: scrollX,
+        y: scrollY,
       });
 
       const userAgent = navigator.userAgent;
