@@ -188,10 +188,40 @@ ${screenshotSection}
   }
   
   /**
+   * Waits for all CSS animations on the page to complete.
+   * This ensures that newly placed tiles with fade-in animations are fully visible.
+   */
+  async function waitForAnimations(): Promise<void> {
+    // Get all elements with running animations
+    const animatedElements = document.querySelectorAll('*');
+    const animationPromises: Promise<void>[] = [];
+
+    animatedElements.forEach((element) => {
+      const animations = element.getAnimations();
+      animations.forEach((animation) => {
+        if (animation.playState === 'running') {
+          animationPromises.push(animation.finished);
+        }
+      });
+    });
+
+    // Wait for all animations to complete (with a timeout)
+    if (animationPromises.length > 0) {
+      await Promise.race([
+        Promise.all(animationPromises),
+        new Promise(resolve => setTimeout(resolve, 3000)) // 3s max wait
+      ]);
+    }
+  }
+
+  /**
    * Handles the feedback button click
    */
   async function handleFeedbackClick() {
     try {
+      // Wait for any ongoing animations to complete before capturing
+      await waitForAnimations();
+
       const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
         scale: 1,
