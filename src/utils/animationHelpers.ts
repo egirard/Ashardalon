@@ -3,6 +3,19 @@
  */
 
 /**
+ * Default timeout for waiting for animations to complete.
+ * Set to 3000ms (3 seconds) to provide a safety margin beyond the
+ * 2-second tile fade-in animation, accounting for potential delays or stacked animations.
+ */
+const DEFAULT_ANIMATION_TIMEOUT = 3000;
+
+/**
+ * Fallback timeout for browsers that don't support the Web Animations API.
+ * Set to 2500ms to ensure most animations (typically 2 seconds) complete.
+ */
+const FALLBACK_ANIMATION_TIMEOUT = 2500;
+
+/**
  * Gets the game board container element for scoping animation queries.
  * Falls back to document.body if game board is not found.
  * 
@@ -17,23 +30,20 @@ export function getGameBoardContainer(): HTMLElement {
  * Waits for all CSS animations within a container to complete.
  * This ensures that newly placed tiles with fade-in animations are fully visible.
  * 
- * The default timeout of 3000ms is chosen to provide a safety margin beyond the
- * 2-second tile fade-in animation, accounting for potential delays or stacked animations.
- * 
  * @param container - The container element to check for animations. Defaults to document.body.
- * @param timeout - Maximum time to wait in milliseconds. Defaults to 3000ms (3 seconds).
+ * @param timeout - Maximum time to wait in milliseconds. Defaults to DEFAULT_ANIMATION_TIMEOUT.
  * @returns Promise that resolves when all animations are complete or timeout is reached
  */
 export async function waitForAnimations(
   container: HTMLElement = document.body,
-  timeout: number = 3000
+  timeout: number = DEFAULT_ANIMATION_TIMEOUT
 ): Promise<void> {
   // Check if the Web Animations API is supported
   // The getAnimations() method is supported in modern browsers (Chrome 84+, Firefox 75+, Safari 13.1+)
   if (typeof container.getAnimations !== 'function') {
-    // Fallback: wait for the timeout duration if API is not supported
+    // Fallback: wait for a fixed duration if API is not supported
     // This ensures screenshots still wait a reasonable amount of time for animations
-    await new Promise<void>(resolve => setTimeout(resolve, Math.min(timeout, 2500)));
+    await new Promise<void>(resolve => setTimeout(resolve, Math.min(timeout, FALLBACK_ANIMATION_TIMEOUT)));
     return;
   }
 
