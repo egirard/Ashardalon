@@ -42,7 +42,8 @@ export async function waitForAnimations(
   // The getAnimations() method is supported in modern browsers (Chrome 84+, Firefox 75+, Safari 13.1+)
   if (typeof container.getAnimations !== 'function') {
     // Fallback: wait for a fixed duration if API is not supported
-    // This ensures screenshots still wait a reasonable amount of time for animations
+    // Cap the wait time at FALLBACK_ANIMATION_TIMEOUT to ensure reasonable behavior
+    // even if a longer timeout is requested, since we can't detect actual animations
     await new Promise<void>(resolve => setTimeout(resolve, Math.min(timeout, FALLBACK_ANIMATION_TIMEOUT)));
     return;
   }
