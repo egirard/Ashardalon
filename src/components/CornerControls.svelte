@@ -197,23 +197,23 @@ ${screenshotSection}
       // This ensures newly placed tiles are fully visible
       await waitForAnimations(getGameBoardContainer());
 
-      // Use windowWidth/windowHeight to ensure proper viewport capture
-      // This helps html2canvas correctly handle CSS transforms and flexbox positioning
+      // Use document.documentElement with foreign object rendering for better CSS handling
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const scrollX = window.scrollX;
-      const scrollY = window.scrollY;
       
-      const canvas = await html2canvas(document.body, {
+      const canvas = await html2canvas(document.documentElement, {
         backgroundColor: '#000000',
         scale: 1,
         logging: false,
-        windowWidth: viewportWidth,
-        windowHeight: viewportHeight,
+        foreignObjectRendering: true,
+        useCORS: true,
+        allowTaint: true,
         width: viewportWidth,
         height: viewportHeight,
-        x: scrollX,
-        y: scrollY,
+        windowWidth: viewportWidth,
+        windowHeight: viewportHeight,
+        scrollX: 0,
+        scrollY: 0,
       });
 
       const userAgent = navigator.userAgent;
