@@ -140,25 +140,33 @@ ${screenshotSection}
       // This ensures newly placed tiles are fully visible
       await waitForAnimations(getGameBoardContainer());
 
-      // Capture the viewport as a screenshot
-      // Use document.documentElement with foreign object rendering for better CSS handling
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
+      // html2canvas has issues with CSS transforms, so we temporarily neutralize them
+      // Save original transform values
+      const dungeonMap = document.querySelector('.dungeon-map') as HTMLElement;
+      const originalTransform = dungeonMap ? dungeonMap.style.transform : '';
+      const originalTransition = dungeonMap ? dungeonMap.style.transition : '';
       
-      const canvas = await html2canvas(document.documentElement, {
+      // Temporarily disable transform and transition for capture
+      if (dungeonMap) {
+        dungeonMap.style.transition = 'none';
+        dungeonMap.style.transform = 'none';
+      }
+
+      // Small delay to let the browser re-render without transforms
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Capture the entire page as a screenshot
+      const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
         scale: 1, // Use 1:1 scale to keep file size reasonable
         logging: false,
-        foreignObjectRendering: true,
-        useCORS: true,
-        allowTaint: true,
-        width: viewportWidth,
-        height: viewportHeight,
-        windowWidth: viewportWidth,
-        windowHeight: viewportHeight,
-        scrollX: 0,
-        scrollY: 0,
       });
+
+      // Restore original transform and transition
+      if (dungeonMap) {
+        dungeonMap.style.transform = originalTransform;
+        dungeonMap.style.transition = originalTransition;
+      }
 
       // Get system information
       const userAgent = navigator.userAgent;
