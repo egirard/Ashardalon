@@ -140,33 +140,18 @@ ${screenshotSection}
       // This ensures newly placed tiles are fully visible
       await waitForAnimations(getGameBoardContainer());
 
-      // html2canvas has issues with CSS transforms, so we temporarily neutralize them
-      // Save original transform values
-      const dungeonMap = document.querySelector('.dungeon-map') as HTMLElement;
-      const originalTransform = dungeonMap ? dungeonMap.style.transform : '';
-      const originalTransition = dungeonMap ? dungeonMap.style.transition : '';
-      
-      // Temporarily disable transform and transition for capture
-      if (dungeonMap) {
-        dungeonMap.style.transition = 'none';
-        dungeonMap.style.transform = 'none';
-      }
+      // Try to capture the game board container specifically
+      // This avoids issues with html2canvas rendering document.body with transforms
+      const gameBoard = document.querySelector('[data-testid="game-board"]') as HTMLElement;
+      const targetElement = gameBoard || document.body;
 
-      // Small delay to let the browser re-render without transforms
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      // Capture the entire page as a screenshot
-      const canvas = await html2canvas(document.body, {
+      // Capture the game board with foreignObjectRendering for better CSS support
+      const canvas = await html2canvas(targetElement, {
         backgroundColor: '#000000',
         scale: 1, // Use 1:1 scale to keep file size reasonable
         logging: false,
+        foreignObjectRendering: true,
       });
-
-      // Restore original transform and transition
-      if (dungeonMap) {
-        dungeonMap.style.transform = originalTransform;
-        dungeonMap.style.transition = originalTransition;
-      }
 
       // Get system information
       const userAgent = navigator.userAgent;
