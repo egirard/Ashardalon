@@ -195,17 +195,15 @@ ${screenshotSection}
     try {
       // Wait for any ongoing animations to complete before capturing
       // This ensures newly placed tiles are fully visible
-      await waitForAnimations(getGameBoardContainer());
+      await waitForAnimations(getGameBoardContainer(), 5000); // Increased from 3s to 5s
+      
+      // Add extra buffer time to ensure animations have fully settled
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Try to capture the game board container specifically
-      const gameBoard = document.querySelector('[data-testid="game-board"]') as HTMLElement;
-      const targetElement = gameBoard || document.body;
-
-      const canvas = await html2canvas(targetElement, {
+      const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
         scale: 1,
         logging: false,
-        foreignObjectRendering: true,
       });
 
       const userAgent = navigator.userAgent;
