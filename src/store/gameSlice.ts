@@ -61,6 +61,8 @@ import {
   createMonsterGroup,
   isGroupDefeated,
   removeMonsterFromGroup,
+  getMonsterMoveToTilePosition,
+  getValidTilePositions,
 } from "./monsters";
 import {
   executeMonsterTurn,
@@ -3951,15 +3953,77 @@ export const gameSlice = createSlice({
           // Find which tile the destination is on
           const newTileId = findTileForGlobalPosition(result.destination, state.dungeon);
           if (newTileId) {
-            // Convert global position to local tile position
-            const localPos = globalToLocalPosition(result.destination, newTileId, state.dungeon);
-            if (localPos) {
-              monsterToMove.position = localPos;
+            // Check if monster is moving to a different tile
+            const isMovingToNewTile = newTileId !== monsterToMove.tileId;
+            
+            let finalPosition: Position | null = null;
+            
+            if (isMovingToNewTile) {
+              // Monster is crossing to a new tile - try to place on scorch mark
+              const newTile = state.dungeon.tiles.find(t => t.id === newTileId);
+              if (newTile) {
+                const scorchMarkResult = getMonsterMoveToTilePosition(
+                  newTile,
+                  state.monsters,
+                  state.heroTokens,
+                  state.dungeon
+                );
+                
+                if (scorchMarkResult === 'occupied') {
+                  // Scorch mark is occupied - need player to choose a position
+                  // Calculate all valid positions on the tile
+                  const validPositions = getValidTilePositions(
+                    newTile,
+                    state.monsters,
+                    state.heroTokens,
+                    state.dungeon
+                  );
+                  
+                  // Create a pending decision for position selection
+                  state.pendingMonsterDecision = {
+                    decisionId: `monster-${monster.instanceId}-tile-entry-${Date.now()}`,
+                    type: 'choose-tile-entry-position',
+                    monsterId: monster.instanceId,
+                    options: {
+                      tileId: newTileId,
+                      positions: validPositions,
+                    },
+                    context: 'movement'
+                  };
+                  state.villainPhasePaused = true;
+                  return;
+                } else {
+                  // Use scorch mark position
+                  finalPosition = scorchMarkResult;
+                }
+              }
+            } else {
+              // Monster is moving within the same tile - use the calculated destination
+              finalPosition = globalToLocalPosition(result.destination, newTileId, state.dungeon);
+            }
+            
+            if (finalPosition) {
+              monsterToMove.position = finalPosition;
               monsterToMove.tileId = newTileId;
+              
+              // Calculate global position for blade barrier check
+              const finalGlobalPos = isMovingToNewTile 
+                ? (() => {
+                    const tile = state.dungeon.tiles.find(t => t.id === newTileId);
+                    if (tile) {
+                      const bounds = getTileBounds(tile);
+                      return {
+                        x: bounds.minX + finalPosition.x,
+                        y: bounds.minY + finalPosition.y,
+                      };
+                    }
+                    return result.destination;
+                  })()
+                : result.destination;
               
               // Check for Blade Barrier tokens at destination
               const bladeBarrierCheck = checkBladeBarrierDamage(
-                result.destination,
+                finalGlobalPos,
                 state.boardTokens || []
               );
               
@@ -4050,14 +4114,77 @@ export const gameSlice = createSlice({
         if (monsterToMove) {
           const newTileId = findTileForGlobalPosition(result.destination, state.dungeon);
           if (newTileId) {
-            const localPos = globalToLocalPosition(result.destination, newTileId, state.dungeon);
-            if (localPos) {
-              monsterToMove.position = localPos;
+            // Check if monster is moving to a different tile
+            const isMovingToNewTile = newTileId !== monsterToMove.tileId;
+            
+            let finalPosition: Position | null = null;
+            
+            if (isMovingToNewTile) {
+              // Monster is crossing to a new tile - try to place on scorch mark
+              const newTile = state.dungeon.tiles.find(t => t.id === newTileId);
+              if (newTile) {
+                const scorchMarkResult = getMonsterMoveToTilePosition(
+                  newTile,
+                  state.monsters,
+                  state.heroTokens,
+                  state.dungeon
+                );
+                
+                if (scorchMarkResult === 'occupied') {
+                  // Scorch mark is occupied - need player to choose a position
+                  // Calculate all valid positions on the tile
+                  const validPositions = getValidTilePositions(
+                    newTile,
+                    state.monsters,
+                    state.heroTokens,
+                    state.dungeon
+                  );
+                  
+                  // Create a pending decision for position selection
+                  state.pendingMonsterDecision = {
+                    decisionId: `monster-${monster.instanceId}-tile-entry-${Date.now()}`,
+                    type: 'choose-tile-entry-position',
+                    monsterId: monster.instanceId,
+                    options: {
+                      tileId: newTileId,
+                      positions: validPositions,
+                    },
+                    context: 'move-and-attack'
+                  };
+                  state.villainPhasePaused = true;
+                  return;
+                } else {
+                  // Use scorch mark position
+                  finalPosition = scorchMarkResult;
+                }
+              }
+            } else {
+              // Monster is moving within the same tile - use the calculated destination
+              finalPosition = globalToLocalPosition(result.destination, newTileId, state.dungeon);
+            }
+            
+            if (finalPosition) {
+              monsterToMove.position = finalPosition;
               monsterToMove.tileId = newTileId;
+              
+              // Calculate global position for blade barrier check
+              const finalGlobalPos = isMovingToNewTile 
+                ? (() => {
+                    const tile = state.dungeon.tiles.find(t => t.id === newTileId);
+                    if (tile) {
+                      const bounds = getTileBounds(tile);
+                      return {
+                        x: bounds.minX + finalPosition.x,
+                        y: bounds.minY + finalPosition.y,
+                      };
+                    }
+                    return result.destination;
+                  })()
+                : result.destination;
               
               // Check for Blade Barrier tokens at destination
               const bladeBarrierCheck = checkBladeBarrierDamage(
-                result.destination,
+                finalGlobalPos,
                 state.boardTokens || []
               );
               

@@ -1484,7 +1484,8 @@ export type PendingMonsterDecisionType =
   | 'choose-hero-target'      // Multiple heroes at same distance for movement/targeting
   | 'choose-adjacent-target'  // Multiple adjacent heroes for attack
   | 'choose-move-destination' // Multiple valid move positions
-  | 'choose-spawn-position';  // Multiple valid spawn positions
+  | 'choose-spawn-position'   // Multiple valid spawn positions
+  | 'choose-tile-entry-position';  // Scorch mark occupied when entering new tile
 
 /**
  * Pending monster decision state - requires player to make a choice during villain phase
@@ -1502,6 +1503,8 @@ export interface PendingMonsterDecision {
     heroIds?: string[];
     /** Positions if choosing location */
     positions?: Position[];
+    /** Tile ID if choosing entry position on a specific tile */
+    tileId?: string;
   };
   /** Context for the decision (e.g., "attack", "movement", "spawn") */
   context: string;

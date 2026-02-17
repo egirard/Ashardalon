@@ -1,5 +1,6 @@
-import type { MonsterDeck, Monster, MonsterState, MonsterGroup, Position, PlacedTile, DungeonState, MonsterCategory } from './types';
+import type { MonsterDeck, Monster, MonsterState, MonsterGroup, Position, PlacedTile, DungeonState, MonsterCategory, HeroToken } from './types';
 import { MONSTERS, INITIAL_MONSTER_DECK, TILE_DEFINITIONS } from './types';
+import { getTileBounds } from './movement';
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -335,6 +336,116 @@ export function getMonsterSpawnPosition(
   
   // No valid spawn position found
   return null;
+}
+
+/**
+ * Check if a position on a tile is occupied by a hero (in global coordinates).
+ * 
+ * @param globalPos - The global position to check
+ * @param heroTokens - Array of all hero tokens on the board
+ * @returns true if the position is occupied by a hero
+ */
+export function isPositionOccupiedByHero(
+  globalPos: Position,
+  heroTokens: { position: Position }[]
+): boolean {
+  return heroTokens.some(
+    h => h.position.x === globalPos.x && h.position.y === globalPos.y
+  );
+}
+
+/**
+ * Get the position for a monster moving to a new tile.
+ * 
+ * According to the official rules for monster movement between tiles:
+ * "If the tactic requires the Monster to move to a new tile, place the Monster on 
+ * the new tile's scorch mark if that square is empty. Whenever possible, Monsters 
+ * move from tile to tile by following the scorch marks. If the scorch mark square 
+ * is occupied, place the Monster anywhere on the tile."
+ * 
+ * This returns the scorch mark position if empty, or 'occupied' if the scorch mark
+ * is occupied (indicating player choice is needed).
+ * 
+ * @param tile - The destination tile where the monster is moving
+ * @param monsters - Array of all monsters currently on the board  
+ * @param heroTokens - Array of all hero tokens
+ * @param dungeon - Dungeon state for coordinate conversion
+ * @returns The scorch mark position (local coordinates) if empty, or 'occupied' if player choice needed
+ */
+export function getMonsterMoveToTilePosition(
+  tile: PlacedTile,
+  monsters: MonsterState[],
+  heroTokens: { position: Position }[],
+  dungeon: DungeonState
+): Position | 'occupied' {
+  // Get the scorch mark position based on tile type and rotation (local coordinates)
+  const scorchMarkLocal = getScorchMarkPosition(tile.tileType, tile.rotation);
+  
+  // Check if the scorch mark is occupied by a monster
+  const occupiedByMonster = isPositionOccupiedByMonster(scorchMarkLocal, tile.id, monsters);
+  if (occupiedByMonster) {
+    return 'occupied';
+  }
+  
+  // Convert scorch mark to global coordinates to check for heroes
+  const tileBounds = getTileBounds(tile);
+  const scorchMarkGlobal = {
+    x: tileBounds.minX + scorchMarkLocal.x,
+    y: tileBounds.minY + scorchMarkLocal.y,
+  };
+  
+  // Check if a hero is at the scorch mark position
+  const occupiedByHero = isPositionOccupiedByHero(scorchMarkGlobal, heroTokens);
+  if (occupiedByHero) {
+    return 'occupied';
+  }
+  
+  // Scorch mark is available
+  return scorchMarkLocal;
+}
+
+/**
+ * Get all valid positions on a tile for monster placement (in global coordinates).
+ * Returns all positions that are not occupied by heroes or other monsters.
+ * 
+ * @param tile - The tile to get valid positions from
+ * @param monsters - Array of all monsters on the board
+ * @param heroTokens - Array of all hero tokens
+ * @param dungeon - Dungeon state for coordinate conversion
+ * @returns Array of valid global positions for monster placement
+ */
+export function getValidTilePositions(
+  tile: PlacedTile,
+  monsters: MonsterState[],
+  heroTokens: { position: Position }[],
+  dungeon: DungeonState
+): Position[] {
+  const validPositions: Position[] = [];
+  const tileBounds = getTileBounds(tile);
+  
+  // For a normal 4x4 tile, check all 16 positions
+  for (let y = 0; y < 4; y++) {
+    for (let x = 0; x < 4; x++) {
+      const localPos = { x, y };
+      const globalPos = {
+        x: tileBounds.minX + x,
+        y: tileBounds.minY + y,
+      };
+      
+      // Check if position is occupied by a monster
+      const hasMonster = isPositionOccupiedByMonster(localPos, tile.id, monsters);
+      if (hasMonster) continue;
+      
+      // Check if position is occupied by a hero
+      const hasHero = isPositionOccupiedByHero(globalPos, heroTokens);
+      if (hasHero) continue;
+      
+      // Position is valid
+      validPositions.push(globalPos);
+    }
+  }
+  
+  return validPositions;
 }
 
 /**

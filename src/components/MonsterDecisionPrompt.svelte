@@ -39,6 +39,8 @@
         return `Select where the ${monsterName} should move:`;
       case 'choose-spawn-position':
         return `Select where to place the ${monsterName}:`;
+      case 'choose-tile-entry-position':
+        return `Scorch mark occupied. Select where to place the ${monsterName} on the tile:`;
       default:
         return 'Select an option:';
     }
@@ -72,7 +74,7 @@
       </div>
     {/if}
     
-    {#if decision.type === 'choose-move-destination' || decision.type === 'choose-spawn-position'}
+    {#if decision.type === 'choose-move-destination' || decision.type === 'choose-spawn-position' || decision.type === 'choose-tile-entry-position'}
       <div class="position-hint">
         <p class="hint-text">Click on a highlighted square on the map</p>
       </div>
