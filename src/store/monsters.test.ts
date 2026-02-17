@@ -572,4 +572,215 @@ describe('monsters', () => {
       expect(newHp).toBe(2); // Should cap at maxHp
     });
   });
+
+  describe('getMonsterMoveToTilePosition', () => {
+    it('should return scorch mark position when it is unoccupied', () => {
+      const { getMonsterMoveToTilePosition } = require('./monsters');
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+      };
+      
+      const monsters: MonsterState[] = [];
+      const heroTokens: any[] = [];
+      const dungeon: any = {
+        tiles: [
+          { id: 'start', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0 },
+          tile
+        ]
+      };
+      
+      const result = getMonsterMoveToTilePosition(tile, monsters, heroTokens, dungeon);
+      
+      // Should return the scorch mark position (local coordinates)
+      expect(result).not.toBe('occupied');
+      expect(result).toHaveProperty('x');
+      expect(result).toHaveProperty('y');
+    });
+
+    it('should return "occupied" when scorch mark has a monster', () => {
+      const { getMonsterMoveToTilePosition, getScorchMarkPosition } = require('./monsters');
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+      };
+      
+      // Get the scorch mark position for this tile
+      const scorchMark = getScorchMarkPosition('tile-black-2exit-a', 0);
+      
+      const monsters: MonsterState[] = [
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-0',
+          position: scorchMark, // Monster is on the scorch mark
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'tile-1',
+        }
+      ];
+      const heroTokens: any[] = [];
+      const dungeon: any = {
+        tiles: [
+          { id: 'start', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0 },
+          tile
+        ]
+      };
+      
+      const result = getMonsterMoveToTilePosition(tile, monsters, heroTokens, dungeon);
+      
+      // Should return 'occupied' because scorch mark has a monster
+      expect(result).toBe('occupied');
+    });
+
+    it('should return "occupied" when scorch mark has a hero', () => {
+      const { getMonsterMoveToTilePosition, getScorchMarkPosition } = require('./monsters');
+      const { getTileBounds } = require('./movement');
+      
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+      };
+      
+      // Get the scorch mark position for this tile (local coords)
+      const scorchMarkLocal = getScorchMarkPosition('tile-black-2exit-a', 0);
+      
+      const dungeon: any = {
+        tiles: [
+          { id: 'start', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0 },
+          tile
+        ]
+      };
+      
+      // Convert to global coordinates
+      const tileBounds = getTileBounds(tile);
+      const scorchMarkGlobal = {
+        x: tileBounds.minX + scorchMarkLocal.x,
+        y: tileBounds.minY + scorchMarkLocal.y,
+      };
+      
+      const monsters: MonsterState[] = [];
+      const heroTokens: any[] = [
+        {
+          heroId: 'quinn',
+          position: scorchMarkGlobal, // Hero is on the scorch mark (global coords)
+        }
+      ];
+      
+      const result = getMonsterMoveToTilePosition(tile, monsters, heroTokens, dungeon);
+      
+      // Should return 'occupied' because scorch mark has a hero
+      expect(result).toBe('occupied');
+    });
+  });
+
+  describe('getValidTilePositions', () => {
+    it('should return all positions when tile is empty', () => {
+      const { getValidTilePositions } = require('./monsters');
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+      };
+      
+      const monsters: MonsterState[] = [];
+      const heroTokens: any[] = [];
+      const dungeon: any = {
+        tiles: [
+          { id: 'start', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0 },
+          tile
+        ]
+      };
+      
+      const result = getValidTilePositions(tile, monsters, heroTokens, dungeon);
+      
+      // Should return 16 positions for a 4x4 tile
+      expect(result).toHaveLength(16);
+    });
+
+    it('should exclude positions occupied by monsters', () => {
+      const { getValidTilePositions } = require('./monsters');
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+      };
+      
+      const monsters: MonsterState[] = [
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-0',
+          position: { x: 0, y: 0 },
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'tile-1',
+        },
+        {
+          monsterId: 'cultist',
+          instanceId: 'cultist-0',
+          position: { x: 1, y: 1 },
+          currentHp: 2,
+          controllerId: 'quinn',
+          tileId: 'tile-1',
+        }
+      ];
+      const heroTokens: any[] = [];
+      const dungeon: any = {
+        tiles: [
+          { id: 'start', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0 },
+          tile
+        ]
+      };
+      
+      const result = getValidTilePositions(tile, monsters, heroTokens, dungeon);
+      
+      // Should return 14 positions (16 - 2 occupied by monsters)
+      expect(result).toHaveLength(14);
+    });
+
+    it('should exclude positions occupied by heroes', () => {
+      const { getValidTilePositions } = require('./monsters');
+      const { getTileBounds } = require('./movement');
+      
+      const tile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-black-2exit-a',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+      };
+      
+      const dungeon: any = {
+        tiles: [
+          { id: 'start', tileType: 'start', position: { col: 0, row: 0 }, rotation: 0 },
+          tile
+        ]
+      };
+      
+      const tileBounds = getTileBounds(tile);
+      const heroGlobalPos = {
+        x: tileBounds.minX + 2,
+        y: tileBounds.minY + 2,
+      };
+      
+      const monsters: MonsterState[] = [];
+      const heroTokens: any[] = [
+        {
+          heroId: 'quinn',
+          position: heroGlobalPos,
+        }
+      ];
+      
+      const result = getValidTilePositions(tile, monsters, heroTokens, dungeon);
+      
+      // Should return 15 positions (16 - 1 occupied by hero)
+      expect(result).toHaveLength(15);
+    });
+  });
 });
