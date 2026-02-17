@@ -6,7 +6,6 @@
    */
   import { HomeIcon, MapIcon, BugIcon, FireIcon, FontSizeIcon } from './icons';
   import html2canvas from 'html2canvas';
-  import { waitForAnimations, getGameBoardContainer } from '../utils/animationHelpers';
   import ConfirmationDialog from './ConfirmationDialog.svelte';
   import FontScaleControls from './FontScaleControls.svelte';
   import { store } from '../store';
@@ -193,10 +192,6 @@ ${screenshotSection}
    */
   async function handleFeedbackClick() {
     try {
-      // Wait for any ongoing animations to complete before capturing
-      // This ensures newly placed tiles are fully visible
-      await waitForAnimations(getGameBoardContainer());
-
       const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
         scale: 1,
