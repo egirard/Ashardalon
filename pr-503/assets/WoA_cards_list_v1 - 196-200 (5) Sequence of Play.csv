@@ -1,0 +1,24 @@
+Number,Name,Front,Back
+196-200,Sequence of Play,"On your turn, complete these phases in this order:
+1. Hero Phase
+2. Exploration Phase
+3. Villain Phase
+
+Hero Phase
+1. If you have 0 Hit Points, use a Healing Surge token if one is available.
+2. Perform one of the following actions:
+- Move and then make an Attack
+- Attack and then Move
+- Make two Moves
+
+Flip card over for Exploration and Villain Phase.","Exploration Phase
+1. if your Hero occupies a square adjacent to an unexplored edge (see page 5), go to Step 2. Otherwise, go to the Villain Phase.
+2. Draw a Dungeon Tile and place it with its trangle adjacent to the unexplored edge.
+3. Draw a Monster Card and place that Monster on the new tile (see page 7).
+
+Villain Phase
+1. If you didn't place a tile during your Exploration Phase, or if you placed a tile with a black triangle, draw an Encounter Card.
+2. If a Villain is in play, activate it.
+3. Activate each Monster and Trap you control, in turn, in the order you drew them.
+
+The player to your left goes next."
