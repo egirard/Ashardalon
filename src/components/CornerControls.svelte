@@ -188,74 +188,119 @@ ${screenshotSection}
   }
   
   /**
+   * Temporarily disables all CSS animations and transitions on the page.
+   * This ensures that screenshots capture elements in their final state, not mid-animation.
+   * @returns A cleanup function to restore animations
+   */
+  function disableAnimations(): () => void {
+    // Add a CSS class that disables all animations and transitions
+    document.body.classList.add('screenshot-mode');
+    
+    // Force a reflow to ensure styles are applied immediately
+    void document.body.offsetHeight;
+    
+    // Return cleanup function to restore animations
+    return () => {
+      document.body.classList.remove('screenshot-mode');
+    };
+  }
+
+  /**
    * Handles the feedback button click
    */
   async function handleFeedbackClick() {
     try {
-      const canvas = await html2canvas(document.body, {
-        backgroundColor: '#000000',
-        scale: 1,
-        logging: false,
-      });
-
-      const userAgent = navigator.userAgent;
-      const date = new Date();
-      const timestamp = date.toISOString();
-      const humanReadableTimestamp = createHumanReadableTimestamp(date);
-
-      const copiedToClipboard = await copyCanvasToClipboard(canvas);
-      const thumbnailDataUrl = generateThumbnail(canvas, 800, 600);
-
-      let screenshotMessage: string;
-      if (copiedToClipboard) {
-        screenshotMessage = '_Screenshot copied to clipboard! **Please paste it here** (Ctrl+V or Cmd+V)._';
-      } else {
-        screenshotMessage = '_Screenshot could not be copied to clipboard automatically. Please attach manually if needed._';
-      }
-
-      const issueBody = createIssueBody(
-        timestamp,
-        screenshotMessage,
-        userAgent,
-        thumbnailDataUrl
-      );
-
-      const issueTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
-      const issueBodyEncoded = encodeURIComponent(issueBody);
-      const labels = 'UserGenerated';
-
-      const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
-
-      if (githubIssueUrl.length > 8000) {
-        console.warn('Issue body with thumbnail too large, trying without thumbnail');
-        const bodyWithoutThumbnail = createIssueBody(
-          timestamp,
-          screenshotMessage,
-          userAgent
-        );
-        const bodyWithoutThumbnailEncoded = encodeURIComponent(bodyWithoutThumbnail);
-        const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${bodyWithoutThumbnailEncoded}&labels=${labels}`;
-        window.open(fallbackUrl, '_blank');
-      } else {
-        window.open(githubIssueUrl, '_blank');
+      // Temporarily disable animations to ensure all elements are fully visible
+      const restoreAnimations = disableAnimations();
+      
+      try {
+        const canvas = await html2canvas(document.body, {
+          backgroundColor: '#000000',
+          scale: 1,
+          logging: false,
+        });
+        
+        // Restore animations immediately after capture
+        restoreAnimations();
+        
+        await processScreenshot(canvas);
+      } catch (error) {
+        // Ensure animations are restored even if capture fails
+        restoreAnimations();
+        throw error;
       }
     } catch (error) {
       console.error('Failed to capture screenshot or create feedback:', error);
-      const date = new Date();
-      const timestamp = date.toISOString();
-      const humanReadableTimestamp = createHumanReadableTimestamp(date);
-      const userAgent = navigator.userAgent;
-      
-      const fallbackBody = createIssueBody(
+      openFallbackIssue();
+    }
+  }
+
+  /**
+   * Processes the captured screenshot canvas and opens GitHub issue.
+   * @param canvas - The canvas containing the screenshot
+   */
+  async function processScreenshot(canvas: HTMLCanvasElement) {
+    const userAgent = navigator.userAgent;
+    const date = new Date();
+    const timestamp = date.toISOString();
+    const humanReadableTimestamp = createHumanReadableTimestamp(date);
+
+    const copiedToClipboard = await copyCanvasToClipboard(canvas);
+    const thumbnailDataUrl = generateThumbnail(canvas, 800, 600);
+
+    let screenshotMessage: string;
+    if (copiedToClipboard) {
+      screenshotMessage = '_Screenshot copied to clipboard! **Please paste it here** (Ctrl+V or Cmd+V)._';
+    } else {
+      screenshotMessage = '_Screenshot could not be copied to clipboard automatically. Please attach manually if needed._';
+    }
+
+    const issueBody = createIssueBody(
+      timestamp,
+      screenshotMessage,
+      userAgent,
+      thumbnailDataUrl
+    );
+
+    const issueTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
+    const issueBodyEncoded = encodeURIComponent(issueBody);
+    const labels = 'UserGenerated';
+
+    const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
+
+    if (githubIssueUrl.length > 8000) {
+      console.warn('Issue body with thumbnail too large, trying without thumbnail');
+      const bodyWithoutThumbnail = createIssueBody(
         timestamp,
-        '_Screenshot could not be captured automatically. Please attach manually if needed._',
+        screenshotMessage,
         userAgent
       );
-      const fallbackTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
-      const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
-      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${fallbackTitle}&body=${fallbackBodyEncoded}&labels=UserGenerated`;
+      const bodyWithoutThumbnailEncoded = encodeURIComponent(bodyWithoutThumbnail);
+      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${bodyWithoutThumbnailEncoded}&labels=${labels}`;
       window.open(fallbackUrl, '_blank');
+    } else {
+      window.open(githubIssueUrl, '_blank');
     }
+  }
+
+  /**
+   * Opens a GitHub issue with fallback content when screenshot capture fails.
+   */
+  function openFallbackIssue() {
+    const date = new Date();
+    const timestamp = date.toISOString();
+    const humanReadableTimestamp = createHumanReadableTimestamp(date);
+    const userAgent = navigator.userAgent;
+    
+    const fallbackBody = createIssueBody(
+      timestamp,
+      '_Screenshot could not be captured automatically. Please attach manually if needed._',
+      userAgent
+    );
+    const fallbackTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
+    const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
+    const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${fallbackTitle}&body=${fallbackBodyEncoded}&labels=UserGenerated`;
+    window.open(fallbackUrl, '_blank');
   }
 </script>
 
@@ -336,6 +381,18 @@ ${screenshotSection}
 {/if}
 
 <style>
+  /* Global CSS rule to disable animations during screenshot capture */
+  :global(body.screenshot-mode *),
+  :global(body.screenshot-mode *::before),
+  :global(body.screenshot-mode *::after) {
+    animation: none !important;
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    transition: none !important;
+    transition-delay: 0s !important;
+    transition-duration: 0s !important;
+  }
+
   .corner-controls {
     position: absolute;
     display: flex;
