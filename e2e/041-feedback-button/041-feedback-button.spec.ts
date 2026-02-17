@@ -26,18 +26,18 @@ test.describe('041 - Submit Feedback Button', () => {
 
     await screenshots.capture(page, 'game-board-with-feedback-button', {
       programmaticCheck: async () => {
-        // Verify the feedback button is visible
-        await expect(page.locator('[data-testid="feedback-button"]')).toBeVisible();
+        // Verify the feedback button is visible (using first() since there are two sets of corner controls)
+        await expect(page.locator('[data-testid="corner-feedback-button"]').first()).toBeVisible();
         
-        // Verify the button has the correct text
-        await expect(page.locator('[data-testid="feedback-button"]')).toContainText('Submit Feedback');
+        // Verify the feedback button has the correct aria label
+        await expect(page.locator('[data-testid="corner-feedback-button"]').first()).toHaveAttribute('aria-label', 'Submit Feedback');
         
         // Verify the button is enabled (can be clicked)
-        await expect(page.locator('[data-testid="feedback-button"]')).toBeEnabled();
+        await expect(page.locator('[data-testid="corner-feedback-button"]').first()).toBeEnabled();
         
         // Verify game board is in correct state
         await expect(page.locator('[data-testid="game-board"]')).toBeVisible();
-        await expect(page.locator('[data-testid="reset-button"]')).toBeVisible();
+        await expect(page.locator('[data-testid="corner-home-button"]').first()).toBeVisible();
       }
     });
   });
@@ -70,8 +70,8 @@ test.describe('041 - Submit Feedback Button', () => {
       });
     });
 
-    // STEP 3: Click the feedback button
-    const clickPromise = page.locator('[data-testid="feedback-button"]').click();
+    // STEP 3: Click the feedback button (using first() since there are two sets of corner controls)
+    const clickPromise = page.locator('[data-testid="corner-feedback-button"]').first().click();
 
     // Wait for window.open to be called (with timeout)
     const openedUrl = await Promise.race([
@@ -93,7 +93,7 @@ test.describe('041 - Submit Feedback Button', () => {
       programmaticCheck: async () => {
         // Verify the game board is still visible (not navigated away)
         await expect(page.locator('[data-testid="game-board"]')).toBeVisible();
-        await expect(page.locator('[data-testid="feedback-button"]')).toBeVisible();
+        await expect(page.locator('[data-testid="corner-feedback-button"]').first()).toBeVisible();
       }
     });
   });

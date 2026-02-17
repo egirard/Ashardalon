@@ -18,18 +18,18 @@ This test verifies that:
 ![000-game-board-with-feedback-button](041-feedback-button.spec.ts-snapshots/000-game-board-with-feedback-button-chromium-linux.png)
 
 **What to verify:**
-- The "📣 Submit Feedback" button is visible in the board controls section
-- The button appears after the "↩ Return to Character Select" button
-- The button has a distinctive purple gradient styling
+- The feedback button (bug icon) is visible in the corner controls (both NW and SE corners)
+- The corner controls include multiple icon buttons: home, map control, font scale, scorch diagnostics, and feedback
+- The feedback button has the correct aria-label "Submit Feedback"
 - The button is enabled and clickable
 - The game board is fully loaded with the start tile and hero token
 
 **Programmatic checks:**
 - Feedback button is visible
-- Feedback button contains text "Submit Feedback"
+- Feedback button has aria-label "Submit Feedback"
 - Feedback button is enabled
 - Game board is visible
-- Reset button is visible
+- Home button (part of corner controls) is visible
 
 ### Screenshot 001: After Feedback Button Click
 
@@ -51,7 +51,7 @@ This test verifies that:
 To manually verify this feature:
 
 1. Start a game by selecting a hero and choosing power cards
-2. On the game board, locate the "📣 Submit Feedback" button in the controls section
+2. On the game board, locate the feedback button (bug icon) in the corner controls (bottom-right or top-left corners)
 3. Click the button
 4. Verify that:
    - A new tab/window opens with the GitHub issue creation page
@@ -60,6 +60,7 @@ To manually verify this feature:
      - A screenshot of the game board in the issue body
      - System information (browser, game version, screen resolution)
      - The "UserGenerated" label is applied
+   - The screenshot clearly shows all game elements including newly-placed tiles (no faint/partial rendering)
    - The game continues running in the original tab (no interruption)
 
 ## Test Implementation Notes
