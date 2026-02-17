@@ -819,6 +819,25 @@ export function findTileForGlobalPosition(globalPos: Position, dungeon: DungeonS
 }
 
 /**
+ * Convert a local tile position to global coordinates.
+ * 
+ * @param localPos - The position in local tile coordinates
+ * @param tileId - The tile ID
+ * @param dungeon - Dungeon state for finding the tile
+ * @returns The global position, or null if tile not found
+ */
+export function localToGlobalPosition(localPos: Position, tileId: string, dungeon: DungeonState): Position | null {
+  const tile = dungeon.tiles.find(t => t.id === tileId);
+  if (!tile) return null;
+  
+  const bounds = getTileBounds(tile);
+  return {
+    x: bounds.minX + localPos.x,
+    y: bounds.minY + localPos.y,
+  };
+}
+
+/**
  * Find the closest monster to a hero that is NOT on the hero's tile.
  * Used for the "Wrath of the Enemy" curse effect.
  * 

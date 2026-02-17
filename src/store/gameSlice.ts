@@ -74,6 +74,7 @@ import {
   findMoveTowardHero,
   resolveMonsterAttackWithStats,
   DEFAULT_MONSTER_ATTACK,
+  localToGlobalPosition,
 } from "./monsterAI";
 import {
   canLevelUp,
@@ -4008,17 +4009,7 @@ export const gameSlice = createSlice({
               
               // Calculate global position for blade barrier check
               const finalGlobalPos = isMovingToNewTile 
-                ? (() => {
-                    const tile = state.dungeon.tiles.find(t => t.id === newTileId);
-                    if (tile) {
-                      const bounds = getTileBounds(tile);
-                      return {
-                        x: bounds.minX + finalPosition.x,
-                        y: bounds.minY + finalPosition.y,
-                      };
-                    }
-                    return result.destination;
-                  })()
+                ? (localToGlobalPosition(finalPosition, newTileId, state.dungeon) ?? result.destination)
                 : result.destination;
               
               // Check for Blade Barrier tokens at destination
@@ -4169,17 +4160,7 @@ export const gameSlice = createSlice({
               
               // Calculate global position for blade barrier check
               const finalGlobalPos = isMovingToNewTile 
-                ? (() => {
-                    const tile = state.dungeon.tiles.find(t => t.id === newTileId);
-                    if (tile) {
-                      const bounds = getTileBounds(tile);
-                      return {
-                        x: bounds.minX + finalPosition.x,
-                        y: bounds.minY + finalPosition.y,
-                      };
-                    }
-                    return result.destination;
-                  })()
+                ? (localToGlobalPosition(finalPosition, newTileId, state.dungeon) ?? result.destination)
                 : result.destination;
               
               // Check for Blade Barrier tokens at destination

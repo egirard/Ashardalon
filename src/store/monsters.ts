@@ -347,7 +347,7 @@ export function getMonsterSpawnPosition(
  */
 export function isPositionOccupiedByHero(
   globalPos: Position,
-  heroTokens: { position: Position }[]
+  heroTokens: HeroToken[]
 ): boolean {
   return heroTokens.some(
     h => h.position.x === globalPos.x && h.position.y === globalPos.y
@@ -375,7 +375,7 @@ export function isPositionOccupiedByHero(
 export function getMonsterMoveToTilePosition(
   tile: PlacedTile,
   monsters: MonsterState[],
-  heroTokens: { position: Position }[],
+  heroTokens: HeroToken[],
   dungeon: DungeonState
 ): Position | 'occupied' {
   // Get the scorch mark position based on tile type and rotation (local coordinates)
@@ -417,7 +417,7 @@ export function getMonsterMoveToTilePosition(
 export function getValidTilePositions(
   tile: PlacedTile,
   monsters: MonsterState[],
-  heroTokens: { position: Position }[],
+  heroTokens: HeroToken[],
   dungeon: DungeonState
 ): Position[] {
   const validPositions: Position[] = [];
