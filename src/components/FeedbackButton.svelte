@@ -1,6 +1,5 @@
 <script lang="ts">
   import html2canvas from 'html2canvas';
-  import { waitForAnimations, getGameBoardContainer } from '../utils/animationHelpers';
 
   // Repository configuration
   const REPO_OWNER = 'egirard';
@@ -136,10 +135,6 @@ ${screenshotSection}
    */
   async function handleFeedbackClick() {
     try {
-      // Wait for any ongoing animations to complete before capturing
-      // This ensures newly placed tiles are fully visible
-      await waitForAnimations(getGameBoardContainer());
-
       // Capture the entire page as a screenshot
       const canvas = await html2canvas(document.body, {
         backgroundColor: '#000000',
