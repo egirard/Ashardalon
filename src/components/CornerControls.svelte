@@ -196,7 +196,9 @@ ${screenshotSection}
     // Add a CSS class that disables all animations and transitions
     document.body.classList.add('screenshot-mode');
     
-    // Force a reflow to ensure styles are applied immediately
+    // Force a reflow to ensure styles are applied immediately before html2canvas runs.
+    // This is necessary because html2canvas captures synchronously and may start before
+    // the browser has fully processed the class-based style changes.
     void document.body.offsetHeight;
     
     // Return cleanup function to restore animations
