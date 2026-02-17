@@ -2243,7 +2243,9 @@
   
   function handleMonsterDecisionPositionClicked(position: Position) {
     if (!pendingMonsterDecision) return;
-    if (pendingMonsterDecision.type !== 'choose-move-destination' && pendingMonsterDecision.type !== 'choose-spawn-position') return;
+    if (pendingMonsterDecision.type !== 'choose-move-destination' && 
+        pendingMonsterDecision.type !== 'choose-spawn-position' &&
+        pendingMonsterDecision.type !== 'choose-tile-entry-position') return;
     
     // Dispatch the selection
     store.dispatch({
@@ -3152,7 +3154,7 @@
         {/if}
 
         <!-- Monster Decision Position Overlay (for move destination selection) -->
-        {#if pendingMonsterDecision && (pendingMonsterDecision.type === 'choose-move-destination' || pendingMonsterDecision.type === 'choose-spawn-position') && pendingMonsterDecision.options.positions}
+        {#if pendingMonsterDecision && (pendingMonsterDecision.type === 'choose-move-destination' || pendingMonsterDecision.type === 'choose-spawn-position' || pendingMonsterDecision.type === 'choose-tile-entry-position') && pendingMonsterDecision.options.positions}
           {@const startTile = dungeon.tiles.find(t => t.tileType === 'start')}
           {#if startTile}
             {@const startTilePos = getTilePixelPosition(startTile, mapBounds)}
