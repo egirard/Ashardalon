@@ -2,6 +2,7 @@ import type { MonsterState, Position, HeroToken, DungeonState, AttackResult, Mon
 import { MONSTER_ATTACKS, MONSTER_TACTICS } from './types';
 import { arePositionsAdjacent, rollD20 } from './combat';
 import { getAdjacentPositions, findTileAtPosition, getTileBounds } from './movement';
+import { getScorchMarkPosition, isPositionOccupiedByMonster, isPositionOccupiedByHero } from './monsters';
 
 /**
  * A tile is 4x4 squares. This constant is used for converting tile range to square distance.
@@ -316,8 +317,72 @@ export function findMoveTowardHero(
   
   const adjacent = getAdjacentPositions(monsterGlobal, dungeon);
   
+  // Get the monster's current tile
+  const currentTile = findTileAtPosition(monsterGlobal, dungeon);
+  if (!currentTile) return null;
+  
+  // Separate adjacent positions into same-tile and different-tile groups
+  const sameTilePositions: Position[] = [];
+  const differentTilePositions: Array<{ pos: Position; tileId: string; tile: any }> = [];
+  
+  for (const pos of adjacent) {
+    const targetTile = findTileAtPosition(pos, dungeon);
+    if (!targetTile) continue;
+    
+    if (targetTile.id === currentTile.id) {
+      sameTilePositions.push(pos);
+    } else {
+      differentTilePositions.push({ pos, tileId: targetTile.id, tile: targetTile });
+    }
+  }
+  
+  // For tile-crossing moves, check if we should prioritize the scorch mark
+  const tileCrossingCandidates: Position[] = [];
+  for (const { pos, tile } of differentTilePositions) {
+    // Get the scorch mark position for this tile (in local coordinates)
+    const scorchMarkLocal = getScorchMarkPosition(tile.tileType, tile.rotation);
+    
+    // Check if the scorch mark is occupied
+    const occupiedByMonster = isPositionOccupiedByMonster(scorchMarkLocal, tile.id, monsters);
+    
+    if (!occupiedByMonster) {
+      // Convert scorch mark to global coordinates to check for heroes
+      const tileBounds = getTileBounds(tile);
+      const scorchMarkGlobal = {
+        x: tileBounds.minX + scorchMarkLocal.x,
+        y: tileBounds.minY + scorchMarkLocal.y,
+      };
+      
+      const occupiedByHero = isPositionOccupiedByHero(scorchMarkGlobal, heroTokens);
+      
+      if (!occupiedByHero) {
+        // Scorch mark is available - check if it's actually reachable from current position
+        const isScorchMarkAdjacent = adjacent.some(
+          adjPos => adjPos.x === scorchMarkGlobal.x && adjPos.y === scorchMarkGlobal.y
+        );
+        
+        if (isScorchMarkAdjacent) {
+          // Use the scorch mark instead of the original adjacent position
+          tileCrossingCandidates.push(scorchMarkGlobal);
+        } else {
+          // Scorch mark is not adjacent, use the original position
+          tileCrossingCandidates.push(pos);
+        }
+      } else {
+        // Scorch mark is occupied by hero, use the original adjacent position
+        tileCrossingCandidates.push(pos);
+      }
+    } else {
+      // Scorch mark is occupied by monster, use the original adjacent position
+      tileCrossingCandidates.push(pos);
+    }
+  }
+  
+  // Combine all valid positions (same-tile moves + tile-crossing candidates)
+  const allCandidates = [...sameTilePositions, ...tileCrossingCandidates];
+  
   // Filter out positions occupied by heroes or other monsters
-  const validPositions = adjacent.filter(pos => {
+  const validPositions = allCandidates.filter(pos => {
     // Check for heroes
     const hasHero = heroTokens.some(h => h.position.x === pos.x && h.position.y === pos.y);
     if (hasHero) return false;
