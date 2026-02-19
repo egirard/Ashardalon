@@ -253,7 +253,7 @@ These effect types display the card description and resolve to the discard pile,
 | kobold-warren | Kobold Warren | Filter monster deck for Reptiles | ✅ Fully Implemented |
 | lost | Lost | Shuffle tile deck | ⚠️ Display only |
 | occupied-lair | Occupied Lair | Place tile, monster, and treasure | ⚠️ Display only |
-| quick-advance | Quick Advance | Move a monster closer | ⚠️ Display only |
+| quick-advance | Quick Advance | Move a monster closer | ✅ Fully Implemented |
 | revel-in-destruction | Revel in Destruction | Heal a monster 1 HP | ✅ Fully Implemented |
 | scream-of-sentry | Scream of the Sentry | Place tile and monster near monster | ✅ Fully Implemented |
 | spotted | Spotted! | Filter deck, place tile and monster | ✅ Fully Implemented |
