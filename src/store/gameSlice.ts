@@ -2428,6 +2428,95 @@ export const gameSlice = createSlice({
             state.encounterEffectMessage = `Bottom tile moved to top of deck (${deckSize} tiles remaining)`;
           }
           
+          // Occupied Lair: Place tile from bottom near hero, spawn monster, place treasure token
+          else if (encounterId === 'occupied-lair') {
+            const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+            const activeHeroTile = activeHeroToken ? findTileAtPosition(activeHeroToken.position, state.dungeon) : null;
+
+            if (activeHeroTile && state.dungeon.unexploredEdges.length > 0) {
+              // Find closest unexplored edge to active hero
+              let closestEdge = state.dungeon.unexploredEdges[0];
+              let closestDistance = Infinity;
+
+              for (const edge of state.dungeon.unexploredEdges) {
+                const edgeTile = state.dungeon.tiles.find(t => t.id === edge.tileId);
+                if (edgeTile) {
+                  const dx = Math.abs(edgeTile.position.col - activeHeroTile.position.col);
+                  const dy = Math.abs(edgeTile.position.row - activeHeroTile.position.row);
+                  const distance = dx + dy;
+                  if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestEdge = edge;
+                  }
+                }
+              }
+
+              // Draw tile from bottom of deck
+              const { drawnTile, remainingDeck } = drawTileFromBottom(state.dungeon.tileDeck);
+
+              if (drawnTile) {
+                state.dungeon.tileDeck = remainingDeck;
+
+                const newTile = placeTile(closestEdge, drawnTile, state.dungeon);
+
+                if (newTile) {
+                  state.dungeon.tiles.push(newTile);
+                  state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
+
+                  // Draw and spawn a monster on the new tile
+                  const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+                  state.monsterDeck = updatedMonsterDeck;
+
+                  let effectMessage = 'Tile placed';
+
+                  if (newMonsterId) {
+                    const newMonsterDef = getMonsterById(newMonsterId);
+                    const controllerHeroId = activeHeroToken?.heroId || (state.heroTokens.length > 0 ? state.heroTokens[0].heroId : 'quinn');
+
+                    const spawnResult = spawnMonstersWithBehavior(
+                      newMonsterId,
+                      newTile,
+                      controllerHeroId,
+                      state.monsters,
+                      state.monsterInstanceCounter,
+                      state.monsterGroupCounter
+                    );
+
+                    if (spawnResult.monsters.length > 0) {
+                      state.monsters.push(...spawnResult.monsters);
+                      state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+                      state.monsterGroupCounter = spawnResult.monsterGroupCounter;
+                      state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
+                      if (spawnResult.group) {
+                        state.monsterGroups.push(spawnResult.group);
+                      }
+                      effectMessage += `, ${newMonsterDef?.name || 'monster'} spawned`;
+                    } else {
+                      effectMessage += ', failed to spawn monster';
+                    }
+                  } else {
+                    effectMessage += ', no monsters in deck';
+                  }
+
+                  // Place a treasure token on the new tile
+                  const treasurePosition = { x: newTile.position.col * 4 + 1, y: newTile.position.row * 4 + 1 };
+                  const treasureToken = createTreasureTokenInstance('occupied-lair', treasurePosition, state.treasureTokenInstanceCounter);
+                  state.treasureTokens.push(treasureToken);
+                  state.treasureTokenInstanceCounter++;
+                  effectMessage += ', treasure token placed';
+
+                  state.encounterEffectMessage = effectMessage;
+                } else {
+                  state.encounterEffectMessage = 'Failed to place tile';
+                }
+              } else {
+                state.encounterEffectMessage = 'No tiles in deck to place';
+              }
+            } else {
+              state.encounterEffectMessage = 'No unexplored edges available';
+            }
+          }
+          
           // Spotted!: Filter deck for Sentries, place tile, spawn monster
           else if (encounterId === 'spotted') {
             // Part 1: Filter monster deck for Sentries
