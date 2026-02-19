@@ -2421,11 +2421,11 @@ export const gameSlice = createSlice({
           // Handle special encounter cards
           const encounterId = state.drawnEncounter.id;
           
-          // Lost: Move bottom tile to top
+          // Lost: Shuffle the entire tile deck
           if (encounterId === 'lost') {
             const deckSize = state.dungeon.tileDeck.length;
-            state.dungeon.tileDeck = moveBottomTileToTop(state.dungeon.tileDeck);
-            state.encounterEffectMessage = `Bottom tile moved to top of deck (${deckSize} tiles remaining)`;
+            state.dungeon.tileDeck = shuffleTileDeck(state.dungeon.tileDeck);
+            state.encounterEffectMessage = `Tile deck shuffled (${deckSize} tiles remaining)`;
           }
           
           // Occupied Lair: Place tile from bottom near hero, spawn monster, place treasure token
