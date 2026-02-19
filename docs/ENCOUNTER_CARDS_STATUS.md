@@ -110,7 +110,7 @@ Complex effects requiring special game logic, tile manipulation, or monster deck
 | `hidden-treasure` | Hidden Treasure | Place treasure token on tile | 📋 Display Only |
 | `kobold-warren` | Kobold Warren | Filter monster deck for Reptiles | 📋 Display Only |
 | `lost` | Lost | Shuffle tile deck | 📋 Display Only |
-| `occupied-lair` | Occupied Lair | Place tile, monster, and treasure | 📋 Display Only |
+| `occupied-lair` | Occupied Lair | Place tile, monster, and treasure | ✅ Fully Implemented |
 | `quick-advance` | Quick Advance | Move a monster closer to hero | 📋 Display Only |
 | `revel-in-destruction` | Revel in Destruction | Heal first damaged monster 1 HP | 📋 Display Only |
 | `scream-of-sentry` | Scream of the Sentry | Place tile and monster near monster | 📋 Display Only |
