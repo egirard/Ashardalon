@@ -150,7 +150,7 @@
   } from "../store/combat";
   import { findTileAtPosition, getTileOrSubTileId } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards, POWER_CARDS } from "../store/powerCards";
-  import { usePowerCard } from "../store/heroesSlice";
+  import { usePowerCard, restoreUsedDailyPower } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
   import type { TreasureCard as TreasureCardType, HeroInventory } from "../store/treasure";
   import { getTreasureById } from "../store/treasure";
@@ -1821,7 +1821,31 @@
 
   // Handle dismissing the encounter card and applying its effect
   function handleDismissEncounterCard() {
-    store.dispatch(dismissEncounterCard());
+    const state = store.getState();
+    const drawnEncounter = state.game.drawnEncounter;
+
+    // Ancient Spirit's Blessing: find and restore the first used daily power
+    // before dismissing, since this requires cross-slice coordination
+    let restoredDailyPower: { heroId: string; cardId: number; cardName: string } | null = null;
+    if (drawnEncounter?.id === 'ancient-spirits-blessing') {
+      const heroPowerCards = state.heroes.heroPowerCards;
+      outer: for (const heroId in heroPowerCards) {
+        const cards = heroPowerCards[heroId];
+        // Check daily power(s) for this hero
+        const dailyCardIds = [cards.daily, ...(cards.dailyLevel2 != null ? [cards.dailyLevel2] : [])];
+        for (const dailyCardId of dailyCardIds) {
+          const cardState = cards.cardStates.find(s => s.cardId === dailyCardId);
+          if (cardState?.isFlipped) {
+            const powerCard = getPowerCardById(dailyCardId);
+            restoredDailyPower = { heroId, cardId: dailyCardId, cardName: powerCard?.name ?? `Power #${dailyCardId}` };
+            store.dispatch(restoreUsedDailyPower({ heroId, cardId: dailyCardId }));
+            break outer;
+          }
+        }
+      }
+    }
+
+    store.dispatch(dismissEncounterCard(restoredDailyPower ? { restoredDailyPower } : undefined));
   }
 
   // Handle dismissing the encounter result popup

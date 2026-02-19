@@ -5,6 +5,7 @@ import {
   HERO_CUSTOM_ABILITIES,
   createInitialPowerCardsState,
   flipPowerCard,
+  unflipPowerCard,
   addLevel2DailyCard,
   getShuffledAtWillCards,
   getShuffledDailyCards,
@@ -251,6 +252,17 @@ export const heroesSlice = createSlice({
         state.heroPowerCards[heroId] = addLevel2DailyCard(powerCards, cardId);
       }
     },
+    /**
+     * Restore (unflip) a used daily power card for a hero
+     * Used by Ancient Spirit's Blessing encounter card effect
+     */
+    restoreUsedDailyPower: (state, action: PayloadAction<{ heroId: string; cardId: number }>) => {
+      const { heroId, cardId } = action.payload;
+      const powerCards = state.heroPowerCards[heroId];
+      if (powerCards) {
+        state.heroPowerCards[heroId] = unflipPowerCard(powerCards, cardId);
+      }
+    },
   },
 });
 
@@ -265,5 +277,6 @@ export const {
   finalizePowerCardSelections,
   usePowerCard,
   addLevel2Daily,
+  restoreUsedDailyPower,
 } = heroesSlice.actions;
 export default heroesSlice.reducer;
