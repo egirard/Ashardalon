@@ -2223,8 +2223,9 @@ export const gameSlice = createSlice({
     },
     /**
      * Dismiss the encounter card display and apply its effect
+     * Optional payload: restoredDailyPower - pre-resolved daily power for Ancient Spirit's Blessing
      */
-    dismissEncounterCard: (state) => {
+    dismissEncounterCard: (state, action: PayloadAction<{ restoredDailyPower?: { heroId: string; cardId: number; cardName: string } | null } | undefined>) => {
       if (state.drawnEncounter) {
         const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
         const activeHeroPosition = activeHeroToken?.position;
@@ -2874,32 +2875,14 @@ export const gameSlice = createSlice({
           }
           
           // Ancient Spirit's Blessing: Flip up a used Daily Power
+          // The actual card restoration is handled by the heroes slice (restoreUsedDailyPower action),
+          // coordinated from GameBoard.svelte before this action is dispatched.
+          // The payload contains info about which power was restored (for the effect message).
           else if (encounterId === 'ancient-spirits-blessing') {
-            // Find first hero with a used daily power
-            let powerRestored = false;
-            for (const heroId in state.heroInventories) {
-              const inventory = state.heroInventories[heroId];
-              if (inventory.dailyPowers) {
-                for (let i = 0; i < inventory.dailyPowers.length; i++) {
-                  if (inventory.dailyPowers[i].used) {
-                    // Flip the power back up
-                    state.heroInventories[heroId] = {
-                      ...inventory,
-                      dailyPowers: [
-                        ...inventory.dailyPowers.slice(0, i),
-                        { ...inventory.dailyPowers[i], used: false },
-                        ...inventory.dailyPowers.slice(i + 1),
-                      ],
-                    };
-                    state.encounterEffectMessage = `${inventory.dailyPowers[i].name} restored`;
-                    powerRestored = true;
-                    break;
-                  }
-                }
-                if (powerRestored) break;
-              }
-            }
-            if (!powerRestored) {
+            const restoredPower = action.payload?.restoredDailyPower;
+            if (restoredPower) {
+              state.encounterEffectMessage = `${restoredPower.cardName} restored for ${restoredPower.heroId}`;
+            } else {
               state.encounterEffectMessage = 'No used daily powers to restore';
             }
           }

@@ -245,7 +245,7 @@ These effect types display the card description and resolve to the discard pile,
 
 | ID | Name | Effect Summary | Implementation Status |
 |----|------|----------------|----------------------|
-| ancient-spirits-blessing | Ancient Spirit's Blessing | Flip up a Daily Power | ⚠️ Display only |
+| ancient-spirits-blessing | Ancient Spirit's Blessing | Flip up a Daily Power | ✅ Fully Implemented |
 | deadly-poison | Deadly Poison | Poisoned heroes take 1 damage | ✅ Fully Implemented |
 | duergar-outpost | Duergar Outpost | Filter monster deck for Devils | ✅ Fully Implemented |
 | hall-of-orcs | Hall of the Orcs | Filter monster deck for Orcs | ✅ Fully Implemented |
@@ -261,6 +261,21 @@ These effect types display the card description and resolve to the discard pile,
 | unnatural-corruption | Unnatural Corruption | Filter monster deck for Aberrants | ⚠️ Display only |
 | wandering-monster | Wandering Monster | Spawn monster on unexplored edge | ✅ Fully Implemented |
 | warp-in-time | Warp in Time | Pass monster cards right | ⚠️ Display only |
+
+#### Ancient Spirit's Blessing Implementation Notes
+
+**Ancient Spirit's Blessing** is now fully implemented:
+- When the encounter card is drawn and dismissed, the game automatically finds the first used (flipped) daily power across all heroes
+- The found daily power is restored (unflipped) so the hero can use it again
+- The effect message displays: `"{cardName} restored for {heroId}"` or `"No used daily powers to restore"` if none are found
+- After applying the effect, the card is discarded and automatically draws another encounter card (as per the card's text: "Draw another Encounter Card")
+- Implementation uses cross-slice coordination: `GameBoard.svelte` reads `state.heroes.heroPowerCards`, dispatches `restoreUsedDailyPower` to the heroes slice, then dispatches `dismissEncounterCard` with the restored power info as payload
+- Key implementation files:
+  - `powerCards.ts`: `unflipPowerCard()` function - creates a new HeroPowerCards with the specified card's `isFlipped` set to `false`
+  - `heroesSlice.ts`: `restoreUsedDailyPower` action - takes `{heroId, cardId}` and restores the card
+  - `gameSlice.ts`: `dismissEncounterCard` now accepts optional `restoredDailyPower` payload for effect message
+  - `GameBoard.svelte`: `handleDismissEncounterCard` coordinates the cross-slice restoration logic
+- E2E test (111) demonstrates three scenarios: no used daily powers, single hero with used daily, and multiple heroes with used daily
 
 #### Deadly Poison Implementation Notes
 

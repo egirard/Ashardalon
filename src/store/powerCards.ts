@@ -218,6 +218,18 @@ export function flipPowerCard(powerCards: HeroPowerCards, cardId: number): HeroP
 }
 
 /**
+ * Restore (unflip) a used power card, marking it as available again
+ */
+export function unflipPowerCard(powerCards: HeroPowerCards, cardId: number): HeroPowerCards {
+  return {
+    ...powerCards,
+    cardStates: powerCards.cardStates.map(state =>
+      state.cardId === cardId ? { ...state, isFlipped: false } : state
+    ),
+  };
+}
+
+/**
  * Add level 2 daily power card
  */
 export function addLevel2DailyCard(powerCards: HeroPowerCards, dailyCardId: number): HeroPowerCards {
