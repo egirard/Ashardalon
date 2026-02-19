@@ -255,7 +255,7 @@ These effect types display the card description and resolve to the discard pile,
 | occupied-lair | Occupied Lair | Place tile, monster, and treasure | ⚠️ Display only |
 | quick-advance | Quick Advance | Move a monster closer | ⚠️ Display only |
 | revel-in-destruction | Revel in Destruction | Heal a monster 1 HP | ✅ Fully Implemented |
-| scream-of-sentry | Scream of the Sentry | Place tile and monster near monster | ⚠️ Display only |
+| scream-of-sentry | Scream of the Sentry | Place tile and monster near monster | ✅ Fully Implemented |
 | spotted | Spotted! | Filter deck, place tile and monster | ✅ Fully Implemented |
 | thief-in-dark | Thief in the Dark | Lose a treasure | ✅ Fully Implemented |
 | unnatural-corruption | Unnatural Corruption | Filter monster deck for Aberrants | ⚠️ Display only |
@@ -357,6 +357,47 @@ These effect types display the card description and resolve to the discard pile,
   - treasure.ts: getTreasureById(), discardTreasure() functions
   - trapsHazards.ts: getTreasureTokensOnTile() function
   - EncounterEffectNotification.svelte: Displays the theft message
+
+#### Scream of the Sentry Implementation Notes
+
+**Scream of the Sentry** is now fully implemented:
+- When the encounter card is drawn and dismissed, it places a tile from the bottom of the deck near an existing monster and spawns a new monster on that tile
+- **No Monsters Case**: If no monsters are in play, the card is immediately discarded with message "No monsters in play - card discarded"
+- **Single Monster Case**: If exactly one monster is in play, that monster is automatically selected as the reference point (no player choice needed)
+- **Multiple Monsters Case**: If multiple monsters are in play, the player must choose which monster to use as the reference point:
+  - The `pendingMonsterChoice` state is set, triggering the MonsterChoiceModal display
+  - Modal shows all available monsters with their images, names, and current/max HP
+  - Player clicks on a monster option to make their choice
+  - The `selectMonsterForEncounter` action is dispatched with the chosen monster's instance ID
+- **Core Effect Logic** (handled by `handleScreamOfSentryEffect()` function):
+  1. **Find Closest Unexplored Edge**: Calculates Manhattan distance from the chosen monster's tile to all unexplored edges
+  2. **Draw Tile from Bottom**: Uses `drawTileFromBottom()` to get a tile from the bottom of the tile deck (not the top)
+  3. **Place Tile**: Places the tile at the closest unexplored edge using `placeTile()` and `updateDungeonAfterExploration()`
+  4. **Spawn Monster**: Draws a monster from the deck and spawns it on the newly placed tile using `spawnMonstersWithBehavior()`
+  5. **Handle Monster Groups**: If the spawned monster type spawns in groups (e.g., Legion Devil), properly creates the monster group
+- **Effect Message**: Displays result (e.g., "Tile placed near Kobold, Snake spawned")
+- **Edge Cases Handled**:
+  - No unexplored edges available: "No unexplored edges available"
+  - Tile deck empty: "No tiles in deck to place"
+  - Monster deck empty: "No monsters in deck to spawn"
+  - Failed tile placement: "Failed to place tile"
+- After applying the effect, the card is discarded to the encounter discard pile
+- Comprehensive unit tests in gameSlice.test.ts verify:
+  - Discarding when no monsters in play
+  - Auto-selecting single monster and applying effect
+  - Prompting for monster choice when multiple monsters exist
+  - Applying effect after player selects a monster
+  - Verifying tile placement, monster spawning, and deck updates
+- E2E test (107) demonstrates the complete card lifecycle in three scenarios:
+  - Scenario 1: No monsters - card discarded
+  - Scenario 2: Single monster - auto-select and apply effect
+  - Scenario 3: Multiple monsters - modal shown, player choice, effect applied
+- Implementation files:
+  - gameSlice.ts: handleScreamOfSentryEffect() helper function, dismissEncounterCard logic, selectMonsterForEncounter reducer
+  - types.ts: PendingMonsterChoiceState interface
+  - MonsterChoiceModal.svelte: UI component for monster selection
+  - GameBoard.svelte: Integration of monster choice modal
+  - dungeon.ts: drawTileFromBottom() function
 
 #### Revel in Destruction Implementation Notes
 
