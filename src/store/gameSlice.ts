@@ -4439,6 +4439,12 @@ export const gameSlice = createSlice({
       state.dungeon.unexploredEdges = action.payload.unexploredEdges;
     },
     /**
+     * Add monsters to the game (for testing purposes)
+     */
+    addMonstersForTesting: (state, action: PayloadAction<MonsterState[]>) => {
+      state.monsters = [...state.monsters, ...action.payload];
+    },
+    /**
      * Set test mode (for E2E testing purposes)
      * When testMode is true, notifications will not auto-dismiss
      */
@@ -5596,6 +5602,7 @@ export const {
   dismissMonsterExplorationEvent,
   setMonsterExplorationEvent,
   addDungeonTiles,
+  addMonstersForTesting,
   setTestMode,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,
