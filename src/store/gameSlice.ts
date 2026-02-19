@@ -936,6 +936,62 @@ function handleScreamOfSentryEffect(state: GameState, chosenMonster: MonsterStat
   }
 }
 
+/**
+ * Handle the Quick Advance encounter card effect for a chosen monster.
+ * Moves the monster one step closer toward the active hero.
+ */
+function handleQuickAdvanceEffect(state: GameState, chosenMonster: MonsterState): void {
+  const monsterDef = getMonsterById(chosenMonster.monsterId);
+  const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+  
+  if (activeHeroToken) {
+    // HeroToken.position is already in global coordinates
+    const heroGlobal = activeHeroToken.position;
+    
+    const moveResult = findMoveTowardHero(
+      chosenMonster,
+      heroGlobal,
+      state.heroTokens,
+      state.monsters,
+      state.dungeon
+    );
+    
+    if (moveResult) {
+      // If multiple equally-good positions exist, just pick the first one
+      const destination = 'needsChoice' in moveResult ? moveResult.positions[0] : moveResult;
+      
+      const newTileId = findTileForGlobalPosition(destination, state.dungeon);
+      const localPos = newTileId ? globalToLocalPosition(destination, newTileId, state.dungeon) : null;
+      
+      if (newTileId && localPos) {
+        chosenMonster.position = localPos;
+        chosenMonster.tileId = newTileId;
+        state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} moved closer`;
+        
+        // Check for Blade Barrier tokens at destination
+        const bladeBarrierCheck = checkBladeBarrierDamage(destination, state.boardTokens || []);
+        if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+          chosenMonster.currentHp = Math.max(0, chosenMonster.currentHp - 1);
+          state.boardTokens = state.boardTokens.filter(token => token.id !== bladeBarrierCheck.tokenToRemove);
+          state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} moved closer and hit Blade Barrier (1 damage)`;
+        }
+      } else {
+        state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} couldn't move closer`;
+      }
+    } else {
+      state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} couldn't move closer`;
+    }
+  } else {
+    state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} couldn't move closer`;
+  }
+  
+  // Discard the encounter card
+  if (state.drawnEncounter) {
+    state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+    state.drawnEncounter = null;
+  }
+}
+
 export interface StartGamePayload {
   heroIds: string[];
   /** Optional positions for deterministic testing. If not provided, positions are randomly assigned. */
@@ -2711,63 +2767,20 @@ export const gameSlice = createSlice({
           
           // Quick Advance: Move a monster closer to active hero
           else if (encounterId === 'quick-advance') {
-            const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
-            if (activeHeroToken && state.monsters.length > 0) {
-              // Find a monster not on active hero's tile
-              const monstersNotOnTile = state.monsters.filter(m => {
-                return m.tileId !== activeHeroToken.tileId || 
-                       m.position.x !== activeHeroToken.position.x || 
-                       m.position.y !== activeHeroToken.position.y;
-              });
-              
-              if (monstersNotOnTile.length > 0) {
-                // Move the first such monster
-                const monsterToMove = monstersNotOnTile[0];
-                const monsterDef = getMonsterById(monsterToMove.monsterId);
-                
-                // Use monster AI to move toward hero
-                const result = executeMonsterTurn(
-                  monsterToMove,
-                  state.heroTokens,
-                  state.heroHp.reduce((acc, hp) => ({ ...acc, [hp.heroId]: hp.currentHp }), {}),
-                  state.heroHp.reduce((acc, hp) => ({ ...acc, [hp.heroId]: hp.ac }), {}),
-                  state.monsters,
-                  state.dungeon,
-                  Math.random
-                );
-                
-                if (result.type === 'move') {
-                  const newTileId = findTileForGlobalPosition(result.destination, state.dungeon);
-                  if (newTileId) {
-                    const localPos = globalToLocalPosition(result.destination, newTileId, state.dungeon);
-                    if (localPos) {
-                      monsterToMove.position = localPos;
-                      monsterToMove.tileId = newTileId;
-                      state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} moved closer`;
-                      
-                      // Check for Blade Barrier tokens at destination
-                      const bladeBarrierCheck = checkBladeBarrierDamage(
-                        result.destination,
-                        state.boardTokens || []
-                      );
-                      
-                      if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
-                        // Deal 1 damage to the monster
-                        monsterToMove.currentHp = Math.max(0, monsterToMove.currentHp - 1);
-                        
-                        // Remove the blade barrier token
-                        state.boardTokens = state.boardTokens.filter(
-                          token => token.id !== bladeBarrierCheck.tokenToRemove
-                        );
-                        
-                        state.encounterEffectMessage = `${monsterDef?.name || 'Monster'} moved closer and hit Blade Barrier (1 damage)`;
-                      }
-                    }
-                  }
-                }
-              } else {
-                state.encounterEffectMessage = 'No monster to move';
-              }
+            if (state.monsters.length === 0) {
+              state.encounterEffectMessage = 'No monsters in play - card discarded';
+              state.encounterDeck = discardEncounter(state.encounterDeck, state.drawnEncounter.id);
+              state.drawnEncounter = null;
+            } else if (state.monsters.length === 1) {
+              handleQuickAdvanceEffect(state, state.monsters[0]);
+            } else {
+              // Multiple monsters - prompt player to choose
+              state.pendingMonsterChoice = {
+                encounterId: 'quick-advance',
+                encounterName: state.drawnEncounter.name,
+                context: 'Choose a monster to move closer',
+              };
+              return;
             }
           }
           
@@ -5311,6 +5324,19 @@ export const gameSlice = createSlice({
       // This is a reusable pattern - add more cases here as needed
       if (encounterId === 'scream-of-sentry') {
         handleScreamOfSentryEffect(state, selectedMonster);
+      } else if (encounterId === 'quick-advance') {
+        handleQuickAdvanceEffect(state, selectedMonster);
+        // Quick Advance requires drawing another encounter card afterward
+        if (shouldDrawAnotherEncounter(encounterId)) {
+          const { encounterId: nextEncounterId, deck: updatedDeck } = drawEncounter(state.encounterDeck);
+          state.encounterDeck = updatedDeck;
+          if (nextEncounterId) {
+            const nextEncounter = getEncounterById(nextEncounterId);
+            if (nextEncounter) {
+              state.drawnEncounter = nextEncounter;
+            }
+          }
+        }
       }
       // Add more encounter handlers here as needed
     },
