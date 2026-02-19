@@ -1120,7 +1120,7 @@ export const ENCOUNTER_CARDS: EncounterCard[] = [
     name: 'Lost',
     type: 'event',
     description: '"All these tunnels look the same!" Without looking at it, take the bottom Dungeon Tile from the stack and place it on top.',
-    effect: { type: 'special', description: 'Move bottom tile to top of tile deck.' },
+    effect: { type: 'special', description: 'Shuffle the entire tile deck.' },
     imagePath: 'assets/Encounter_Lost.png',
   },
   {

@@ -251,7 +251,7 @@ These effect types display the card description and resolve to the discard pile,
 | hall-of-orcs | Hall of the Orcs | Filter monster deck for Orcs | ✅ Fully Implemented |
 | hidden-treasure | Hidden Treasure | Place treasure token | ✅ Fully Implemented |
 | kobold-warren | Kobold Warren | Filter monster deck for Reptiles | ✅ Fully Implemented |
-| lost | Lost | Shuffle tile deck | ⚠️ Display only |
+| lost | Lost | Shuffle tile deck | ✅ Fully Implemented |
 | occupied-lair | Occupied Lair | Place tile, monster, and treasure | ✅ Fully Implemented |
 | quick-advance | Quick Advance | Move a monster closer | ✅ Fully Implemented |
 | revel-in-destruction | Revel in Destruction | Heal a monster 1 HP | ✅ Fully Implemented |
@@ -429,6 +429,24 @@ These effect types display the card description and resolve to the discard pile,
   - Healing logic: monsters.ts (`healMonster` function)
   - EncounterEffectNotification.svelte: Displays the healing message
 - Implementation reference: issue egirard/Ashardalon (implement-revel-in-destruction)
+
+#### Lost Implementation Notes
+
+**Lost** is now fully implemented:
+- When the encounter card is drawn and accepted, it shuffles the entire tile deck
+- Uses `shuffleTileDeck()` function from exploration.ts to randomize the order of remaining tiles
+- **Effect Message**: Displays the deck size (e.g., "Tile deck shuffled (12 tiles remaining)")
+- After applying the effect, the card is discarded to the encounter discard pile
+- E2E test (110) demonstrates the complete card lifecycle:
+  - Draw encounter card
+  - Display card with description
+  - Shuffle tile deck (verify deck contents changed order)
+  - Show effect notification
+  - Discard card
+- Implementation files:
+  - Card definition: types.ts (Lost card definition)
+  - Effect application: gameSlice.ts (`dismissEncounterCard` reducer, 'lost' case)
+  - Shuffle logic: exploration.ts (`shuffleTileDeck` function)
 
 #### Duergar Outpost Implementation Notes
 
