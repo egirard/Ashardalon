@@ -73,3 +73,66 @@ This test verifies that the game prompts the player to choose a destination squa
 ✅ Player can click on a highlighted square to select it  
 ✅ Monster moves to selected position after selection  
 ✅ Villain phase continues after selection
+
+## Test 2: Monster Scorch Mark Prioritization
+
+### User Story
+As a player, when a monster moves to a new dungeon tile, I expect it to prioritize moving to the scorch mark of that tile if available, following official game rules.
+
+### Test Description
+This test verifies that monsters prioritize scorch marks when crossing from one tile to another during movement.
+
+### Test Steps
+
+#### Screenshot 004: Initial State Before Monster Move
+![Before Scorch Move](101-monster-move-destination.spec.ts-snapshots/003-004-before-scorch-move-chromium-linux.png)
+
+**What to verify:**
+- Monster (Kobold) is on the start tile at position (3, 2)
+- Hero (Quinn) is on the east tile at position (7, 2)
+- A second tile (tile-east) exists adjacent to the start tile
+- Monster is positioned near the edge between tiles
+
+**Programmatic checks:**
+- Monster `tileId` is 'start'
+- Monster position is (3, 2)
+- Hero position is (7, 2)
+
+#### Screenshot 005: After Monster Moves to New Tile
+![After Scorch Move](101-monster-move-destination.spec.ts-snapshots/004-005-after-scorch-move-chromium-linux.png)
+
+**What to verify:**
+- Monster has moved toward the hero
+- If monster crossed to the east tile, it should be at or near the scorch mark
+- The scorch mark for tile-black-2exit-a at 0° rotation is at local position (1, 2)
+- Monster prioritizes this position when entering the tile
+
+**Programmatic checks:**
+- Monster has moved from original position
+- If `tileId` is 'tile-east', verify scorch mark prioritization
+- Distance to scorch mark position is minimal
+
+### Implementation Details
+
+**Scenario Setup:**
+- Start tile with monster at (3, 2)
+- Adjacent east tile (tile-black-2exit-a) with scorch mark at local (1, 2)
+- Hero on east tile at (7, 2) to draw monster across tiles
+
+**Expected Behavior:**
+1. Monster detects hero on adjacent tile
+2. Monster moves toward hero, crossing tile boundary
+3. `findMoveTowardHero` in `monsterAI.ts` detects tile crossing
+4. Function prioritizes scorch mark at (1, 2) of destination tile
+5. Monster moves to scorch mark if unoccupied
+
+### Related Components
+- `monsterAI.ts` - Monster movement AI with scorch mark prioritization
+- `monsters.ts` - Scorch mark position calculation functions
+- `gameSlice.ts` - Movement execution during villain phase
+
+### Success Criteria
+✅ Monster moves toward hero across tiles  
+✅ Monster prioritizes scorch mark when entering new tile  
+✅ Scorch mark logic activates only for tile-crossing moves  
+✅ Same-tile movement unaffected by scorch mark logic
