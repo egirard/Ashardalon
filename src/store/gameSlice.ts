@@ -233,6 +233,8 @@ export interface GameState {
   monsterAttackTargetId: string | null;
   /** ID of the monster that performed the attack */
   monsterAttackerId: string | null;
+  /** Name of the attack used by the monster (for displaying in combat result) */
+  monsterAttackName: string | null;
   /** Results of area attack (for displaying multiple combat results sequentially) */
   monsterAreaAttackResults: AttackResult[] | null;
   /** IDs of heroes targeted by area attack */
@@ -660,6 +662,7 @@ const initialState: GameState = {
   monsterAttackResult: null,
   monsterAttackTargetId: null,
   monsterAttackerId: null,
+  monsterAttackName: null,
   monsterAreaAttackResults: null,
   monsterAreaAttackTargetIds: null,
   villainPhaseMonsterIndex: 0,
@@ -1083,6 +1086,7 @@ export const gameSlice = createSlice({
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+      state.monsterAttackName = null;
       state.villainPhaseMonsterIndex = 0;
 
       // Initialize hero turn actions for the first hero
@@ -1496,6 +1500,7 @@ export const gameSlice = createSlice({
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+      state.monsterAttackName = null;
       state.villainPhaseMonsterIndex = 0;
       state.monsterMoveActionId = null;
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
@@ -2043,6 +2048,7 @@ export const gameSlice = createSlice({
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+      state.monsterAttackName = null;
       state.monsterMoveActionId = null;
       
       // Clear exploration phase message to ensure sequential display
@@ -2099,6 +2105,7 @@ export const gameSlice = createSlice({
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+      state.monsterAttackName = null;
       state.monsterMoveActionId = null;
       
       // Clear encounter state
@@ -4193,6 +4200,7 @@ export const gameSlice = createSlice({
         state.monsterAttackResult = result.result;
         state.monsterAttackTargetId = result.targetId;
         state.monsterAttackerId = monster.instanceId;
+        state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? DEFAULT_MONSTER_ATTACK.name;
 
         // Log the monster attack
         const monsterDef = getMonsterById(monster.monsterId);
@@ -4342,6 +4350,7 @@ export const gameSlice = createSlice({
         state.monsterAttackResult = result.result;
         state.monsterAttackTargetId = result.targetId;
         state.monsterAttackerId = monster.instanceId;
+        state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.moveAttack?.name ?? MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? DEFAULT_MONSTER_ATTACK.name;
 
         // Log the monster attack (move-and-attack)
         const monsterDef = getMonsterById(monster.monsterId);
@@ -4559,6 +4568,7 @@ export const gameSlice = createSlice({
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
+      state.monsterAttackName = null;
     },
     /**
      * Dismiss the monster move action display
@@ -5591,6 +5601,7 @@ export const gameSlice = createSlice({
               state.monsterAttackResult = attackResult;
               state.monsterAttackTargetId = targetHeroId;
               state.monsterAttackerId = monster.instanceId;
+              state.monsterAttackName = attackOption.name;
               
               // Apply damage if hit
               if (attackResult.isHit && attackResult.damage > 0) {

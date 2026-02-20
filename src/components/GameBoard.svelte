@@ -224,6 +224,7 @@
   let monsterAttackResult: AttackResult | null = $state(null);
   let monsterAttackTargetId: string | null = $state(null);
   let monsterAttackerId: string | null = $state(null);
+  let monsterAttackName: string | null = $state(null);
   let villainPhaseMonsterIndex: number = $state(0);
   let monsterMoveActionId: string | null = $state(null);
   let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
@@ -344,7 +345,7 @@
       monsterAttackResult = state.game.monsterAttackResult;
       monsterAttackTargetId = state.game.monsterAttackTargetId;
       monsterAttackerId = state.game.monsterAttackerId;
-      villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
+      monsterAttackName = state.game.monsterAttackName;
       monsterMoveActionId = state.game.monsterMoveActionId;
       heroTurnActions = state.game.heroTurnActions;
       scenario = state.game.scenario;
