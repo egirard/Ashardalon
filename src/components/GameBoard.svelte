@@ -346,6 +346,7 @@
       monsterAttackTargetId = state.game.monsterAttackTargetId;
       monsterAttackerId = state.game.monsterAttackerId;
       monsterAttackName = state.game.monsterAttackName;
+      villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
       monsterMoveActionId = state.game.monsterMoveActionId;
       heroTurnActions = state.game.heroTurnActions;
       scenario = state.game.scenario;
@@ -417,6 +418,7 @@
     monsterAttackResult = state.game.monsterAttackResult;
     monsterAttackTargetId = state.game.monsterAttackTargetId;
     monsterAttackerId = state.game.monsterAttackerId;
+    monsterAttackName = state.game.monsterAttackName;
     villainPhaseMonsterIndex = state.game.villainPhaseMonsterIndex;
     monsterMoveActionId = state.game.monsterMoveActionId;
     heroTurnActions = state.game.heroTurnActions;
@@ -3642,7 +3644,7 @@
     <CombatResultDisplay
       result={monsterAttackResult}
       attackerName={getMonsterAttackerName()}
-      attackName="Attack"
+      attackName={monsterAttackName ?? ''}
       targetName={getMonsterAttackTargetName()}
       onDismiss={handleDismissMonsterAttackResult}
       edge={getActivePlayerEdge()}

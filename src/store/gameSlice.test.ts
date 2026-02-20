@@ -68,6 +68,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     monsterAttackResult: null,
     monsterAttackTargetId: null,
     monsterAttackerId: null,
+    monsterAttackName: null,
     villainPhaseMonsterIndex: 0,
     monsterMoveActionId: null,
     heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
