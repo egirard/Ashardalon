@@ -272,6 +272,8 @@
   let pendingMonsterDecision: import('../store/types').PendingMonsterDecision | null = $state(null);
   let selectedTargetId: string | null = $state(null);
   let selectedTargetType: 'monster' | 'trap' | 'treasure' | null = $state(null);
+  // Tracks the expanded attack card in the active hero's power cards panel
+  let activeExpandedAttackCardId: number | null = $state(null);
   let trapDisableResult: import('../store/types').TrapDisableResult | null = $state(null);
   let logEntries: import('../store/types').LogEntry[] = $state([]);
   let showScorchMarks: boolean = $state(false);
@@ -1929,6 +1931,12 @@
       return;
     }
     
+    // If an attack card is expanded in the power cards panel, trigger the attack directly
+    if (activeExpandedAttackCardId !== null && targetType === 'monster') {
+      handleAttackWithCard(activeExpandedAttackCardId, targetId);
+      return;
+    }
+    
     // Select the target (existing behavior)
     store.dispatch(selectTarget({ targetId, targetType }));
   }
@@ -3566,6 +3574,7 @@
             })() : null}
             onAttemptCageEscape={isHeroActive ? handleAttemptCageEscape : undefined}
             isCurrentHeroCaged={isHeroActive && turnState.currentPhase === "hero-phase" ? isCurrentHeroCaged() : false}
+            onExpandedCardChange={isHeroActive ? (id) => { activeExpandedAttackCardId = id; } : undefined}
           />
         </div>
       </div>

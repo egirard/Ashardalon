@@ -92,6 +92,12 @@
      * Whether the current hero is the one who is caged
      */
     isCurrentHeroCaged?: boolean;
+    /**
+     * Callback when the expanded attack card changes.
+     * Reports the currently expanded attack card ID (or null if none).
+     * Should only be provided for the active hero.
+     */
+    onExpandedCardChange?: (cardId: number | null) => void;
   }
 
   let { 
@@ -115,11 +121,17 @@
     onActivateFlamingSphereDamage,
     cagedAllyInfo = null,
     onAttemptCageEscape,
-    isCurrentHeroCaged = false
+    isCurrentHeroCaged = false,
+    onExpandedCardChange,
   }: Props = $props();
 
   // State for expanded attack card
   let expandedAttackCardId: number | null = $state(null);
+  
+  // Notify parent when the expanded attack card changes
+  $effect(() => {
+    onExpandedCardChange?.(expandedAttackCardId);
+  });
   
   // State for selected card to show in details panel (replaces inline expansion and CardDetailView)
   let selectedCardForDetailsPanel: PowerCard | null = $state(null);
