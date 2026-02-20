@@ -73,7 +73,7 @@ test.describe('059 - Attack Power Dashboard Expanded', () => {
         payload: [{
           instanceId: 'test-kobold-1',
           monsterId: 'kobold',
-          tileId: 'start',
+          tileId: 'start-tile',
           position: { x: 2, y: 2 }, // Adjacent to Vistra at (2, 3)
           hp: 3,
           isDowned: false
@@ -172,12 +172,12 @@ test.describe('059 - Attack Power Dashboard Expanded', () => {
           
           // Verify attack was executed
           expect(storeState.game.attackResult).toBeDefined();
-          expect(storeState.game.attackResult?.targetInstanceId).toBe('test-kobold-1');
+          expect(storeState.game.attackTargetId).toBe('test-kobold-1');
         }
       });
 
       // Dismiss attack result
-      const continueButton = page.locator('button:has-text("Continue")');
+      const continueButton = page.locator('[data-testid="dismiss-combat-result"]');
       if (await continueButton.isVisible()) {
         await continueButton.click();
       }
