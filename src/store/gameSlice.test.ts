@@ -34,6 +34,8 @@ import gameReducer, {
   cancelMonsterChoice,
   setActiveEnvironment,
   setTraps,
+  placeExplorationTile,
+  addExplorationMonster,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
@@ -5689,6 +5691,151 @@ describe("gameSlice", () => {
 
       // Trap should remain (hero not on tile)
       expect(state.traps).toHaveLength(1);
+    });
+  });
+
+  describe("exploration logging", () => {
+    const createExplorationTestState = () => createGameState({
+      currentScreen: "game-board",
+      heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }], // North edge
+      turnState: {
+        currentHeroIndex: 0,
+        currentPhase: "hero-phase",
+        turnNumber: 1,
+        exploredThisTurn: false,
+        drewOnlyWhiteTilesThisTurn: false,
+      },
+      dungeon: {
+        tiles: [
+          {
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          },
+        ],
+        unexploredEdges: [
+          { tileId: "start-tile", direction: "north" },
+        ],
+        tileDeck: ["tile-black-2exit-a"],
+      },
+      monsterDeck: {
+        drawPile: ["kobold"],
+        discardPile: [],
+      },
+      monsters: [],
+      monsterInstanceCounter: 0,
+    });
+
+    it("should add exploration log entry when hero triggers exploration", () => {
+      const initialState = createExplorationTestState();
+      const state = gameReducer(initialState, endHeroPhase());
+
+      const explorationEntries = state.logEntries.filter(e => e.type === 'exploration');
+      expect(explorationEntries.length).toBeGreaterThanOrEqual(1);
+      const triggerEntry = explorationEntries.find(e => e.message.includes('explores to the north'));
+      expect(triggerEntry).toBeDefined();
+      expect(triggerEntry?.message).toContain('Quinn');
+      expect(triggerEntry?.heroId).toBe('quinn');
+    });
+
+    it("should add tile placement log entry when placeExplorationTile is dispatched", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: false,
+          drewOnlyWhiteTilesThisTurn: false,
+        },
+        explorationPhase: {
+          step: "awaiting-tile",
+          drawnTile: "tile-black-2exit-a",
+          exploredEdge: { tileId: "start-tile", direction: "north" },
+          drawnMonster: "kobold",
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+          ],
+          tileDeck: [],
+        },
+      });
+
+      const state = gameReducer(initialState, placeExplorationTile());
+
+      const explorationEntries = state.logEntries.filter(e => e.type === 'exploration');
+      expect(explorationEntries.length).toBeGreaterThanOrEqual(1);
+      const placementEntry = explorationEntries.find(e => e.message.includes('tile revealed'));
+      expect(placementEntry).toBeDefined();
+      expect(placementEntry?.message).toContain('north');
+      expect(placementEntry?.message).toContain('Black');
+    });
+
+    it("should add monster spawn log entry when addExplorationMonster is dispatched", () => {
+      const initialState = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 0 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "exploration-phase",
+          turnNumber: 1,
+          exploredThisTurn: true,
+          drewOnlyWhiteTilesThisTurn: false,
+        },
+        explorationPhase: {
+          step: "awaiting-monster",
+          drawnTile: "tile-black-2exit-a",
+          exploredEdge: { tileId: "start-tile", direction: "north" },
+          drawnMonster: "kobold",
+        },
+        recentlyPlacedTileId: "tile-1",
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "open", south: "unexplored", east: "unexplored", west: "unexplored" },
+            },
+            {
+              id: "tile-1",
+              tileType: "tile-black-2exit-a",
+              position: { col: 0, row: -1 },
+              rotation: 180,
+              edges: { north: "unexplored", south: "open", east: "wall", west: "wall" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "tile-1", direction: "north" },
+          ],
+          tileDeck: [],
+        },
+        monsters: [],
+        monsterInstanceCounter: 0,
+        monsterGroupCounter: 0,
+      });
+
+      const state = gameReducer(initialState, addExplorationMonster());
+
+      const explorationEntries = state.logEntries.filter(e => e.type === 'exploration');
+      expect(explorationEntries.length).toBeGreaterThanOrEqual(1);
+      const spawnEntry = explorationEntries.find(e => e.message.includes('appeared'));
+      expect(spawnEntry).toBeDefined();
+      expect(spawnEntry?.message).toContain('Kobold');
     });
   });
 });

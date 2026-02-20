@@ -1356,6 +1356,19 @@ export const gameSlice = createSlice({
         // Clear movement overlay
         state.validMoveSquares = [];
         state.showingMovement = false;
+        // Log movement completion
+        const movingHero = AVAILABLE_HEROES.find(h => h.id === heroId);
+        const movingHeroName = movingHero?.name ?? heroId;
+        const startPos = state.incrementalMovement.startingPosition;
+        const squaresUsed = state.incrementalMovement.totalSpeed;
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'hero-action',
+          message: `${movingHeroName} moved ${squaresUsed} square${squaresUsed !== 1 ? 's' : ''}`,
+          details: `From (${startPos.x}, ${startPos.y}) to (${position.x}, ${position.y})`,
+          heroId,
+        });
       } else {
         // Still have remaining movement - recalculate valid squares
         state.validMoveSquares = getValidMoveSquares(
@@ -1375,12 +1388,18 @@ export const gameSlice = createSlice({
       if (state.turnState.currentPhase !== "hero-phase") return;
       if (!state.incrementalMovement?.inProgress) return;
       
+      // Capture movement info before clearing state
+      const heroId = state.incrementalMovement.heroId;
+      const startPos = state.incrementalMovement.startingPosition;
+      const totalSpeed = state.incrementalMovement.totalSpeed;
+      const squaresUsed = totalSpeed - state.incrementalMovement.remainingMovement;
+      const heroToken = state.heroTokens.find(t => t.heroId === heroId);
+      
       // Mark movement as complete and discard remaining movement
       state.incrementalMovement.inProgress = false;
       state.incrementalMovement.remainingMovement = 0;
       
       // Track the move action
-      const heroId = state.incrementalMovement.heroId;
       const heroStatuses = getHeroStatuses(state, heroId);
       state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move', heroStatuses);
       
@@ -1390,6 +1409,21 @@ export const gameSlice = createSlice({
       
       // Clear undo snapshot (completing the move is a commitment)
       state.undoSnapshot = null;
+      
+      // Log movement completion
+      if (squaresUsed > 0 && heroToken) {
+        const movingHero = AVAILABLE_HEROES.find(h => h.id === heroId);
+        const movingHeroName = movingHero?.name ?? heroId;
+        const endPos = heroToken.position;
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'hero-action',
+          message: `${movingHeroName} moved ${squaresUsed} square${squaresUsed !== 1 ? 's' : ''}`,
+          details: `From (${startPos.x}, ${startPos.y}) to (${endPos.x}, ${endPos.y})`,
+          heroId,
+        });
+      }
     },
     /**
      * Record Flaming Sphere movement as the hero's movement action
@@ -1571,6 +1605,18 @@ export const gameSlice = createSlice({
           // Update decks
           state.dungeon.tileDeck = remainingDeck;
           state.monsterDeck = updatedMonsterDeck;
+          
+          // Log exploration trigger
+          const exploringHero = AVAILABLE_HEROES.find(h => h.id === currentToken.heroId);
+          const exploringHeroName = exploringHero?.name ?? currentToken.heroId;
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'exploration',
+            message: `🗺️ ${exploringHeroName} explores to the ${exploredEdge.direction}`,
+            details: `Position (${currentToken.position.x}, ${currentToken.position.y}) | Tiles remaining: ${remainingDeck.length}`,
+            heroId: currentToken.heroId,
+          });
         }
       } else {
         // No exploration - hero not on unexplored edge
@@ -1713,6 +1759,16 @@ export const gameSlice = createSlice({
           newTile
         );
         
+        // Log tile placement
+        const tileColor = isBlackTile ? 'Black' : 'White';
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'exploration',
+          message: `New tile revealed to the ${exploredEdge.direction} (${tileColor} arrow)`,
+          details: `Tile type: ${drawnTile} | New exits added to dungeon`,
+        });
+        
         // Move to next step
         state.explorationPhase.step = 'awaiting-monster';
       }
@@ -1783,6 +1839,18 @@ export const gameSlice = createSlice({
               token => token.id !== bladeBarrierCheck.tokenToRemove
             );
           }
+          
+          // Log monster spawn
+          const spawnedMonsterDef = getMonsterById(drawnMonster);
+          const spawnedMonsterName = spawnedMonsterDef?.name ?? drawnMonster;
+          const spawnCount = spawnResult.monsters.length;
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'exploration',
+            message: `${spawnedMonsterName}${spawnCount > 1 ? ` ×${spawnCount}` : ''} appeared on the new tile!`,
+            details: `Spawned at position (${spawnResult.monsters[0].position.x}, ${spawnResult.monsters[0].position.y})`,
+          });
         }
       }
       
