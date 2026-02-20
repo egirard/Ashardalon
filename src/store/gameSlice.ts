@@ -4001,6 +4001,12 @@ export const gameSlice = createSlice({
       }
     },
     /**
+     * Set encounter deck directly (for testing purposes)
+     */
+    setEncounterDeck: (state, action: PayloadAction<EncounterDeck>) => {
+      state.encounterDeck = action.payload;
+    },
+    /**
      * Set turn phase directly (for testing purposes)
      */
     setTurnPhase: (state, action: PayloadAction<TurnPhase>) => {
@@ -5778,6 +5784,7 @@ export const {
   setCurrentPhase,
   clearAttackResult,
   setDrawnEncounter,
+  setEncounterDeck,
   setTurnPhase,
   activateNextMonster,
   dismissMonsterAttackResult,
