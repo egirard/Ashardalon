@@ -10,15 +10,6 @@ import { getScorchMarkPosition, isPositionOccupiedByMonster, isPositionOccupiedB
 const SQUARES_PER_TILE = 4;
 
 /**
- * Default monster attack stats used when no tactics or attacks are defined.
- */
-export const DEFAULT_MONSTER_ATTACK: MonsterAttackOption = {
-  name: 'Attack',
-  attackBonus: 5,
-  damage: 1,
-};
-
-/**
  * Result of a monster's turn - either move, attack, move-and-attack, area-attack, explore, needs-choice, or no action
  */
 export type MonsterAction =
@@ -606,7 +597,8 @@ export function executeMonsterTurn(
   
   // Handle area-attack behavior first (Cave Bear, Gibbering Mouther)
   if (tacticType === 'area-attack') {
-    const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
+    const attackOption = tactics?.adjacentAttack;
+    if (!attackOption) return { type: 'none' };
     let targetHeroes: HeroToken[] = [];
     
     // Determine which heroes to target based on attack properties
@@ -700,8 +692,9 @@ export function executeMonsterTurn(
     }
     
     // Single adjacent hero - attack them
+    const attackOption = tactics?.adjacentAttack;
+    if (!attackOption) return { type: 'none' };
     const targetAC = heroAcMap[adjacentHero.heroId] ?? 10;
-    const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
     const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
     return { type: 'attack', targetId: adjacentHero.heroId, result };
   }
@@ -772,7 +765,8 @@ export function executeMonsterTurn(
         
         // Can move adjacent and attack in the same turn
         const targetAC = heroAcMap[heroInRange.hero.heroId] ?? 10;
-        const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
+        const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack;
+        if (!attackOption) return { type: 'none' };
         const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
         return { 
           type: 'move-and-attack', 

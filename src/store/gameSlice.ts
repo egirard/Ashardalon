@@ -73,7 +73,6 @@ import {
   getMonsterGlobalPosition,
   findMoveTowardHero,
   resolveMonsterAttackWithStats,
-  DEFAULT_MONSTER_ATTACK,
   localToGlobalPosition,
 } from "./monsterAI";
 import {
@@ -4200,7 +4199,7 @@ export const gameSlice = createSlice({
         state.monsterAttackResult = result.result;
         state.monsterAttackTargetId = result.targetId;
         state.monsterAttackerId = monster.instanceId;
-        state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? DEFAULT_MONSTER_ATTACK.name;
+        state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? null;
 
         // Log the monster attack
         const monsterDef = getMonsterById(monster.monsterId);
@@ -4350,7 +4349,7 @@ export const gameSlice = createSlice({
         state.monsterAttackResult = result.result;
         state.monsterAttackTargetId = result.targetId;
         state.monsterAttackerId = monster.instanceId;
-        state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.moveAttack?.name ?? MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? DEFAULT_MONSTER_ATTACK.name;
+        state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.moveAttack?.name ?? MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? null;
 
         // Log the monster attack (move-and-attack)
         const monsterDef = getMonsterById(monster.monsterId);
@@ -5594,7 +5593,11 @@ export const gameSlice = createSlice({
               // Adjacent attack - execute attack immediately
               const targetAC = heroAcMap[targetHeroId] ?? 10;
               const tactics = MONSTER_TACTICS[monster.monsterId];
-              const attackOption = tactics?.adjacentAttack ?? DEFAULT_MONSTER_ATTACK;
+              const attackOption = tactics?.adjacentAttack;
+              if (!attackOption) {
+                state.villainPhaseMonsterIndex++;
+                return;
+              }
               const attackResult = resolveMonsterAttackWithStats(attackOption, targetAC, Math.random);
               
               // Store the attack result
