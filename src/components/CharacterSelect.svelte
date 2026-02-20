@@ -1,7 +1,7 @@
 <script lang="ts">
   import { store } from '../store';
   import { selectHeroFromEdge, finalizePowerCardSelections, swapSidesOnEdge, type EdgePosition, type SidePreference, type HeroPowerCardSelection } from '../store/heroesSlice';
-  import { startGame } from '../store/gameSlice';
+  import { startGame, registerEventHooks } from '../store/gameSlice';
   import type { Hero } from '../store/types';
   import { assetPath } from '../utils';
   import PowerCardSelection from './PowerCardSelection.svelte';
@@ -93,6 +93,9 @@
     if (selectedHeroes.length > 0 && allPowerCardsSelected()) {
       store.dispatch(finalizePowerCardSelections());
       store.dispatch(startGame({ heroIds: selectedHeroes.map(h => h.id) }));
+      // Register event hooks for all heroes' power cards
+      const heroPowerCards = Object.values(store.getState().heroes.heroPowerCards);
+      store.dispatch(registerEventHooks(heroPowerCards));
     }
   }
   

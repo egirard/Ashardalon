@@ -147,6 +147,22 @@ import {
   type StatusEffect,
   type StatusEffectType,
 } from "./statusEffects";
+import type { EventHookState } from './gameEvents';
+import type { HeroPowerCards } from './powerCards';
+import {
+  initializeEventHooks,
+  registerAllHeroHooks,
+  triggerGameEvent,
+  unregisterPowerCard,
+  calculateEncounterCancelCost,
+} from './powerCardIntegration';
+import type {
+  AttackHitByHeroEvent,
+  AttackMissEvent,
+  AttackHitOnHeroEvent,
+  MonsterSpawnEvent,
+  MonsterActivationEvent,
+} from './gameEvents';
 
 /**
  * Default turn state for the beginning of a game
@@ -368,6 +384,12 @@ export interface GameState {
   monsterDecisionSelectedHero: string | null;
   /** Selected position from monster decision (to be used by villain phase AI) */
   monsterDecisionSelectedPosition: Position | null;
+  /** Event hook registry for power card conditional effects */
+  eventHooks: EventHookState;
+  /** Power card flips pending from event hooks (to be processed by heroesSlice) */
+  pendingPowerCardFlips: Array<{ powerCardId: number; heroId: string }>;
+  /** Encounter cancel cost (may be reduced by Perseverance card effect) */
+  encounterCancelCost: number;
 }
 
 /**
@@ -726,6 +748,9 @@ const initialState: GameState = {
   villainPhasePaused: false,
   monsterDecisionSelectedHero: null,
   monsterDecisionSelectedPosition: null,
+  eventHooks: initializeEventHooks(),
+  pendingPowerCardFlips: [],
+  encounterCancelCost: ENCOUNTER_CANCEL_COST,
 };
 
 /**
@@ -1002,6 +1027,47 @@ export interface StartGamePayload {
   seed?: number;
 }
 
+/**
+ * Calculate the encounter cancel cost for the given game state, factoring in Perseverance card.
+ * This is an inline helper to avoid passing a Draft to external functions.
+ */
+function getModifiedEncounterCancelCost(
+  heroTokens: HeroToken[],
+  dungeon: DungeonState,
+  eventHooks: EventHookState,
+  currentHeroIndex: number,
+  baseCost: number
+): number {
+  const currentHeroId = heroTokens[currentHeroIndex]?.heroId;
+  if (!currentHeroId) return baseCost;
+
+  const currentHero = heroTokens.find(t => t.heroId === currentHeroId);
+  if (!currentHero) return baseCost;
+
+  // Simple tile check - get the sub-tile/tile of the current hero
+  const { getTileOrSubTileId: getTileId } = { getTileOrSubTileId: getTileOrSubTileId };
+  const currentTileId = getTileId(currentHero.position, dungeon);
+  if (!currentTileId) return baseCost;
+
+  // Find all heroes on the same tile
+  const heroesOnTile = heroTokens.filter(token => {
+    const tileId = getTileId(token.position, dungeon);
+    return tileId === currentTileId;
+  });
+
+  // Check if any hero on the tile has Perseverance (ID 10) hook active
+  const hasPerseverance = heroesOnTile.some(hero =>
+    Object.values(eventHooks.hooks).some(
+      reg => reg.powerCardId === 10 && reg.heroId === hero.heroId
+    )
+  );
+
+  if (!hasPerseverance) return baseCost;
+
+  // Perseverance reduces cost by number of heroes on tile
+  return Math.max(0, baseCost - heroesOnTile.length);
+}
+
 export const gameSlice = createSlice({
   name: "game",
   initialState,
@@ -1129,6 +1195,11 @@ export const gameSlice = createSlice({
       // Clear encounter effect messages
       state.encounterEffectMessage = null;
       state.badLuckExtraEncounterPending = false;
+
+      // Initialize event hook system
+      state.eventHooks = initializeEventHooks();
+      state.pendingPowerCardFlips = [];
+      state.encounterCancelCost = ENCOUNTER_CANCEL_COST;
 
       // Show scenario introduction on game start
       state.showScenarioIntroduction = true;
@@ -2064,6 +2135,15 @@ export const gameSlice = createSlice({
           if (encounter) {
             state.drawnEncounter = encounter;
             
+            // Calculate encounter cancel cost (may be reduced by Perseverance)
+            state.encounterCancelCost = getModifiedEncounterCancelCost(
+              state.heroTokens,
+              state.dungeon,
+              state.eventHooks,
+              state.turnState.currentHeroIndex,
+              ENCOUNTER_CANCEL_COST
+            );
+
             // Check if current hero has Bad Luck curse - mark for extra encounter
             const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
             if (currentHeroId) {
@@ -2078,8 +2158,8 @@ export const gameSlice = createSlice({
             }
             
             // Log encounter draw
-            const canCancel = canCancelEncounter(state.partyResources);
-            const cancelInfo = canCancel ? ` (Cancel: ${ENCOUNTER_CANCEL_COST} XP)` : '';
+            const canCancel = state.partyResources.xp >= state.encounterCancelCost;
+            const cancelInfo = canCancel ? ` (Cancel: ${state.encounterCancelCost} XP)` : '';
             state.logEntries.push({
               id: state.logEntryCounter++,
               timestamp: Date.now(),
@@ -3233,30 +3313,51 @@ export const gameSlice = createSlice({
       }
     },
     /**
-     * Cancel the encounter card by spending 5 XP (skips encounter effect)
+     * Register event hooks for all heroes' power cards.
+     * Should be called after game start and whenever power cards are restored (rest).
+     */
+    registerEventHooks: (state, action: PayloadAction<HeroPowerCards[]>) => {
+      state.eventHooks = registerAllHeroHooks(initializeEventHooks(), action.payload);
+    },
+    /**
+     * Clear pending power card flips (called after heroesSlice has processed them).
+     */
+    clearPendingPowerCardFlips: (state) => {
+      state.pendingPowerCardFlips = [];
+    },
+    /**
+     * Unregister event hook for a specific power card (called when a card is manually used).
+     */
+    unregisterEventHookForCard: (state, action: PayloadAction<{ powerCardId: number; heroId: string }>) => {
+      state.eventHooks = unregisterPowerCard(state.eventHooks, action.payload.powerCardId, action.payload.heroId);
+    },
+    /**
+     * Cancel the encounter card by spending XP (skips encounter effect)
+     * Cost may be reduced by Perseverance card effect.
      */
     cancelEncounterCard: (state) => {
-      if (state.drawnEncounter && canCancelEncounter(state.partyResources)) {
+      if (state.drawnEncounter && state.partyResources.xp >= state.encounterCancelCost) {
         const encounterName = state.drawnEncounter.name;
-        const xpBefore = state.partyResources.xp;
+        const cancelCost = state.encounterCancelCost;
         
-        // Cancel encounter - deducts XP and discards the card without applying effect
-        const result = cancelEncounter(
-          state.drawnEncounter,
-          state.partyResources,
-          state.encounterDeck
-        );
-        
-        state.partyResources = result.resources;
-        state.encounterDeck = result.encounterDeck;
+        // Cancel encounter - deducts XP (using potentially Perseverance-modified cost) and discards the card
+        state.partyResources = {
+          ...state.partyResources,
+          xp: state.partyResources.xp - cancelCost,
+        };
+        state.encounterDeck = {
+          ...state.encounterDeck,
+          discardPile: [...state.encounterDeck.discardPile, state.drawnEncounter.id],
+        };
         state.drawnEncounter = null;
+        state.encounterCancelCost = ENCOUNTER_CANCEL_COST;
         
         // Log encounter cancellation
         state.logEntries.push({
           id: state.logEntryCounter++,
           timestamp: Date.now(),
           type: 'encounter',
-          message: `Cancelled: ${encounterName} (-${ENCOUNTER_CANCEL_COST} XP, ${result.resources.xp} remaining)`,
+          message: `Cancelled: ${encounterName} (-${cancelCost} XP, ${state.partyResources.xp} remaining)`,
         });
       }
     },
@@ -3306,10 +3407,45 @@ export const gameSlice = createSlice({
       const currentHeroHp = state.heroHp.find(h => h.heroId === currentHeroId);
       
       // Calculate actual damage with level 2 critical bonus (always calculate for consistency)
-      const actualDamage = (result.isHit && currentHeroHp) 
+      let actualDamage = (result.isHit && currentHeroHp) 
         ? calculateDamage(currentHeroHp.level, result.roll, result.damage)
         : result.damage;
       
+      // Trigger attack-hit-by-hero event for power card hooks (e.g., Furious Assault +1 damage)
+      if (result.isHit && currentHeroId) {
+        const attackHitEvent: AttackHitByHeroEvent = {
+          type: 'attack-hit-by-hero',
+          heroId: currentHeroId,
+          turnNumber: state.turnState.turnNumber,
+          attackerId: currentHeroId,
+          targetMonsterId: targetInstanceId,
+          attackResult: result,
+          damage: actualDamage,
+          powerCardId: cardId,
+        };
+        const eventResult = triggerGameEvent(state.eventHooks, attackHitEvent);
+        // Apply damage modification from hooks (e.g., Furious Assault +1)
+        actualDamage = eventResult.event.damage;
+        // Queue power card flips and unregister used hooks
+        for (const flip of eventResult.powerCardsToFlip) {
+          state.pendingPowerCardFlips.push(flip);
+          state.eventHooks = unregisterPowerCard(state.eventHooks, flip.powerCardId, flip.heroId);
+        }
+      } else if (!result.isHit && currentHeroId) {
+        // Trigger attack-miss event for power card hooks (e.g., Inspiring Advice reroll)
+        const attackMissEvent: AttackMissEvent = {
+          type: 'attack-miss',
+          heroId: currentHeroId,
+          turnNumber: state.turnState.turnNumber,
+          attackerId: currentHeroId,
+          targetMonsterId: targetInstanceId,
+          attackResult: result,
+          powerCardId: cardId,
+        };
+        triggerGameEvent(state.eventHooks, attackMissEvent);
+        // Note: Inspiring Advice reroll is handled via UI interaction using pendingPowerCardFlips
+      }
+
       // Always store the result with calculated damage for display consistency
       state.attackResult = { ...result, damage: actualDamage };
       
@@ -4222,8 +4358,31 @@ export const gameSlice = createSlice({
           logDetails += ` | Damage: ${result.result.damage}`;
         }
 
-        // Apply damage to hero if hit
-        if (result.result.isHit && result.result.damage > 0) {
+        // Trigger attack-hit-on-hero event for power card hooks (e.g., Practiced Evasion, Tumbling Escape)
+        let monsterAttackPrevented = false;
+        if (result.result.isHit) {
+          const attackHitOnHeroEvent: AttackHitOnHeroEvent = {
+            type: 'attack-hit-on-hero',
+            heroId: result.targetId,
+            turnNumber: state.turnState.turnNumber,
+            targetHeroId: result.targetId,
+            attackerMonsterId: monster.instanceId,
+            attackResult: result.result,
+            isTrapAttack: false,
+            isEventAttack: false,
+            allTargetHeroIds: [result.targetId],
+          };
+          const hitEventResult = triggerGameEvent(state.eventHooks, attackHitOnHeroEvent);
+          monsterAttackPrevented = hitEventResult.preventedDefault;
+          // Queue power card flips and unregister used hooks
+          for (const flip of hitEventResult.powerCardsToFlip) {
+            state.pendingPowerCardFlips.push(flip);
+            state.eventHooks = unregisterPowerCard(state.eventHooks, flip.powerCardId, flip.heroId);
+          }
+        }
+
+        // Apply damage to hero if hit and not prevented by a hook
+        if (result.result.isHit && result.result.damage > 0 && !monsterAttackPrevented) {
           const heroHp = state.heroHp.find(h => h.heroId === result.targetId);
           if (heroHp) {
             heroHp.currentHp = Math.max(0, heroHp.currentHp - result.result.damage);
@@ -5857,5 +6016,8 @@ export const {
   dismissScenarioIntroduction,
   showScenarioIntroductionModal,
   addLogEntry,
+  registerEventHooks,
+  clearPendingPowerCardFlips,
+  unregisterEventHookForCard,
 } = gameSlice.actions;
 export default gameSlice.reducer;

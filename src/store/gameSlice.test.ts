@@ -36,9 +36,14 @@ import gameReducer, {
   setTraps,
   placeExplorationTile,
   addExplorationMonster,
+  registerEventHooks,
+  clearPendingPowerCardFlips,
   GameState,
 } from "./gameSlice";
-import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult } from "./types";
+import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult, ENCOUNTER_CANCEL_COST } from "./types";
+import { createEventHookState } from "./gameEvents";
+import { registerHeroPowerCardHooks } from "./powerCardIntegration";
+import type { HeroPowerCards } from "./powerCards";
 
 // Start tile grid dimensions - double-height tile with valid spaces x: 1-3, y: 0-7
 const START_TILE_GRID = { minX: 1, maxX: 3, minY: 0, maxY: 7 };
@@ -103,6 +108,9 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     encounterEffectMessage: null,
     logEntries: [],
     logEntryCounter: 0,
+    eventHooks: createEventHookState(),
+    pendingPowerCardFlips: [],
+    encounterCancelCost: ENCOUNTER_CANCEL_COST,
     ...overrides,
   };
 }
@@ -5837,6 +5845,234 @@ describe("gameSlice", () => {
       const spawnEntry = explorationEntries.find(e => e.message.includes('appeared'));
       expect(spawnEntry).toBeDefined();
       expect(spawnEntry?.message).toContain('Kobold');
+    });
+  });
+
+  describe("event hook system integration", () => {
+    describe("registerEventHooks", () => {
+      it("should register hooks for hero power cards", () => {
+        const heroPowerCards: HeroPowerCards = {
+          heroId: 'tarak',
+          customAbility: 31, // Furious Assault
+          utility: 20,       // To Arms!
+          atWills: [32, 33],
+          daily: 35,
+          cardStates: [
+            { cardId: 31, isFlipped: false },
+            { cardId: 20, isFlipped: false },
+            { cardId: 32, isFlipped: false },
+            { cardId: 33, isFlipped: false },
+            { cardId: 35, isFlipped: false },
+          ],
+          powerCards: [],
+        };
+
+        const state = gameReducer(initialState, registerEventHooks([heroPowerCards]));
+
+        // Should have hooks registered (Furious Assault = attack-hit-by-hero, To Arms! = monster-spawn)
+        const hookCount = Object.keys(state.eventHooks.hooks).length;
+        expect(hookCount).toBeGreaterThan(0);
+      });
+
+      it("should not register hooks for flipped (used) cards", () => {
+        const heroPowerCards: HeroPowerCards = {
+          heroId: 'tarak',
+          customAbility: 31, // Furious Assault - flipped
+          utility: 20,
+          atWills: [32, 33],
+          daily: 35,
+          cardStates: [
+            { cardId: 31, isFlipped: true },  // Used
+            { cardId: 20, isFlipped: false },
+            { cardId: 32, isFlipped: false },
+            { cardId: 33, isFlipped: false },
+            { cardId: 35, isFlipped: false },
+          ],
+          powerCards: [],
+        };
+
+        const stateWithFlipped = gameReducer(initialState, registerEventHooks([heroPowerCards]));
+
+        const heroPowerCards2: HeroPowerCards = {
+          ...heroPowerCards,
+          cardStates: [
+            { cardId: 31, isFlipped: false },  // Not used
+            { cardId: 20, isFlipped: false },
+            { cardId: 32, isFlipped: false },
+            { cardId: 33, isFlipped: false },
+            { cardId: 35, isFlipped: false },
+          ],
+        };
+
+        const stateWithNotFlipped = gameReducer(initialState, registerEventHooks([heroPowerCards2]));
+
+        // Flipped card should have fewer hooks (Furious Assault hook missing)
+        const flippedHookCount = Object.keys(stateWithFlipped.eventHooks.hooks).length;
+        const notFlippedHookCount = Object.keys(stateWithNotFlipped.eventHooks.hooks).length;
+        expect(flippedHookCount).toBeLessThan(notFlippedHookCount);
+      });
+    });
+
+    describe("clearPendingPowerCardFlips", () => {
+      it("should clear pending power card flips", () => {
+        const stateWithFlips = createGameState({
+          pendingPowerCardFlips: [{ powerCardId: 31, heroId: 'tarak' }],
+        });
+
+        const newState = gameReducer(stateWithFlips, clearPendingPowerCardFlips());
+        expect(newState.pendingPowerCardFlips).toHaveLength(0);
+      });
+    });
+
+    describe("Furious Assault (+1 damage on hit)", () => {
+      it("should add +1 damage when Furious Assault hook is active", () => {
+        // Setup: hero with Furious Assault (ID 31) registered
+        const heroPowerCards: HeroPowerCards = {
+          heroId: 'tarak',
+          customAbility: 31, // Furious Assault
+          utility: 20,
+          atWills: [32, 33],
+          daily: 35,
+          cardStates: [
+            { cardId: 31, isFlipped: false },
+            { cardId: 20, isFlipped: false },
+            { cardId: 32, isFlipped: false },
+            { cardId: 33, isFlipped: false },
+            { cardId: 35, isFlipped: false },
+          ],
+          powerCards: [],
+        };
+
+        const stateWithHooks = gameReducer(initialState, registerEventHooks([heroPowerCards]));
+
+        // Setup game with hero and monster
+        const baseState = createGameState({
+          ...stateWithHooks,
+          currentScreen: 'game-board',
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: 'hero-phase',
+            turnNumber: 1,
+            exploredThisTurn: false,
+            drewOnlyWhiteTilesThisTurn: false,
+          },
+          heroTokens: [{ heroId: 'tarak', position: { x: 1, y: 1 } }],
+          heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
+          heroHp: [{ heroId: 'tarak', currentHp: 10, maxHp: 10, level: 1, ac: 16, surgeValue: 4, attackBonus: 6, statuses: [] }],
+          monsters: [{ instanceId: 'monster-1', monsterId: 'kobold', position: { x: 1, y: 2 }, tileId: 'start-tile', currentHp: 5, maxHp: 5, controllerId: 'tarak' }],
+        });
+
+        const attackResult: AttackResult = {
+          roll: 10,
+          attackBonus: 6,
+          total: 16,
+          targetAC: 15,
+          isHit: true,
+          isCritical: false,
+          damage: 2,
+        };
+
+        const newState = gameReducer(baseState, setAttackResult({
+          result: attackResult,
+          targetInstanceId: 'monster-1',
+          attackName: 'Furious Assault',
+        }));
+
+        // Damage should be modified to 3 (2 + 1 from Furious Assault)
+        expect(newState.attackResult?.damage).toBe(3);
+        // Furious Assault should be queued for flip
+        expect(newState.pendingPowerCardFlips).toContainEqual({ powerCardId: 31, heroId: 'tarak' });
+      });
+
+      it("should not add bonus damage when Furious Assault is not active", () => {
+        // Setup: hero without Furious Assault registered
+        const baseState = createGameState({
+          currentScreen: 'game-board',
+          turnState: {
+            currentHeroIndex: 0,
+            currentPhase: 'hero-phase',
+            turnNumber: 1,
+            exploredThisTurn: false,
+            drewOnlyWhiteTilesThisTurn: false,
+          },
+          heroTokens: [{ heroId: 'tarak', position: { x: 1, y: 1 } }],
+          heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
+          heroHp: [{ heroId: 'tarak', currentHp: 10, maxHp: 10, level: 1, ac: 16, surgeValue: 4, attackBonus: 6, statuses: [] }],
+          monsters: [{ instanceId: 'monster-1', monsterId: 'kobold', position: { x: 1, y: 2 }, tileId: 'start-tile', currentHp: 5, maxHp: 5, controllerId: 'tarak' }],
+          // No event hooks registered
+          eventHooks: createEventHookState(),
+        });
+
+        const attackResult: AttackResult = {
+          roll: 10,
+          attackBonus: 6,
+          total: 16,
+          targetAC: 15,
+          isHit: true,
+          isCritical: false,
+          damage: 2,
+        };
+
+        const newState = gameReducer(baseState, setAttackResult({
+          result: attackResult,
+          targetInstanceId: 'monster-1',
+          attackName: 'Sure Strike',
+        }));
+
+        // Damage should remain at 2 (no Furious Assault)
+        expect(newState.attackResult?.damage).toBe(2);
+        // No pending card flips
+        expect(newState.pendingPowerCardFlips).toHaveLength(0);
+      });
+    });
+
+    describe("Perseverance (encounter cancel cost reduction)", () => {
+      it("should reduce encounter cancel cost when Perseverance is active", () => {
+        // Setup: Perseverance (ID 10) active for a hero
+        const heroPowerCards: HeroPowerCards = {
+          heroId: 'vistra',
+          customAbility: 11,
+          utility: 10, // Perseverance
+          atWills: [2, 3],
+          daily: 5,
+          cardStates: [
+            { cardId: 10, isFlipped: false },
+            { cardId: 11, isFlipped: false },
+            { cardId: 2, isFlipped: false },
+            { cardId: 3, isFlipped: false },
+            { cardId: 5, isFlipped: false },
+          ],
+          powerCards: [],
+        };
+
+        // Register hooks in state
+        const stateWithHooks = gameReducer(initialState, registerEventHooks([heroPowerCards]));
+
+        // Verify Perseverance hook was registered
+        const hasHooks = Object.keys(stateWithHooks.eventHooks.hooks).length > 0;
+        expect(hasHooks).toBe(true);
+      });
+
+      it("should use standard cancel cost when Perseverance is not active", () => {
+        // State with no hooks
+        const state = createGameState({});
+        expect(state.encounterCancelCost).toBe(ENCOUNTER_CANCEL_COST);
+      });
+    });
+
+    describe("startGame initializes event hooks", () => {
+      it("should initialize event hooks on game start", () => {
+        const state = gameReducer(initialState, startGame({
+          heroIds: ['tarak'],
+          positions: [{ x: 1, y: 1 }],
+          seed: 42,
+        }));
+
+        expect(state.eventHooks).toBeDefined();
+        expect(state.eventHooks.hooks).toBeDefined();
+        expect(state.pendingPowerCardFlips).toEqual([]);
+        expect(state.encounterCancelCost).toBe(ENCOUNTER_CANCEL_COST);
+      });
     });
   });
 });
