@@ -1844,12 +1844,15 @@ export const gameSlice = createSlice({
           const spawnedMonsterDef = getMonsterById(drawnMonster);
           const spawnedMonsterName = spawnedMonsterDef?.name ?? drawnMonster;
           const spawnCount = spawnResult.monsters.length;
+          const spawnPositions = spawnResult.monsters
+            .map(m => `(${m.position.x}, ${m.position.y})`)
+            .join(', ');
           state.logEntries.push({
             id: state.logEntryCounter++,
             timestamp: Date.now(),
             type: 'exploration',
             message: `${spawnedMonsterName}${spawnCount > 1 ? ` ×${spawnCount}` : ''} appeared on the new tile!`,
-            details: `Spawned at position (${spawnResult.monsters[0].position.x}, ${spawnResult.monsters[0].position.y})`,
+            details: `Spawned at position${spawnCount > 1 ? 's' : ''}: ${spawnPositions}`,
           });
         }
       }
