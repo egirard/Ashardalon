@@ -34,7 +34,7 @@ test.describe('063 - Target Selection on Map', () => {
         payload: [{
           instanceId: 'kobold-test',
           monsterId: 'kobold',
-          tileId: 'start',
+          tileId: 'start-tile',
           position: { x: 2, y: 3 },
           hp: 3,
           maxHp: 3,
@@ -151,11 +151,63 @@ test.describe('063 - Target Selection on Map', () => {
     expect(deselectedState.selectedTargetId).toBeNull();
     expect(deselectedState.selectedTargetType).toBeNull();
 
-    // STEP 6: Verify final state - target should be deselected
-    const finalState = await page.evaluate(() => {
-      return (window as any).__REDUX_STORE__.getState().game;
+    // STEP 6: Expand an at-will attack card in the side panel
+    // Quinn's default power cards include Cleric's Shield (card ID 2), an adjacent at-will attack
+    // This simulates the player activating an attack, then tapping the monster on the map
+    const clericsShieldCard = page.locator('[data-testid="power-card-2"]');
+    await expect(clericsShieldCard).toBeVisible();
+    await expect(clericsShieldCard).toHaveClass(/eligible/);
+    // Verify this is Cleric's Shield (Quinn's at-will attack card)
+    await expect(clericsShieldCard).toHaveAttribute('aria-label', /Cleric's Shield/);
+    await expect(clericsShieldCard).toBeVisible();
+    await expect(clericsShieldCard).toHaveClass(/eligible/);
+    
+    await clericsShieldCard.click();
+
+    // Wait for the card to expand (shows inline target selection)
+    await expect(page.locator('[data-testid="attack-card-expanded-2"]')).toBeVisible();
+
+    await screenshots.capture(page, '003-attack-card-expanded-select-target', {
+      programmaticCheck: async () => {
+        // Verify the attack card is expanded and shows the monster as a target
+        await expect(page.locator('[data-testid="attack-card-expanded-2"]')).toBeVisible();
+        await expect(page.locator('[data-testid="attack-target-kobold-test"]')).toBeVisible();
+        // Monster on the map is still targetable
+        await expect(monsterToken).toHaveAttribute('data-targetable', 'true');
+        // No attack triggered yet
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState().game;
+        });
+        expect(storeState.attackResult).toBeNull();
+      }
     });
-    expect(finalState.selectedTargetId).toBeNull();
-    expect(finalState.selectedTargetType).toBeNull();
+
+    // STEP 7: Click the monster token on the MAP (not the button in the side panel)
+    // This is the key feature being tested: tapping the on-screen monster triggers the attack
+    await page.evaluate(() => {
+      const button = document.querySelector('[data-testid="monster-token"][data-monster-id="kobold-test"]') as HTMLButtonElement;
+      if (button) {
+        button.click();
+      }
+    });
+
+    // Wait for the attack result to appear
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.attackResult).not.toBeNull();
+    }).toPass();
+
+    await screenshots.capture(page, '004-attack-triggered-by-map-click', {
+      programmaticCheck: async () => {
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState().game;
+        });
+        // Verify attack was triggered by the on-map click
+        expect(storeState.attackResult).not.toBeNull();
+        expect(storeState.attackTargetId).toBe('kobold-test');
+      }
+    });
   });
 });
