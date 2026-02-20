@@ -486,14 +486,6 @@
     return unsubscribe;
   });
 
-  // Re-register event hooks whenever power card states change (e.g., after manual card use or rest)
-  $effect(() => {
-    const allPowerCards = Object.values(heroPowerCards);
-    if (allPowerCards.length > 0) {
-      store.dispatch(registerEventHooks(allPowerCards));
-    }
-  });
-
   // Create a derived game state object for power card eligibility checking
   // This consolidates the necessary state properties for determining if power cards can be activated
   let gameState = $derived.by(() => {
@@ -1866,6 +1858,9 @@
             const powerCard = getPowerCardById(dailyCardId);
             restoredDailyPower = { heroId, cardId: dailyCardId, cardName: powerCard?.name ?? `Power #${dailyCardId}` };
             store.dispatch(restoreUsedDailyPower({ heroId, cardId: dailyCardId }));
+            // Re-register event hooks since a daily power card was restored
+            const allPowerCards = Object.values(store.getState().heroes.heroPowerCards);
+            store.dispatch(registerEventHooks(allPowerCards));
             break outer;
           }
         }
