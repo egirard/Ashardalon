@@ -1045,7 +1045,7 @@ function getModifiedEncounterCancelCost(
   if (!currentHero) return baseCost;
 
   // Simple tile check - get the sub-tile/tile of the current hero
-  const { getTileOrSubTileId: getTileId } = { getTileOrSubTileId: getTileOrSubTileId };
+  const getTileId = getTileOrSubTileId;
   const currentTileId = getTileId(currentHero.position, dungeon);
   if (!currentTileId) return baseCost;
 
@@ -1929,6 +1929,26 @@ export const gameSlice = createSlice({
             message: `${spawnedMonsterName}${spawnCount > 1 ? ` ×${spawnCount}` : ''} appeared on the new tile!`,
             details: `Spawned at position${spawnCount > 1 ? 's' : ''}: ${spawnPositions}`,
           });
+
+          // Trigger monster-spawn event for power card hooks (e.g., To Arms!)
+          const firstMonster = spawnResult.monsters[0];
+          if (firstMonster) {
+            const monsterSpawnEvent: MonsterSpawnEvent = {
+              type: 'monster-spawn',
+              heroId: currentToken.heroId,
+              turnNumber: state.turnState.turnNumber,
+              monsterInstanceId: firstMonster.instanceId,
+              monsterId: drawnMonster,
+              position: firstMonster.position,
+              tileId: newTile.id,
+            };
+            const spawnEventResult = triggerGameEvent(state.eventHooks, monsterSpawnEvent);
+            // Queue power card flips and unregister used hooks
+            for (const flip of spawnEventResult.powerCardsToFlip) {
+              state.pendingPowerCardFlips.push(flip);
+              state.eventHooks = unregisterPowerCard(state.eventHooks, flip.powerCardId, flip.heroId);
+            }
+          }
         }
       }
       
@@ -3314,9 +3334,12 @@ export const gameSlice = createSlice({
     },
     /**
      * Register event hooks for all heroes' power cards.
-     * Should be called after game start and whenever power cards are restored (rest).
+     * Re-registers from scratch based on current card states (only non-flipped cards get hooks).
+     * Should be called after game start and whenever power card states change (rest, card use).
      */
     registerEventHooks: (state, action: PayloadAction<HeroPowerCards[]>) => {
+      // Re-register from scratch: only cards that are not flipped will have active hooks.
+      // This ensures the registry always reflects the current availability of power cards.
       state.eventHooks = registerAllHeroHooks(initializeEventHooks(), action.payload);
     },
     /**
@@ -4204,6 +4227,23 @@ export const gameSlice = createSlice({
 
       const monster = controlledMonsters[state.villainPhaseMonsterIndex];
       if (!monster) return;
+
+      // Trigger monster-activation event for power card hooks (e.g., Bravery - teleport to monster)
+      const monsterActivationEvent: MonsterActivationEvent = {
+        type: 'monster-activation',
+        heroId: currentHeroId,
+        turnNumber: state.turnState.turnNumber,
+        monsterInstanceId: monster.instanceId,
+        monsterId: monster.monsterId,
+        position: monster.position,
+        controllerId: monster.controllerId,
+      };
+      const activationEventResult = triggerGameEvent(state.eventHooks, monsterActivationEvent);
+      // Queue power card flips and unregister used hooks
+      for (const flip of activationEventResult.powerCardsToFlip) {
+        state.pendingPowerCardFlips.push(flip);
+        state.eventHooks = unregisterPowerCard(state.eventHooks, flip.powerCardId, flip.heroId);
+      }
 
       // Build hero HP and AC maps (AC includes item bonuses)
       const heroHpMap: Record<string, number> = {};
