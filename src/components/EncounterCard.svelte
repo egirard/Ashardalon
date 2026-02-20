@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { EncounterCard, EncounterType } from '../store/types';
-  import { ENCOUNTER_CANCEL_COST } from '../store/types';
   import { assetPath, getEdgeRotation } from '../utils';
   import type { EdgePosition } from '../store/heroesSlice';
   import { LightningIcon, WarningIcon, CrystalIcon } from './icons';
@@ -8,15 +7,16 @@
   interface Props {
     encounter: EncounterCard;
     partyXp?: number;
+    cancelCost?: number;
     onDismiss?: () => void;
     onCancel?: () => void;
     edge?: EdgePosition;
   }
   
-  let { encounter, partyXp = 0, onDismiss, onCancel, edge = 'bottom' }: Props = $props();
+  let { encounter, partyXp = 0, cancelCost = 5, onDismiss, onCancel, edge = 'bottom' }: Props = $props();
   
   // Check if the cancel option is available (party has enough XP)
-  let canCancel = $derived(partyXp >= ENCOUNTER_CANCEL_COST);
+  let canCancel = $derived(partyXp >= cancelCost);
   
   function handleDismiss() {
     if (onDismiss) {
@@ -169,9 +169,9 @@
         onclick={handleCancel}
         disabled={!canCancel}
         data-testid="encounter-cancel"
-        title={canCancel ? 'Spend 5 XP to cancel this encounter' : 'Not enough XP (need 5)'}
+        title={canCancel ? `Spend ${cancelCost} XP to cancel this encounter` : `Not enough XP (need ${cancelCost})`}
       >
-        Cancel (5 XP)
+        Cancel ({cancelCost} XP)
       </button>
       <button 
         class="accept-button"

@@ -68,6 +68,9 @@
     selectMonsterTarget,
     selectMonsterPosition,
     cancelMonsterDecision,
+    clearPendingPowerCardFlips,
+    unregisterEventHookForCard,
+    registerEventHooks,
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
@@ -278,6 +281,8 @@
   let trapDisableResult: import('../store/types').TrapDisableResult | null = $state(null);
   let logEntries: import('../store/types').LogEntry[] = $state([]);
   let showScorchMarks: boolean = $state(false);
+  let encounterCancelCost: number = $state(5);
+  let pendingPowerCardFlips: Array<{ powerCardId: number; heroId: string }> = $state([]);
   
   // Blade Barrier token placement state
   let pendingBladeBarrier: { 
@@ -395,6 +400,14 @@
       trapDisableResult = state.game.trapDisableResult;
       logEntries = state.game.logEntries;
       showScorchMarks = state.ui.showScorchMarks;
+      encounterCancelCost = state.game.encounterCancelCost;
+      // Process pending power card flips from event hooks
+      if (state.game.pendingPowerCardFlips.length > 0) {
+        for (const { powerCardId, heroId } of state.game.pendingPowerCardFlips) {
+          store.dispatch(usePowerCard({ heroId, cardId: powerCardId }));
+        }
+        store.dispatch(clearPendingPowerCardFlips());
+      }
       
       // Force Svelte to process pending updates
       tick();
@@ -468,8 +481,17 @@
     trapDisableResult = state.game.trapDisableResult;
     logEntries = state.game.logEntries;
     showScorchMarks = state.ui.showScorchMarks;
+    encounterCancelCost = state.game.encounterCancelCost;
 
     return unsubscribe;
+  });
+
+  // Re-register event hooks whenever power card states change (e.g., after manual card use or rest)
+  $effect(() => {
+    const allPowerCards = Object.values(heroPowerCards);
+    if (allPowerCards.length > 0) {
+      store.dispatch(registerEventHooks(allPowerCards));
+    }
   });
 
   // Create a derived game state object for power card eligibility checking
@@ -3758,6 +3780,7 @@
     <EncounterCard
       encounter={drawnEncounter}
       partyXp={partyResources.xp}
+      cancelCost={encounterCancelCost}
       onDismiss={handleDismissEncounterCard}
       onCancel={handleCancelEncounterCard}
       edge={getActivePlayerEdge()}
