@@ -3783,6 +3783,28 @@ export const gameSlice = createSlice({
               availableHeroes,
             };
           }
+
+          // Check if this card has a "self-move" effect (attacker moves their speed after attack)
+          const selfMoveEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'self-move');
+
+          // Only set up self-move if no other pending move-after-attack is already in progress
+          // (prevents overwriting an ally-move effect set by the same card)
+          if (selfMoveEffect && !state.pendingMoveAfterAttack) {
+            // Determine if this was the first or second action
+            const wasFirstAction = state.heroTurnActions.actionsTaken.length === 0;
+
+            // The attacker moves their own speed
+            const attackerHero = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
+            const moveDistance = attackerHero?.speed ?? DEFAULT_HERO_SPEED;
+
+            state.pendingMoveAfterAttack = {
+              cardId,
+              moveDistance,
+              wasFirstAction,
+              selectedHeroId: currentHeroId,
+              availableHeroes: [currentHeroId],
+            };
+          }
           
           // Check if this card has an "ac-bonus" effect (Hit or Miss)
           const acBonusEffect = parsedAction.hitOrMissEffects?.find(e => e.type === 'ac-bonus');

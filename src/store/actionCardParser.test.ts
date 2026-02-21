@@ -131,6 +131,20 @@ describe('actionCardParser', () => {
       });
     });
 
+    describe('Distracting Jab (self-move after attack)', () => {
+      it('should parse self-move effect for "after the attack, move your speed"', () => {
+        const card = getPowerCardById(32); // Distracting Jab
+        expect(card).toBeDefined();
+
+        const parsed = parseActionCard(card!);
+
+        expect(parsed.hitOrMissEffects).toBeDefined();
+        const selfMoveEffect = parsed.hitOrMissEffects?.find(e => e.type === 'self-move');
+        expect(selfMoveEffect).toBeDefined();
+        expect(selfMoveEffect?.type).toBe('self-move');
+      });
+    });
+
     describe('Sure Strike (simple attack)', () => {
       it('should parse a simple attack correctly', () => {
         const card = getPowerCardById(14); // Sure Strike
