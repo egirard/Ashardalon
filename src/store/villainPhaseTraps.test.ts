@@ -179,4 +179,123 @@ describe('villainPhaseTraps', () => {
       expect(result.traps).toEqual([]);
     });
   });
+
+  describe('activateVillainPhaseTraps - hazards', () => {
+    it('should attack heroes on cave-in tile each villain phase', () => {
+      const hazards: HazardState[] = [
+        { id: 'hazard-1', encounterId: 'cave-in-hazard', position: { x: 2, y: 2 } },
+      ];
+      const heroHp: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, ac: 17, surgeValue: 4, level: 1 },
+      ];
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 2 } },
+      ];
+
+      // Roll 9 on d20 (+1 for 1-based): (0.4 * 20 + 1 = 9), +9 = 18 vs AC 17 = hit for 2 damage
+      const result = activateVillainPhaseTraps([], hazards, heroHp, heroTokens, mockDungeon, 0, 1, () => 0.4);
+
+      expect(result.heroHp[0].currentHp).toBe(6); // 2 damage from hit
+    });
+
+    it('should apply miss damage from cave-in when attack misses', () => {
+      const hazards: HazardState[] = [
+        { id: 'hazard-1', encounterId: 'cave-in-hazard', position: { x: 2, y: 2 } },
+      ];
+      const heroHp: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, ac: 17, surgeValue: 4, level: 1 },
+      ];
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 2 } },
+      ];
+
+      // Roll 1 on d20: (0.0 * 20 + 1 = 1), +9 = 10 vs AC 17 = miss, 1 miss damage
+      const result = activateVillainPhaseTraps([], hazards, heroHp, heroTokens, mockDungeon, 0, 1, () => 0.0);
+
+      expect(result.heroHp[0].currentHp).toBe(7); // 1 miss damage
+    });
+
+    it('should attack heroes on pit tile each villain phase', () => {
+      const hazards: HazardState[] = [
+        { id: 'hazard-1', encounterId: 'pit', position: { x: 2, y: 2 } },
+      ];
+      const heroHp: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, ac: 17, surgeValue: 4, level: 1 },
+      ];
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 2 } },
+      ];
+
+      // Roll 7 on d20: (0.3 * 20 + 1 = 7), +10 = 17 vs AC 17 = hit for 2 damage
+      const result = activateVillainPhaseTraps([], hazards, heroHp, heroTokens, mockDungeon, 0, 1, () => 0.3);
+
+      expect(result.heroHp[0].currentHp).toBe(6); // 2 damage from hit
+    });
+
+    it('should not deal miss damage from pit on miss', () => {
+      const hazards: HazardState[] = [
+        { id: 'hazard-1', encounterId: 'pit', position: { x: 2, y: 2 } },
+      ];
+      const heroHp: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, ac: 17, surgeValue: 4, level: 1 },
+      ];
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 2 } },
+      ];
+
+      // Roll 1: (0.0 * 20 + 1 = 1), +10 = 11 vs AC 17 = miss, no miss damage for pit
+      const result = activateVillainPhaseTraps([], hazards, heroHp, heroTokens, mockDungeon, 0, 1, () => 0.0);
+
+      expect(result.heroHp[0].currentHp).toBe(8); // No damage on miss
+    });
+
+    it('should apply Poisoned status to heroes on volcanic vapors tile', () => {
+      const hazards: HazardState[] = [
+        { id: 'hazard-1', encounterId: 'volcanic-vapors', position: { x: 2, y: 2 } },
+      ];
+      const heroHp: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, ac: 17, surgeValue: 4, level: 1, statuses: [] },
+      ];
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 2, y: 2 } },
+      ];
+
+      const result = activateVillainPhaseTraps([], hazards, heroHp, heroTokens, mockDungeon, 0, 1, Math.random, 1);
+
+      expect(result.heroHp[0].currentHp).toBe(8); // No direct damage
+      expect(result.heroHp[0].statuses?.some(s => s.type === 'poisoned')).toBe(true);
+    });
+
+    it('should not poison heroes not on volcanic vapors tile', () => {
+      const hazards: HazardState[] = [
+        { id: 'hazard-1', encounterId: 'volcanic-vapors', position: { x: 2, y: 2 } },
+      ];
+      const heroHp: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, ac: 17, surgeValue: 4, level: 1, statuses: [] },
+      ];
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 3, y: 3 } }, // Different tile
+      ];
+
+      const result = activateVillainPhaseTraps([], hazards, heroHp, heroTokens, mockDungeon, 0, 1, Math.random, 1);
+
+      expect(result.heroHp[0].statuses?.some(s => s.type === 'poisoned')).toBe(false);
+    });
+
+    it('should not affect heroes not on hazard tile', () => {
+      const hazards: HazardState[] = [
+        { id: 'hazard-1', encounterId: 'cave-in-hazard', position: { x: 2, y: 2 } },
+      ];
+      const heroHp: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, ac: 17, surgeValue: 4, level: 1 },
+      ];
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 5, y: 5 } }, // Different tile
+      ];
+
+      const result = activateVillainPhaseTraps([], hazards, heroHp, heroTokens, mockDungeon, 0, 1, () => 0.5);
+
+      expect(result.heroHp[0].currentHp).toBe(8); // No damage
+    });
+  });
 });

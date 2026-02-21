@@ -781,6 +781,7 @@ export function shouldDrawAnotherEncounter(encounterId: string): boolean {
     'deadly-poison',
     'hidden-treasure',
     'quick-advance',
+    'warp-in-time',
   ];
   return followUpCards.includes(encounterId);
 }
