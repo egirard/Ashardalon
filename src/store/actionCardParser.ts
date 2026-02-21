@@ -59,7 +59,7 @@ export interface MissEffect {
  * Hit or miss effect that triggers regardless of hit/miss
  */
 export interface HitOrMissEffect {
-  type: 'heal' | 'move-monster' | 'move-hero' | 'ac-bonus' | 'ally-move';
+  type: 'heal' | 'move-monster' | 'move-hero' | 'ac-bonus' | 'ally-move' | 'self-move';
   amount?: number;
   target?: string;
 }
@@ -368,6 +368,13 @@ function parseHitOrMissEffects(rule: string): HitOrMissEffect[] {
         type: 'move-monster',
       });
     }
+  }
+
+  // Check for "after the attack, move your speed" pattern (attacker moves their speed)
+  if (rule.includes('after the attack') && rule.includes('move your speed')) {
+    effects.push({
+      type: 'self-move',
+    });
   }
 
   return effects;
