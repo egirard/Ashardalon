@@ -245,6 +245,11 @@ export function isOnWallSquare(localX: number, localY: number, tile: PlacedTile)
     return false;
   }
   
+  // If tile has no edges defined, treat all squares as walkable
+  if (!tile.edges) {
+    return false;
+  }
+  
   // Check each edge - if it's a wall, the squares along that edge are walls
   // North edge (y = 0)
   if (tile.edges.north === 'wall' && localY === 0) {
