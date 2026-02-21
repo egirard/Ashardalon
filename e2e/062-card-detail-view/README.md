@@ -64,6 +64,16 @@ This informs the player that this is a passive item that doesn't require activat
 
 The player clicks the X button on the detail view to close it. The view is dismissed.
 
+### Step 9: Inventory with Magic Item
+![009-inventory-with-magic-item](062-card-detail-view.spec.ts-snapshots/000-009-inventory-with-magic-item-chromium-linux.png)
+
+A treasure item (+1 Magic Sword) appears in the player inventory at the bottom of the screen.
+
+### Step 10: Magic Item Detail View Within Viewport
+![010-magic-item-detail-within-viewport](062-card-detail-view.spec.ts-snapshots/001-010-magic-item-detail-within-viewport-chromium-linux.png)
+
+The player clicks the magic item. The card detail view appears anchored to the bottom of the player card and grows **upward**, ensuring the entire description is visible within the viewport. Previously, the card detail grew downward and was cut off at the bottom of the screen.
+
 ## Feature Verification
 
 This test verifies that:
@@ -75,6 +85,7 @@ This test verifies that:
 - ✅ Detail view works for all card types (power cards, treasure items)
 - ✅ Close button on detail view dismisses it
 - ✅ Selected cards show visual feedback (golden border)
+- ✅ Magic item card detail view stays fully within viewport when player card is at the bottom
 
 ## Acceptance Criteria Met
 
@@ -84,3 +95,4 @@ This test verifies that:
 - ✅ Clicking another card replaces enlarged display
 - ✅ Clicking mini-card second time dismisses enlarged card
 - ✅ Works for status effects, treasure cards, and player action cards
+- ✅ Card detail description does not appear offscreen on 1280x800 viewport

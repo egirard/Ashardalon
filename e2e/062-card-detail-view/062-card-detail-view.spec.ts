@@ -123,6 +123,15 @@ test.describe('062 - Card Detail View', () => {
         await expect(page.locator('[data-testid="card-type"]')).toContainText('Treasure');
         const heading = page.locator('[data-testid="card-detail-view"] h3');
         await expect(heading).toContainText('Magic Sword');
+
+        // Verify card detail view is fully within the viewport (not cut off offscreen)
+        const viewportSize = page.viewportSize();
+        const cardDetailBox = await page.locator('[data-testid="card-detail-view"]').boundingBox();
+        expect(cardDetailBox).not.toBeNull();
+        if (cardDetailBox && viewportSize) {
+          expect(cardDetailBox.y).toBeGreaterThanOrEqual(0);
+          expect(cardDetailBox.y + cardDetailBox.height).toBeLessThanOrEqual(viewportSize.height);
+        }
       }
     });
 
@@ -132,6 +141,72 @@ test.describe('062 - Card Detail View', () => {
     await screenshots.capture(page, '008-detail-closed-via-button', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="card-detail-view"]')).not.toBeVisible();
+      }
+    });
+  });
+
+  test('Magic item card detail view stays within viewport when player card is at the bottom', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // STEP 1: Start game with Vistra and give her a treasure item
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="hero-vistra-bottom"]').click();
+    await selectDefaultPowerCards(page, 'vistra');
+    await setupDeterministicGame(page);
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
+
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'vistra', position: { x: 2, y: 3 } }
+      });
+      store.dispatch({ type: 'game/hideMovement' });
+      // Give Vistra a magic treasure item (Dwarven Hammer - id 137, or +1 Magic Sword - id 134)
+      store.dispatch({
+        type: 'game/setHeroInventories',
+        payload: {
+          vistra: {
+            heroId: 'vistra',
+            items: [{ cardId: 134, isFlipped: false }]
+          }
+        }
+      });
+    });
+
+    // Disable animations for stable screenshots
+    await page.addStyleTag({
+      content: '* { animation-duration: 0s !important; transition-duration: 0s !important; }'
+    });
+
+    await page.locator('[data-testid="treasure-item-134"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, '009-inventory-with-magic-item', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="treasure-item-134"]')).toBeVisible();
+      }
+    });
+
+    // STEP 2: Click the treasure item to open card detail view
+    await page.locator('[data-testid="treasure-item-134"]').click();
+    await page.locator('[data-testid="card-detail-view"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, '010-magic-item-detail-within-viewport', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="card-detail-view"]')).toBeVisible();
+        await expect(page.locator('[data-testid="card-type"]')).toContainText('Treasure');
+
+        // Verify card detail view is fully within the viewport (not cut off offscreen)
+        const viewportSize = page.viewportSize();
+        const cardDetailBox = await page.locator('[data-testid="card-detail-view"]').boundingBox();
+        expect(cardDetailBox).not.toBeNull();
+        if (cardDetailBox && viewportSize) {
+          expect(cardDetailBox.y).toBeGreaterThanOrEqual(0);
+          expect(cardDetailBox.y + cardDetailBox.height).toBeLessThanOrEqual(viewportSize.height);
+        }
       }
     });
   });

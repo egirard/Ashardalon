@@ -36,6 +36,7 @@
     bladeBarrierState?: BladeBarrierSelectionState | null;
     onCancelBladeBarrier?: () => void;
     onConfirmBladeBarrier?: () => void;
+    boardPosition?: 'top' | 'bottom' | 'left' | 'right';
   }
 
   let { 
@@ -44,7 +45,8 @@
     onActivate,
     bladeBarrierState = null,
     onCancelBladeBarrier,
-    onConfirmBladeBarrier
+    onConfirmBladeBarrier,
+    boardPosition = 'bottom'
   }: Props = $props();
 
   // Get icon component based on treasure effect type
@@ -84,6 +86,7 @@
 {#if detail}
   <div 
     class="card-detail-view" 
+    class:anchor-top={boardPosition === 'top'}
     data-testid="card-detail-view"
     role="dialog"
     aria-label="Card details"
@@ -282,7 +285,8 @@
 <style>
   .card-detail-view {
     position: absolute;
-    top: 0;
+    bottom: 0;
+    top: auto;
     left: calc(100% + 0.5rem);
     width: 250px;
     max-width: 90vw;
@@ -298,6 +302,11 @@
     /* Custom scrollbar styling - thin width with gold theme matching UI */
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.6) rgba(20, 20, 35, 0.5);
+  }
+
+  .card-detail-view.anchor-top {
+    bottom: auto;
+    top: 0;
   }
 
   /* Webkit scrollbar styling for Chrome/Safari */

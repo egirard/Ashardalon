@@ -357,6 +357,7 @@
     <CardDetailView 
       detail={selectedCardDetail}
       onDismiss={handleDismissDetail}
+      boardPosition={boardPosition}
     />
   {/if}
 
