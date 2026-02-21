@@ -367,33 +367,24 @@
     border: 1px solid rgba(76, 175, 80, 0.5);
   }
 
-  /* Active clickable step - bright green with sweep animation */
+  /* Active clickable step - timer bar sweeps left to right over 1.2s (once) */
   .exploration-step.clickable.active {
-    background: linear-gradient(
-      90deg,
-      rgba(76, 175, 80, 0.4) 0%,
-      rgba(76, 175, 80, 0.4) 30%,
-      rgba(144, 238, 144, 0.85) 50%,
-      rgba(76, 175, 80, 0.4) 70%,
-      rgba(76, 175, 80, 0.4) 100%
-    );
-    background-size: 200% auto;
+    background-color: rgba(46, 125, 50, 0.2);
+    background-image: linear-gradient(90deg, rgba(144, 238, 144, 0.75) 0%, rgba(76, 175, 80, 0.6) 100%);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    background-position: left center;
     border-color: #4caf50;
-    animation: exploration-sweep 1s ease-in-out forwards;
+    animation: exploration-timer 1.2s linear forwards;
   }
 
-  @keyframes exploration-sweep {
-    0% {
-      background-position: -100% center;
-    }
-    100% {
-      background-position: 100% center;
-    }
+  @keyframes exploration-timer {
+    from { background-size: 0% 100%; }
+    to   { background-size: 100% 100%; }
   }
 
   .exploration-step.clickable.active:hover {
     border-color: #66bb6a;
-    transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(76, 175, 80, 0.4);
   }
 
