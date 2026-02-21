@@ -14,6 +14,7 @@ import {
   moveTowardPosition,
   spreadLavaFlow,
 } from './trapsHazards';
+import { applyStatusEffect } from './statusEffects';
 
 /**
  * Result of activating traps during villain phase
@@ -38,7 +39,8 @@ export function activateVillainPhaseTraps(
   dungeon: DungeonState,
   trapInstanceCounter: number,
   hazardInstanceCounter: number,
-  randomFn: () => number = Math.random
+  randomFn: () => number = Math.random,
+  turnNumber: number = 0
 ): VillainPhaseTrapResult {
   let updatedHp = [...heroHp];
   let updatedTraps = [...traps];
@@ -141,6 +143,63 @@ export function activateVillainPhaseTraps(
             randomFn
           );
         }
+        break;
+      }
+    }
+  }
+
+  // Process each hazard
+  for (const hazard of hazards) {
+    switch (hazard.encounterId) {
+      case 'cave-in-hazard': {
+        // Attack +9 vs each hero on the hazard tile, hit: 2 damage, miss: 1 damage
+        updatedHp = attackHeroesOnTile(
+          hazard.position,
+          9,  // Attack bonus
+          2,  // Damage on hit
+          1,  // Damage on miss
+          updatedHp,
+          heroTokens,
+          randomFn
+        );
+        break;
+      }
+
+      case 'pit': {
+        // Attack +10 vs each hero on the pit tile, hit: 2 damage
+        updatedHp = attackHeroesOnTile(
+          hazard.position,
+          10, // Attack bonus
+          2,  // Damage on hit
+          0,  // No miss damage
+          updatedHp,
+          heroTokens,
+          randomFn
+        );
+        break;
+      }
+
+      case 'volcanic-vapors': {
+        // Heroes on tile become Poisoned each villain phase
+        const heroIdsOnTile = heroTokens
+          .filter(token =>
+            token.position.x === hazard.position.x &&
+            token.position.y === hazard.position.y
+          )
+          .map(token => token.heroId);
+
+        updatedHp = updatedHp.map(hp => {
+          if (heroIdsOnTile.includes(hp.heroId)) {
+            const updatedStatuses = applyStatusEffect(
+              hp.statuses ?? [],
+              'poisoned',
+              'volcanic-vapors',
+              turnNumber
+            );
+            return { ...hp, statuses: updatedStatuses };
+          }
+          return hp;
+        });
         break;
       }
     }

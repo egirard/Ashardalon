@@ -115,6 +115,7 @@ import {
   tileHasHazard,
   findValidTreasurePlacement,
   getTreasureTokensOnTile,
+  getHazardsOnTile,
 } from "./trapsHazards";
 import { activateVillainPhaseTraps } from "./villainPhaseTraps";
 import { checkBladeBarrierDamage } from "./powerCardEffects";
@@ -1413,6 +1414,29 @@ export const gameSlice = createSlice({
           const message = isDragonsTribute && state.dragonsTributeSecondTreasure
             ? `${heroId} collected treasure token! (Dragon's Tribute: Draw 2, discard higher)`
             : `${heroId} collected treasure token!`;
+          if (state.encounterEffectMessage) {
+            state.encounterEffectMessage += ` | ${message}`;
+          } else {
+            state.encounterEffectMessage = message;
+          }
+        }
+      }
+      
+      // Check for volcanic vapors hazard on destination tile - hero becomes Poisoned
+      const hazardsOnDestTile = getHazardsOnTile(position, state.hazards);
+      const hasVolcanicVapors = hazardsOnDestTile.some(h => h.encounterId === 'volcanic-vapors');
+      if (hasVolcanicVapors) {
+        const heroHpIndex = state.heroHp.findIndex(hp => hp.heroId === heroId);
+        if (heroHpIndex !== -1) {
+          const heroHp = state.heroHp[heroHpIndex];
+          const updatedStatuses = applyStatusEffect(
+            heroHp.statuses ?? [],
+            'poisoned',
+            'volcanic-vapors',
+            state.turnState.turnNumber
+          );
+          state.heroHp[heroHpIndex] = { ...heroHp, statuses: updatedStatuses };
+          const message = `${heroId} is Poisoned by Volcanic Vapors!`;
           if (state.encounterEffectMessage) {
             state.encounterEffectMessage += ` | ${message}`;
           } else {
@@ -3084,6 +3108,44 @@ export const gameSlice = createSlice({
               };
               // Keep the encounter card displayed until choice is made
               return;
+            }
+          }
+          
+          // Warp in Time: Each player passes one monster card to the player on the right, draw another encounter
+          else if (encounterId === 'warp-in-time') {
+            if (state.heroTokens.length <= 1) {
+              state.encounterEffectMessage = 'No other players - no monster cards passed';
+            } else {
+              const passMsgs: string[] = [];
+              // Each hero simultaneously passes one monster to the right
+              // Build pass pairs first to avoid sequential assignment confusion
+              const passPairs: Array<{ fromIdx: number; toIdx: number }> = [];
+              for (let i = 0; i < state.heroTokens.length; i++) {
+                passPairs.push({ fromIdx: i, toIdx: (i + 1) % state.heroTokens.length });
+              }
+              // Collect monsters to pass (first controlled monster per hero, before any changes)
+              const monstersToPass: Array<{ instanceId: string; toHeroId: string; monsterName: string } | null> = 
+                passPairs.map(({ fromIdx, toIdx }) => {
+                  const fromHeroId = state.heroTokens[fromIdx]?.heroId;
+                  const toHeroId = state.heroTokens[toIdx]?.heroId;
+                  if (!fromHeroId || !toHeroId) return null;
+                  const monster = state.monsters.find(m => m.controllerId === fromHeroId);
+                  if (!monster) return null;
+                  const monsterData = MONSTERS.find(m => m.id === monster.monsterId);
+                  return { instanceId: monster.instanceId, toHeroId, monsterName: monsterData?.name ?? 'Monster' };
+                });
+              // Apply the passes
+              for (const pass of monstersToPass) {
+                if (!pass) continue;
+                const idx = state.monsters.findIndex(m => m.instanceId === pass.instanceId);
+                if (idx !== -1) {
+                  state.monsters[idx] = { ...state.monsters[idx], controllerId: pass.toHeroId };
+                  passMsgs.push(`${pass.monsterName} → ${pass.toHeroId}`);
+                }
+              }
+              state.encounterEffectMessage = passMsgs.length > 0
+                ? `Warp in Time: ${passMsgs.join(', ')}`
+                : 'Warp in Time: No monsters to pass';
             }
           }
           
@@ -4839,7 +4901,8 @@ export const gameSlice = createSlice({
         state.dungeon,
         state.trapInstanceCounter,
         state.hazardInstanceCounter,
-        randomFn
+        randomFn,
+        state.turnState.turnNumber
       );
       
       // Log trap activations if any traps exist
@@ -4856,6 +4919,23 @@ export const gameSlice = createSlice({
           type: 'combat',
           message: `Villain Phase: Traps activated`,
           details: `Active traps: ${uniqueTrapNames.join(', ')}`,
+        });
+      }
+      
+      // Log hazard activations if any hazards exist
+      if (state.hazards.length > 0) {
+        const hazardNames = state.hazards.map(hazard => {
+          const encounter = getEncounterById(hazard.encounterId);
+          return encounter?.name || 'Hazard';
+        });
+        const uniqueHazardNames = [...new Set(hazardNames)];
+        
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'combat',
+          message: `Villain Phase: Hazards activated`,
+          details: `Active hazards: ${uniqueHazardNames.join(', ')}`,
         });
       }
       
