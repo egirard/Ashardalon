@@ -1,6 +1,6 @@
 import type { MonsterDeck, Monster, MonsterState, MonsterGroup, Position, PlacedTile, DungeonState, MonsterCategory, HeroToken } from './types';
 import { MONSTERS, INITIAL_MONSTER_DECK, TILE_DEFINITIONS } from './types';
-import { getTileBounds } from './movement';
+import { getTileBounds, isOnWallSquare } from './movement';
 
 /**
  * Shuffle an array using Fisher-Yates algorithm
@@ -320,15 +320,18 @@ export function getMonsterSpawnPosition(
   // Get the scorch mark position based on tile type and rotation
   const scorchMark = getScorchMarkPosition(tile.tileType, tile.rotation);
   
-  // Check if the scorch mark is available
-  if (!isPositionOccupiedByMonster(scorchMark, tile.id, monsters)) {
+  // Check if the scorch mark is on a valid (non-wall) square and available
+  if (!isOnWallSquare(scorchMark.x, scorchMark.y, tile) &&
+      !isPositionOccupiedByMonster(scorchMark, tile.id, monsters)) {
     return scorchMark;
   }
   
-  // Scorch mark is occupied, find an adjacent open square
+  // Scorch mark is occupied or on a wall, find an adjacent open square
   const adjacentPositions = getAdjacentTilePositions(scorchMark);
   
   for (const pos of adjacentPositions) {
+    // Skip wall squares
+    if (isOnWallSquare(pos.x, pos.y, tile)) continue;
     if (!isPositionOccupiedByMonster(pos, tile.id, monsters)) {
       return pos;
     }
@@ -431,6 +434,9 @@ export function getValidTilePositions(
         x: tileBounds.minX + x,
         y: tileBounds.minY + y,
       };
+      
+      // Check if position is a wall square
+      if (isOnWallSquare(x, y, tile)) continue;
       
       // Check if position is occupied by a monster
       const hasMonster = isPositionOccupiedByMonster(localPos, tile.id, monsters);
