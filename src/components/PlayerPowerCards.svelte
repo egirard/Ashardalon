@@ -517,7 +517,7 @@
           class:disabled={highlightState === 'disabled'}
           class:expanded={isExpanded || isBladeBarrierInSelection || isFlamingSphereInSelection}
           class:selected={isSelected}
-          title="{card.name} ({card.type}){ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n{card.description}\n\n{card.rule}"
+          title={`${card.name} (${card.type})${ineligibilityReason ? ` - ${ineligibilityReason}` : ''}\n\n${card.description}\n\n${card.rule}`}
           style="border-color: {getPowerCardColor(card.type)};"
           onclick={() => handlePowerCardClick(card.id, highlightState, card, isFlipped, ineligibilityReason)}
           data-testid="power-card-{card.id}"
