@@ -4,7 +4,7 @@
   // Repository configuration
   const REPO_OWNER = 'egirard';
   const REPO_NAME = 'Ashardalon';
-  const GAME_VERSION = '1.0.0'; // From package.json
+  const GAME_VERSION = __GIT_COMMIT__;
 
   /**
    * Creates a human-readable timestamp string from a Date object.

@@ -10,6 +10,7 @@
   import FontScaleControls from './FontScaleControls.svelte';
   import { store } from '../store';
   import { toggleScorchMarks } from '../store/uiSlice';
+  import type { LogEntry } from '../store/types';
   
   interface Props {
     position: 'nw' | 'se';
@@ -39,7 +40,7 @@
   // Repository configuration for feedback
   const REPO_OWNER = 'egirard';
   const REPO_NAME = 'Ashardalon';
-  const GAME_VERSION = '1.0.0';
+  const GAME_VERSION = __GIT_COMMIT__;
   
   /**
    * Handles the Home button click - shows confirmation dialog
@@ -100,12 +101,27 @@
   }
   
   /**
+   * Formats the last N log entries into a markdown list for bug reports.
+   */
+  function formatLogEntries(entries: LogEntry[]): string {
+    if (entries.length === 0) {
+      return '_No game events logged yet._';
+    }
+    return entries.map(entry => {
+      const time = new Date(entry.timestamp).toISOString().split('T')[1].split('.')[0];
+      const details = entry.details ? ` — ${entry.details}` : '';
+      return `- \`[${time}]\` **${entry.type}** — ${entry.message}${details}`;
+    }).join('\n');
+  }
+
+  /**
    * Creates an issue body with screenshot instructions or thumbnail.
    */
   function createIssueBody(
     timestamp: string, 
     screenshotMessage: string, 
-    userAgent: string, 
+    userAgent: string,
+    logEntriesSection: string,
     thumbnailDataUrl?: string
   ): string {
     const screenshotSection = thumbnailDataUrl
@@ -123,6 +139,9 @@
 
 ### Screenshot
 ${screenshotSection}
+
+### Recent Game Log (Last 10 Events)
+${logEntriesSection}
 
 ### System Information
 - **Browser/User Agent:** ${userAgent}
@@ -247,6 +266,9 @@ ${screenshotSection}
     const timestamp = date.toISOString();
     const humanReadableTimestamp = createHumanReadableTimestamp(date);
 
+    const recentLogs = store.getState().game.logEntries.slice(-10);
+    const logEntriesSection = formatLogEntries(recentLogs);
+
     const copiedToClipboard = await copyCanvasToClipboard(canvas);
     const thumbnailDataUrl = generateThumbnail(canvas, 800, 600);
 
@@ -261,6 +283,7 @@ ${screenshotSection}
       timestamp,
       screenshotMessage,
       userAgent,
+      logEntriesSection,
       thumbnailDataUrl
     );
 
@@ -275,7 +298,8 @@ ${screenshotSection}
       const bodyWithoutThumbnail = createIssueBody(
         timestamp,
         screenshotMessage,
-        userAgent
+        userAgent,
+        logEntriesSection
       );
       const bodyWithoutThumbnailEncoded = encodeURIComponent(bodyWithoutThumbnail);
       const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${bodyWithoutThumbnailEncoded}&labels=${labels}`;
@@ -293,11 +317,14 @@ ${screenshotSection}
     const timestamp = date.toISOString();
     const humanReadableTimestamp = createHumanReadableTimestamp(date);
     const userAgent = navigator.userAgent;
+    const recentLogs = store.getState().game.logEntries.slice(-10);
+    const logEntriesSection = formatLogEntries(recentLogs);
     
     const fallbackBody = createIssueBody(
       timestamp,
       '_Screenshot could not be captured automatically. Please attach manually if needed._',
-      userAgent
+      userAgent,
+      logEntriesSection
     );
     const fallbackTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
     const fallbackBodyEncoded = encodeURIComponent(fallbackBody);
