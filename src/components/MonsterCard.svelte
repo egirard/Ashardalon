@@ -11,7 +11,7 @@
     autoDismiss?: boolean;
   }
   
-  let { monsterId, onDismiss, edge = 'bottom', autoDismiss = true }: Props = $props();
+  let { monsterId, onDismiss, edge = 'bottom', autoDismiss = false }: Props = $props();
   
   // Get monster definition
   const monster = $derived(MONSTERS.find(m => m.id === monsterId));
@@ -129,6 +129,12 @@
     cursor: pointer;
     opacity: 1;
     transition: opacity 2s ease-out;
+    animation: overlay-fade-in 0.4s ease-out forwards;
+  }
+
+  @keyframes overlay-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   
   .monster-card-overlay.fade-out {
@@ -144,6 +150,21 @@
     max-width: 320px;
     box-shadow: 0 8px 32px rgba(200, 0, 0, 0.3);
     cursor: default;
+    animation: card-materialize 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  @keyframes card-materialize {
+    0% {
+      opacity: 0;
+      transform: scale(0.5) rotate(-3deg);
+    }
+    60% {
+      transform: scale(1.05) rotate(1deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
   }
   
   .card-header {
@@ -226,5 +247,15 @@
     color: #666;
     font-size: 0.75rem;
     margin: 0;
+  }
+
+  /* Respect user's reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .monster-card-overlay {
+      animation: none;
+    }
+    .monster-card {
+      animation: none;
+    }
   }
 </style>

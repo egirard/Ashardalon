@@ -283,6 +283,11 @@
   let showScorchMarks: boolean = $state(false);
   let encounterCancelCost: number = $state(5);
   let pendingPowerCardFlips: Array<{ powerCardId: number; heroId: string }> = $state([]);
+
+  // Timer for auto-advancing exploration phase steps
+  let explorationAutoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
+  // Timer for showing pending monster card after tile animation
+  let pendingMonsterDisplayTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Blade Barrier token placement state
   let pendingBladeBarrier: { 
@@ -368,6 +373,44 @@
       explorationPhase = state.game.explorationPhase;
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
       pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
+
+      // Auto-advance exploration phase steps based on current step
+      if (state.game.turnState.currentPhase === 'exploration-phase') {
+        const step = state.game.explorationPhase.step;
+        if (step === 'awaiting-tile' || step === 'awaiting-monster') {
+          if (explorationAutoAdvanceTimer === null) {
+            const delay = 1000;
+            const action = step === 'awaiting-tile' ? placeExplorationTile : addExplorationMonster;
+            explorationAutoAdvanceTimer = setTimeout(() => {
+              explorationAutoAdvanceTimer = null;
+              store.dispatch(action());
+            }, delay);
+          }
+        } else {
+          // Clear timer if step is no longer awaiting user action
+          if (explorationAutoAdvanceTimer !== null) {
+            clearTimeout(explorationAutoAdvanceTimer);
+            explorationAutoAdvanceTimer = null;
+          }
+        }
+      } else {
+        // Not in exploration phase - clear any pending timer
+        if (explorationAutoAdvanceTimer !== null) {
+          clearTimeout(explorationAutoAdvanceTimer);
+          explorationAutoAdvanceTimer = null;
+        }
+      }
+
+      // Handle pending monster card display timer (show monster card after tile animation)
+      if (state.game.pendingMonsterDisplayId !== null && pendingMonsterDisplayTimer === null) {
+        pendingMonsterDisplayTimer = setTimeout(() => {
+          pendingMonsterDisplayTimer = null;
+          store.dispatch(showPendingMonster());
+        }, 4000);
+      } else if (state.game.pendingMonsterDisplayId === null && pendingMonsterDisplayTimer !== null) {
+        clearTimeout(pendingMonsterDisplayTimer);
+        pendingMonsterDisplayTimer = null;
+      }
       poisonedDamageNotification = state.game.poisonedDamageNotification;
       poisonRecoveryNotification = state.game.poisonRecoveryNotification;
       heroPowerCards = state.heroes.heroPowerCards;
@@ -558,17 +601,17 @@
     }
   });
 
-  // Auto-end exploration phase when both steps are complete or phase is skipped
+  // Auto-advance exploration phase steps and auto-end when complete
   $effect(() => {
     if (turnState.currentPhase !== "exploration-phase") return;
-    if (explorationPhase.step !== 'complete' && explorationPhase.step !== 'skipped') return;
-    
-    // Wait a brief moment for the user to see the completion/skip state
-    const timer = setTimeout(() => {
-      store.dispatch(endExplorationPhase());
-    }, explorationPhase.step === 'skipped' ? 1500 : 500); // Longer delay for skipped message
-    
-    return () => clearTimeout(timer);
+
+    const step = explorationPhase.step;
+
+    if (step === 'complete' || step === 'skipped') {
+      const delay = step === 'skipped' ? 1500 : 500;
+      const timer = setTimeout(() => store.dispatch(endExplorationPhase()), delay);
+      return () => clearTimeout(timer);
+    }
   });
 
   // Auto-show movement options when hero phase starts and hero can move
@@ -587,20 +630,6 @@
     store.dispatch(
       showMovement({ heroId: currentHeroId, speed: getTotalSpeed(currentHeroId) }),
     );
-  });
-
-  // Sequence tile and monster animations: show monster card after tile fade-in completes
-  // When a tile is placed, the monster spawns immediately but the card display is delayed
-  // This creates a sequential animation: tile fades in (2s), exploration message completes (3s), pause (1s), then monster card shows
-  $effect(() => {
-    if (!pendingMonsterDisplayId) return;
-    
-    // Wait 4 seconds: 3s for exploration message (1s visible + 2s fade) + 1s pause before showing monster
-    const timer = setTimeout(() => {
-      store.dispatch(showPendingMonster());
-    }, 4000);
-    
-    return () => clearTimeout(timer);
   });
 
   // Auto-activate monsters during villain phase

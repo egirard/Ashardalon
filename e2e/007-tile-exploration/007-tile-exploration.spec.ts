@@ -98,15 +98,14 @@ test.describe('007 - Explore and Place New Tile', () => {
     // STEP 3: End the hero phase to trigger exploration
     await page.locator('[data-testid="end-phase-button"]').click();
 
-    // Wait for exploration phase to complete
-    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
+    // Wait for auto-advance to place the tile and add the monster
+    // Both dungeon-tile appearing and monster mini-card appearing confirm both steps completed
+    await expect(page.locator('[data-testid="dungeon-tile"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="monster-card-mini"]')).toBeVisible({ timeout: 5000 });
 
     await screenshots.capture(page, 'new-tile-placed', {
       programmaticCheck: async () => {
-        // Verify we're now in exploration phase
-        await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
-        
-        // Verify Redux store state - should have placed a new tile
+        // Verify Redux store state - should have placed a new tile and monster
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
@@ -123,6 +122,15 @@ test.describe('007 - Explore and Place New Tile', () => {
         );
         expect(startTile.edges.north).toBe('open');
         
+        // North edge of start-tile should no longer be in unexplored edges
+        const northEdgeUnexplored = storeState.game.dungeon.unexploredEdges.some(
+          (e: any) => e.tileId === 'start-tile' && e.direction === 'north'
+        );
+        expect(northEdgeUnexplored).toBe(false);
+        
+        // Monster should have been added
+        expect(storeState.game.monsters.length).toBeGreaterThan(0);
+        
         // The new tile should exist
         const newTile = storeState.game.dungeon.tiles.find(
           (t: any) => t.id !== 'start-tile'
@@ -131,31 +139,18 @@ test.describe('007 - Explore and Place New Tile', () => {
         expect(newTile.position.row).toBe(NORTH_TILE_ROW_POSITION);
         
         // **VISUAL VERIFICATION: Verify the new tile is rendered on the page**
-        // Should have 2 tiles visible: start-tile and dungeon-tile
         await expect(page.locator('[data-testid="start-tile"]')).toBeVisible();
         await expect(page.locator('[data-testid="dungeon-tile"]')).toBeVisible();
         
         // Verify there are exactly 2 placed tiles in the dungeon map
         const placedTiles = page.locator('.placed-tile');
         await expect(placedTiles).toHaveCount(2);
-      }
-    });
 
-    // STEP 4: Verify the unexplored edge is now explored
-    await screenshots.capture(page, 'edge-explored', {
-      programmaticCheck: async () => {
-        const storeState = await page.evaluate(() => {
-          return (window as any).__REDUX_STORE__.getState();
-        });
-        
-        // North edge of start-tile should no longer be unexplored
-        const northEdgeUnexplored = storeState.game.dungeon.unexploredEdges.some(
-          (e: any) => e.tileId === 'start-tile' && e.direction === 'north'
-        );
-        expect(northEdgeUnexplored).toBe(false);
-        
         // Tile deck count should show the count after exploration
         await expect(page.locator('[data-testid="tile-deck-count"]')).toHaveText(String(TILE_DECK_SIZE_AFTER_EXPLORATION));
+        
+        // Monster mini-card should be visible in the player area
+        await expect(page.locator('[data-testid="monster-card-mini"]')).toBeVisible();
       }
     });
   });
