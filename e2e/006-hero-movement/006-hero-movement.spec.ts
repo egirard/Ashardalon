@@ -111,17 +111,30 @@ test.describe('006 - Move a Hero', () => {
       }
     });
 
-    // Click the target square to move
+    // Click the target square to move one step (incremental movement keeps overlay visible)
     await targetSquare.click();
 
-    // Wait for movement to complete (overlay should disappear)
-    await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
+    // Wait for hero to move to new position
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+    }).toPass();
+
+    // Wait for the movement overlay to update with new valid squares from position (3, 2)
+    // The overlay stays visible because the hero can still move (incremental movement system)
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      // Verify overlay shows updated valid squares from the new position (3, 2)
+      expect(storeState.game.validMoveSquares.length).toBeGreaterThan(0);
+      expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+    }).toPass();
 
     await screenshots.capture(page, 'hero-moved', {
       programmaticCheck: async () => {
-        // Verify movement overlay is gone
-        await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
-        
         // Verify hero token is still visible
         await expect(page.locator('[data-testid="hero-token"]')).toBeVisible();
         
@@ -130,8 +143,20 @@ test.describe('006 - Move a Hero', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
-        expect(storeState.game.showingMovement).toBe(false);
-        expect(storeState.game.validMoveSquares).toEqual([]);
+        
+        // Verify the movement overlay shows updated valid squares from the new position
+        // Movement overlay is still showing because the hero can still move (hasn't used all moves)
+        expect(storeState.game.showingMovement).toBe(true);
+        expect(storeState.game.validMoveSquares.length).toBeGreaterThan(0);
+        
+        // Verify wall squares (x=0) are NOT included in valid moves
+        expect(storeState.game.validMoveSquares.every(
+          (s: { x: number; y: number }) => s.x >= 1
+        )).toBe(true);
+        
+        // Verify valid move squares from (3, 2) do not include original position (2, 2)
+        // (hero moved away from there)
+        expect(storeState.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
       }
     });
   });

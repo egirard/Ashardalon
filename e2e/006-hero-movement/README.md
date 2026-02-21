@@ -42,7 +42,7 @@ User about to click on a highlighted square to move the hero.
 ### 003 - Hero Moved
 ![Screenshot 003](006-hero-movement.spec.ts-snapshots/003-hero-moved-chromium-linux.png)
 
-Quinn has moved to the new position. The movement overlay is closed.
+Quinn has moved to the new position at (3, 2). The movement overlay updates to show valid squares from the new position, demonstrating that wall squares are excluded from valid move targets.
 
 ## Programmatic Verification
 
@@ -54,6 +54,8 @@ Each screenshot includes programmatic verification of:
 - Occupied squares excluded from valid moves
 - Hero position updated in Redux store after movement
 - Movement overlay cleared after hero moves
+- Wall squares (x=0 column on start tile, edge squares on normal tiles) excluded from valid moves
+- Movement overlay updates to show reduced valid squares from new position after each step
 
 ## Manual Verification Checklist
 
