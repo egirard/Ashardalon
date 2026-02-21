@@ -385,6 +385,7 @@
 
   .exploration-step.clickable.active:hover {
     border-color: #66bb6a;
+    transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(76, 175, 80, 0.4);
   }
 
