@@ -5,17 +5,12 @@
   import { assetPath } from '../utils';
   import { HeartIcon, SkullIcon, SwordIcon, ShieldIcon, LightningIcon, DiceIcon, TargetIcon, StarIcon, XIcon } from './icons';
   import CardDetailView, { type CardDetail } from './CardDetailView.svelte';
-  import LogViewer from './LogViewer.svelte';
-  import type { LogEntry } from '../store/types';
 
   // Condition type constant for consistency
   const DAZED_CONDITION = 'dazed';
 
   // State for selected card to show in detail view
   let selectedCardDetail: CardDetail | null = $state(null);
-
-  // State for showing log viewer
-  let showLogViewer = $state(false);
 
   interface Props {
     hero: Hero;
@@ -38,11 +33,11 @@
     treasurePlacementMessage?: string;
     /** Message to display for pending monster spawn */
     monsterSpawnMessage?: string;
-    /** Log entries for the game */
-    logEntries?: LogEntry[];
+    /** Callback to open the game log viewer */
+    onOpenLog?: () => void;
   }
 
-  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage, monsterSpawnMessage, logEntries = [] }: Props = $props();
+  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage, monsterSpawnMessage, onOpenLog }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -162,12 +157,7 @@
 
   // Handle opening the log viewer
   function handleOpenLog() {
-    showLogViewer = true;
-  }
-
-  // Handle closing the log viewer
-  function handleCloseLog() {
-    showLogViewer = false;
+    onOpenLog?.();
   }
 </script>
 
@@ -362,14 +352,6 @@
   {/if}
 
 </div>
-
-<!-- Log Viewer (shown as overlay) -->
-{#if showLogViewer}
-  <LogViewer 
-    logEntries={logEntries}
-    onDismiss={handleCloseLog}
-  />
-{/if}
 
 <style>
   .player-card {

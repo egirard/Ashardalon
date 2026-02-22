@@ -134,6 +134,7 @@
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
   import MonsterDecisionPrompt from "./MonsterDecisionPrompt.svelte";
   import PlayerCard from "./PlayerCard.svelte";
+  import LogViewer from "./LogViewer.svelte";
   import PlayerPowerCards from "./PlayerPowerCards.svelte";
   import TurnProgressCard from "./TurnProgressCard.svelte";
   import FeedbackButton from "./FeedbackButton.svelte";
@@ -280,6 +281,7 @@
   let activeExpandedAttackCardId: number | null = $state(null);
   let trapDisableResult: import('../store/types').TrapDisableResult | null = $state(null);
   let logEntries: import('../store/types').LogEntry[] = $state([]);
+  let showLogViewer = $state(false);
   let showScorchMarks: boolean = $state(false);
   let encounterCancelCost: number = $state(5);
   let pendingPowerCardFlips: Array<{ powerCardId: number; heroId: string }> = $state([]);
@@ -3573,7 +3575,7 @@
             boardPosition={edge}
             treasurePlacementMessage={isHeroActive && pendingTreasurePlacement ? 'Choose a tile to place the treasure token' : undefined}
             monsterSpawnMessage={isHeroActive && pendingMonsterSpawn ? `Choose a tile to spawn ${pendingMonsterSpawn.monsterName}` : undefined}
-            {logEntries}
+            onOpenLog={() => showLogViewer = true}
           />
           <!-- Turn Progress Card (shown only for active player) -->
           {#if isHeroActive}
@@ -3917,6 +3919,14 @@
       objective={scenario.objective}
       instructions={scenario.instructions}
       onDismiss={handleDismissScenarioIntroduction}
+    />
+  {/if}
+
+  <!-- Log Viewer (rendered at top level to avoid backdrop-filter containment issues) -->
+  {#if showLogViewer}
+    <LogViewer
+      logEntries={logEntries}
+      onDismiss={() => showLogViewer = false}
     />
   {/if}
 </div>
