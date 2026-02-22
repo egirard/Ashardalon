@@ -152,7 +152,7 @@
     arePositionsAdjacent,
     isWithinTileRange,
   } from "../store/combat";
-  import { findTileAtPosition, getTileOrSubTileId } from "../store/movement";
+  import { findTileAtPosition, getTileOrSubTileId, getTileBounds } from "../store/movement";
   import { getPowerCardById, type HeroPowerCards, POWER_CARDS } from "../store/powerCards";
   import { usePowerCard, restoreUsedDailyPower } from "../store/heroesSlice";
   import { parseActionCard, requiresMultiAttack, requiresMovementFirst } from "../store/actionCardParser";
@@ -763,14 +763,12 @@
       // South tiles: positioned after north tiles + start tile
       const northTileCount = Math.max(0, -bounds.minRow);
       
-      // Special case: tiles at col=±1, row=1 are adjacent to the start tile's south sub-tile
-      // They should align with y: 4-7 (south sub-tile), not be placed below the entire start tile
-      if ((tile.position.col === 1 || tile.position.col === -1) && tile.position.row === 1) {
-        // Position to align with south sub-tile which starts at y=4 (NORMAL_TILE_HEIGHT in pixels)
-        // The south sub-tile occupies y: 4-7, equivalent to the second half of the start tile
-        y = northTileCount * NORMAL_TILE_HEIGHT + NORMAL_TILE_HEIGHT;
+      if (tile.position.col !== 0) {
+        // Non-start-column tiles use uniform row spacing:
+        // row=1 aligns with the south sub-tile (y: 4-7), row=2 below that, etc.
+        y = northTileCount * NORMAL_TILE_HEIGHT + tile.position.row * NORMAL_TILE_HEIGHT;
       } else {
-        // Other south tiles: positioned after the full start tile
+        // Start-column tiles: positioned after the full start tile
         // Don't subtract START_TILE_NORTH_OFFSET_DIFF for south tiles.
         // That adjustment is for aligning the start tile with north tiles,
         // but south tiles should align with the start tile's south edge.
@@ -2492,10 +2490,9 @@
     // Use the same logic as monster spawning - find an empty square
     const tileWidth = 4;
     const tileHeight = targetTile.tileType === 'start' ? 8 : 4;
-    const tileBaseX = targetTile.position.col * tileWidth;
-    const tileBaseY = targetTile.position.row === 0 
-      ? 0 
-      : 8 + (targetTile.position.row - 1) * 4;
+    const tileBounds = getTileBounds(targetTile);
+    const tileBaseX = tileBounds.minX;
+    const tileBaseY = tileBounds.minY;
     
     // For start tile, respect walkable bounds and staircase
     const isStartTile = targetTile.tileType === 'start';
@@ -2685,23 +2682,15 @@
     // Get all valid squares from these tiles (excluding wall borders)
     const allSquares: Position[] = [];
     for (const tile of tilesInRange) {
-      const tileWidth = TILE_WIDTH;
-      const tileHeight = tile.id === 'start-tile' ? START_TILE_HEIGHT : NORMAL_TILE_HEIGHT;
-      
-      const minX = tile.position.col * tileWidth;
-      const maxX = minX + tileWidth - 1;
-      const minY = tile.position.row < 0 
-        ? tile.position.row * tileHeight
-        : tile.position.row === 0 
-          ? 0 
-          : START_TILE_HEIGHT + (tile.position.row - 1) * tileHeight;
-      const maxY = minY + tileHeight - 1;
+      const bounds = getTileBounds(tile);
+      const tileWidth = bounds.maxX - bounds.minX + 1;
+      const tileHeight = bounds.maxY - bounds.minY + 1;
       
       // Add interior squares (excluding borders)
-      for (let x = minX; x <= maxX; x++) {
-        for (let y = minY; y <= maxY; y++) {
-          const localX = x - minX;
-          const localY = y - minY;
+      for (let x = bounds.minX; x <= bounds.maxX; x++) {
+        for (let y = bounds.minY; y <= bounds.maxY; y++) {
+          const localX = x - bounds.minX;
+          const localY = y - bounds.minY;
           
           // Exclude wall squares (outer border)
           if (localX >= 1 && localX < tileWidth - 1 && localY >= 1 && localY < tileHeight - 1) {
