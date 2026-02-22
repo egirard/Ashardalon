@@ -31,6 +31,7 @@
     dismissHealingSurgeNotification,
     dismissEncounterEffectMessage,
     dismissExplorationPhaseMessage,
+    dismissVillainPhaseStepMessage,
     dismissPoisonedDamageNotification,
     dismissPoisonRecoveryNotification,
     attemptPoisonRecovery,
@@ -242,6 +243,7 @@
   let healingSurgeHpRestored: number | null = $state(null);
   let encounterEffectMessage: string | null = $state(null);
   let explorationPhaseMessage: string | null = $state(null);
+  let villainPhaseStepMessage: string | null = $state(null);
   let monsterExplorationEvent: { monsterId: string; monsterName: string; direction: import('../store/types').Direction; tileType: string } | null = $state(null);
   let explorationPhase: import('../store/gameSlice').ExplorationPhaseState = $state({ step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null });
   let recentlyPlacedTileId: string | null = $state(null);
@@ -290,6 +292,8 @@
   let explorationAutoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
   // Timer for showing pending monster card after tile animation
   let pendingMonsterDisplayTimer: ReturnType<typeof setTimeout> | null = null;
+  // Timer for auto-dismissing "Encounter card skipped" message
+  let villainStepDismissTimer: ReturnType<typeof setTimeout> | null = null;
   
   // Blade Barrier token placement state
   let pendingBladeBarrier: { 
@@ -371,6 +375,21 @@
       healingSurgeHpRestored = state.game.healingSurgeHpRestored;
       encounterEffectMessage = state.game.encounterEffectMessage;
       explorationPhaseMessage = state.game.explorationPhaseMessage;
+      // Update villain phase step message and manage auto-dismiss for "Encounter card skipped"
+      const newVillainStepMsg = state.game.villainPhaseStepMessage;
+      if (newVillainStepMsg !== villainPhaseStepMessage) {
+        villainPhaseStepMessage = newVillainStepMsg;
+        if (villainStepDismissTimer !== null) {
+          clearTimeout(villainStepDismissTimer);
+          villainStepDismissTimer = null;
+        }
+        if (newVillainStepMsg === 'Encounter card skipped') {
+          villainStepDismissTimer = setTimeout(() => {
+            villainStepDismissTimer = null;
+            store.dispatch(dismissVillainPhaseStepMessage());
+          }, 2000);
+        }
+      }
       monsterExplorationEvent = state.game.monsterExplorationEvent;
       explorationPhase = state.game.explorationPhase;
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
@@ -490,6 +509,7 @@
     healingSurgeHpRestored = state.game.healingSurgeHpRestored;
     encounterEffectMessage = state.game.encounterEffectMessage;
     explorationPhaseMessage = state.game.explorationPhaseMessage;
+    villainPhaseStepMessage = state.game.villainPhaseStepMessage;
     monsterExplorationEvent = state.game.monsterExplorationEvent;
     explorationPhase = state.game.explorationPhase;
     recentlyPlacedTileId = state.game.recentlyPlacedTileId;
@@ -1822,6 +1842,26 @@
     const monster = monsters.find((m) => m.instanceId === monsterMoveActionId);
     if (!monster) return "bottom";
     return heroEdgeMap[monster.controllerId] || "bottom";
+  }
+
+  // Compute the villain phase step message to show in TurnProgressCard.
+  // Combines store-level step message (encounter) with derived monster action text.
+  function getVillainPhaseDisplayMessage(): string | null {
+    if (turnState.currentPhase !== 'villain-phase') return null;
+    // Encounter step from store
+    if (villainPhaseStepMessage) return villainPhaseStepMessage;
+    // Monster attack in progress
+    if (monsterAttackResult !== null && monsterAttackerId !== null) {
+      return `${getMonsterAttackerName()} attacks ${getMonsterAttackTargetName()}`;
+    }
+    // Monster move in progress
+    if (monsterMoveActionId !== null) {
+      return `${getMonsterMoveActionName()} moves`;
+    }
+    // No monsters to activate
+    const controlled = getControlledMonsters();
+    if (controlled.length === 0) return 'No controlled monsters.\nSkipping villain phase.';
+    return null;
   }
 
   // Handle dismissing the defeat notification
@@ -3584,6 +3624,7 @@
               explorationPhaseState={explorationPhase}
               onPlaceTile={handlePlaceTile}
               onAddMonster={handleAddMonster}
+              villainPhaseStepMessage={getVillainPhaseDisplayMessage()}
             />
           {/if}
           <!-- Power cards to the right of player card -->

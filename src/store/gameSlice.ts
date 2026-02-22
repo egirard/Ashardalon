@@ -391,6 +391,8 @@ export interface GameState {
   pendingPowerCardFlips: Array<{ powerCardId: number; heroId: string }>;
   /** Encounter cancel cost (may be reduced by Perseverance card effect) */
   encounterCancelCost: number;
+  /** Current villain phase step message for display in turn progress (encounter drawing/skipped) */
+  villainPhaseStepMessage: string | null;
 }
 
 /**
@@ -752,6 +754,7 @@ const initialState: GameState = {
   eventHooks: initializeEventHooks(),
   pendingPowerCardFlips: [],
   encounterCancelCost: ENCOUNTER_CANCEL_COST,
+  villainPhaseStepMessage: null,
 };
 
 /**
@@ -2179,6 +2182,7 @@ export const gameSlice = createSlice({
           const encounter = getEncounterById(encounterId);
           if (encounter) {
             state.drawnEncounter = encounter;
+            state.villainPhaseStepMessage = 'Drawing encounter card';
             
             // Calculate encounter cancel cost (may be reduced by Perseverance)
             state.encounterCancelCost = getModifiedEncounterCancelCost(
@@ -2214,6 +2218,8 @@ export const gameSlice = createSlice({
             });
           }
         }
+      } else {
+        state.villainPhaseStepMessage = 'Encounter card skipped';
       }
     },
     /**
@@ -2231,6 +2237,7 @@ export const gameSlice = createSlice({
       state.monsterAttackerId = null;
       state.monsterAttackName = null;
       state.monsterMoveActionId = null;
+      state.villainPhaseStepMessage = null;
       
       // Clear encounter state
       state.drawnEncounter = null;
@@ -2429,6 +2436,7 @@ export const gameSlice = createSlice({
      */
     dismissEncounterCard: (state, action: PayloadAction<{ restoredDailyPower?: { heroId: string; cardId: number; cardName: string } | null } | undefined>) => {
       if (state.drawnEncounter) {
+        state.villainPhaseStepMessage = null;
         const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
         const activeHeroPosition = activeHeroToken?.position;
         
@@ -3423,6 +3431,7 @@ export const gameSlice = createSlice({
      */
     cancelEncounterCard: (state) => {
       if (state.drawnEncounter && state.partyResources.xp >= state.encounterCancelCost) {
+        state.villainPhaseStepMessage = null;
         const encounterName = state.drawnEncounter.name;
         const cancelCost = state.encounterCancelCost;
         
@@ -5101,6 +5110,12 @@ export const gameSlice = createSlice({
       state.recentlyPlacedTileId = null;
     },
     /**
+     * Dismiss the villain phase step message (e.g. "Encounter card skipped" auto-dismiss)
+     */
+    dismissVillainPhaseStepMessage: (state) => {
+      state.villainPhaseStepMessage = null;
+    },
+    /**
      * Dismiss the poisoned damage notification
      */
     dismissPoisonedDamageNotification: (state) => {
@@ -6101,6 +6116,7 @@ export const {
   dismissEncounterResult,
   placeTreasureToken,
   dismissExplorationPhaseMessage,
+  dismissVillainPhaseStepMessage,
   dismissPoisonedDamageNotification,
   dismissPoisonRecoveryNotification,
   attemptPoisonRecovery,
