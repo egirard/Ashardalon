@@ -610,7 +610,7 @@
     const step = explorationPhase.step;
 
     if (step === 'complete' || step === 'skipped') {
-      const delay = step === 'skipped' ? 1500 : 500;
+      const delay = step === 'skipped' ? 3500 : 500;
       const timer = setTimeout(() => store.dispatch(endExplorationPhase()), delay);
       return () => clearTimeout(timer);
     }

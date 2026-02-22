@@ -1725,6 +1725,7 @@ export const gameSlice = createSlice({
           exploredEdge: null,
           drawnMonster: null,
         };
+        state.explorationPhaseMessage = 'Not on unexplored edge,\nskipping exploration';
       }
       
       // Apply environment effects that trigger at end of Hero Phase
