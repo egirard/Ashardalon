@@ -29,6 +29,8 @@
     onPlaceTile?: () => void;
     /** Callback when adding monster step is clicked */
     onAddMonster?: () => void;
+    /** Current villain phase step message (encounter drawing/skipped, monster actions) */
+    villainPhaseStepMessage?: string | null;
   }
 
   let { 
@@ -46,7 +48,8 @@
     onUndo,
     explorationPhaseState = null,
     onPlaceTile,
-    onAddMonster
+    onAddMonster,
+    villainPhaseStepMessage = null
   }: Props = $props();
 
   // Define phase information
@@ -195,6 +198,13 @@
                 </div>
               {/if}
             {/if}
+          {/if}
+          
+          <!-- Villain Phase Steps (shown only for active villain phase) -->
+          {#if phase.id === currentPhase && currentPhase === 'villain-phase' && villainPhaseStepMessage}
+            <div class="villain-step animate-in" data-testid="villain-phase-step">
+              {villainPhaseStepMessage}
+            </div>
           {/if}
           
           <!-- Movement Controls (shown only for active hero phase with incremental movement) -->
@@ -404,6 +414,34 @@
     font-weight: bold;
   }
 
+  /* Villain phase step */
+  .villain-step {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.4rem;
+    margin-top: 0.2rem;
+    border-radius: 3px;
+    color: #e8a020;
+    background: rgba(232, 160, 32, 0.1);
+    border: 1px solid rgba(232, 160, 32, 0.4);
+    font-weight: bold;
+    white-space: pre-line;
+  }
+
+  .villain-step.animate-in {
+    animation: villain-step-in 0.4s ease-out forwards;
+  }
+
+  @keyframes villain-step-in {
+    from {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
   /* Movement controls */
   .movement-info {
     display: flex;
@@ -498,6 +536,10 @@
     .exploration-step.clickable.active {
       animation: none;
       background: rgba(76, 175, 80, 0.4);
+    }
+
+    .villain-step.animate-in {
+      animation: none;
     }
   }
 </style>
