@@ -3791,7 +3791,8 @@
   {/if}
 
   <!-- Encounter Card Display (shown during villain phase when no exploration occurred) -->
-  {#if drawnEncounter}
+  <!-- Wait for monster card to be dismissed before showing encounter card -->
+  {#if drawnEncounter && !recentlySpawnedMonsterId}
     <EncounterCard
       encounter={drawnEncounter}
       partyXp={partyResources.xp}
