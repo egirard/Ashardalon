@@ -83,6 +83,7 @@
     font-weight: bold;
     text-align: left;
     max-width: 500px;
+    white-space: pre-line;
   }
   
 
