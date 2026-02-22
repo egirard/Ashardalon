@@ -20,7 +20,13 @@ This project brings the excitement of the Wrath of Ashardalon board game to your
 1. Visit the [deployed game](https://egirard.github.io/Ashardalon/)
 2. No installation required - the game runs directly in your browser
 3. Gather your party and start exploring!
+4. Note that this project is not yet finished - there are some known (and many many unknown) issues remaining, so please use the "file feedback" button whenever you see something wrong.
 
+### Major Known Issues ###
+
+1. Only one scenario is currently supported.  So complex rooms and boss monsters aren't yet in play.
+2. There are probably lots of "I should be able to use this power to change this effect" that aren't yet implemented.
+   
 ### Local Development
 
 To run the project locally:
