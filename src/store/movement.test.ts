@@ -368,6 +368,33 @@ describe("movement utilities", () => {
         expect(bounds).toEqual({ minX: 4, maxX: 7, minY: 0, maxY: 3 });
       });
 
+      it("should return correct bounds for tile adjacent to start tile south sub-tile (col=1, row=1)", () => {
+        const tile: PlacedTile = {
+          id: 'tile-1',
+          tileType: 'tile-2exit-a',
+          position: { col: 1, row: 1 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'open' },
+        };
+        
+        const bounds = getTileBounds(tile);
+        expect(bounds).toEqual({ minX: 4, maxX: 7, minY: 4, maxY: 7 });
+      });
+
+      it("should return correct bounds for tile two east of start at row=1 (col=2, row=1)", () => {
+        const tile: PlacedTile = {
+          id: 'tile-2',
+          tileType: 'tile-2exit-a',
+          position: { col: 2, row: 1 },
+          rotation: 0,
+          edges: { north: 'unexplored', south: 'unexplored', east: 'unexplored', west: 'open' },
+        };
+        
+        // This tile is placed east of col=1 row=1, so should align with y: 4-7
+        const bounds = getTileBounds(tile);
+        expect(bounds).toEqual({ minX: 8, maxX: 11, minY: 4, maxY: 7 });
+      });
+
       it("should return correct bounds for tile north of start", () => {
         const northTile: PlacedTile = {
           id: 'tile-1',
