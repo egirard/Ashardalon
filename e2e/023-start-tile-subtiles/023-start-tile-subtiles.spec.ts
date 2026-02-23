@@ -108,32 +108,32 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
       }
     });
 
-    // STEP 4: Verify start tile has all 6 unexplored edges (2 per sub-tile on east/west sides)
+    // STEP 4: Verify start tile has 4 unexplored edges (north, south, and 2 east)
     await screenshots.capture(page, 'start-tile-unexplored-edges', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         
-        // Start tile should have 6 unexplored edges:
+        // Start tile should have 4 unexplored edges:
         // - 1 north (spans full width)
         // - 1 south (spans full width)
         // - 2 east (one per sub-tile)
-        // - 2 west (one per sub-tile)
+        // The west side is a solid wall with no unexplored edges
         const startTileEdges = storeState.game.dungeon.unexploredEdges.filter(
           (e: any) => e.tileId === 'start-tile'
         );
-        expect(startTileEdges).toHaveLength(6);
+        expect(startTileEdges).toHaveLength(4);
         
-        // Verify all 4 directions are present
+        // Verify correct directions are present
         const directions = startTileEdges.map((e: any) => e.direction);
         expect(directions).toContain('north');
         expect(directions).toContain('south');
         expect(directions).toContain('east');
-        expect(directions).toContain('west');
+        expect(directions).not.toContain('west');
         
-        // Verify visual unexplored edge indicators (6 total)
-        await expect(page.locator('[data-testid="unexplored-edge"]')).toHaveCount(6);
+        // Verify visual unexplored edge indicators (4 total)
+        await expect(page.locator('[data-testid="unexplored-edge"]')).toHaveCount(4);
       }
     });
   });

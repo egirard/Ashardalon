@@ -756,6 +756,9 @@ export function getStartTileSubTileId(y: number): StartTileSubTileId | null {
  * 
  * For visual and exploration purposes, it's treated as one tile with 4 edges.
  * For movement and tile counting purposes, each sub-tile is treated separately.
+ * 
+ * The west side of the start tile is a solid wall (no exits).
+ * The east side has exits at the north and south sub-tile positions.
  */
 export const START_TILE: PlacedTile = {
   id: 'start-tile',
@@ -766,7 +769,7 @@ export const START_TILE: PlacedTile = {
     north: 'unexplored',
     south: 'unexplored',
     east: 'unexplored',
-    west: 'unexplored',
+    west: 'wall',
   },
 };
 

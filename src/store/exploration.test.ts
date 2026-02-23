@@ -188,7 +188,7 @@ describe("exploration", () => {
       expect(result).toEqual({ tileId: "start-tile", direction: "east", subTileId: "start-tile-north" });
     });
 
-    it("should return the west edge when hero is on west edge position", () => {
+    it("should return null when hero is on west edge position (west is a solid wall)", () => {
       const hero: HeroToken = {
         heroId: "quinn",
         position: { x: 1, y: 1 },
@@ -196,8 +196,8 @@ describe("exploration", () => {
       const dungeon = initializeDungeon();
       
       const result = checkExploration(hero, dungeon);
-      // Hero at y=1 is in north sub-tile, so expect north sub-tile west edge
-      expect(result).toEqual({ tileId: "start-tile", direction: "west", subTileId: "start-tile-north" });
+      // West side of start tile is a solid wall - no exploration possible
+      expect(result).toBeNull();
     });
 
     it("should return null when edge is already explored", () => {
@@ -532,15 +532,15 @@ describe("exploration", () => {
       expect(dungeon.tiles[0].id).toBe("start-tile");
     });
 
-    it("should have six unexplored edges on the start tile (2 per east/west sub-tile)", () => {
+    it("should have four unexplored edges on the start tile (north, south, and 2 east sub-tiles)", () => {
       const dungeon = initializeDungeon();
       
-      // Start tile has 6 unexplored edges:
+      // Start tile has 4 unexplored edges:
       // - 1 north (spans full width)
       // - 1 south (spans full width)
       // - 2 east (one per sub-tile: north and south)
-      // - 2 west (one per sub-tile: north and south)
-      expect(dungeon.unexploredEdges).toHaveLength(6);
+      // The west side is a solid wall with no unexplored edges
+      expect(dungeon.unexploredEdges).toHaveLength(4);
       expect(dungeon.unexploredEdges).toContainEqual({
         tileId: "start-tile",
         direction: "north",
@@ -559,16 +559,8 @@ describe("exploration", () => {
         direction: "east",
         subTileId: "start-tile-south",
       });
-      expect(dungeon.unexploredEdges).toContainEqual({
-        tileId: "start-tile",
-        direction: "west",
-        subTileId: "start-tile-north",
-      });
-      expect(dungeon.unexploredEdges).toContainEqual({
-        tileId: "start-tile",
-        direction: "west",
-        subTileId: "start-tile-south",
-      });
+      // West side is a solid wall - no unexplored west edges
+      expect(dungeon.unexploredEdges.some(e => e.direction === "west")).toBe(false);
     });
 
     it("should start with an empty tile deck", () => {
@@ -877,24 +869,19 @@ describe("exploration", () => {
         )
       ).toBe(false);
       
-      // But the south sub-tile's east edge should still be present
+      // And the south sub-tile's east edge should still be present
       expect(
         result.unexploredEdges.some(
           (e) => e.tileId === "start-tile" && e.direction === "east" && e.subTileId === "start-tile-south"
         )
       ).toBe(true);
       
-      // And both west edges should still be present
+      // West side is a solid wall - no west edges should exist
       expect(
         result.unexploredEdges.some(
-          (e) => e.tileId === "start-tile" && e.direction === "west" && e.subTileId === "start-tile-north"
+          (e) => e.tileId === "start-tile" && e.direction === "west"
         )
-      ).toBe(true);
-      expect(
-        result.unexploredEdges.some(
-          (e) => e.tileId === "start-tile" && e.direction === "west" && e.subTileId === "start-tile-south"
-        )
-      ).toBe(true);
+      ).toBe(false);
     });
   });
 
