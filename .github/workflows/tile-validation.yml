@@ -1,0 +1,44 @@
+name: Tile Validation Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'public/assets/Tile_**.png'
+      - 'src/store/types.ts'
+      - 'tools/validate_tiles.py'
+  push:
+    branches:
+      - main
+    paths:
+      - 'public/assets/Tile_**.png'
+      - 'src/store/types.ts'
+      - 'tools/validate_tiles.py'
+
+jobs:
+  tile-validation:
+    name: Tile Metadata Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install Pillow numpy
+
+      - name: Run tile validation
+        run: python tools/validate_tiles.py --check --output tile-validation-report.json
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tile-validation-report
+          path: tile-validation-report.json
+          retention-days: 30
