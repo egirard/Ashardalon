@@ -664,6 +664,9 @@
     // Don't auto-activate if there's an action result being displayed
     if (monsterAttackResult !== null || monsterMoveActionId !== null) return;
     
+    // Don't auto-activate while a monster exploration notification is showing
+    if (monsterExplorationEvent !== null) return;
+    
     // Don't auto-end if there's an encounter card being displayed
     if (drawnEncounter !== null) return;
     
