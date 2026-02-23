@@ -31,6 +31,8 @@
     onAddMonster?: () => void;
     /** Current villain phase step message (encounter drawing/skipped, monster actions) */
     villainPhaseStepMessage?: string | null;
+    /** Maximum number of actions available for the hero this turn (defaults to 2, 1 if dazed) */
+    heroMaxActions?: number;
   }
 
   let { 
@@ -49,7 +51,8 @@
     explorationPhaseState = null,
     onPlaceTile,
     onAddMonster,
-    villainPhaseStepMessage = null
+    villainPhaseStepMessage = null,
+    heroMaxActions = 2
   }: Props = $props();
 
   // Define phase information
@@ -86,7 +89,7 @@
     // 2. Currently IN the hero phase
     if (phaseId === 'hero-phase' && currentPhase === 'hero-phase' && heroTurnActions) {
       const actionsTaken = heroTurnActions.actionsTaken.length;
-      const totalActions = 2;
+      const totalActions = heroMaxActions;
       return `Hero Phase (${actionsTaken} of ${totalActions} actions)`;
     }
     return phases.find(p => p.id === phaseId)?.name || '';

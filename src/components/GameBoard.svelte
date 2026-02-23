@@ -3628,6 +3628,7 @@
               onPlaceTile={handlePlaceTile}
               onAddMonster={handleAddMonster}
               villainPhaseStepMessage={getVillainPhaseDisplayMessage()}
+              heroMaxActions={isCurrentHeroDazed() ? 1 : 2}
             />
           {/if}
           <!-- Power cards to the right of player card -->
