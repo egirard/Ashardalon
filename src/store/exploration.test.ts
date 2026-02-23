@@ -748,6 +748,103 @@ describe("exploration", () => {
       expect(startTile?.edges.north).toBe("open");
     });
 
+    it("should not add unexplored edge when an adjacent tile already exists in that direction", () => {
+      // Set up a dungeon where placing a new tile will be directly adjacent to an already-placed tile
+      // Existing tile at (0, -2), new tile will be placed at (0, -1). The new tile's north faces (0,-2).
+      const dungeon = initializeDungeon();
+
+      const existingAboveTile: PlacedTile = {
+        id: "tile-above",
+        tileType: "tile-black-2exit-a",
+        position: { col: 0, row: -2 },
+        rotation: 0,
+        edges: { north: "wall", south: "unexplored", east: "wall", west: "wall" },
+      };
+      const dungeonWithTile: DungeonState = {
+        ...dungeon,
+        tiles: [...dungeon.tiles, existingAboveTile],
+        unexploredEdges: [
+          ...dungeon.unexploredEdges,
+          { tileId: "tile-above", direction: "south" },
+        ],
+      };
+
+      // Explore north from start tile, placing a new tile at (0, -1)
+      // The new tile has a north edge that faces existingAboveTile at (0, -2)
+      const exploredEdge: TileEdge = { tileId: "start-tile", direction: "north" };
+      const newTile: PlacedTile = {
+        id: "tile-new",
+        tileType: "tile-black-2exit-a",
+        position: { col: 0, row: -1 },
+        rotation: 0,
+        edges: { north: "unexplored", south: "open", east: "unexplored", west: "unexplored" },
+      };
+
+      const result = updateDungeonAfterExploration(dungeonWithTile, exploredEdge, newTile);
+
+      // North edge of new tile faces existingAboveTile — should NOT be in unexploredEdges
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-new" && e.direction === "north")).toBe(false);
+      // The new tile's north edge should be 'open'
+      const placedNewTile = result.tiles.find(t => t.id === "tile-new");
+      expect(placedNewTile?.edges.north).toBe("open");
+      // existingAboveTile's south edge should now be 'open'
+      const placedAboveTile = result.tiles.find(t => t.id === "tile-above");
+      expect(placedAboveTile?.edges.south).toBe("open");
+      // existingAboveTile's south unexplored edge should be removed
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-above" && e.direction === "south")).toBe(false);
+      // East and west are still unexplored
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-new" && e.direction === "east")).toBe(true);
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-new" && e.direction === "west")).toBe(true);
+    });
+
+    it("should connect edges and not add unexplored edge when new tile is adjacent to existing tile", () => {
+      // Set up dungeon where placing a new tile will be adjacent to an already-placed tile
+      const dungeon = initializeDungeon();
+
+      // Tile already placed to the east at col=1, row=-1
+      const existingEastTile: PlacedTile = {
+        id: "tile-east",
+        tileType: "tile-black-2exit-a",
+        position: { col: 1, row: -1 },
+        rotation: 270,
+        edges: { north: "wall", south: "wall", east: "unexplored", west: "unexplored" },
+      };
+      const dungeonWithTile: DungeonState = {
+        ...dungeon,
+        tiles: [...dungeon.tiles, existingEastTile],
+        unexploredEdges: [
+          ...dungeon.unexploredEdges,
+          { tileId: "tile-east", direction: "west" },
+        ],
+      };
+
+      // New tile placed at (0, -1) - its east edge faces existingEastTile at (1, -1)
+      const exploredEdge: TileEdge = { tileId: "start-tile", direction: "north" };
+      const newTile: PlacedTile = {
+        id: "tile-new",
+        tileType: "tile-black-2exit-a",
+        position: { col: 0, row: -1 },
+        rotation: 0,
+        edges: { north: "unexplored", south: "open", east: "unexplored", west: "unexplored" },
+      };
+
+      const result = updateDungeonAfterExploration(dungeonWithTile, exploredEdge, newTile);
+
+      // The east edge of the new tile faces existingEastTile - should NOT be in unexploredEdges
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-new" && e.direction === "east")).toBe(false);
+      // The new tile's east edge should be 'open' in the tiles array
+      const placedNewTile = result.tiles.find(t => t.id === "tile-new");
+      expect(placedNewTile?.edges.east).toBe("open");
+      // The existingEastTile's west edge should now be 'open'
+      const placedEastTile = result.tiles.find(t => t.id === "tile-east");
+      expect(placedEastTile?.edges.west).toBe("open");
+      // The existingEastTile's west unexplored edge should be removed
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-east" && e.direction === "west")).toBe(false);
+      // Other edges of the new tile should still be in unexploredEdges
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-new" && e.direction === "north")).toBe(true);
+      expect(result.unexploredEdges.some(e => e.tileId === "tile-new" && e.direction === "west")).toBe(true);
+    });
+
     it("should only remove the explored sub-tile edge, not all edges with same direction", () => {
       const dungeon = initializeDungeon();
       

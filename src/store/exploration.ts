@@ -430,6 +430,18 @@ export function shuffleTileDeck(
 }
 
 /**
+ * Get the grid position adjacent to a given position in a direction
+ */
+function getAdjacentPosition(position: GridPosition, direction: Direction): GridPosition {
+  switch (direction) {
+    case 'north': return { col: position.col, row: position.row - 1 };
+    case 'south': return { col: position.col, row: position.row + 1 };
+    case 'east': return { col: position.col + 1, row: position.row };
+    case 'west': return { col: position.col - 1, row: position.row };
+  }
+}
+
+/**
  * Update dungeon state after exploration
  */
 export function updateDungeonAfterExploration(
@@ -439,7 +451,7 @@ export function updateDungeonAfterExploration(
 ): DungeonState {
   // Remove the explored edge from unexplored edges
   // For edges with subTileId, must match all three: tileId, direction, AND subTileId
-  const updatedUnexploredEdges = dungeon.unexploredEdges.filter(
+  let updatedUnexploredEdges = dungeon.unexploredEdges.filter(
     e => !(
       e.tileId === exploredEdge.tileId && 
       e.direction === exploredEdge.direction &&
@@ -447,16 +459,8 @@ export function updateDungeonAfterExploration(
     )
   );
   
-  // Add new unexplored edges from the new tile (excluding the connected edge)
-  const connectingEdge = getOppositeDirection(exploredEdge.direction);
-  const directions: Direction[] = ['north', 'south', 'east', 'west'];
-  
-  const newUnexploredEdges = directions
-    .filter(dir => dir !== connectingEdge && newTile.edges[dir] === 'unexplored')
-    .map(dir => ({ tileId: newTile.id, direction: dir }));
-  
   // Update the existing tile's edge to 'open'
-  const updatedTiles = dungeon.tiles.map(tile => {
+  let updatedTiles = dungeon.tiles.map(tile => {
     if (tile.id === exploredEdge.tileId) {
       return {
         ...tile,
@@ -468,9 +472,46 @@ export function updateDungeonAfterExploration(
     }
     return tile;
   });
+
+  // Add new unexplored edges from the new tile (excluding the connected edge),
+  // but skip any direction where an adjacent tile already exists on the map.
+  const connectingEdge = getOppositeDirection(exploredEdge.direction);
+  const directions: Direction[] = ['north', 'south', 'east', 'west'];
+  const newTileEdges = { ...newTile.edges };
+  const newUnexploredEdges: TileEdge[] = [];
+
+  for (const dir of directions) {
+    if (dir === connectingEdge) continue;
+    if (newTile.edges[dir] !== 'unexplored') continue;
+
+    const adjacentPos = getAdjacentPosition(newTile.position, dir);
+    const adjacentTile = updatedTiles.find(
+      t => t.position.col === adjacentPos.col && t.position.row === adjacentPos.row
+    );
+
+    if (adjacentTile) {
+      // Adjacent tile already exists — connect the edges instead of marking unexplored
+      newTileEdges[dir] = 'open';
+      const adjacentConnectingDir = getOppositeDirection(dir);
+      updatedTiles = updatedTiles.map(tile => {
+        if (tile.id === adjacentTile.id) {
+          return {
+            ...tile,
+            edges: { ...tile.edges, [adjacentConnectingDir]: 'open' as const },
+          };
+        }
+        return tile;
+      });
+      updatedUnexploredEdges = updatedUnexploredEdges.filter(
+        e => !(e.tileId === adjacentTile.id && e.direction === adjacentConnectingDir)
+      );
+    } else {
+      newUnexploredEdges.push({ tileId: newTile.id, direction: dir });
+    }
+  }
   
   return {
-    tiles: [...updatedTiles, newTile],
+    tiles: [...updatedTiles, { ...newTile, edges: newTileEdges }],
     unexploredEdges: [...updatedUnexploredEdges, ...newUnexploredEdges],
     tileDeck: dungeon.tileDeck,
   };
