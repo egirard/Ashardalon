@@ -27,7 +27,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import numpy as np
@@ -56,10 +56,43 @@ OPEN_RATIO_THRESHOLD = 0.85 # Center/corner ratio above this → likely open
 
 # Tile grid constants (must match NORMAL_TILE_SIZE in src/store/movement.ts)
 TILE_GRID_SIZE = 4           # Each tile is 4×4 cells (0-based, 0..3)
+MAX_IDX = TILE_GRID_SIZE - 1 # = 3
 
-# For scorch-mark image analysis
+# Per-cell image analysis thresholds
+# Cells whose interior dark% is above this are classified as 'wall' by image
+CELL_WALL_DARK_PCT = 40.0
+# How much darker the centre of a scorch-mark cell must be vs adjacent floor
+SCORCH_CENTRE_RATIO = 0.75   # centre brightness / cell mean below this → scorch
+
+# For scorch-mark legacy image analysis
 SCORCH_DETECTION_RADIUS = 30   # Pixel radius around scorch position to inspect
 SCORCH_DARK_THRESHOLD = 60     # Mean brightness below this → dark/burned region
+
+# ---------------------------------------------------------------------------
+# Scorch-mark → arrow direction mapping
+# In WoA each tile has a main entrance arrow pointing toward one edge.
+# The scorch mark (spawn position) is always in the inner quadrant opposite
+# the entrance, so its standard (x,y) position determines arrow direction.
+#
+#   scorch (1,2) → arrow points SOUTH → arrow half-cells at (1,3) and (2,3)
+#   scorch (2,1) → arrow points NORTH → arrow half-cells at (1,0) and (2,0)
+#   scorch (1,1) → arrow points WEST  → arrow half-cells at (0,1) and (0,2)
+#   scorch (2,2) → arrow points EAST  → arrow half-cells at (3,1) and (3,2)
+# ---------------------------------------------------------------------------
+_SCORCH_TO_ARROW: Dict[Tuple[int, int], Tuple[str, List[Tuple[int, int]]]] = {
+    (1, 2): ("south", [(1, 3), (2, 3)]),
+    (2, 1): ("north", [(1, 0), (2, 0)]),
+    (1, 1): ("west",  [(0, 1), (0, 2)]),
+    (2, 2): ("east",  [(3, 1), (3, 2)]),
+}
+
+# Cell type labels used throughout the report
+CELL_TYPE_EMPTY        = "empty"
+CELL_TYPE_WALL         = "wall"
+CELL_TYPE_SCORCH_MARK  = "scorch_mark"
+CELL_TYPE_WHITE_ARROW  = "white_arrow"
+CELL_TYPE_BLACK_ARROW  = "black_arrow"
+CELL_TYPE_UNKNOWN      = "unknown"
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +298,264 @@ def _is_scorch_on_wall(scorch_pos: dict, edges: dict) -> tuple:
     return False, ""
 
 
+# ---------------------------------------------------------------------------
+# Per-cell analysis
+# ---------------------------------------------------------------------------
+
+def _get_arrow_cells(scorch_pos: dict) -> Tuple[Optional[str], List[Tuple[int, int]]]:
+    """
+    Return (arrow_direction, [(cx,cy), (cx,cy)]) for the two arrow half-cells,
+    or (None, []) if the scorch position is non-standard.
+    """
+    key = (scorch_pos["x"], scorch_pos["y"])
+    info = _SCORCH_TO_ARROW.get(key)
+    if info is None:
+        return None, []
+    direction, cells = info
+    return direction, cells
+
+
+def _is_wall_cell(cx: int, cy: int, edges: dict) -> bool:
+    """Return True if the cell at (cx,cy) is a wall cell given edge definitions."""
+    if edges.get("north") == "wall" and cy == 0:
+        return True
+    if edges.get("south") == "wall" and cy == MAX_IDX:
+        return True
+    if edges.get("west") == "wall" and cx == 0:
+        return True
+    if edges.get("east") == "wall" and cx == MAX_IDX:
+        return True
+    return False
+
+
+def _cell_image_stats(arr: np.ndarray, cx: int, cy: int) -> Dict[str, float]:
+    """
+    Compute image statistics for a single grid cell.
+
+    Returns a dict with brightness metrics useful for classifying the cell type.
+    """
+    tile_h, tile_w = arr.shape[:2]
+    cell_w = tile_w // TILE_GRID_SIZE
+    cell_h = tile_h // TILE_GRID_SIZE
+    x1, x2 = cx * cell_w, (cx + 1) * cell_w
+    y1, y2 = cy * cell_h, (cy + 1) * cell_h
+
+    full = arr[y1:y2, x1:x2, :3].astype(float)
+    mean_brightness = float(full.mean())
+    dark_pct = float((full.mean(axis=2) < 50).mean() * 100)
+
+    # Interior region (inner 50% of cell), ignoring border pixels
+    margin_x = cell_w // 4
+    margin_y = cell_h // 4
+    interior = arr[y1 + margin_y: y2 - margin_y,
+                   x1 + margin_x: x2 - margin_x, :3].astype(float)
+    interior_brightness = float(interior.mean()) if interior.size else mean_brightness
+    interior_dark_pct = float(
+        (interior.mean(axis=2) < 50).mean() * 100
+    ) if interior.size else dark_pct
+
+    # Variance (high variance may indicate a pattern/shape, not plain texture)
+    variance = float(full.std())
+
+    return {
+        "mean_brightness": round(mean_brightness, 1),
+        "interior_brightness": round(interior_brightness, 1),
+        "dark_pct": round(dark_pct, 1),
+        "interior_dark_pct": round(interior_dark_pct, 1),
+        "variance": round(variance, 1),
+    }
+
+
+def _infer_cell_type_from_image(
+    stats: Dict[str, float],
+    cx: int,
+    cy: int,
+    edges: dict,
+    is_black_tile: bool,
+    arrow_cells: List[Tuple[int, int]],
+) -> str:
+    """
+    Infer a cell's type purely from its image statistics.
+
+    The analysis is conservative to avoid false positives from the tile's
+    stone-border artwork (which makes corner cells and edge cells dark
+    regardless of whether the edge is 'open' or 'wall'):
+
+    - CORNER cells (cx ∈ {0,3} AND cy ∈ {0,3}): always dark stone blocks in
+      the artwork; return UNKNOWN (metadata is authoritative).
+    - EDGE cells (at row 0/3 or col 0/3) on OPEN edges: can appear dark due
+      to dungeon-floor texture at the corridor mouth; return WALL only when
+      interior_dark_pct > 85 % (extremely high confidence).
+    - INTERIOR cells (1 ≤ cx ≤ 2 AND 1 ≤ cy ≤ 2): reliable interior_dark_pct
+      discriminates wall from floor; threshold ≥ 40 %.
+    - WALL EDGE cells (at row/col of a wall edge): reliably dark; any dark
+      reading ≥ 40 % is treated as WALL.
+
+    Returns one of the CELL_TYPE_* constants.
+    """
+    int_dark = stats["interior_dark_pct"]
+    is_corner = (cx in (0, MAX_IDX)) and (cy in (0, MAX_IDX))
+    is_edge = (cx == 0) or (cx == MAX_IDX) or (cy == 0) or (cy == MAX_IDX)
+
+    # Corner cells – always ambiguous in scanned tile images
+    if is_corner:
+        return CELL_TYPE_UNKNOWN
+
+    # Determine if this edge cell faces a wall or open side
+    if is_edge:
+        faces_wall = _is_wall_cell(cx, cy, edges)
+        if faces_wall:
+            # Wall edge: normal wall threshold
+            if int_dark >= CELL_WALL_DARK_PCT:
+                return CELL_TYPE_WALL
+            return CELL_TYPE_UNKNOWN
+        else:
+            # Open edge: corridor mouth can look dark – only very confident wall
+            if int_dark > 85.0:
+                return CELL_TYPE_WALL
+            # Check if this is an arrow cell
+            if (cx, cy) in arrow_cells:
+                return CELL_TYPE_BLACK_ARROW if is_black_tile else CELL_TYPE_WHITE_ARROW
+            return CELL_TYPE_EMPTY
+
+    # Interior cell (not at any edge)
+    if int_dark >= CELL_WALL_DARK_PCT:
+        return CELL_TYPE_WALL
+
+    # Check for arrow cells inside the grid (non-standard positions)
+    if (cx, cy) in arrow_cells:
+        return CELL_TYPE_BLACK_ARROW if is_black_tile else CELL_TYPE_WHITE_ARROW
+
+    # Scorch mark: interior moderately dark but below wall threshold
+    if int_dark > 5.0 and stats["interior_brightness"] < 90:
+        return CELL_TYPE_SCORCH_MARK
+
+    return CELL_TYPE_EMPTY
+
+
+def _classify_cell(
+    arr: Optional[np.ndarray],
+    cx: int,
+    cy: int,
+    tile_def: "TileDefinition",
+    arrow_cells: List[Tuple[int, int]],
+) -> Dict[str, Any]:
+    """
+    Classify one grid cell using both metadata and image analysis.
+
+    Returns a dict with:
+      meta_type  – classification derived from metadata (authoritative)
+      img_type   – classification inferred from image pixels (best-effort)
+      mismatch   – True when img_type disagrees with meta_type
+      stats      – raw image statistics dict (present only when array is given)
+    """
+    edges = tile_def.default_edges
+    scorch = tile_def.scorch_mark_position
+    is_black = tile_def.is_black_tile
+
+    # --- Metadata-based type ------------------------------------------------
+    if cx == scorch["x"] and cy == scorch["y"]:
+        meta_type = CELL_TYPE_SCORCH_MARK
+    elif (cx, cy) in arrow_cells:
+        meta_type = CELL_TYPE_BLACK_ARROW if is_black else CELL_TYPE_WHITE_ARROW
+    elif _is_wall_cell(cx, cy, edges):
+        meta_type = CELL_TYPE_WALL
+    else:
+        meta_type = CELL_TYPE_EMPTY
+
+    # --- Image-based type ---------------------------------------------------
+    img_type = CELL_TYPE_UNKNOWN
+    stats: dict = {}
+    if arr is not None:
+        stats = _cell_image_stats(arr, cx, cy)
+        img_type = _infer_cell_type_from_image(
+            stats, cx, cy, edges, is_black, arrow_cells
+        )
+
+    # A mismatch is flagged only for meaningful disagreements:
+    # 1. Image says WALL at a cell that metadata says should be accessible
+    #    (empty/scorch/arrow on an open edge) – this is the PR #543 pattern.
+    # 2. Scorch mark visually appears as dark wall at an accessible position.
+    # Exception: black_arrow cells are intentionally dark (black triangle on
+    # stone floor), so a 'wall' reading there is expected and NOT a mismatch.
+    mismatch = False
+    if img_type not in (CELL_TYPE_UNKNOWN, CELL_TYPE_WALL):
+        pass  # image does not infer wall – no mismatch
+    elif img_type == CELL_TYPE_WALL:
+        if meta_type == CELL_TYPE_WALL:
+            pass  # expected dark wall
+        elif meta_type == CELL_TYPE_BLACK_ARROW:
+            pass  # black arrows ARE dark – suppress false positive
+        else:
+            # Image says wall but metadata says accessible
+            mismatch = True
+
+    result: dict = {
+        "x": cx,
+        "y": cy,
+        "meta_type": meta_type,
+        "img_type": img_type,
+        "mismatch": mismatch,
+    }
+    if stats:
+        result["stats"] = stats
+    return result
+
+
+def analyze_tile_cells(
+    tile_def: "TileDefinition",
+    arr: Optional[np.ndarray],
+) -> Dict[str, Any]:
+    """
+    Perform per-cell analysis for a tile.
+
+    Returns a dict:
+      arrow_direction  – 'north'|'south'|'east'|'west'|None
+      arrow_cells      – list of (cx,cy) pairs for the two arrow half-cells
+      cells            – 4×4 list-of-lists (row-major) of cell dicts
+      mismatches       – list of cell dicts where metadata/image disagree
+      non_standard_scorch – True when scorch position has no standard arrow mapping
+    """
+    arrow_direction, arrow_cells = _get_arrow_cells(tile_def.scorch_mark_position)
+    non_standard = arrow_direction is None
+
+    cells: List[List[Dict[str, Any]]] = []
+    mismatches: List[Dict[str, Any]] = []
+
+    for cy in range(TILE_GRID_SIZE):
+        row = []
+        for cx in range(TILE_GRID_SIZE):
+            cell = _classify_cell(arr, cx, cy, tile_def, arrow_cells)
+            row.append(cell)
+            if cell["mismatch"]:
+                mismatches.append(cell)
+        cells.append(row)
+
+    return {
+        "arrow_direction": arrow_direction,
+        "arrow_cells": arrow_cells,
+        "cells": cells,
+        "mismatches": mismatches,
+        "non_standard_scorch": non_standard,
+    }
+
+
+def _cell_map_str(cell_analysis: dict) -> str:
+    """Render a compact 4×4 ASCII map of per-cell metadata types."""
+    abbrev = {
+        CELL_TYPE_EMPTY:       ".",
+        CELL_TYPE_WALL:        "#",
+        CELL_TYPE_SCORCH_MARK: "S",
+        CELL_TYPE_WHITE_ARROW: "w",
+        CELL_TYPE_BLACK_ARROW: "b",
+        CELL_TYPE_UNKNOWN:     "?",
+    }
+    rows = []
+    for row in cell_analysis["cells"]:
+        rows.append(" ".join(abbrev.get(c["meta_type"], "?") for c in row))
+    return "\n".join(rows)
+
+
 def _count_open_edges(edges: dict) -> int:
     return sum(1 for v in edges.values() if v == "open")
 
@@ -293,6 +584,7 @@ def validate_tile(tile_def: TileDefinition, assets_dir: str) -> dict:
     issues = []
     edge_analysis = {}
     scorch_info = {}
+    cell_analysis: dict = {}
 
     # --- Image-based analysis -----------------------------------------------
     if arr is None:
@@ -330,6 +622,39 @@ def validate_tile(tile_def: TileDefinition, assets_dir: str) -> dict:
         # Scorch mark image analysis (informational only)
         scorch_pos = tile_def.scorch_mark_position
         scorch_info = _detect_scorch_mark(arr, scorch_pos, tile_size=tile_w)
+
+    # --- Per-cell analysis (metadata + image) --------------------------------
+    cell_analysis = analyze_tile_cells(tile_def, arr)
+
+    if cell_analysis["non_standard_scorch"]:
+        sp = tile_def.scorch_mark_position
+        issues.append({
+            "severity": "info",
+            "code": "NON_STANDARD_SCORCH",
+            "message": (
+                f"Scorch mark at ({sp['x']},{sp['y']}) does not map to a "
+                "standard arrow direction; arrow cells cannot be determined. "
+                "Expected standard positions: (1,2)=south, (2,1)=north, "
+                "(1,1)=west, (2,2)=east."
+            ),
+            "scorch_x": sp["x"],
+            "scorch_y": sp["y"],
+        })
+
+    for mismatch_cell in cell_analysis["mismatches"]:
+        issues.append({
+            "severity": "warning",
+            "code": "CELL_TYPE_MISMATCH",
+            "message": (
+                f"Cell ({mismatch_cell['x']},{mismatch_cell['y']}): "
+                f"metadata='{mismatch_cell['meta_type']}' but image analysis "
+                f"infers '{mismatch_cell['img_type']}'"
+            ),
+            "cell_x": mismatch_cell["x"],
+            "cell_y": mismatch_cell["y"],
+            "meta_type": mismatch_cell["meta_type"],
+            "img_type": mismatch_cell["img_type"],
+        })
 
     # --- Metadata-only checks -----------------------------------------------
     scorch_pos = tile_def.scorch_mark_position
@@ -370,6 +695,7 @@ def validate_tile(tile_def: TileDefinition, assets_dir: str) -> dict:
         "metadata_edges": tile_def.default_edges,
         "is_black_tile": tile_def.is_black_tile,
         "scorch_mark_position": tile_def.scorch_mark_position,
+        "cell_analysis": cell_analysis,
         "edge_analysis": edge_analysis,
         "scorch_analysis": scorch_info,
         "issues": issues,
@@ -504,7 +830,7 @@ def apply_fixes(tile_results: list, source_path: str, dry_run: bool = False) -> 
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
-def print_summary(results: list, fixes_applied: int = 0) -> None:
+def print_summary(results: list, fixes_applied: int = 0, show_cell_maps: bool = False) -> None:
     """Print a human-readable summary of validation results."""
     total = len(results)
     errors = sum(1 for r in results if r["has_errors"])
@@ -524,9 +850,23 @@ def print_summary(results: list, fixes_applied: int = 0) -> None:
     print()
 
     for result in results:
-        if not result["issues"]:
+        has_issues = bool(result["issues"])
+        has_cell_map = "cell_analysis" in result and result["cell_analysis"]
+        if not has_issues and not (show_cell_maps and has_cell_map):
             continue
+
         print(f"  ── {result['tile_type']} ({result['image_path']})")
+
+        # Print cell map when verbose
+        if show_cell_maps and has_cell_map:
+            ca = result["cell_analysis"]
+            direction = ca.get("arrow_direction") or "unknown"
+            print(f"     Cell map (arrow={direction}):   # = wall  . = empty")
+            print(f"                              S = scorch  b/w = arrow")
+            for line in _cell_map_str(ca).splitlines():
+                print(f"       {line}")
+            print()
+
         for issue in result["issues"]:
             icon = {"error": "✗", "warning": "⚠", "info": "ℹ"}.get(
                 issue["severity"], "?"
@@ -613,6 +953,12 @@ def main() -> int:
         for r in results:
             r.pop("edge_analysis", None)
             r.pop("scorch_analysis", None)
+            # Keep cell_analysis but drop per-cell image stats to keep report small
+            ca = r.get("cell_analysis")
+            if ca:
+                for row in ca.get("cells", []):
+                    for cell in row:
+                        cell.pop("stats", None)
 
     # Apply fixes (fix mode only)
     fixes_applied = 0
@@ -623,7 +969,7 @@ def main() -> int:
             print("  No high-confidence fixes to apply.")
 
     # Print human-readable summary
-    print_summary(results, fixes_applied=fixes_applied)
+    print_summary(results, fixes_applied=fixes_applied, show_cell_maps=args.verbose)
 
     # Write JSON report
     report = {

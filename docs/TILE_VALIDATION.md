@@ -4,19 +4,49 @@ This document describes the image-processing tile validation script (`tools/vali
 
 ## Overview
 
-The script cross-references each tile's `defaultEdges` and `scorchMarkPosition` metadata (defined in `src/store/types.ts`) with the actual tile PNG images. It detects:
+The script cross-references each tile's `defaultEdges` and `scorchMarkPosition` metadata (defined in `src/store/types.ts`) with the actual tile PNG images. It analyses each tile at two levels:
+
+### Tile-level checks
 
 | Check | Severity | Description |
 |-------|----------|-------------|
 | `EDGE_MISMATCH` | warning | Tile edge metadata says `'open'`/`'wall'` but image analysis confidently infers the opposite |
 | `SCORCH_ON_WALL` | warning | Scorch mark position falls on a wall cell (inaccessible grid square) |
+| `NON_STANDARD_SCORCH` | info | Scorch mark position doesn't map to a standard arrow direction |
 | `EXIT_COUNT_MISMATCH` | info | Tile name (e.g. `tile-black-3exit-a`) implies N exits but metadata defines a different count |
 | `IMAGE_NOT_FOUND` | error | Image file referenced in metadata cannot be found |
 
+### Cell-level checks (per-cell analysis)
+
+Each tile's 4×4 grid is classified cell-by-cell using metadata and image analysis:
+
+| Cell type | Symbol | Description |
+|-----------|--------|-------------|
+| `empty` | `.` | Accessible floor cell |
+| `wall` | `#` | Inaccessible wall cell (based on edge definitions) |
+| `scorch_mark` | `S` | Monster spawn marker (scorchMarkPosition) |
+| `black_arrow` | `b` | Half of a black entrance arrow (black tiles) |
+| `white_arrow` | `w` | Half of a white entrance arrow (white tiles) |
+
+The two arrow cells form one half-arrow each: together they represent the tile's entrance direction, derived from the scorch mark position.
+
+**Arrow direction mapping** (standard scorch positions):
+
+| Scorch at | Arrow direction | Arrow cells |
+|-----------|----------------|-------------|
+| (1,2) | south | (1,3) and (2,3) |
+| (2,1) | north | (1,0) and (2,0) |
+| (1,1) | west | (0,1) and (0,2) |
+| (2,2) | east | (3,1) and (3,2) |
+
+| Cell check | Severity | Description |
+|------------|----------|-------------|
+| `CELL_TYPE_MISMATCH` | warning | Image analysis disagrees with metadata-based cell classification |
+
 Severity levels:
 - **error** – blocks the game from running correctly; must be fixed
-- **warning** – deterministic fix available; run `--fix` or review manually
-- **info** – informational note; metadata is authoritative, name is historical
+- **warning** – deterministic fix available or requires manual review
+- **info** – informational note; metadata is authoritative
 
 ## When to Run
 
@@ -121,6 +151,25 @@ python tools/validate_tiles.py --check \
 ```
 
 ## Technical Details
+
+### Per-cell analysis
+
+The script classifies each of the 16 cells (4×4 grid) in two ways:
+
+**Metadata-based classification** (authoritative):
+1. If `(cx,cy)` equals `scorchMarkPosition` → `scorch_mark`
+2. If `(cx,cy)` is one of the two arrow cells (derived from scorch position) → `black_arrow` or `white_arrow`
+3. If `(cx,cy)` is at a wall edge (e.g. cx=3 for east='wall') → `wall`
+4. Otherwise → `empty`
+
+**Image-based classification** (best-effort cross-check):
+- Corner cells (all four corners) are always `unknown` – they appear dark regardless of edge definitions due to the tile's stone-border artwork
+- Edge cells at wall sides: classified as `wall` if interior dark% > 40%
+- Edge cells at open sides: classified as `wall` only at very high confidence (interior dark% > 85%)  
+- Interior cells (1 ≤ cx,cy ≤ 2): classified as `wall` if interior dark% > 40%
+- Black arrow cells: intentionally dark, so a 'wall' image reading is suppressed
+
+A `CELL_TYPE_MISMATCH` warning fires only when the image infers `wall` but metadata classifies the cell as accessible (empty, scorch_mark, or white/black arrow).
 
 ### Edge analysis algorithm
 
