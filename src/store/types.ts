@@ -672,14 +672,14 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, scorchMarkPosition: { x: 1, y: 1 } },  // All open
   // White 2-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
   { tileType: 'tile-white-2exit-a', imagePath: 'assets/Tile_White_x2_01.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 2 } },  // S/E open, N/W walls
-  { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 3, y: 1 } },  // All open (4 exits based on analysis)
+  { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'wall', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 1 } },  // S/W open, N/E walls
   { tileType: 'tile-white-2exit-c', imagePath: 'assets/Tile_White_x2_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 2, y: 1 } },  // N/S open, E/W walls
   { tileType: 'tile-white-2exit-d', imagePath: 'assets/Tile_White_x2_04.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 2, y: 1 } },  // N/S open, E/W walls
   { tileType: 'tile-white-2exit-e', imagePath: 'assets/Tile_White_x2_05.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 2, y: 1 } },  // N/S open, E/W walls
   // White 3-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
-  { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 0, y: 2 } },  // All open (4 exits based on analysis)
+  { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 2 } },  // N/S/E open, W wall
   { tileType: 'tile-white-3exit-b', imagePath: 'assets/Tile_White_x3_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 1 } },  // S/E/W open, N wall
-  { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 3, y: 1 } },  // All open (4 exits based on analysis)
+  { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 2, y: 1 } },  // N/S/W open, E wall
 ];
 
 /**
