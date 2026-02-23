@@ -330,11 +330,12 @@ export function placeTile(
 /**
  * Initialize the dungeon state with the start tile.
  * 
- * The start tile has 6 unexplored edges:
+ * The start tile has 4 unexplored edges:
  * - 1 north edge (spans full width)
  * - 1 south edge (spans full width)
  * - 2 east edges (one for north sub-tile, one for south sub-tile)
- * - 2 west edges (one for north sub-tile, one for south sub-tile)
+ * 
+ * The west side of the start tile is a solid wall and has no unexplored edges.
  */
 export function initializeDungeon(): DungeonState {
   return {
@@ -345,9 +346,6 @@ export function initializeDungeon(): DungeonState {
       // East edges - one per sub-tile
       { tileId: 'start-tile', direction: 'east', subTileId: 'start-tile-north' },
       { tileId: 'start-tile', direction: 'east', subTileId: 'start-tile-south' },
-      // West edges - one per sub-tile
-      { tileId: 'start-tile', direction: 'west', subTileId: 'start-tile-north' },
-      { tileId: 'start-tile', direction: 'west', subTileId: 'start-tile-south' },
     ],
     tileDeck: [],
   };
