@@ -2237,6 +2237,8 @@ export const gameSlice = createSlice({
       state.monsterAttackerId = null;
       state.monsterAttackName = null;
       state.monsterMoveActionId = null;
+      state.monsterAreaAttackResults = null;
+      state.monsterAreaAttackTargetIds = null;
       state.villainPhaseStepMessage = null;
       
       // Clear encounter state
@@ -4712,11 +4714,6 @@ export const gameSlice = createSlice({
         });
       } else if (result.type === 'area-attack') {
         // Handle area attack: monster attacks all valid targets simultaneously
-        // Store results for sequential display to player
-        state.monsterAreaAttackResults = result.results;
-        state.monsterAreaAttackTargetIds = result.targetIds;
-        state.monsterAttackerId = monster.instanceId;
-        
         // Process all attacks immediately (damage, status effects)
         const monsterDef = getMonsterById(monster.monsterId);
         const monsterName = monsterDef?.name ?? 'Monster';
@@ -4768,6 +4765,25 @@ export const gameSlice = createSlice({
         const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
         if (allHeroesDefeated) {
           state.currentScreen = "defeat";
+        }
+
+        // Show first result via monsterAttackResult so the $effect blocks villain phase advancement.
+        // Remaining results are stored in monsterAreaAttackResults for sequential display.
+        if (result.results.length > 0) {
+          state.monsterAttackResult = result.results[0];
+          state.monsterAttackTargetId = result.targetIds[0];
+          state.monsterAttackerId = monster.instanceId;
+          state.monsterAttackName = attackOption?.name ?? null;
+          if (result.results.length > 1) {
+            state.monsterAreaAttackResults = result.results.slice(1);
+            state.monsterAreaAttackTargetIds = result.targetIds.slice(1);
+          } else {
+            state.monsterAreaAttackResults = null;
+            state.monsterAreaAttackTargetIds = null;
+          }
+        } else {
+          state.monsterAreaAttackResults = null;
+          state.monsterAreaAttackTargetIds = null;
         }
       } else if (result.type === 'explore') {
         // Handle monster-triggered exploration
@@ -4860,13 +4876,30 @@ export const gameSlice = createSlice({
       state.villainPhaseMonsterIndex += 1;
     },
     /**
-     * Dismiss the monster attack result display
+     * Dismiss the monster attack result display.
+     * If there are remaining area attack results (from area-attack tactics), shows the next one.
      */
     dismissMonsterAttackResult: (state) => {
-      state.monsterAttackResult = null;
-      state.monsterAttackTargetId = null;
-      state.monsterAttackerId = null;
-      state.monsterAttackName = null;
+      // Check if there are more area attack results to show sequentially.
+      // Both arrays are always set together, so treat targetIds as parallel to results.
+      const remainingResults = state.monsterAreaAttackResults;
+      const remainingTargets = state.monsterAreaAttackTargetIds ?? [];
+      if (remainingResults && remainingResults.length > 0) {
+        state.monsterAttackResult = remainingResults[0];
+        state.monsterAttackTargetId = remainingTargets[0] ?? null;
+        // Keep monsterAttackerId and monsterAttackName unchanged (same monster)
+        const nextResults = remainingResults.slice(1);
+        const nextTargets = remainingTargets.slice(1);
+        state.monsterAreaAttackResults = nextResults.length > 0 ? nextResults : null;
+        state.monsterAreaAttackTargetIds = nextTargets.length > 0 ? nextTargets : null;
+      } else {
+        state.monsterAttackResult = null;
+        state.monsterAttackTargetId = null;
+        state.monsterAttackerId = null;
+        state.monsterAttackName = null;
+        state.monsterAreaAttackResults = null;
+        state.monsterAreaAttackTargetIds = null;
+      }
     },
     /**
      * Dismiss the monster move action display
