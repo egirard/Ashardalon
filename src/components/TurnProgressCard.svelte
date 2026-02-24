@@ -205,9 +205,11 @@
           
           <!-- Villain Phase Steps (shown only for active villain phase) -->
           {#if phase.id === currentPhase && currentPhase === 'villain-phase' && villainPhaseStepMessage}
-            <div class="villain-step animate-in" data-testid="villain-phase-step">
-              {villainPhaseStepMessage}
-            </div>
+            {#key villainPhaseStepMessage}
+              <div class="villain-step animate-in" data-testid="villain-phase-step">
+                {villainPhaseStepMessage}
+              </div>
+            {/key}
           {/if}
           
           <!-- Movement Controls (shown only for active hero phase with incremental movement) -->
@@ -365,9 +367,14 @@
   }
 
   .exploration-step.skipped {
-    background: rgba(128, 128, 128, 0.2);
+    background-color: rgba(128, 128, 128, 0.1);
+    background-image: linear-gradient(90deg, rgba(180, 180, 180, 0.5) 0%, rgba(128, 128, 128, 0.3) 100%);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    background-position: left center;
     color: #999;
     border: 1px solid rgba(128, 128, 128, 0.3);
+    animation: exploration-timer 1.2s linear forwards;
   }
 
   .exploration-step.clickable {
@@ -431,18 +438,12 @@
   }
 
   .villain-step.animate-in {
-    animation: villain-step-in 0.4s ease-out forwards;
-  }
-
-  @keyframes villain-step-in {
-    from {
-      opacity: 0;
-      transform: translateX(-6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    background-color: rgba(232, 160, 32, 0.05);
+    background-image: linear-gradient(90deg, rgba(232, 160, 32, 0.45) 0%, rgba(232, 160, 32, 0.2) 100%);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    background-position: left center;
+    animation: exploration-timer 1.2s linear forwards;
   }
 
   /* Movement controls */
@@ -541,8 +542,14 @@
       background: rgba(76, 175, 80, 0.4);
     }
 
+    .exploration-step.skipped {
+      animation: none;
+      background: rgba(128, 128, 128, 0.2);
+    }
+
     .villain-step.animate-in {
       animation: none;
+      background: rgba(232, 160, 32, 0.1);
     }
   }
 </style>
