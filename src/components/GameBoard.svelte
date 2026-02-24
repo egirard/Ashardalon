@@ -4256,7 +4256,8 @@
   }
 
   .hero-token.active .token-image {
-    box-shadow: 0 0 10px 3px gold;
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 0 3px #ffd700, 0 0 18px 8px rgba(255, 215, 0, 0.85);
   }
 
   .token-image {
@@ -4264,9 +4265,9 @@
     height: 40px;
     object-fit: contain;
     border-radius: 50%;
-    border: 2px solid #ffd700;
+    border: 2px solid rgba(255, 255, 255, 0.45);
     background: rgba(0, 0, 0, 0.7);
-    transition: box-shadow 0.3s ease-out;
+    transition: box-shadow 0.3s ease-out, border 0.3s ease-out;
   }
 
   .token-label {
