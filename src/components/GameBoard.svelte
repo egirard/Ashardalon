@@ -3836,8 +3836,8 @@
   {/if}
 
   <!-- Encounter Card Display (shown during villain phase when no exploration occurred) -->
-  <!-- Wait for monster card to be dismissed before showing encounter card -->
-  {#if drawnEncounter && !recentlySpawnedMonsterId}
+  <!-- Wait for monster card (including pending tile animation) to be dismissed before showing encounter card -->
+  {#if drawnEncounter && !recentlySpawnedMonsterId && !pendingMonsterDisplayId}
     <EncounterCard
       encounter={drawnEncounter}
       partyXp={partyResources.xp}
