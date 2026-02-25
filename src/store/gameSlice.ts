@@ -1873,6 +1873,40 @@ export const gameSlice = createSlice({
           details: `Tile type: ${drawnTile} | New exits added to dungeon`,
         });
         
+        // Long Hallway special rule: automatically draw and place a second tile on its unexplored edge
+        if (tileDef?.isLongHallway && state.dungeon.tileDeck.length > 0) {
+          const hallwayUnexploredEdge = state.dungeon.unexploredEdges.find(e => e.tileId === newTile.id);
+          if (hallwayUnexploredEdge) {
+            const { drawnTile: secondTileType, remainingDeck: deckAfterSecond } = drawTile(state.dungeon.tileDeck);
+            if (secondTileType) {
+              const secondTile = placeTile(hallwayUnexploredEdge, secondTileType, state.dungeon);
+              if (secondTile) {
+                const secondTileDef = getTileDefinition(secondTileType);
+                const isSecondTileBlack = secondTileDef?.isBlackTile ?? true;
+                
+                // Update encounter tracking: if second tile is black, an encounter will be drawn
+                if (isSecondTileBlack) {
+                  state.turnState.drewOnlyWhiteTilesThisTurn = false;
+                }
+                
+                // Update dungeon state with second tile
+                state.dungeon = updateDungeonAfterExploration(state.dungeon, hallwayUnexploredEdge, secondTile);
+                state.dungeon.tileDeck = deckAfterSecond;
+                
+                // Log second tile placement
+                const secondTileColor = isSecondTileBlack ? 'Black' : 'White';
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'exploration',
+                  message: `🏛️ Long Hallway: second tile revealed to the ${hallwayUnexploredEdge.direction} (${secondTileColor} arrow)`,
+                  details: `Tile type: ${secondTileType} | Long Hallway special rule`,
+                });
+              }
+            }
+          }
+        }
+        
         // Move to next step
         state.explorationPhase.step = 'awaiting-monster';
       }

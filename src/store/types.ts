@@ -631,6 +631,13 @@ export interface TileDefinition {
    * - White arrow tiles: spawn monsters but prevent encounter draw (if only white tiles drawn)
    */
   isBlackTile: boolean;
+  /**
+   * Whether this is a Long Hallway named tile.
+   * When a Long Hallway is placed, an additional tile is automatically drawn and placed
+   * on the hallway's unexplored edge. An encounter card is drawn during Villain Phase
+   * unless both the Long Hallway AND the additional tile are white arrow tiles.
+   */
+  isLongHallway?: boolean;
   /** 
    * Position of the scorch mark (spawn marker) in default orientation.
    * This is in local tile coordinates (0-3, 0-3) and represents where
@@ -680,6 +687,9 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 2 } },  // N/S/E open, W wall
   { tileType: 'tile-white-3exit-b', imagePath: 'assets/Tile_White_x3_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 1 } },  // S/E/W open, N wall
   { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 2, y: 1 } },  // N/S/W open, E wall
+  // Long Hallway named tiles (N/S corridor, draws an extra tile automatically on the unexplored end)
+  { tileType: 'tile-long-hallway-black', imagePath: 'assets/Tile_Named_LongHallwayBlack.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true, isLongHallway: true, scorchMarkPosition: { x: 2, y: 2 } },  // N/S open, black arrow
+  { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 2, y: 2 } },  // N/S open, white arrow
 ];
 
 /**
@@ -694,6 +704,8 @@ export const INITIAL_TILE_DECK: string[] = [
   // White tiles
   'tile-white-2exit-a', 'tile-white-2exit-b', 'tile-white-2exit-c', 'tile-white-2exit-d', 'tile-white-2exit-e',
   'tile-white-3exit-a', 'tile-white-3exit-b', 'tile-white-3exit-c',
+  // Long Hallway named tiles
+  'tile-long-hallway-black', 'tile-long-hallway-white',
 ];
 
 /**

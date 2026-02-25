@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 import { createScreenshotHelper } from '../helpers/screenshot-helper';
 
 // Test constants for better readability
-const INITIAL_TILE_DECK_SIZE = 16;
-const TILE_DECK_SIZE_AFTER_FIRST_EXPLORATION = 15;
-const TILE_DECK_SIZE_AFTER_SECOND_EXPLORATION = 14;
+const INITIAL_TILE_DECK_SIZE = 18;
+const TILE_DECK_SIZE_AFTER_FIRST_EXPLORATION = 17;
+const TILE_DECK_SIZE_AFTER_SECOND_EXPLORATION = 16;
 const FIXED_SEED = 12345; // Fixed seed for reproducible tile draws
 
 test.describe('021 - Exploration on Newly Placed Tiles', () => {
