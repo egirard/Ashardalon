@@ -146,6 +146,9 @@
         
         <div class="phase-content">
           <div class="phase-name">{getPhaseName(phase.id)}</div>
+          {#if phase.id === 'exploration-phase' && currentPhase === 'hero-phase'}
+            <div class="phase-description">(only triggers on tile edges)</div>
+          {/if}
           {#if phase.description}
             <div class="phase-description">{phase.description}</div>
           {/if}
@@ -216,7 +219,7 @@
           {#if phase.id === currentPhase && currentPhase === 'hero-phase' && incrementalMovement?.inProgress}
             <div class="movement-info" data-testid="movement-info">
               <span class="movement-icon">🏃</span>
-              <span class="movement-text">{incrementalMovement.remainingMovement} of {incrementalMovement.totalSpeed};</span>
+              <span class="movement-text">{incrementalMovement.totalSpeed - incrementalMovement.remainingMovement} of {incrementalMovement.totalSpeed} squares</span>
               {#if onCompleteMove}
                 <button
                   class="movement-action-button"
