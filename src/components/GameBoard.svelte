@@ -37,7 +37,6 @@
     attemptPoisonRecovery,
     attemptCageEscape,
     attemptDisableTrap,
-    showPendingMonster,
     useVoluntaryActionSurge,
     skipActionSurge,
     startMultiAttack,
@@ -223,6 +222,8 @@
   });
   let monsters: MonsterState[] = $state([]);
   let recentlySpawnedMonsterId: string | null = $state(null);
+  /** Tracks which monster's card was just dismissed - used to trigger mini-card entrance animation */
+  let newlyDismissedMonsterId: string | null = $state(null);
   let attackResult: AttackResult | null = $state(null);
   let attackTargetId: string | null = $state(null);
   let heroHp: HeroHpState[] = $state([]);
@@ -290,8 +291,6 @@
 
   // Timer for auto-advancing exploration phase steps
   let explorationAutoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
-  // Timer for showing pending monster card after tile animation
-  let pendingMonsterDisplayTimer: ReturnType<typeof setTimeout> | null = null;
   // Timer for auto-dismissing "Encounter card skipped" message
   let villainStepDismissTimer: ReturnType<typeof setTimeout> | null = null;
   
@@ -422,16 +421,6 @@
         }
       }
 
-      // Handle pending monster card display timer (show monster card after tile animation)
-      if (state.game.pendingMonsterDisplayId !== null && pendingMonsterDisplayTimer === null) {
-        pendingMonsterDisplayTimer = setTimeout(() => {
-          pendingMonsterDisplayTimer = null;
-          store.dispatch(showPendingMonster());
-        }, 4000);
-      } else if (state.game.pendingMonsterDisplayId === null && pendingMonsterDisplayTimer !== null) {
-        clearTimeout(pendingMonsterDisplayTimer);
-        pendingMonsterDisplayTimer = null;
-      }
       poisonedDamageNotification = state.game.poisonedDamageNotification;
       poisonRecoveryNotification = state.game.poisonRecoveryNotification;
       heroPowerCards = state.heroes.heroPowerCards;
@@ -1285,7 +1274,11 @@
 
   // Handle dismissing the monster card
   function handleDismissMonsterCard() {
+    // Track which monster was just dismissed for mini-card entrance animation
+    newlyDismissedMonsterId = recentlySpawnedMonsterId;
     store.dispatch(dismissMonsterCard());
+    // Clear the newly dismissed ID after animation completes (600ms)
+    setTimeout(() => { newlyDismissedMonsterId = null; }, 600);
   }
 
   // Handle dismissing the scenario introduction modal
@@ -3322,8 +3315,9 @@
           {/if}
         {/each}
 
-        <!-- Monster tokens -->
+        <!-- Monster tokens (hidden while monster card modal is showing for that monster) -->
         {#each monsters as monsterState (monsterState.instanceId)}
+          {#if monsterState.instanceId !== recentlySpawnedMonsterId}
           {@const isTargetable = turnState.currentPhase === "hero-phase" && 
                                  !mapControlMode && 
                                  getTargetableMonstersForCurrentHero().some(m => m.instanceId === monsterState.instanceId)}
@@ -3346,6 +3340,7 @@
               }
             }}
           />
+          {/if}
         {/each}
         
         <!-- Trap markers -->
@@ -3591,6 +3586,7 @@
                 <MonsterCardMini 
                   {monster}
                   isActivating={activatingMonsterId === monster.instanceId}
+                  isNew={newlyDismissedMonsterId === monster.instanceId}
                 />
               {/each}
             </div>

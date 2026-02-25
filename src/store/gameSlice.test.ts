@@ -1373,7 +1373,16 @@ describe("gameSlice", () => {
         monsterInstanceCounter: 0,
       });
 
-      const state = gameReducer(gameInProgress, endHeroPhase());
+      // Step 1: End hero phase -> sets up exploration (awaiting-tile)
+      const afterHeroPhase = gameReducer(gameInProgress, endHeroPhase());
+      expect(afterHeroPhase.explorationPhase.step).toBe("awaiting-tile");
+
+      // Step 2: Place tile -> places tile (awaiting-monster)
+      const afterTilePlaced = gameReducer(afterHeroPhase, placeExplorationTile());
+      expect(afterTilePlaced.explorationPhase.step).toBe("awaiting-monster");
+
+      // Step 3: Add monster -> spawns monster and shows card immediately
+      const state = gameReducer(afterTilePlaced, addExplorationMonster());
 
       // Should have spawned a monster
       expect(state.monsters).toHaveLength(1);
@@ -1381,9 +1390,15 @@ describe("gameSlice", () => {
       expect(state.monsters[0].controllerId).toBe("quinn"); // Controlled by exploring hero
       expect(state.monsters[0].instanceId).toBe("kobold-0");
       expect(state.monsterInstanceCounter).toBe(1);
-      // Monster display is delayed, so it should be in pendingMonsterDisplayId
-      expect(state.pendingMonsterDisplayId).toBe("kobold-0");
-      expect(state.recentlySpawnedMonsterId).toBeNull();
+      // Monster card is shown immediately (blocking modal)
+      expect(state.recentlySpawnedMonsterId).toBe("kobold-0");
+      // Exploration waits for monster card dismissal before ending
+      expect(state.explorationPhase.step).toBe("awaiting-monster-dismiss");
+
+      // Step 4: Dismiss monster card -> exploration step advances to complete
+      const afterDismiss = gameReducer(state, dismissMonsterCard());
+      expect(afterDismiss.recentlySpawnedMonsterId).toBeNull();
+      expect(afterDismiss.explorationPhase.step).toBe("complete");
     });
 
     it("should not spawn monster when no tile is placed (hero not on edge)", () => {
@@ -1463,15 +1478,17 @@ describe("gameSlice", () => {
         monsterInstanceCounter: 0,
       });
 
-      const state = gameReducer(gameInProgress, endHeroPhase());
+      // Run through the multi-step exploration flow
+      const afterHeroPhase = gameReducer(gameInProgress, endHeroPhase());
+      const afterTilePlaced = gameReducer(afterHeroPhase, placeExplorationTile());
+      const state = gameReducer(afterTilePlaced, addExplorationMonster());
 
       // White tiles DO spawn monsters
       expect(state.monsters).toHaveLength(1);
       expect(state.monsters[0].monsterId).toBe("kobold");
-      // Monster display is delayed, so it should be in pendingMonsterDisplayId
-      expect(state.pendingMonsterDisplayId).toBe("kobold-0");
-      expect(state.recentlySpawnedMonsterId).toBeNull();
-      // Monster deck should be updated
+      // Monster card is shown immediately (blocking modal)
+      expect(state.recentlySpawnedMonsterId).toBe("kobold-0");
+      // Monster deck should be updated (was drawn during endHeroPhase)
       expect(state.monsterDeck.drawPile).toEqual([]);
       // Exploration should be marked as occurred
       expect(state.turnState.exploredThisTurn).toBe(true);
