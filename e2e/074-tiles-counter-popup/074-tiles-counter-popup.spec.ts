@@ -26,8 +26,8 @@ test.describe('074 - Tiles Counter Popup', () => {
         // Verify tile counter button is visible
         await expect(page.locator('[data-testid="tile-deck-counter"]')).toBeVisible();
         
-        // Verify tile count badge shows 16
-        await expect(page.locator('[data-testid="tile-deck-count"]')).toHaveText('16');
+        // Verify tile count badge shows 18
+        await expect(page.locator('[data-testid="tile-deck-count"]')).toHaveText('18');
         
         // Verify counter is in party resources container with XP and Healing Surges
         const partyResources = page.locator('.party-resources');
@@ -40,7 +40,7 @@ test.describe('074 - Tiles Counter Popup', () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
-        expect(storeState.game.dungeon.tileDeck).toHaveLength(16);
+        expect(storeState.game.dungeon.tileDeck).toHaveLength(18);
       }
     });
 
@@ -59,7 +59,7 @@ test.describe('074 - Tiles Counter Popup', () => {
         await expect(page.locator('[data-testid="tile-popover"]')).toContainText('Tiles Remaining');
         
         // Verify popup shows current tile count
-        await expect(page.locator('[data-testid="tile-popover"]')).toContainText('Tiles in Deck: 16');
+        await expect(page.locator('[data-testid="tile-popover"]')).toContainText('Tiles in Deck: 18');
         
         // Verify popup explains how tiles work
         await expect(page.locator('[data-testid="tile-popover"]')).toContainText('How Tiles Work');
