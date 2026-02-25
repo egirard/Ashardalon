@@ -196,11 +196,17 @@ export function calculateTileRotation(explorationDirection: Direction, tileDef: 
   // (minimizing angular distance from preferred rotation)
   const rotations = [0, 90, 180, 270];
   
-  // Sort rotations by angular distance from preferred rotation
+  // Sort rotations by angular distance from preferred rotation.
+  // When two rotations are equidistant, prefer the one that is clockwise-closer to preferred
+  // so that the tile arrow faces the correct direction for symmetric tiles (e.g. Long Hallway).
   const sortedRotations = rotations.sort((a, b) => {
     const distA = Math.min(Math.abs(a - preferredRotation), 360 - Math.abs(a - preferredRotation));
     const distB = Math.min(Math.abs(b - preferredRotation), 360 - Math.abs(b - preferredRotation));
-    return distA - distB;
+    if (distA !== distB) return distA - distB;
+    // Tiebreaker: prefer the rotation that is clockwise-closer to preferred
+    const cwDistA = (a - preferredRotation + 360) % 360;
+    const cwDistB = (b - preferredRotation + 360) % 360;
+    return cwDistA - cwDistB;
   });
   
   for (const fallbackRotation of sortedRotations) {
