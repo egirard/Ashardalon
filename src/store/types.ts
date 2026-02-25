@@ -687,9 +687,11 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   { tileType: 'tile-white-3exit-a', imagePath: 'assets/Tile_White_x3_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 2 } },  // N/S/E open, W wall
   { tileType: 'tile-white-3exit-b', imagePath: 'assets/Tile_White_x3_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 1 } },  // S/E/W open, N wall
   { tileType: 'tile-white-3exit-c', imagePath: 'assets/Tile_White_x3_03.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 2, y: 1 } },  // N/S/W open, E wall
-  // Long Hallway named tiles (N/S corridor, draws an extra tile automatically on the unexplored end)
-  { tileType: 'tile-long-hallway-black', imagePath: 'assets/Tile_Named_LongHallwayBlack.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true, isLongHallway: true, scorchMarkPosition: { x: 2, y: 2 } },  // N/S open, black arrow
-  { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 2, y: 2 } },  // N/S open, white arrow
+  // Long Hallway named tiles (E/W corridor in default orientation, draws an extra tile automatically on the unexplored end)
+  // Image default: openings on West (entrance) and East (unexplored arrow), walls on North/South.
+  // Rotated 90° CW when placed for N/S exploration, so arrow points toward entrance.
+  { tileType: 'tile-long-hallway-black', imagePath: 'assets/Tile_Named_LongHallwayBlack.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: true, isLongHallway: true, scorchMarkPosition: { x: 1, y: 2 } },  // E/W open, black arrow points east
+  { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 1, y: 1 } },  // E/W open, white arrow points east
 ];
 
 /**
