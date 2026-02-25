@@ -110,7 +110,7 @@
 
       case 'villain-phase':
         if (monstersToActivate > 0) {
-          return `${monstersActivated}/${monstersToActivate} monsters`;
+          return `${monstersActivated} of ${monstersToActivate} monsters`;
         }
         return null;
 
@@ -149,6 +149,15 @@
           {#if phase.description}
             <div class="phase-description">{phase.description}</div>
           {/if}
+          <!-- Villain Phase Steps (shown only for active villain phase) -->
+          {#if phase.id === currentPhase && currentPhase === 'villain-phase' && villainPhaseStepMessage}
+            {#key villainPhaseStepMessage}
+              <div class="villain-step animate-in" data-testid="villain-phase-step">
+                {villainPhaseStepMessage}
+              </div>
+            {/key}
+          {/if}
+
           {#if getPhaseDetail(phase.id)}
             <div class="phase-detail" data-testid="phase-detail-{phase.id}">
               {getPhaseDetail(phase.id)}
@@ -201,15 +210,6 @@
                 </div>
               {/if}
             {/if}
-          {/if}
-          
-          <!-- Villain Phase Steps (shown only for active villain phase) -->
-          {#if phase.id === currentPhase && currentPhase === 'villain-phase' && villainPhaseStepMessage}
-            {#key villainPhaseStepMessage}
-              <div class="villain-step animate-in" data-testid="villain-phase-step">
-                {villainPhaseStepMessage}
-              </div>
-            {/key}
           {/if}
           
           <!-- Movement Controls (shown only for active hero phase with incremental movement) -->
