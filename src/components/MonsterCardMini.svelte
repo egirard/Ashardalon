@@ -7,9 +7,10 @@
   interface Props {
     monster: MonsterState;
     isActivating?: boolean;
+    isNew?: boolean;
   }
   
-  let { monster, isActivating = false }: Props = $props();
+  let { monster, isActivating = false, isNew = false }: Props = $props();
   
   // Get monster definition
   const monsterDef = $derived(MONSTERS.find(m => m.id === monster.monsterId));
@@ -40,6 +41,7 @@
   <div 
     class="monster-card-mini"
     class:activating={isActivating}
+    class:card-appears={isNew}
     data-testid="monster-card-mini"
     data-monster-id={monster.instanceId}
   >
@@ -244,9 +246,34 @@
     text-overflow: ellipsis;
   }
   
+  /* Animation when monster card transitions from full modal to mini card */
+  .monster-card-mini.card-appears {
+    animation: card-shrink-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  @keyframes card-shrink-in {
+    0% {
+      opacity: 0;
+      transform: scale(2.5);
+      box-shadow: 0 0 40px rgba(255, 100, 100, 0.8);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: none;
+    }
+  }
+
   /* Respect user's reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
     .monster-card-mini.activating {
+      animation: none;
+    }
+    .monster-card-mini.card-appears {
       animation: none;
     }
   }

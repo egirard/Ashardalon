@@ -399,13 +399,14 @@ export interface GameState {
  * Exploration phase step types
  */
 export type ExplorationStep = 
-  | 'not-started'        // Phase just started, no steps shown yet
-  | 'skipped'            // Hero not on edge, phase will be skipped
-  | 'awaiting-tile'      // Waiting for user to click to place tile
-  | 'tile-placed'        // Tile has been placed
-  | 'awaiting-monster'   // Waiting for user to click to add monster
-  | 'monster-added'      // Monster has been added
-  | 'complete';          // All steps completed
+  | 'not-started'              // Phase just started, no steps shown yet
+  | 'skipped'                  // Hero not on edge, phase will be skipped
+  | 'awaiting-tile'            // Waiting for user to click to place tile
+  | 'tile-placed'              // Tile has been placed
+  | 'awaiting-monster'         // Waiting for user to click to add monster
+  | 'monster-added'            // Monster has been added
+  | 'awaiting-monster-dismiss' // Monster card is showing; waiting for player to dismiss before phase ends
+  | 'complete';                // All steps completed
 
 /**
  * Exploration phase state tracking
@@ -1921,8 +1922,8 @@ export const gameSlice = createSlice({
             state.monsterGroups.push(spawnResult.group);
           }
           
-          // Set pending monster display for first monster
-          state.pendingMonsterDisplayId = spawnResult.monsters[0].instanceId;
+          // Show monster card immediately as a blocking modal
+          state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
           
           // Check for Blade Barrier tokens at spawn position of first monster
           const bladeBarrierCheck = checkBladeBarrierDamage(
@@ -1980,8 +1981,13 @@ export const gameSlice = createSlice({
         }
       }
       
-      // Mark exploration as complete
-      state.explorationPhase.step = 'complete';
+      // Mark exploration as waiting for monster card dismissal (if a monster was spawned)
+      // or complete (if no monster was spawned / no tile placed)
+      if (state.recentlySpawnedMonsterId) {
+        state.explorationPhase.step = 'awaiting-monster-dismiss';
+      } else {
+        state.explorationPhase.step = 'complete';
+      }
     },
     /**
      * End the exploration phase and move to villain phase
@@ -2049,7 +2055,7 @@ export const gameSlice = createSlice({
                       }
                       
                       // Set pending monster display to show the first monster card popup
-                      state.pendingMonsterDisplayId = spawnResult.monsters[0].instanceId;
+                      state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
                     }
                   }
                 }
@@ -2431,6 +2437,11 @@ export const gameSlice = createSlice({
      */
     dismissMonsterCard: (state) => {
       state.recentlySpawnedMonsterId = null;
+      // If exploration is waiting for the monster card to be dismissed, advance to complete
+      // so the exploration phase can end and the villain phase can start
+      if (state.explorationPhase?.step === 'awaiting-monster-dismiss') {
+        state.explorationPhase.step = 'complete';
+      }
     },
     /**
      * Dismiss the encounter card display and apply its effect
