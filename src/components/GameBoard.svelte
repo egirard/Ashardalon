@@ -3579,17 +3579,20 @@
         data-side-preference={sidePreference}
       >
         <div class="hero-with-monsters-container" data-testid="hero-container-{hero.id}">
-          <!-- Monster cards to the left of player card -->
+          <!-- Monster cards to the left of player card (hide card while full modal is showing) -->
           {#if controlledMonsters.length > 0}
-            <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
-              {#each controlledMonsters as monster (monster.instanceId)}
-                <MonsterCardMini 
-                  {monster}
-                  isActivating={activatingMonsterId === monster.instanceId}
-                  isNew={newlyDismissedMonsterId === monster.instanceId}
-                />
-              {/each}
-            </div>
+            {@const visibleMiniCards = controlledMonsters.filter(m => m.instanceId !== recentlySpawnedMonsterId)}
+            {#if visibleMiniCards.length > 0}
+              <div class="monster-cards-left" data-testid="monster-cards-{hero.id}">
+                {#each visibleMiniCards as monster (monster.instanceId)}
+                  <MonsterCardMini 
+                    {monster}
+                    isActivating={activatingMonsterId === monster.instanceId}
+                    isNew={newlyDismissedMonsterId === monster.instanceId}
+                  />
+                {/each}
+              </div>
+            {/if}
           {/if}
           <PlayerCard
             {hero}
