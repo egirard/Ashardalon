@@ -35,6 +35,9 @@
   const customAbilityId = $derived(HERO_CUSTOM_ABILITIES[hero.id]);
   const customAbility = $derived(customAbilityId ? getPowerCardById(customAbilityId) : null);
 
+  // Preview panel state - which card is currently shown in the detail panel
+  let previewCard: { card: PowerCard; type: 'utility' | 'atWill' | 'daily' } | null = $state(null);
+
   // Power card type colors
   function getPowerCardColor(type: string): string {
     switch (type) {
@@ -55,9 +58,28 @@
     }
   }
 
-  function handleCardClick(card: PowerCard, type: 'utility' | 'atWill' | 'daily') {
-    // Clicking a card now immediately selects it
-    selectCard(card.id, type);
+  // Click on a mini-card opens the detail/preview panel instead of immediately selecting
+  function handleCardPreview(card: PowerCard, type: 'utility' | 'atWill' | 'daily') {
+    if (previewCard?.card.id === card.id) {
+      previewCard = null; // toggle off if same card clicked again
+    } else {
+      previewCard = { card, type };
+    }
+  }
+
+  // Select or deselect the card currently shown in the preview panel
+  function handleSelectFromPreview() {
+    if (!previewCard) return;
+    selectCard(previewCard.card.id, previewCard.type);
+  }
+
+  function isPreviewCardSelected(): boolean {
+    if (!previewCard) return false;
+    const { card, type } = previewCard;
+    if (type === 'utility') return isUtilitySelected(card.id);
+    if (type === 'atWill') return isAtWillSelected(card.id);
+    if (type === 'daily') return isDailySelected(card.id);
+    return false;
   }
 
   function selectCard(cardId: number, type: 'utility' | 'atWill' | 'daily') {
@@ -81,6 +103,14 @@
   function isDailySelected(cardId: number): boolean {
     return selection.daily === cardId;
   }
+
+  // Truncate description for the mini-card one-liner
+  const SHORT_DESCRIPTION_LIMIT = 48;
+  const DEFAULT_DAMAGE = 1;
+  function getShortDescription(description: string): string {
+    if (description.length <= SHORT_DESCRIPTION_LIMIT) return description;
+    return description.substring(0, SHORT_DESCRIPTION_LIMIT - 1) + '…';
+  }
 </script>
 
 <div class="power-card-selection" data-testid="power-card-selection" data-edge={edge}>
@@ -91,7 +121,7 @@
     </div>
 
     <div class="card-layout">
-      <!-- Left columns: Mini cards organized by section -->
+      <!-- Left: Compact mini-card list organised by section -->
       <div class="mini-cards-columns">
         <!-- Custom Ability Column -->
         {#if customAbility}
@@ -101,7 +131,10 @@
               <span class="card-type-badge" style="background-color: {getPowerCardColor('utility')};">
                 {getPowerCardAbbrev('utility')}
               </span>
-              <span class="card-name-mini">{customAbility.name}</span>
+              <span class="card-text">
+                <span class="card-name-mini">{customAbility.name}</span>
+                <span class="card-desc-mini">{getShortDescription(customAbility.description)}</span>
+              </span>
               <span class="auto-label">AUTO</span>
             </div>
           </div>
@@ -114,14 +147,18 @@
             <button
               class="mini-card"
               class:selected={isUtilitySelected(card.id)}
+              class:previewing={previewCard?.card.id === card.id}
               style="border-color: {getPowerCardColor(card.type)};"
-              onclick={() => handleCardClick(card, 'utility')}
+              onclick={() => handleCardPreview(card, 'utility')}
               data-testid="utility-card-{card.id}"
             >
               <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
                 {getPowerCardAbbrev(card.type)}
               </span>
-              <span class="card-name-mini">{card.name}</span>
+              <span class="card-text">
+                <span class="card-name-mini">{card.name}</span>
+                <span class="card-desc-mini">{getShortDescription(card.description)}</span>
+              </span>
               {#if isUtilitySelected(card.id)}
                 <CheckIcon size={12} ariaLabel="Selected" />
               {/if}
@@ -136,14 +173,18 @@
             <button
               class="mini-card"
               class:selected={isAtWillSelected(card.id)}
+              class:previewing={previewCard?.card.id === card.id}
               style="border-color: {getPowerCardColor(card.type)};"
-              onclick={() => handleCardClick(card, 'atWill')}
+              onclick={() => handleCardPreview(card, 'atWill')}
               data-testid="atwill-card-{card.id}"
             >
               <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
                 {getPowerCardAbbrev(card.type)}
               </span>
-              <span class="card-name-mini">{card.name}</span>
+              <span class="card-text">
+                <span class="card-name-mini">{card.name}</span>
+                <span class="card-desc-mini">{getShortDescription(card.description)}</span>
+              </span>
               {#if isAtWillSelected(card.id)}
                 <CheckIcon size={12} ariaLabel="Selected" />
               {/if}
@@ -158,14 +199,18 @@
             <button
               class="mini-card"
               class:selected={isDailySelected(card.id)}
+              class:previewing={previewCard?.card.id === card.id}
               style="border-color: {getPowerCardColor(card.type)};"
-              onclick={() => handleCardClick(card, 'daily')}
+              onclick={() => handleCardPreview(card, 'daily')}
               data-testid="daily-card-{card.id}"
             >
               <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
                 {getPowerCardAbbrev(card.type)}
               </span>
-              <span class="card-name-mini">{card.name}</span>
+              <span class="card-text">
+                <span class="card-name-mini">{card.name}</span>
+                <span class="card-desc-mini">{getShortDescription(card.description)}</span>
+              </span>
               {#if isDailySelected(card.id)}
                 <CheckIcon size={12} ariaLabel="Selected" />
               {/if}
@@ -173,6 +218,44 @@
           {/each}
         </div>
       </div>
+
+      <!-- Right: Detail panel shown when a power card is clicked -->
+      {#if previewCard}
+        <div class="power-detail-panel" data-testid="power-detail-panel">
+          <div class="detail-header">
+            <span
+              class="detail-type-badge"
+              style="background-color: {getPowerCardColor(previewCard.card.type)}33; border-color: {getPowerCardColor(previewCard.card.type)}; color: {getPowerCardColor(previewCard.card.type)};"
+            >
+              {previewCard.card.type} Power
+            </span>
+            <strong class="detail-name" data-testid="detail-card-name">{previewCard.card.name}</strong>
+          </div>
+
+          {#if previewCard.card.attackBonus !== undefined}
+            <div class="detail-stats">
+              <span class="stat-item"><strong>Attack:</strong> +{previewCard.card.attackBonus}</span>
+              <span class="stat-item"><strong>Damage:</strong> {previewCard.card.damage ?? DEFAULT_DAMAGE}</span>
+            </div>
+          {/if}
+
+          <p class="detail-description" data-testid="detail-card-description">{previewCard.card.description}</p>
+
+          <div class="detail-rule" data-testid="detail-card-rule">
+            <strong>Rule:</strong> {previewCard.card.rule}
+          </div>
+
+          <button
+            class="detail-select-button"
+            class:deselect={isPreviewCardSelected()}
+            onclick={handleSelectFromPreview}
+            data-testid="detail-select-button"
+            aria-label="{isPreviewCardSelected() ? 'Deselect' : 'Select'} {previewCard.card.name}"
+          >
+            {isPreviewCardSelected() ? 'Deselect' : 'Select'} Power
+          </button>
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -215,7 +298,6 @@
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
     padding: 1rem;
-    width: min(700px, 90vmin);
     max-height: min(85vh, 90vmin);
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -256,27 +338,38 @@
 
   .card-layout {
     display: flex;
+    flex-direction: row;
+    gap: 0.75rem;
     flex: 1;
     min-height: 0;
     overflow: hidden;
   }
 
-  /* Mini cards in CSS column layout (single column split in half) */
+  /* Compact mini-card list – narrowed to ~50% of the previous width */
   .mini-cards-columns {
-    column-count: 2;
-    column-gap: 0.5rem;
-    flex: 1;
+    width: 280px;
+    flex-shrink: 0;
     max-height: 100%;
     overflow-y: auto;
-    padding-right: 0.5rem;
+    padding-right: 0.25rem;
+    /* Custom scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 215, 0, 0.4) transparent;
+  }
+
+  .mini-cards-columns::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .mini-cards-columns::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.4);
+    border-radius: 2px;
   }
 
   .card-column {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    gap: 0.25rem;
     margin-bottom: 0.5rem;
   }
 
@@ -285,76 +378,230 @@
   }
 
   .section-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: #ffd700;
     font-weight: bold;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.15rem;
     text-transform: uppercase;
   }
 
   .mini-card {
     display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.4rem;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: 0.3rem 0.4rem;
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid;
     border-radius: 4px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     cursor: pointer;
     transition: all 0.2s ease;
     color: #fff;
     text-align: left;
     font-family: inherit;
+    width: 100%;
   }
 
   .mini-card:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
     transform: translateX(2px);
   }
 
   .mini-card.selected {
     border-width: 2px;
     border-color: #ffd700 !important;
-    background: rgba(255, 215, 0, 0.2);
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+    background: rgba(255, 215, 0, 0.15);
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.35);
   }
 
-  .mini-card.expanded {
+  .mini-card.previewing {
     border-width: 2px;
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
-  }
-
-  .mini-card.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
   }
 
   .mini-card.custom-ability {
     border-color: #9c27b0;
-    background: rgba(156, 39, 176, 0.2);
+    background: rgba(156, 39, 176, 0.15);
     cursor: default;
   }
 
   .card-type-badge {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: bold;
     color: #fff;
-    padding: 0.2rem 0.3rem;
+    padding: 0.15rem 0.25rem;
     border-radius: 3px;
     flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  /* Wrapper for card name + one-line description */
+  .card-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 0.05rem;
   }
 
   .card-name-mini {
-    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .card-desc-mini {
+    font-size: 0.58rem;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    font-style: italic;
   }
 
   .auto-label {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     color: #9c27b0;
     font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  /* ── Detail / preview panel ─────────────────────────────── */
+  .power-detail-panel {
+    width: 260px;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    color: #ddd;
+    overflow-y: auto;
+    max-height: 100%;
+    animation: panel-fade-in 0.15s ease-out;
+    /* Custom scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 215, 0, 0.4) transparent;
+  }
+
+  .power-detail-panel::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .power-detail-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 215, 0, 0.4);
+    border-radius: 2px;
+  }
+
+  @keyframes panel-fade-in {
+    from { opacity: 0; transform: translateX(6px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .detail-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .detail-type-badge {
+    display: inline-block;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    width: fit-content;
+    border: 1px solid;
+  }
+
+  .detail-name {
+    font-size: 0.85rem;
+    color: #fff;
+    line-height: 1.3;
+  }
+
+  .detail-stats {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+  }
+
+  .stat-item {
+    font-size: 0.65rem;
+    color: #ffd700;
+  }
+
+  .stat-item strong {
+    color: #fff;
+  }
+
+  .detail-description {
+    margin: 0;
+    line-height: 1.4;
+    font-style: italic;
+    color: #bbb;
+    font-size: 0.7rem;
+  }
+
+  .detail-rule {
+    line-height: 1.45;
+    padding: 0.45rem 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    border-left: 3px solid #ffd700;
+    font-size: 0.7rem;
+    white-space: pre-line;
+  }
+
+  .detail-rule strong {
+    color: #ffd700;
+  }
+
+  .detail-select-button {
+    margin-top: auto;
+    padding: 0.45rem 0.6rem;
+    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
+    border: 2px solid #66bb6a;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+
+  .detail-select-button:hover {
+    background: linear-gradient(135deg, #388e3c 0%, #43a047 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(46, 125, 50, 0.5);
+  }
+
+  .detail-select-button.deselect {
+    background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%);
+    border-color: #ef5350;
+  }
+
+  .detail-select-button.deselect:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, #e53935 100%);
+    box-shadow: 0 3px 8px rgba(198, 40, 40, 0.5);
+  }
+
+  /* Respect user's reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .power-detail-panel {
+      animation: none;
+    }
   }
 </style>
