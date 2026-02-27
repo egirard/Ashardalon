@@ -248,6 +248,7 @@
   let monsterExplorationEvent: { monsterId: string; monsterName: string; direction: import('../store/types').Direction; tileType: string } | null = $state(null);
   let explorationPhase: import('../store/gameSlice').ExplorationPhaseState = $state({ step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null });
   let recentlyPlacedTileId: string | null = $state(null);
+  let recentlyPlacedRoomSetTileIds: string[] = $state([]);
   let pendingMonsterDisplayId: string | null = $state(null);
   let poisonedDamageNotification: { heroId: string; damage: number } | null = $state(null);
   let poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null = $state(null);
@@ -392,6 +393,7 @@
       monsterExplorationEvent = state.game.monsterExplorationEvent;
       explorationPhase = state.game.explorationPhase;
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
+      recentlyPlacedRoomSetTileIds = state.game.recentlyPlacedRoomSetTileIds;
       pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
 
       // Auto-advance exploration phase steps based on current step
@@ -502,6 +504,7 @@
     monsterExplorationEvent = state.game.monsterExplorationEvent;
     explorationPhase = state.game.explorationPhase;
     recentlyPlacedTileId = state.game.recentlyPlacedTileId;
+    recentlyPlacedRoomSetTileIds = state.game.recentlyPlacedRoomSetTileIds;
     pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
     poisonedDamageNotification = state.game.poisonedDamageNotification;
     poisonRecoveryNotification = state.game.poisonRecoveryNotification;
@@ -3049,17 +3052,19 @@
           {@const isTileSelectableForMonsterSpawn = validMonsterSpawnTiles.includes(tile.id)}
           {@const isTileSelectable = isTileSelectableForBladeBarrier || isTileSelectableForRelocation || isTileSelectableForMonsterSpawn}
           {@const hasSelectableSquares = pendingBladeBarrier && pendingBladeBarrier.step === 'square-selection' && pendingBladeBarrier.selectedTileId === tile.id}
+          {@const roomSetIndex = recentlyPlacedRoomSetTileIds.indexOf(tile.id)}
+          {@const isRoomSetTile = roomSetIndex !== -1}
           <div
             class="placed-tile"
             class:start-tile={tile.tileType === "start"}
-            class:newly-placed={tile.id === recentlyPlacedTileId}
+            class:newly-placed={tile.id === recentlyPlacedTileId || isRoomSetTile}
             class:selectable-tile={isTileSelectable}
             class:has-selectable-squares={hasSelectableSquares}
             data-testid={tile.tileType === "start"
               ? "start-tile"
               : "dungeon-tile"}
             data-tile-id={tile.id}
-            style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;"
+            style="left: {tilePos.x}px; top: {tilePos.y}px; width: {tileDims.width}px; height: {tileDims.height}px;{isRoomSetTile ? ` animation-delay: ${roomSetIndex * 0.6}s;` : ''}"
             onclick={(e) => {
               if (isTileSelectableForBladeBarrier) {
                 handleBladeBarrierTileSelected(tile.id, e);

@@ -645,6 +645,12 @@ export interface TileDefinition {
    * When placed, this tile triggers the chamber-reveal event for scenario-specific effects.
    */
   isChamberEntrance?: boolean;
+  /**
+   * Whether this tile is part of a room set (placed automatically on chamber reveal).
+   * Room set tiles are not drawn from the deck; they are placed at fixed positions
+   * relative to the Chamber Entrance tile.
+   */
+  isChamberTile?: boolean;
   /** 
    * Position of the scorch mark (spawn marker) in default orientation.
    * This is in local tile coordinates (0-3, 0-3) and represents where
@@ -653,6 +659,32 @@ export interface TileDefinition {
    * position in the default orientation (rotation 0).
    */
   scorchMarkPosition: Position;
+}
+
+/**
+ * A single tile in a room set, positioned relative to the Chamber Entrance tile.
+ * Offsets are directional: forward is in the exploration direction,
+ * right is perpendicular (clockwise from forward).
+ */
+export interface RoomSetTile {
+  /** Tile type to place */
+  tileType: string;
+  /** Number of grid steps in the exploration direction (1 = immediately beyond entrance) */
+  forwardOffset: number;
+  /** Number of grid steps to the right of the exploration direction (can be negative for left) */
+  rightOffset: number;
+}
+
+/**
+ * Room set definition for a multi-tile chamber.
+ * When a Chamber Entrance tile is revealed and the active scenario defines a room set,
+ * all tiles in the set are placed immediately around/beyond the entrance.
+ */
+export interface RoomSetDefinition {
+  /** Display name of the room set */
+  name: string;
+  /** Tiles that form the room set, each positioned relative to the entrance */
+  tiles: RoomSetTile[];
 }
 
 /**
@@ -701,6 +733,16 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 1, y: 1 } },  // E/W open, white arrow points east
   // Chamber Entrance tile — marks the boundary of the final chamber; triggers chamber-reveal when placed
   { tileType: 'tile-chamber-entrance', imagePath: 'assets/Tile_DireChamber_Entrance.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberEntrance: true, scorchMarkPosition: { x: 2, y: 2 } },
+  // Horrid Chamber room tiles — placed as a set when the Chamber Entrance is revealed (Adventure 14)
+  { tileType: 'tile-horrid-chamber-01', imagePath: 'assets/Tile_HorridChamber_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-horrid-chamber-02', imagePath: 'assets/Tile_HorridChamber_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-horrid-chamber-03', imagePath: 'assets/Tile_HorridChamber_03.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-horrid-chamber-04', imagePath: 'assets/Tile_HorridChamber_04.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  // Dire Chamber room tiles — placed as a set when the Chamber Entrance is revealed (Adventure 15)
+  { tileType: 'tile-dire-chamber-01', imagePath: 'assets/Tile_DireChamber_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-dire-chamber-02', imagePath: 'assets/Tile_DireChamber_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-dire-chamber-03', imagePath: 'assets/Tile_DireChamber_03.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-dire-chamber-04', imagePath: 'assets/Tile_DireChamber_04.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
 ];
 
 /**
