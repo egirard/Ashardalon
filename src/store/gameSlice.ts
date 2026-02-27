@@ -47,6 +47,8 @@ import {
   moveBottomTileToTop,
   drawTileFromBottom,
   shuffleTileDeck,
+  addRoomSetTile,
+  computeRoomSetTilePosition,
 } from "./exploration";
 import {
   initializeMonsterDeck,
@@ -349,6 +351,8 @@ export interface GameState {
   explorationPhase: ExplorationPhaseState;
   /** ID of the most recently placed tile (for animation tracking) */
   recentlyPlacedTileId: string | null;
+  /** IDs of tiles placed as part of a room set reveal (for sequential animation) */
+  recentlyPlacedRoomSetTileIds: string[];
   /** ID of monster waiting to be displayed after tile animation completes */
   pendingMonsterDisplayId: string | null;
   /** Poisoned damage notification: hero ID and damage taken (null if no notification) */
@@ -738,6 +742,7 @@ const initialState: GameState = {
   explorationPhaseMessage: null,
   explorationPhase: { step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null },
   recentlyPlacedTileId: null,
+  recentlyPlacedRoomSetTileIds: [],
   pendingMonsterDisplayId: null,
   poisonedDamageNotification: null,
   poisonRecoveryNotification: null,
@@ -1923,6 +1928,36 @@ export const gameSlice = createSlice({
             message: `🚪 Chamber Entrance revealed!`,
             details: `The way to the final chamber is open.`,
           });
+
+          // Place room set tiles if the scenario defines one
+          const scenarioDef = getScenarioById(state.selectedScenarioId);
+          if (scenarioDef.roomSet) {
+            const roomSetTileIds: string[] = [];
+            for (const roomTile of scenarioDef.roomSet.tiles) {
+              const roomTileId = `tile-room-set-${state.dungeon.tiles.length}`;
+              const roomTilePosition = computeRoomSetTilePosition(
+                newTile.position,
+                exploredEdge.direction,
+                roomTile.forwardOffset,
+                roomTile.rightOffset
+              );
+              state.dungeon = addRoomSetTile(
+                state.dungeon,
+                roomTile.tileType,
+                roomTilePosition,
+                roomTileId
+              );
+              roomSetTileIds.push(roomTileId);
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'exploration',
+                message: `🏛️ ${scenarioDef.roomSet.name}: placed ${roomTile.tileType}`,
+                details: `Room set tile placed at col:${roomTilePosition.col} row:${roomTilePosition.row}`,
+              });
+            }
+            state.recentlyPlacedRoomSetTileIds = roomSetTileIds;
+          }
         }
         
         // Long Hallway special rule: automatically draw and place a second tile on its unexplored edge
@@ -2264,6 +2299,7 @@ export const gameSlice = createSlice({
       // Clear exploration phase message to ensure sequential display
       state.explorationPhaseMessage = null;
       state.recentlyPlacedTileId = null;
+      state.recentlyPlacedRoomSetTileIds = [];
       
       // Draw encounter if no exploration occurred this turn
       if (shouldDrawEncounter(state.turnState)) {
@@ -5039,6 +5075,13 @@ export const gameSlice = createSlice({
       state.monsters = [...state.monsters, ...action.payload];
     },
     /**
+     * Set the tile deck (for testing purposes)
+     * Allows E2E tests to force specific tiles to be drawn next.
+     */
+    setTileDeck: (state, action: PayloadAction<string[]>) => {
+      state.dungeon.tileDeck = action.payload;
+    },
+    /**
      * Set test mode (for E2E testing purposes)
      * When testMode is true, notifications will not auto-dismiss
      */
@@ -5238,6 +5281,7 @@ export const gameSlice = createSlice({
     dismissExplorationPhaseMessage: (state) => {
       state.explorationPhaseMessage = null;
       state.recentlyPlacedTileId = null;
+      state.recentlyPlacedRoomSetTileIds = [];
     },
     /**
      * Dismiss the villain phase step message (e.g. "Encounter card skipped" auto-dismiss)
@@ -6246,6 +6290,7 @@ export const {
   setMonsterExplorationEvent,
   addDungeonTiles,
   addMonstersForTesting,
+  setTileDeck,
   setTestMode,
   dismissHealingSurgeNotification,
   dismissEncounterEffectMessage,

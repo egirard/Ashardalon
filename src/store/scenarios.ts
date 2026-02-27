@@ -7,6 +7,8 @@
  * in docs/scenario_design.md.
  */
 
+import type { RoomSetDefinition } from './types';
+
 /**
  * Configuration for scenario-specific dungeon tile deck setup.
  *
@@ -59,6 +61,12 @@ export interface ScenarioDefinition {
    * Chamber Entrance tile has been revealed.
    */
   defeatedIfDeckExhausted?: boolean;
+  /**
+   * Room set placed when the Chamber Entrance tile is revealed.
+   * Each tile in the set is placed at a fixed position relative to the entrance,
+   * in the direction the hero explored. Tiles are placed sequentially with animations.
+   */
+  roomSet?: RoomSetDefinition;
 }
 
 /** All selectable scenarios, in the order they appear in the lobby book. */
@@ -91,6 +99,15 @@ export const SCENARIOS: ScenarioDefinition[] = [
     splashImage: 'assets/HeroScreen_VoidCaller.png',
     monstersToDefeat: 12,
     deckSetup: { miniStackSize: 10, chamberEntrancePosition: 0 },
+    roomSet: {
+      name: 'Obsidian Sanctum',
+      tiles: [
+        { tileType: 'tile-horrid-chamber-01', forwardOffset: 1, rightOffset: 0 },
+        { tileType: 'tile-horrid-chamber-02', forwardOffset: 1, rightOffset: 1 },
+        { tileType: 'tile-horrid-chamber-03', forwardOffset: 2, rightOffset: 0 },
+        { tileType: 'tile-horrid-chamber-04', forwardOffset: 2, rightOffset: 1 },
+      ],
+    },
   },
   {
     id: 'adventure-15',
@@ -108,6 +125,15 @@ export const SCENARIOS: ScenarioDefinition[] = [
     monstersToDefeat: 12,
     deckSetup: { miniStackSize: 12, chamberEntrancePosition: 0 },
     defeatedIfDeckExhausted: true,
+    roomSet: {
+      name: 'Infernal Workshop',
+      tiles: [
+        { tileType: 'tile-dire-chamber-01', forwardOffset: 1, rightOffset: 0 },
+        { tileType: 'tile-dire-chamber-02', forwardOffset: 1, rightOffset: 1 },
+        { tileType: 'tile-dire-chamber-03', forwardOffset: 2, rightOffset: 0 },
+        { tileType: 'tile-dire-chamber-04', forwardOffset: 2, rightOffset: 1 },
+      ],
+    },
   },
 ];
 

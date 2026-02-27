@@ -6,7 +6,9 @@ import type {
   Direction, 
   GridPosition,
   DungeonState,
-  TileDefinition
+  TileDefinition,
+  RoomSetTile,
+  EdgeType,
 } from './types';
 import { TILE_DEFINITIONS, START_TILE, getStartTileSubTileId } from './types';
 import { findTileAtPosition, isOnTileEdge } from './movement';
@@ -516,6 +518,111 @@ export function updateDungeonAfterExploration(
   
   return {
     tiles: [...updatedTiles, { ...newTile, edges: newTileEdges }],
+    unexploredEdges: [...updatedUnexploredEdges, ...newUnexploredEdges],
+    tileDeck: dungeon.tileDeck,
+  };
+}
+
+/**
+ * Compute the absolute grid position for a room set tile given:
+ * - The entrance tile's grid position
+ * - The exploration direction (the direction the hero explored to reach the entrance)
+ * - The tile's forward and right offsets (relative to the exploration direction)
+ *
+ * "Forward" is in the exploration direction; "right" is clockwise from forward.
+ */
+export function computeRoomSetTilePosition(
+  entrancePosition: GridPosition,
+  explorationDirection: Direction,
+  forwardOffset: number,
+  rightOffset: number
+): GridPosition {
+  const { col, row } = entrancePosition;
+
+  switch (explorationDirection) {
+    case 'north':
+      // forward = decreasing row, right = increasing col
+      return { col: col + rightOffset, row: row - forwardOffset };
+    case 'south':
+      // forward = increasing row, right = decreasing col
+      return { col: col - rightOffset, row: row + forwardOffset };
+    case 'east':
+      // forward = increasing col, right = increasing row
+      return { col: col + forwardOffset, row: row + rightOffset };
+    case 'west':
+      // forward = decreasing col, right = decreasing row
+      return { col: col - forwardOffset, row: row - rightOffset };
+  }
+}
+
+/**
+ * Add a single room set tile to the dungeon at the given absolute grid position.
+ * Unlike normal tile placement, this does not require an explored edge — the tile
+ * is inserted at a fixed absolute position. Edges are automatically connected to
+ * any adjacent tiles already in the dungeon.
+ */
+export function addRoomSetTile(
+  dungeon: DungeonState,
+  tileType: string,
+  position: GridPosition,
+  tileId: string
+): DungeonState {
+  const tileDef = getTileDefinition(tileType);
+  if (!tileDef) return dungeon;
+
+  const directions: Direction[] = ['north', 'south', 'east', 'west'];
+
+  let updatedTiles = [...dungeon.tiles];
+  let updatedUnexploredEdges = [...dungeon.unexploredEdges];
+
+  // Start with all open edges as 'unexplored' (walls stay as walls)
+  const newTileEdges: { north: EdgeType; south: EdgeType; east: EdgeType; west: EdgeType } = {
+    north: tileDef.defaultEdges.north === 'wall' ? 'wall' : 'unexplored',
+    south: tileDef.defaultEdges.south === 'wall' ? 'wall' : 'unexplored',
+    east: tileDef.defaultEdges.east === 'wall' ? 'wall' : 'unexplored',
+    west: tileDef.defaultEdges.west === 'wall' ? 'wall' : 'unexplored',
+  };
+  const newUnexploredEdges: TileEdge[] = [];
+
+  for (const dir of directions) {
+    if (newTileEdges[dir] === 'wall') continue;
+
+    const adjacentPos = getAdjacentPosition(position, dir);
+    const adjacentTile = updatedTiles.find(
+      t => t.position.col === adjacentPos.col && t.position.row === adjacentPos.row
+    );
+
+    if (adjacentTile) {
+      // Adjacent tile already exists — connect edges
+      newTileEdges[dir] = 'open';
+      const adjacentConnectingDir = getOppositeDirection(dir);
+      updatedTiles = updatedTiles.map(tile => {
+        if (tile.id === adjacentTile.id) {
+          return {
+            ...tile,
+            edges: { ...tile.edges, [adjacentConnectingDir]: 'open' as const },
+          };
+        }
+        return tile;
+      });
+      updatedUnexploredEdges = updatedUnexploredEdges.filter(
+        e => !(e.tileId === adjacentTile.id && e.direction === adjacentConnectingDir)
+      );
+    } else {
+      newUnexploredEdges.push({ tileId: tileId, direction: dir });
+    }
+  }
+
+  const newTile: PlacedTile = {
+    id: tileId,
+    tileType,
+    position,
+    rotation: 0,
+    edges: newTileEdges,
+  };
+
+  return {
+    tiles: [...updatedTiles, newTile],
     unexploredEdges: [...updatedUnexploredEdges, ...newUnexploredEdges],
     tileDeck: dungeon.tileDeck,
   };
