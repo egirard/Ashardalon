@@ -511,6 +511,7 @@
   .hero-row-container {
     position: relative;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
   }
@@ -527,6 +528,7 @@
   .hero-column-container {
     position: relative;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
   }
