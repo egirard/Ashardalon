@@ -1933,6 +1933,16 @@ export const gameSlice = createSlice({
           const scenarioDef = getScenarioById(state.selectedScenarioId);
           if (scenarioDef.roomSet) {
             const roomSetTileIds: string[] = [];
+            // Pre-compute ALL room set tile positions so each addRoomSetTile call knows
+            // which neighbours are interior (will be connected later) vs. exterior (seal).
+            const allRoomSetPositions = scenarioDef.roomSet.tiles.map(rt =>
+              computeRoomSetTilePosition(
+                newTile.position,
+                exploredEdge.direction,
+                rt.forwardOffset,
+                rt.rightOffset
+              )
+            );
             for (const roomTile of scenarioDef.roomSet.tiles) {
               const roomTileId = `tile-room-set-${state.dungeon.tiles.length}`;
               const roomTilePosition = computeRoomSetTilePosition(
@@ -1946,7 +1956,8 @@ export const gameSlice = createSlice({
                 roomTile.tileType,
                 roomTilePosition,
                 roomTileId,
-                exploredEdge.direction
+                exploredEdge.direction,
+                allRoomSetPositions
               );
               roomSetTileIds.push(roomTileId);
               state.logEntries.push({
