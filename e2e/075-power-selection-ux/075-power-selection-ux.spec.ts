@@ -16,7 +16,7 @@ test.describe('075 - Power Selection UX', () => {
       }
     });
 
-    // STEP 2: Select hero Vistra (Fighter with 3 at-will powers) from the bottom edge
+    // STEP 2: Select hero Vistra (Dwarf Fighter with 3 at-will powers) from the bottom edge
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
     
     await screenshots.capture(page, 'hero-selected', {
@@ -37,13 +37,13 @@ test.describe('075 - Power Selection UX', () => {
       }
     });
 
-    // STEP 3: Open power card selection modal for Vistra
+    // STEP 3: Open power card selection panel for Vistra
     await page.locator('[data-testid="select-powers-vistra"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
 
-    await screenshots.capture(page, 'power-modal-opened', {
+    await screenshots.capture(page, 'power-panel-opened', {
       programmaticCheck: async () => {
-        // Verify modal is visible
+        // Verify panel is visible
         await expect(page.locator('[data-testid="power-card-selection"]')).toBeVisible();
         
         // Verify custom ability card is displayed (Dwarven Resilience for Vistra)
@@ -66,11 +66,7 @@ test.describe('075 - Power Selection UX', () => {
       }
     });
 
-    // STEP 4: Click on an unselected at-will card (should auto-swap)
-    // First, get the current selections
-    const selectedAtWills = await page.locator('[data-testid^="atwill-card-"].selected').all();
-    const firstSelectedId = await selectedAtWills[0].getAttribute('data-testid');
-    
+    // STEP 4: Click an at-will card to open the detail panel
     // Find an unselected at-will card
     const allAtWillCards = await page.locator('[data-testid^="atwill-card-"]').all();
     let unselectedCard = null;
@@ -81,15 +77,35 @@ test.describe('075 - Power Selection UX', () => {
         break;
       }
     }
-    
-    // Click the unselected card
+
+    // Click to open detail panel
     if (unselectedCard) {
       await unselectedCard.click();
     }
-    
+
+    await screenshots.capture(page, 'detail-panel-opened', {
+      programmaticCheck: async () => {
+        // Verify detail panel is visible
+        await expect(page.locator('[data-testid="power-detail-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="detail-card-name"]')).toBeVisible();
+        await expect(page.locator('[data-testid="detail-card-description"]')).toBeVisible();
+        await expect(page.locator('[data-testid="detail-card-rule"]')).toBeVisible();
+        
+        // Select button is visible and says "Select Power" (card is not yet selected)
+        await expect(page.locator('[data-testid="detail-select-button"]')).toBeVisible();
+        await expect(page.locator('[data-testid="detail-select-button"]')).toContainText('Select Power');
+      }
+    });
+
+    // STEP 5: Select the card from the detail panel (auto-swaps since at 2/2 capacity)
+    const firstSelectedAtWills = await page.locator('[data-testid^="atwill-card-"].selected').all();
+    const firstSelectedId = await firstSelectedAtWills[0].getAttribute('data-testid');
+
+    await page.locator('[data-testid="detail-select-button"]').click();
+
     await screenshots.capture(page, 'power-swapped', {
       programmaticCheck: async () => {
-        // Verify the first selected card is no longer selected
+        // Verify the first selected card is no longer selected (auto-swap occurred)
         if (firstSelectedId) {
           const firstCard = page.locator(`[data-testid="${firstSelectedId}"]`);
           await expect(firstCard).not.toHaveClass(/selected/);
@@ -97,27 +113,30 @@ test.describe('075 - Power Selection UX', () => {
         
         // Verify still exactly 2 at-will cards are selected
         await expect(page.locator('[data-testid^="atwill-card-"].selected')).toHaveCount(2);
+        
+        // The detail panel select button now shows "Deselect Power"
+        await expect(page.locator('[data-testid="detail-select-button"]')).toContainText('Deselect Power');
       }
     });
 
-    // STEP 5: Verify Done button is NOT present (removed as per requirement 3)
+    // STEP 6: Verify Done button is NOT present (removed as per requirement)
     await screenshots.capture(page, 'no-done-button', {
       programmaticCheck: async () => {
         // Verify Done button does not exist
         await expect(page.locator('[data-testid="done-power-selection"]')).not.toBeVisible();
         
-        // Verify close button (X) is present in modal header
+        // Verify close button (X) is present in panel header
         await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();
       }
     });
 
-    // STEP 6: Close modal using X button
+    // STEP 7: Close panel using X button
     await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
-    await screenshots.capture(page, 'modal-closed', {
+    await screenshots.capture(page, 'panel-closed', {
       programmaticCheck: async () => {
-        // Verify modal is closed
+        // Verify panel is closed
         await expect(page.locator('[data-testid="power-card-selection"]')).not.toBeVisible();
         
         // Verify the power count still shows "5 of 5 Powers"

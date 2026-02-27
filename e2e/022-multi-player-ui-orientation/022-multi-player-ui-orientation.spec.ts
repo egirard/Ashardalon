@@ -20,21 +20,15 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="power-card-selection"]')).toBeVisible();
         await expect(page.locator('.modal-header h2')).toContainText('Quinn');
-        // Verify done button is enabled (shows completion via button state)
-        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
+        // Verify close button is present
+        await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();
         // Verify mini-cards are displayed in column layout
         await expect(page.locator('.mini-cards-columns')).toBeVisible();
       }
     });
     
-    // Accept pre-selected power cards
-    // Note: Power cards are pre-selected by default (utility + 2 at-wills + daily).
-    // Manual selection would trigger toggle behavior, deselecting pre-selected cards.
-    // Use evaluate to click since rotated elements may be outside viewport bounds
-    await page.evaluate(() => {
-      const button = document.querySelector('[data-testid="done-power-selection"]') as HTMLButtonElement;
-      if (button) button.click();
-    });
+    // Accept pre-selected power cards by closing the panel
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     // STEP 3: Select Vistra from top edge (180° rotation)
@@ -48,17 +42,17 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="power-card-selection"]')).toBeVisible();
         await expect(page.locator('.modal-header h2')).toContainText('Vistra');
-        // Verify done button is enabled (shows completion via button state)
-        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
+        // Verify close button is present
+        await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();
         // Verify mini-cards are displayed in column layout
         await expect(page.locator('.mini-cards-columns')).toBeVisible();
       }
     });
     
-    // Accept pre-selected power cards (same approach for all heroes)
+    // Accept pre-selected power cards by closing the panel
     // Use evaluate to click since rotated elements may be outside viewport bounds
     await page.evaluate(() => {
-      const button = document.querySelector('[data-testid="done-power-selection"]') as HTMLButtonElement;
+      const button = document.querySelector('[data-testid="close-power-selection"]') as HTMLButtonElement;
       if (button) button.click();
     });
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
@@ -74,17 +68,17 @@ test.describe('022 - Multi-Player UI Orientation', () => {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="power-card-selection"]')).toBeVisible();
         await expect(page.locator('.modal-header h2')).toContainText('Keyleth');
-        // Verify done button is enabled (shows completion via button state)
-        await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
+        // Verify close button is present
+        await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();
         // Verify mini-cards are displayed in column layout
         await expect(page.locator('.mini-cards-columns')).toBeVisible();
       }
     });
     
-    // Accept pre-selected power cards (same approach for all heroes)
+    // Accept pre-selected power cards by closing the panel
     // Use evaluate to click since rotated elements may be outside viewport bounds
     await page.evaluate(() => {
-      const button = document.querySelector('[data-testid="done-power-selection"]') as HTMLButtonElement;
+      const button = document.querySelector('[data-testid="close-power-selection"]') as HTMLButtonElement;
       if (button) button.click();
     });
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
