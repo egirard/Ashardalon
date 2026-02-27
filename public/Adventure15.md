@@ -2,6 +2,9 @@ Adventure 15: The Echo of the Cursed Forge
 Goal: Reach the Infernal Workshop and destroy Vraxos, the Cursed Sentinel.
 
 Introduction
+
+![The Infernal Workshop — entrance to the Dire Chamber](assets/Tile_DireChamber_Entrance.png)
+
 Deep within the soot-stained corridors of Firestorm Peak lies an ancient forge once used to craft weapons of legend. However, a mechanical monstrosity known as Vraxos has claimed the forge, using its heat to build an army of animated armors and jagged blades. The forge's rhythmic pounding can be felt throughout the mountain, destabilizing the tunnels. You must find the workshop and dismantle the Sentinel before the mountain collapses.
 
 Setup
@@ -35,6 +38,9 @@ Victory: The Heroes win if they defeat Vraxos, the Cursed Sentinel.
 Defeat: The Heroes lose if any Hero is at 0 Hit Points and there are no Healing Surges remaining, or if the Dungeon Tile deck runs out before the Chamber is reached.
 
 New Villain: Vraxos, the Cursed Sentinel
+
+![Vraxos, the Cursed Sentinel (use the Otyugh miniature as proxy)](assets/Villain_Otyugh.png)
+
 AC: 18
 
 HP: 10 (Adjust for number of players: +5 HP per additional Hero)
