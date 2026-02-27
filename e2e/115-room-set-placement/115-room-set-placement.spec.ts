@@ -114,6 +114,23 @@ test.describe('115 - Room Set Placement on Chamber Reveal', () => {
           expect(tile, `Expected ${tileType} to be placed`).toBeDefined();
         }
 
+        // Room set tiles must not connect through walls — verify no unexplored edges
+        // remain on the room set tiles (they form a closed chamber with only wall exteriors)
+        const roomSetTileIds = (state.game.recentlyPlacedRoomSetTileIds as string[]);
+        const roomSetUnexploredEdges = state.game.dungeon.unexploredEdges.filter(
+          (e: any) => roomSetTileIds.includes(e.tileId)
+        );
+        expect(roomSetUnexploredEdges).toHaveLength(0);
+
+        // Chamber entrance must not have unexplored edges on its wall sides (east/west)
+        const entranceUnexplored = state.game.dungeon.unexploredEdges.filter(
+          (e: any) => e.tileId === entranceTile.id
+        );
+        const hasEastOrWestUnexplored = entranceUnexplored.some(
+          (e: any) => e.direction === 'east' || e.direction === 'west'
+        );
+        expect(hasEastOrWestUnexplored).toBe(false);
+
         // Chamber should be revealed
         expect(state.game.scenario.chamberRevealed).toBe(true);
 

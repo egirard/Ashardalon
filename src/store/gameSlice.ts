@@ -1945,7 +1945,8 @@ export const gameSlice = createSlice({
                 state.dungeon,
                 roomTile.tileType,
                 roomTilePosition,
-                roomTileId
+                roomTileId,
+                exploredEdge.direction
               );
               roomSetTileIds.push(roomTileId);
               state.logEntries.push({

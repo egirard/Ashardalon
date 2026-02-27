@@ -7,7 +7,6 @@ import type {
   GridPosition,
   DungeonState,
   TileDefinition,
-  RoomSetTile,
   EdgeType,
 } from './types';
 import { TILE_DEFINITIONS, START_TILE, getStartTileSubTileId } from './types';
@@ -556,31 +555,55 @@ export function computeRoomSetTilePosition(
 }
 
 /**
+ * Rotation degrees to apply for each exploration direction.
+ * Room set tiles are defined in canonical "north" orientation.
+ * When the chamber is reached from a different direction, rotate to match.
+ */
+const EXPLORATION_DIRECTION_ROTATION: Record<Direction, number> = {
+  north: 0,
+  east: 90,
+  south: 180,
+  west: 270,
+};
+
+/**
  * Add a single room set tile to the dungeon at the given absolute grid position.
- * Unlike normal tile placement, this does not require an explored edge — the tile
- * is inserted at a fixed absolute position. Edges are automatically connected to
- * any adjacent tiles already in the dungeon.
+ *
+ * Unlike normal tile placement this does not require an explored edge — the tile is
+ * inserted at a fixed absolute position.
+ *
+ * The tile's `defaultEdges` are defined for the canonical "north exploration" orientation.
+ * `explorationDirection` is used to rotate the edges (and tile image) so the room always
+ * faces the correct way regardless of which direction the hero came from.
+ *
+ * Only connects to an adjacent tile when the adjacent tile's connecting edge is not a
+ * wall — prevents room set tiles from bridging through solid walls of existing tiles.
  */
 export function addRoomSetTile(
   dungeon: DungeonState,
   tileType: string,
   position: GridPosition,
-  tileId: string
+  tileId: string,
+  explorationDirection: Direction = 'north'
 ): DungeonState {
   const tileDef = getTileDefinition(tileType);
   if (!tileDef) return dungeon;
+
+  const rotation = EXPLORATION_DIRECTION_ROTATION[explorationDirection];
+  // Rotate the canonical defaultEdges to match the actual exploration direction
+  const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
 
   const directions: Direction[] = ['north', 'south', 'east', 'west'];
 
   let updatedTiles = [...dungeon.tiles];
   let updatedUnexploredEdges = [...dungeon.unexploredEdges];
 
-  // Start with all open edges as 'unexplored' (walls stay as walls)
+  // Start with rotated edges: walls stay as walls, open edges start as 'unexplored'
   const newTileEdges: { north: EdgeType; south: EdgeType; east: EdgeType; west: EdgeType } = {
-    north: tileDef.defaultEdges.north === 'wall' ? 'wall' : 'unexplored',
-    south: tileDef.defaultEdges.south === 'wall' ? 'wall' : 'unexplored',
-    east: tileDef.defaultEdges.east === 'wall' ? 'wall' : 'unexplored',
-    west: tileDef.defaultEdges.west === 'wall' ? 'wall' : 'unexplored',
+    north: rotatedEdges.north === 'wall' ? 'wall' : 'unexplored',
+    south: rotatedEdges.south === 'wall' ? 'wall' : 'unexplored',
+    east: rotatedEdges.east === 'wall' ? 'wall' : 'unexplored',
+    west: rotatedEdges.west === 'wall' ? 'wall' : 'unexplored',
   };
   const newUnexploredEdges: TileEdge[] = [];
 
@@ -593,21 +616,24 @@ export function addRoomSetTile(
     );
 
     if (adjacentTile) {
-      // Adjacent tile already exists — connect edges
-      newTileEdges[dir] = 'open';
       const adjacentConnectingDir = getOppositeDirection(dir);
-      updatedTiles = updatedTiles.map(tile => {
-        if (tile.id === adjacentTile.id) {
-          return {
-            ...tile,
-            edges: { ...tile.edges, [adjacentConnectingDir]: 'open' as const },
-          };
-        }
-        return tile;
-      });
-      updatedUnexploredEdges = updatedUnexploredEdges.filter(
-        e => !(e.tileId === adjacentTile.id && e.direction === adjacentConnectingDir)
-      );
+      // Only connect through valid (non-wall) edges on the adjacent tile
+      if (adjacentTile.edges[adjacentConnectingDir] !== 'wall') {
+        newTileEdges[dir] = 'open';
+        updatedTiles = updatedTiles.map(tile => {
+          if (tile.id === adjacentTile.id) {
+            return {
+              ...tile,
+              edges: { ...tile.edges, [adjacentConnectingDir]: 'open' as const },
+            };
+          }
+          return tile;
+        });
+        updatedUnexploredEdges = updatedUnexploredEdges.filter(
+          e => !(e.tileId === adjacentTile.id && e.direction === adjacentConnectingDir)
+        );
+      }
+      // (direction is physically blocked by adjacent tile's wall — no connection or unexplored edge)
     } else {
       newUnexploredEdges.push({ tileId: tileId, direction: dir });
     }
@@ -617,7 +643,7 @@ export function addRoomSetTile(
     id: tileId,
     tileType,
     position,
-    rotation: 0,
+    rotation,
     edges: newTileEdges,
   };
 
