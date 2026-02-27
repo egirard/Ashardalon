@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { getScenarioById } from "./scenarios";
 import {
   GameScreen,
   HeroToken,
@@ -213,6 +214,8 @@ const DEFAULT_HERO_SPEED = 5;
 
 export interface GameState {
   currentScreen: GameScreen;
+  /** ID of the scenario selected in the lobby (see src/store/scenarios.ts) */
+  selectedScenarioId: string;
   heroTokens: HeroToken[];
   turnState: TurnState;
   /** Seed used for random number generation, enables reproducible game states */
@@ -669,6 +672,7 @@ function createUndoSnapshot(
 
 const initialState: GameState = {
   currentScreen: "character-select",
+  selectedScenarioId: 'default',
   heroTokens: [],
   turnState: { ...DEFAULT_TURN_STATE },
   validMoveSquares: [],
@@ -1162,8 +1166,16 @@ export const gameSlice = createSlice({
       // Initialize hero turn actions for the first hero
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
 
-      // Initialize scenario state (MVP: defeat 2 monsters)
-      state.scenario = { ...DEFAULT_SCENARIO_STATE };
+      // Initialize scenario state from the selected scenario definition
+      const scenarioDef = getScenarioById(state.selectedScenarioId);
+      state.scenario = {
+        monstersDefeated: 0,
+        monstersToDefeat: scenarioDef.monstersToDefeat,
+        objective: scenarioDef.goal,
+        title: scenarioDef.title,
+        description: scenarioDef.intro,
+        introductionShown: false,
+      };
 
       // Initialize party resources (XP starts at 0)
       state.partyResources = { ...DEFAULT_PARTY_RESOURCES };
@@ -6133,6 +6145,12 @@ export const gameSlice = createSlice({
       state.monsterDecisionSelectedPosition = null;
     },
     /**
+     * Select a scenario in the lobby (before the game starts)
+     */
+    selectScenario: (state, action: PayloadAction<string>) => {
+      state.selectedScenarioId = action.payload;
+    },
+    /**
      * Dismiss the scenario introduction modal
      */
     dismissScenarioIntroduction: (state) => {
@@ -6250,6 +6268,7 @@ export const {
   selectMonsterTarget,
   selectMonsterPosition,
   cancelMonsterDecision,
+  selectScenario,
   dismissScenarioIntroduction,
   showScenarioIntroductionModal,
   addLogEntry,
