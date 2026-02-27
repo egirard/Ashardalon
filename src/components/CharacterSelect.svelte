@@ -165,7 +165,9 @@
   <!-- Top edge - heroes rotated 180° for player sitting at top -->
   <div class="edge-zone edge-top" data-testid="edge-top">
     <div class="hero-row-container">
-      <p class="choose-hero-label">Choose your hero</p>
+      {#if getHeroesOnEdge('top').length === 0}
+        <p class="choose-hero-label">Choose your hero</p>
+      {/if}
       <!-- Duplicate panels for heroes on same edge -->
       {#if getHeroesOnEdge('top').length >= 2}
         {#each getHeroesOnEdge('top') as hero (hero.id)}
@@ -238,7 +240,9 @@
     <!-- Left edge - heroes rotated 270° (90° counter-clockwise) for player sitting at left -->
     <div class="edge-zone edge-left" data-testid="edge-left">
       <div class="hero-column-container">
-        <p class="choose-hero-label">Choose your hero</p>
+        {#if getHeroesOnEdge('left').length === 0}
+          <p class="choose-hero-label">Choose your hero</p>
+        {/if}
         <!-- Duplicate panels for heroes on same edge -->
         {#if getHeroesOnEdge('left').length >= 2}
           {#each getHeroesOnEdge('left') as hero (hero.id)}
@@ -314,7 +318,9 @@
     <!-- Right edge - heroes rotated 90° clockwise for player sitting at right -->
     <div class="edge-zone edge-right" data-testid="edge-right">
       <div class="hero-column-container">
-        <p class="choose-hero-label">Choose your hero</p>
+        {#if getHeroesOnEdge('right').length === 0}
+          <p class="choose-hero-label">Choose your hero</p>
+        {/if}
         <!-- Duplicate panels for heroes on same edge -->
         {#if getHeroesOnEdge('right').length >= 2}
           {#each getHeroesOnEdge('right') as hero (hero.id)}
@@ -386,7 +392,9 @@
   <!-- Bottom edge - heroes at 0° for player sitting at bottom (standard orientation) -->
   <div class="edge-zone edge-bottom" data-testid="edge-bottom">
     <div class="hero-row-container">
-      <p class="choose-hero-label">Choose your hero</p>
+      {#if getHeroesOnEdge('bottom').length === 0}
+        <p class="choose-hero-label">Choose your hero</p>
+      {/if}
       <!-- Duplicate panels for heroes on same edge -->
       {#if getHeroesOnEdge('bottom').length >= 2}
         {#each getHeroesOnEdge('bottom') as hero (hero.id)}

@@ -166,7 +166,7 @@
   .book-wrapper {
     position: relative;
     width: 100%;
-    max-width: 340px;
+    max-width: min(420px, 100%);
     transition: transform 0.5s ease-in-out;
   }
 
@@ -216,12 +216,25 @@
     overflow: hidden;
   }
 
-  /* ---- Page content ---- */
+  /* ---- Page content (scrollable area) ---- */
   .page-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
+    max-height: 55vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(184, 134, 11, 0.4) transparent;
+  }
+
+  .page-content::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .page-content::-webkit-scrollbar-thumb {
+    background: rgba(184, 134, 11, 0.4);
+    border-radius: 3px;
   }
 
   /* ---- Page navigation row ---- */
@@ -259,7 +272,7 @@
 
   .splash-image {
     width: 100%;
-    max-height: 120px;
+    max-height: 90px;
     object-fit: cover;
     border-radius: 4px;
     border: 1px solid rgba(184, 134, 11, 0.3);
@@ -289,10 +302,6 @@
     color: #b0a090;
     text-align: left;
     line-height: 1.5;
-    max-height: 5.5em;
-    overflow: hidden;
-    /* Fade out bottom */
-    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
   }
 
   .villain-line {
