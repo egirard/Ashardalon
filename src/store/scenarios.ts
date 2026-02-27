@@ -7,6 +7,31 @@
  * in docs/scenario_design.md.
  */
 
+/**
+ * Configuration for scenario-specific dungeon tile deck setup.
+ *
+ * The deck is built as follows:
+ * 1. Shuffle all regular dungeon tiles.
+ * 2. Take the first `miniStackSize` tiles as the mini-stack (drawn first).
+ * 3. From the remaining tiles, insert the Chamber Entrance tile at position
+ *    `chamberEntrancePosition` from the top of the remainder (0 = immediately
+ *    after the mini-stack).
+ * 4. Append the rest of the shuffled tiles below.
+ *
+ * Final draw order: mini-stack tiles → (0..chamberEntrancePosition-1 remainder tiles)
+ *   → CHAMBER_ENTRANCE → remaining tiles.
+ */
+export interface DeckSetupConfig {
+  /**
+   * Number of tiles from the remainder (below the mini-stack) to place above the
+   * Chamber Entrance. Use 0 to place the Chamber Entrance directly after the
+   * mini-stack, which is the standard configuration for Adventures 14 and 15.
+   */
+  chamberEntrancePosition: number;
+  /** Total number of regular tiles in the mini-stack drawn before the Chamber Entrance group. */
+  miniStackSize: number;
+}
+
 export interface ScenarioDefinition {
   /** Unique identifier used to look up the scenario */
   id: string;
@@ -23,6 +48,17 @@ export interface ScenarioDefinition {
   /** Number of monsters the party must defeat to win (will be replaced by richer
    *  win-condition logic in later stages) */
   monstersToDefeat: number;
+  /**
+   * Scenario-specific dungeon tile deck setup.
+   * When present, the deck is arranged per this config (Chamber Entrance at the
+   * specified position). When absent, the deck is fully shuffled randomly.
+   */
+  deckSetup?: DeckSetupConfig;
+  /**
+   * When true, the party is defeated if the tile deck runs out before the
+   * Chamber Entrance tile has been revealed.
+   */
+  defeatedIfDeckExhausted?: boolean;
 }
 
 /** All selectable scenarios, in the order they appear in the lobby book. */
@@ -54,6 +90,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     villain: 'Malphas, the Void-Caller',
     splashImage: 'assets/HeroScreen_VoidCaller.png',
     monstersToDefeat: 12,
+    deckSetup: { miniStackSize: 10, chamberEntrancePosition: 0 },
   },
   {
     id: 'adventure-15',
@@ -69,6 +106,8 @@ export const SCENARIOS: ScenarioDefinition[] = [
     villain: 'Vraxos, the Cursed Sentinel',
     splashImage: 'assets/HeroScreen_CursedForge.png',
     monstersToDefeat: 12,
+    deckSetup: { miniStackSize: 12, chamberEntrancePosition: 0 },
+    defeatedIfDeckExhausted: true,
   },
 ];
 

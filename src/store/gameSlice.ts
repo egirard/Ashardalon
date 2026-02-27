@@ -9,6 +9,7 @@ import {
   DungeonState,
   TileEdge,
   INITIAL_TILE_DECK,
+  CHAMBER_ENTRANCE_TILE_ID,
   MonsterDeck,
   MonsterState,
   MonsterGroup,
@@ -33,6 +34,7 @@ import {
   ENCOUNTER_CANCEL_COST,
   PendingMonsterDecision,
 } from "./types";
+import { applyDeckSetup } from "./scenarioEngine";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
 import {
   initializeDungeon,
@@ -197,6 +199,7 @@ const DEFAULT_SCENARIO_STATE: ScenarioState = {
   description: "You and your fellow adventurers have entered the depths beneath Firestorm Peak. The dragon Ashardalon's corruption spreads through these caverns. As you explore the dungeon, you'll face hordes of monsters and discover the source of evil.",
   instructions: "Work together to explore the dungeon tiles. When you explore, draw from the Monster Deck and place monsters on the board. Defeat monsters to gain XP and level up your heroes.",
   introductionShown: false,
+  chamberRevealed: false,
 };
 
 /**
@@ -1108,6 +1111,9 @@ export const gameSlice = createSlice({
         position: assignedPositions[index],
       }));
 
+      // Resolve the selected scenario definition (used for deck setup and scenario state)
+      const scenarioDef = getScenarioById(state.selectedScenarioId);
+
       // Initialize turn state
       state.turnState = { ...DEFAULT_TURN_STATE };
 
@@ -1117,7 +1123,12 @@ export const gameSlice = createSlice({
 
       // Initialize dungeon with start tile and shuffled tile deck
       const dungeon = initializeDungeon();
-      dungeon.tileDeck = initializeTileDeck([...INITIAL_TILE_DECK], randomFn);
+      // Use scenario-specific deck setup if defined, otherwise shuffle randomly
+      if (scenarioDef.deckSetup) {
+        dungeon.tileDeck = applyDeckSetup([...INITIAL_TILE_DECK], scenarioDef.deckSetup, randomFn);
+      } else {
+        dungeon.tileDeck = initializeTileDeck([...INITIAL_TILE_DECK], randomFn);
+      }
       state.dungeon = dungeon;
 
       // Initialize monster deck
@@ -1167,7 +1178,6 @@ export const gameSlice = createSlice({
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
 
       // Initialize scenario state from the selected scenario definition
-      const scenarioDef = getScenarioById(state.selectedScenarioId);
       state.scenario = {
         monstersDefeated: 0,
         monstersToDefeat: scenarioDef.monstersToDefeat,
@@ -1175,6 +1185,7 @@ export const gameSlice = createSlice({
         title: scenarioDef.title,
         description: scenarioDef.intro,
         introductionShown: false,
+        chamberRevealed: false,
       };
 
       // Initialize party resources (XP starts at 0)
@@ -1733,6 +1744,23 @@ export const gameSlice = createSlice({
             heroId: currentToken.heroId,
           });
         }
+      } else if (exploredEdge && state.dungeon.tileDeck.length === 0) {
+        // Hero is on an unexplored edge but the tile deck is empty
+        const scenarioDef = getScenarioById(state.selectedScenarioId);
+        if (scenarioDef.defeatedIfDeckExhausted && !state.scenario.chamberRevealed) {
+          // Adventure 15: defeat if deck runs out before the chamber is revealed
+          state.defeatReason = 'The mountain collapses. The Chamber Entrance was never found — the dungeon tile deck is exhausted.';
+          state.currentScreen = 'defeat';
+          return;
+        }
+        // No tiles remain but no defeat condition — skip exploration
+        state.explorationPhase = {
+          step: 'skipped',
+          drawnTile: null,
+          exploredEdge: null,
+          drawnMonster: null,
+        };
+        state.explorationPhaseMessage = 'Tile deck exhausted,\nskipping exploration';
       } else {
         // No exploration - hero not on unexplored edge
         state.explorationPhase = {
@@ -1884,6 +1912,18 @@ export const gameSlice = createSlice({
           message: `New tile revealed to the ${exploredEdge.direction} (${tileColor} arrow)`,
           details: `Tile type: ${drawnTile} | New exits added to dungeon`,
         });
+
+        // Detect Chamber Entrance placement and mark it as revealed
+        if (tileDef?.isChamberEntrance) {
+          state.scenario.chamberRevealed = true;
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'exploration',
+            message: `🚪 Chamber Entrance revealed!`,
+            details: `The way to the final chamber is open.`,
+          });
+        }
         
         // Long Hallway special rule: automatically draw and place a second tile on its unexplored edge
         if (tileDef?.isLongHallway && state.dungeon.tileDeck.length > 0) {
