@@ -17,7 +17,6 @@
     HERO_CUSTOM_ABILITIES,
   } from '../store/powerCards';
   import { getEdgeRotation } from '../utils';
-  import { CheckIcon, CircleIcon } from './icons';
 
   interface Props {
     hero: Hero;
@@ -35,7 +34,7 @@
   const customAbilityId = $derived(HERO_CUSTOM_ABILITIES[hero.id]);
   const customAbility = $derived(customAbilityId ? getPowerCardById(customAbilityId) : null);
 
-  // Preview panel state - which card is currently shown in the detail panel
+  // Preview panel state – which card is shown in the detail panel
   let previewCard: { card: PowerCard; type: 'utility' | 'atWill' | 'daily' } | null = $state(null);
 
   // Power card type colors
@@ -48,41 +47,22 @@
     }
   }
 
-  // Power card type abbreviation
-  function getPowerCardAbbrev(type: string): string {
-    switch (type) {
-      case 'at-will': return 'AW';
-      case 'daily': return 'D';
-      case 'utility': return 'U';
-      default: return '';
-    }
+  // Smart one-line stat summary for mini-cards: "+8 D2", "rng +6 D1", "+4 D1×2"
+  // "ranged" is detected by "within N tile(s)" in the rule (e.g. "within 1 tile of you")
+  // "twice" is detected by "attack ... twice" in the rule (e.g. "Attack one adjacent Monster twice")
+  function getStatSummary(card: PowerCard): string {
+    if (card.attackBonus === undefined) return '';
+    const dmg = card.damage ?? 1;
+    const ranged = /within \d+ tiles?/i.test(card.rule);
+    const twice = /attack.*twice/i.test(card.rule);
+    return `${ranged ? 'rng ' : ''}+${card.attackBonus} D${dmg}${twice ? '×2' : ''}`;
   }
 
-  // Click on a mini-card opens the detail/preview panel instead of immediately selecting
   function handleCardPreview(card: PowerCard, type: 'utility' | 'atWill' | 'daily') {
-    if (previewCard?.card.id === card.id) {
-      previewCard = null; // toggle off if same card clicked again
-    } else {
-      previewCard = { card, type };
-    }
+    previewCard = previewCard?.card.id === card.id ? null : { card, type };
   }
 
-  // Select or deselect the card currently shown in the preview panel
-  function handleSelectFromPreview() {
-    if (!previewCard) return;
-    selectCard(previewCard.card.id, previewCard.type);
-  }
-
-  function isPreviewCardSelected(): boolean {
-    if (!previewCard) return false;
-    const { card, type } = previewCard;
-    if (type === 'utility') return isUtilitySelected(card.id);
-    if (type === 'atWill') return isAtWillSelected(card.id);
-    if (type === 'daily') return isDailySelected(card.id);
-    return false;
-  }
-
-  function selectCard(cardId: number, type: 'utility' | 'atWill' | 'daily') {
+  function toggleCardSelection(cardId: number, type: 'utility' | 'atWill' | 'daily') {
     if (type === 'utility') {
       store.dispatch(selectUtilityCard({ heroId: hero.id, cardId }));
     } else if (type === 'atWill') {
@@ -92,24 +72,15 @@
     }
   }
 
-  function isUtilitySelected(cardId: number): boolean {
-    return selection.utility === cardId;
+  function isCardSelected(cardId: number, type: 'utility' | 'atWill' | 'daily'): boolean {
+    if (type === 'utility') return selection.utility === cardId;
+    if (type === 'atWill') return selection.atWills.includes(cardId);
+    if (type === 'daily') return selection.daily === cardId;
+    return false;
   }
 
-  function isAtWillSelected(cardId: number): boolean {
-    return selection.atWills.includes(cardId);
-  }
-
-  function isDailySelected(cardId: number): boolean {
-    return selection.daily === cardId;
-  }
-
-  // Truncate description for the mini-card one-liner
-  const SHORT_DESCRIPTION_LIMIT = 48;
-  const DEFAULT_DAMAGE = 1;
-  function getShortDescription(description: string): string {
-    if (description.length <= SHORT_DESCRIPTION_LIMIT) return description;
-    return description.substring(0, SHORT_DESCRIPTION_LIMIT - 1) + '…';
+  function isPreviewCardSelected(): boolean {
+    return previewCard ? isCardSelected(previewCard.card.id, previewCard.type) : false;
   }
 </script>
 
@@ -121,139 +92,143 @@
     </div>
 
     <div class="card-layout">
-      <!-- Left: Compact mini-card list organised by section -->
-      <div class="mini-cards-columns">
-        <!-- Custom Ability Column -->
-        {#if customAbility}
-          <div class="card-column">
-            <div class="section-label">Custom Ability</div>
-            <div class="mini-card custom-ability" data-testid="custom-ability-card">
-              <span class="card-type-badge" style="background-color: {getPowerCardColor('utility')};">
-                {getPowerCardAbbrev('utility')}
-              </span>
-              <span class="card-text">
-                <span class="card-name-mini">{customAbility.name}</span>
-                <span class="card-desc-mini">{getShortDescription(customAbility.description)}</span>
-              </span>
-              <span class="auto-label">AUTO</span>
-            </div>
-          </div>
-        {/if}
+      <!-- Two-column card list: Col 1 = Custom+Utility, Col 2 = At-Will+Daily -->
+      <div class="card-columns-area">
 
-        <!-- Utility Cards Column -->
-        <div class="card-column">
-          <div class="section-label">Utility (Pick 1)</div>
+        <!-- Column 1: Custom Ability + Utility -->
+        <div class="card-col">
+          {#if customAbility}
+            <div class="section-label">Custom</div>
+            <div class="mini-card custom-ability" data-testid="custom-ability-card">
+              <input type="checkbox" class="card-checkbox" checked disabled aria-label="Custom ability (auto-selected)" />
+              <span class="card-name">{customAbility.name}</span>
+            </div>
+          {/if}
+
+          <div class="section-label">Utility (1)</div>
           {#each utilityCards as card (card.id)}
-            <button
+            <div
               class="mini-card"
-              class:selected={isUtilitySelected(card.id)}
+              class:selected={isCardSelected(card.id, 'utility')}
               class:previewing={previewCard?.card.id === card.id}
-              style="border-color: {getPowerCardColor(card.type)};"
-              onclick={() => handleCardPreview(card, 'utility')}
+              style="--cc: {getPowerCardColor(card.type)};"
               data-testid="utility-card-{card.id}"
             >
-              <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
-                {getPowerCardAbbrev(card.type)}
-              </span>
-              <span class="card-text">
-                <span class="card-name-mini">{card.name}</span>
-                <span class="card-desc-mini">{getShortDescription(card.description)}</span>
-              </span>
-              {#if isUtilitySelected(card.id)}
-                <CheckIcon size={12} ariaLabel="Selected" />
-              {/if}
-            </button>
+              <input
+                type="checkbox"
+                class="card-checkbox"
+                checked={isCardSelected(card.id, 'utility')}
+                onchange={() => toggleCardSelection(card.id, 'utility')}
+                aria-label="Select {card.name}"
+              />
+              <button
+                class="card-info-btn"
+                onclick={() => handleCardPreview(card, 'utility')}
+                aria-label="Details: {card.name}"
+              >
+                <span class="card-name">{card.name}</span>
+                {#if getStatSummary(card)}<span class="card-stat">{getStatSummary(card)}</span>{/if}
+              </button>
+            </div>
           {/each}
         </div>
 
-        <!-- At-Will Cards Column -->
-        <div class="card-column">
-          <div class="section-label">At-Will (Pick 2) - {selection.atWills.length}/2</div>
+        <!-- Column 2: At-Will + Daily -->
+        <div class="card-col">
+          <div class="section-label">At-Will ({selection.atWills.length}/2)</div>
           {#each atWillCards as card (card.id)}
-            <button
+            <div
               class="mini-card"
-              class:selected={isAtWillSelected(card.id)}
+              class:selected={isCardSelected(card.id, 'atWill')}
               class:previewing={previewCard?.card.id === card.id}
-              style="border-color: {getPowerCardColor(card.type)};"
-              onclick={() => handleCardPreview(card, 'atWill')}
+              style="--cc: {getPowerCardColor(card.type)};"
               data-testid="atwill-card-{card.id}"
             >
-              <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
-                {getPowerCardAbbrev(card.type)}
-              </span>
-              <span class="card-text">
-                <span class="card-name-mini">{card.name}</span>
-                <span class="card-desc-mini">{getShortDescription(card.description)}</span>
-              </span>
-              {#if isAtWillSelected(card.id)}
-                <CheckIcon size={12} ariaLabel="Selected" />
-              {/if}
-            </button>
+              <input
+                type="checkbox"
+                class="card-checkbox"
+                checked={isCardSelected(card.id, 'atWill')}
+                onchange={() => toggleCardSelection(card.id, 'atWill')}
+                aria-label="Select {card.name}"
+              />
+              <button
+                class="card-info-btn"
+                onclick={() => handleCardPreview(card, 'atWill')}
+                aria-label="Details: {card.name}"
+              >
+                <span class="card-name">{card.name}</span>
+                {#if getStatSummary(card)}<span class="card-stat">{getStatSummary(card)}</span>{/if}
+              </button>
+            </div>
           {/each}
-        </div>
 
-        <!-- Daily Cards Column -->
-        <div class="card-column">
-          <div class="section-label">Daily (Pick 1)</div>
+          <div class="section-label">Daily (1)</div>
           {#each dailyCards as card (card.id)}
-            <button
+            <div
               class="mini-card"
-              class:selected={isDailySelected(card.id)}
+              class:selected={isCardSelected(card.id, 'daily')}
               class:previewing={previewCard?.card.id === card.id}
-              style="border-color: {getPowerCardColor(card.type)};"
-              onclick={() => handleCardPreview(card, 'daily')}
+              style="--cc: {getPowerCardColor(card.type)};"
               data-testid="daily-card-{card.id}"
             >
-              <span class="card-type-badge" style="background-color: {getPowerCardColor(card.type)};">
-                {getPowerCardAbbrev(card.type)}
-              </span>
-              <span class="card-text">
-                <span class="card-name-mini">{card.name}</span>
-                <span class="card-desc-mini">{getShortDescription(card.description)}</span>
-              </span>
-              {#if isDailySelected(card.id)}
-                <CheckIcon size={12} ariaLabel="Selected" />
-              {/if}
-            </button>
+              <input
+                type="checkbox"
+                class="card-checkbox"
+                checked={isCardSelected(card.id, 'daily')}
+                onchange={() => toggleCardSelection(card.id, 'daily')}
+                aria-label="Select {card.name}"
+              />
+              <button
+                class="card-info-btn"
+                onclick={() => handleCardPreview(card, 'daily')}
+                aria-label="Details: {card.name}"
+              >
+                <span class="card-name">{card.name}</span>
+                {#if getStatSummary(card)}<span class="card-stat">{getStatSummary(card)}</span>{/if}
+              </button>
+            </div>
           {/each}
         </div>
       </div>
 
-      <!-- Right: Detail panel shown when a power card is clicked -->
+      <!-- Right: Detail panel shown when a card info button is clicked -->
       {#if previewCard}
+        {@const pc = previewCard}
         <div class="power-detail-panel" data-testid="power-detail-panel">
           <div class="detail-header">
             <span
               class="detail-type-badge"
-              style="background-color: {getPowerCardColor(previewCard.card.type)}33; border-color: {getPowerCardColor(previewCard.card.type)}; color: {getPowerCardColor(previewCard.card.type)};"
+              style="background-color: {getPowerCardColor(pc.card.type)}33; border-color: {getPowerCardColor(pc.card.type)}; color: {getPowerCardColor(pc.card.type)};"
             >
-              {previewCard.card.type} Power
+              {pc.card.type} Power
             </span>
-            <strong class="detail-name" data-testid="detail-card-name">{previewCard.card.name}</strong>
+            <strong class="detail-name" data-testid="detail-card-name">{pc.card.name}</strong>
           </div>
 
-          {#if previewCard.card.attackBonus !== undefined}
+          {#if pc.card.attackBonus !== undefined}
             <div class="detail-stats">
-              <span class="stat-item"><strong>Attack:</strong> +{previewCard.card.attackBonus}</span>
-              <span class="stat-item"><strong>Damage:</strong> {previewCard.card.damage ?? DEFAULT_DAMAGE}</span>
+              <span class="stat-item"><strong>Attack:</strong> +{pc.card.attackBonus}</span>
+              <span class="stat-item"><strong>Damage:</strong> {pc.card.damage ?? 1}</span>
             </div>
           {/if}
 
-          <p class="detail-description" data-testid="detail-card-description">{previewCard.card.description}</p>
+          <p class="detail-description" data-testid="detail-card-description">{pc.card.description}</p>
 
           <div class="detail-rule" data-testid="detail-card-rule">
-            <strong>Rule:</strong> {previewCard.card.rule}
+            <strong>Rule:</strong> {pc.card.rule}
           </div>
 
-          <button
-            class="detail-select-button"
-            class:deselect={isPreviewCardSelected()}
-            onclick={handleSelectFromPreview}
-            data-testid="detail-select-button"
-            aria-label="{isPreviewCardSelected() ? 'Deselect' : 'Select'} {previewCard.card.name}"
-          >
-            {isPreviewCardSelected() ? 'Deselect' : 'Select'} Power
-          </button>
+          <label class="detail-checkbox-label" data-testid="detail-select-button">
+            <input
+              type="checkbox"
+              class="detail-checkbox"
+              checked={isPreviewCardSelected()}
+              onchange={() => toggleCardSelection(pc.card.id, pc.type)}
+            />
+            <span class="detail-checkbox-text">
+              {isPreviewCardSelected() ? 'Deselect Power' : 'Select Power'}
+            </span>
+          </label>
         </div>
       {/if}
     </div>
@@ -297,7 +272,7 @@
     position: relative;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     max-height: min(85vh, 90vmin);
     color: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -311,24 +286,24 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
     flex-shrink: 0;
   }
 
   .modal-header h2 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .close-button {
     background: none;
     border: none;
     color: #fff;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.25rem 0.5rem;
     line-height: 1;
   }
 
@@ -339,154 +314,150 @@
   .card-layout {
     display: flex;
     flex-direction: row;
-    gap: 0.75rem;
+    gap: 0.6rem;
     flex: 1;
     min-height: 0;
     overflow: hidden;
   }
 
-  /* Compact mini-card list – narrowed to ~50% of the previous width */
-  .mini-cards-columns {
-    width: 280px;
-    flex-shrink: 0;
+  /* Two-column area: each column ~135px */
+  .card-columns-area {
+    display: flex;
+    flex-direction: row;
+    gap: 0.4rem;
     max-height: 100%;
     overflow-y: auto;
-    padding-right: 0.25rem;
-    /* Custom scrollbar styling */
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.4) transparent;
   }
 
-  .mini-cards-columns::-webkit-scrollbar {
+  .card-columns-area::-webkit-scrollbar {
     width: 4px;
   }
 
-  .mini-cards-columns::-webkit-scrollbar-thumb {
+  .card-columns-area::-webkit-scrollbar-thumb {
     background: rgba(255, 215, 0, 0.4);
     border-radius: 2px;
   }
 
-  .card-column {
+  .card-col {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .card-column:last-child {
-    margin-bottom: 0;
+    gap: 0.2rem;
+    width: 135px;
+    flex-shrink: 0;
   }
 
   .section-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: #ffd700;
     font-weight: bold;
-    margin-bottom: 0.15rem;
     text-transform: uppercase;
+    white-space: nowrap;
+    margin-top: 0.35rem;
+    margin-bottom: 0.05rem;
   }
 
+  .card-col > .section-label:first-child {
+    margin-top: 0;
+  }
+
+  /* Mini-card row: [checkbox] [info button] */
   .mini-card {
     display: flex;
-    align-items: flex-start;
-    gap: 0.25rem;
-    padding: 0.3rem 0.4rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.2rem 0.3rem;
     background: rgba(0, 0, 0, 0.4);
-    border: 1px solid;
-    border-radius: 4px;
-    font-size: 0.65rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: #fff;
-    text-align: left;
-    font-family: inherit;
-    width: 100%;
-  }
-
-  .mini-card:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    transform: translateX(2px);
+    border: 1px solid var(--cc, #555);
+    border-radius: 3px;
   }
 
   .mini-card.selected {
-    border-width: 2px;
     border-color: #ffd700 !important;
-    background: rgba(255, 215, 0, 0.15);
-    box-shadow: 0 0 6px rgba(255, 215, 0, 0.35);
+    background: rgba(255, 215, 0, 0.12);
   }
 
   .mini-card.previewing {
     border-width: 2px;
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .mini-card.custom-ability {
     border-color: #9c27b0;
-    background: rgba(156, 39, 176, 0.15);
-    cursor: default;
+    background: rgba(156, 39, 176, 0.12);
   }
 
-  .card-type-badge {
-    font-size: 0.55rem;
-    font-weight: bold;
-    color: #fff;
-    padding: 0.15rem 0.25rem;
-    border-radius: 3px;
+  /* Checkbox – small, accent-colored */
+  .card-checkbox {
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
-    margin-top: 0.1rem;
+    cursor: pointer;
+    accent-color: #ffd700;
+    margin: 0;
   }
 
-  /* Wrapper for card name + one-line description */
-  .card-text {
-    display: flex;
-    flex-direction: column;
+  /* Button that opens the detail panel on click */
+  .card-info-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
     flex: 1;
     min-width: 0;
-    gap: 0.05rem;
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
   }
 
-  .card-name-mini {
+  .card-info-btn:hover {
+    color: #ffd700;
+  }
+
+  .card-name {
+    font-size: 0.65rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-weight: 600;
-    line-height: 1.2;
+    width: 100%;
+    line-height: 1.25;
+    font-weight: 500;
   }
 
-  .card-desc-mini {
-    font-size: 0.58rem;
-    color: rgba(255, 255, 255, 0.5);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
-    font-style: italic;
-  }
-
-  .auto-label {
+  .card-stat {
     font-size: 0.55rem;
-    color: #9c27b0;
-    font-weight: bold;
-    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.15;
+    font-family: monospace;
+    white-space: nowrap;
+  }
+
+  .card-info-btn:hover .card-stat {
+    color: #ffd700;
   }
 
   /* ── Detail / preview panel ─────────────────────────────── */
   .power-detail-panel {
-    width: 260px;
+    width: 220px;
     flex-shrink: 0;
     background: rgba(0, 0, 0, 0.45);
     border: 1px solid rgba(255, 215, 0, 0.3);
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.7rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    font-size: 0.72rem;
+    gap: 0.45rem;
+    font-size: 0.7rem;
     color: #ddd;
     overflow-y: auto;
     max-height: 100%;
     animation: panel-fade-in 0.15s ease-out;
-    /* Custom scrollbar */
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 215, 0, 0.4) transparent;
   }
@@ -508,14 +479,14 @@
   .detail-header {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
   }
 
   .detail-type-badge {
     display: inline-block;
-    padding: 0.2rem 0.45rem;
+    padding: 0.15rem 0.4rem;
     border-radius: 4px;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: bold;
     text-transform: uppercase;
     width: fit-content;
@@ -523,7 +494,7 @@
   }
 
   .detail-name {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: #fff;
     line-height: 1.3;
   }
@@ -531,13 +502,13 @@
   .detail-stats {
     display: flex;
     gap: 0.75rem;
-    padding: 0.35rem 0.5rem;
+    padding: 0.3rem 0.45rem;
     background: rgba(0, 0, 0, 0.4);
     border-radius: 4px;
   }
 
   .stat-item {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: #ffd700;
   }
 
@@ -550,16 +521,16 @@
     line-height: 1.4;
     font-style: italic;
     color: #bbb;
-    font-size: 0.7rem;
+    font-size: 0.67rem;
   }
 
   .detail-rule {
     line-height: 1.45;
-    padding: 0.45rem 0.5rem;
+    padding: 0.4rem 0.45rem;
     background: rgba(0, 0, 0, 0.4);
     border-radius: 4px;
     border-left: 3px solid #ffd700;
-    font-size: 0.7rem;
+    font-size: 0.67rem;
     white-space: pre-line;
   }
 
@@ -567,35 +538,39 @@
     color: #ffd700;
   }
 
-  .detail-select-button {
+  /* Checkbox row at the bottom of the detail panel */
+  .detail-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
     margin-top: auto;
-    padding: 0.45rem 0.6rem;
-    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
-    border: 2px solid #66bb6a;
-    border-radius: 6px;
-    color: #fff;
-    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 0.38rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    background: rgba(0, 0, 0, 0.3);
+    transition: background 0.2s;
+    user-select: none;
+  }
+
+  .detail-checkbox-label:hover {
+    background: rgba(255, 215, 0, 0.1);
+  }
+
+  .detail-checkbox {
+    width: 14px;
+    height: 14px;
+    accent-color: #ffd700;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .detail-checkbox-text {
+    font-size: 0.65rem;
     font-weight: bold;
     text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-  }
-
-  .detail-select-button:hover {
-    background: linear-gradient(135deg, #388e3c 0%, #43a047 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(46, 125, 50, 0.5);
-  }
-
-  .detail-select-button.deselect {
-    background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%);
-    border-color: #ef5350;
-  }
-
-  .detail-select-button.deselect:hover {
-    background: linear-gradient(135deg, #d32f2f 0%, #e53935 100%);
-    box-shadow: 0 3px 8px rgba(198, 40, 40, 0.5);
+    color: #fff;
   }
 
   /* Respect user's reduced motion preference */
@@ -605,3 +580,4 @@
     }
   }
 </style>
+

@@ -23,7 +23,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
         // Verify close button is present
         await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();
         // Verify mini-cards are displayed in column layout
-        await expect(page.locator('.mini-cards-columns')).toBeVisible();
+        await expect(page.locator('.card-columns-area')).toBeVisible();
       }
     });
     
@@ -45,7 +45,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
         // Verify close button is present
         await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();
         // Verify mini-cards are displayed in column layout
-        await expect(page.locator('.mini-cards-columns')).toBeVisible();
+        await expect(page.locator('.card-columns-area')).toBeVisible();
       }
     });
     
@@ -71,7 +71,7 @@ test.describe('022 - Multi-Player UI Orientation', () => {
         // Verify close button is present
         await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();
         // Verify mini-cards are displayed in column layout
-        await expect(page.locator('.mini-cards-columns')).toBeVisible();
+        await expect(page.locator('.card-columns-area')).toBeVisible();
       }
     });
     
