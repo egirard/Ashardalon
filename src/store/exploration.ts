@@ -578,13 +578,20 @@ const EXPLORATION_DIRECTION_ROTATION: Record<Direction, number> = {
  *
  * Only connects to an adjacent tile when the adjacent tile's connecting edge is not a
  * wall — prevents room set tiles from bridging through solid walls of existing tiles.
+ *
+ * `roomSetPositions` is the full set of positions that will be occupied by tiles in this
+ * room set placement batch.  Open edges that face a position in this set remain
+ * 'unexplored' (the matching tile will be placed later and connect to them).  Open edges
+ * that face a position NOT in this set AND have no existing adjacent tile are sealed as
+ * 'wall' — these are exterior edges of the chamber that should not form dangling corridors.
  */
 export function addRoomSetTile(
   dungeon: DungeonState,
   tileType: string,
   position: GridPosition,
   tileId: string,
-  explorationDirection: Direction = 'north'
+  explorationDirection: Direction = 'north',
+  roomSetPositions: GridPosition[] = []
 ): DungeonState {
   const tileDef = getTileDefinition(tileType);
   if (!tileDef) return dungeon;
@@ -635,7 +642,17 @@ export function addRoomSetTile(
       }
       // (direction is physically blocked by adjacent tile's wall — no connection or unexplored edge)
     } else {
-      newUnexploredEdges.push({ tileId: tileId, direction: dir });
+      // No existing tile adjacent.  Check whether this position is reserved for a
+      // later room set tile (interior connection) or truly exterior (seal it).
+      const isRoomSetNeighbor = roomSetPositions.some(
+        p => p.col === adjacentPos.col && p.row === adjacentPos.row
+      );
+      if (isRoomSetNeighbor) {
+        newUnexploredEdges.push({ tileId: tileId, direction: dir });
+      } else {
+        // Exterior edge — seal it so no dangling corridor indicator appears
+        newTileEdges[dir] = 'wall';
+      }
     }
   }
 
