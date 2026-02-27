@@ -6,7 +6,7 @@
 
 ## Test Flow
 
-This test verifies the side preference feature for heroes on the same edge:
+### Test 1: Two Players on Bottom Edge (swap functionality)
 
 1. Navigate to character selection screen
 2. Select first hero (Quinn) from bottom edge - no side indicator appears yet
@@ -14,37 +14,62 @@ This test verifies the side preference feature for heroes on the same edge:
 4. Click the swap button to swap their side preferences
 5. Start the game and verify panels are positioned side-by-side on the game board
 
+### Test 2: Two Players on Top Edge (orientation fix)
+
+1. Navigate to character selection screen
+2. Select Keyleth from top edge - no side indicator appears yet
+3. Select Tarak from top edge - duplicate panels appear with correct 180° rotation
+4. Start the game and verify panels are positioned side-by-side at the top of the game board
+
 ## Screenshots
 
-### Step 1: Initial Character Selection Screen
+### Test 1 - Step 1: Initial Character Selection Screen
 
 The player sees all 5 available heroes at each edge of the screen.
 
 ![000-character-selection-initial](068-two-players-same-side.spec.ts-snapshots/000-character-selection-initial-chromium-linux.png)
 
-### Step 2: One Hero Selected - No Side Indicator
+### Test 1 - Step 2: One Hero Selected - No Side Indicator
 
 After selecting Quinn from the bottom edge, the hero is highlighted but no side indicator appears (only 1 hero on this edge).
 
 ![001-quinn-selected-bottom-no-indicator](068-two-players-same-side.spec.ts-snapshots/001-quinn-selected-bottom-no-indicator-chromium-linux.png)
 
-### Step 3: Two Heroes Selected - Side Indicators Appear
+### Test 1 - Step 3: Two Heroes Selected - Side Indicators Appear
 
 After selecting Vistra from the bottom edge, side indicators appear above both heroes. Quinn shows left position (highlighted square) and Vistra shows right position (highlighted square).
 
 ![002-two-heroes-bottom-side-indicators-appear](068-two-players-same-side.spec.ts-snapshots/002-two-heroes-bottom-side-indicators-appear-chromium-linux.png)
 
-### Step 4: Sides Swapped
+### Test 1 - Step 4: Sides Swapped
 
 After clicking the arrow button, Quinn is now on the right and Vistra is on the left. The indicators update to show the new positions.
 
 ![003-sides-swapped](068-two-players-same-side.spec.ts-snapshots/003-sides-swapped-chromium-linux.png)
 
-### Step 5: Game Board with Side-by-Side Positioning
+### Test 1 - Step 5: Game Board with Side-by-Side Positioning
 
 On the game board, Quinn's panel is positioned at the right side of the bottom edge and Vistra's panel is at the left side, with proper spacing between them.
 
 ![004-game-board-side-by-side](068-two-players-same-side.spec.ts-snapshots/004-game-board-side-by-side-chromium-linux.png)
+
+### Test 2 - Step 1: Keyleth Selected at Top - No Side Indicator
+
+After selecting Keyleth from the top edge, the hero is highlighted but no side indicator appears (only 1 hero on this edge).
+
+![000-keyleth-selected-top-no-indicator](068-two-players-same-side.spec.ts-snapshots/000-keyleth-selected-top-no-indicator-chromium-linux.png)
+
+### Test 2 - Step 2: Two Heroes at Top - Duplicate Panels Appear
+
+After selecting Tarak from the top edge, duplicate panels appear with correct 180° orientation (readable by the player sitting at the top).
+
+![001-two-heroes-top-duplicate-panels-appear](068-two-players-same-side.spec.ts-snapshots/001-two-heroes-top-duplicate-panels-appear-chromium-linux.png)
+
+### Test 2 - Step 3: Game Board - Top Edge Side-by-Side
+
+On the game board, both panels are positioned at the top edge, side-by-side, with Keyleth on the left and Tarak on the right.
+
+![002-game-board-top-edge-side-by-side](068-two-players-same-side.spec.ts-snapshots/002-game-board-top-edge-side-by-side-chromium-linux.png)
 
 ## Verification Checklist
 

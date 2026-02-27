@@ -127,4 +127,92 @@ test.describe('068 - Two Players on Same Side', () => {
       }
     });
   });
+
+  test('two players on the top edge see duplicate panels with correct orientation', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // STEP 1: Navigate to character selection
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+
+    // STEP 2: Select Keyleth from top edge
+    await page.locator('[data-testid="hero-keyleth-top"]').click();
+    await page.locator('[data-testid="select-powers-keyleth"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'keyleth-selected-top-no-indicator', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="selected-count"]')).toContainText('1 heroes selected');
+        // Verify no side indicator is shown (only 1 hero on this edge)
+        const sideIndicators = await page.locator('[data-testid="side-indicator"]').count();
+        expect(sideIndicators).toBe(0);
+      }
+    });
+
+    // STEP 3: Select Tarak from top edge (second hero on same edge)
+    await page.locator('[data-testid="hero-tarak-top"]').click();
+    // Wait for duplicate panels to appear
+    await page.locator('[data-testid="duplicate-panel-tarak-right"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'two-heroes-top-duplicate-panels-appear', {
+      programmaticCheck: async () => {
+        // Hero cards should now be hidden (not in DOM)
+        const keylethCard = await page.locator('[data-testid="hero-keyleth-top"]').count();
+        const tarakCard = await page.locator('[data-testid="hero-tarak-top"]').count();
+        expect(keylethCard).toBe(0);
+        expect(tarakCard).toBe(0);
+
+        await expect(page.locator('[data-testid="selected-count"]')).toContainText('2 heroes selected');
+
+        // Verify duplicate panels exist for both heroes
+        const duplicatePanels = await page.locator('[data-testid^="duplicate-panel-"]').count();
+        expect(duplicatePanels).toBe(2);
+
+        // Verify Redux store edge assignments
+        const storeState = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+
+        expect(storeState.heroes.heroEdgeMap['keyleth']).toBe('top');
+        expect(storeState.heroes.heroEdgeMap['tarak']).toBe('top');
+        expect(storeState.heroes.heroSidePreferences['keyleth']).toBe('left');
+        expect(storeState.heroes.heroSidePreferences['tarak']).toBe('right');
+      }
+    });
+
+    // STEP 4: Start the game and verify top-edge panels are correctly positioned
+    await setupDeterministicGame(page);
+    await page.locator('[data-testid="start-game-button"]').click();
+    await dismissScenarioIntroduction(page);
+
+    await screenshots.capture(page, 'game-board-top-edge-side-by-side', {
+      fullPage: true,
+      programmaticCheck: async () => {
+        // Verify both player panels are visible at the top edge
+        const topPanels = await page.locator('[data-testid="player-panel-top"]').count();
+        expect(topPanels).toBe(2);
+
+        const keylethPanel = page.locator('[data-testid="player-panel-top"][data-hero-id="keyleth"]');
+        const tarakPanel = page.locator('[data-testid="player-panel-top"][data-hero-id="tarak"]');
+
+        await expect(keylethPanel).toBeVisible();
+        await expect(tarakPanel).toBeVisible();
+
+        // Verify side preferences persisted
+        expect(await keylethPanel.getAttribute('data-side-preference')).toBe('left');
+        expect(await tarakPanel.getAttribute('data-side-preference')).toBe('right');
+
+        // Verify panels are positioned side-by-side (not overlapping)
+        const keylethBox = await keylethPanel.boundingBox();
+        const tarakBox = await tarakPanel.boundingBox();
+
+        expect(keylethBox).not.toBeNull();
+        expect(tarakBox).not.toBeNull();
+
+        if (keylethBox && tarakBox) {
+          // Keyleth (left side) should be further left than Tarak (right side)
+          expect(tarakBox.x).toBeGreaterThan(keylethBox.x + keylethBox.width);
+        }
+      }
+    });
+  });
 });
