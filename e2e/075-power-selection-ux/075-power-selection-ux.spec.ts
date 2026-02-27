@@ -66,7 +66,7 @@ test.describe('075 - Power Selection UX', () => {
       }
     });
 
-    // STEP 4: Click an at-will card to open the detail panel
+    // STEP 4: Click an at-will card's info button to open the detail panel
     // Find an unselected at-will card
     const allAtWillCards = await page.locator('[data-testid^="atwill-card-"]').all();
     let unselectedCard = null;
@@ -78,9 +78,9 @@ test.describe('075 - Power Selection UX', () => {
       }
     }
 
-    // Click to open detail panel
+    // Click the info button inside the card to open detail panel
     if (unselectedCard) {
-      await unselectedCard.click();
+      await unselectedCard.locator('.card-info-btn').click();
     }
 
     await screenshots.capture(page, 'detail-panel-opened', {
