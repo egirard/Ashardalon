@@ -166,7 +166,7 @@
   .book-wrapper {
     position: relative;
     width: 100%;
-    max-width: min(420px, 100%);
+    max-width: min(480px, 100%);
     transition: transform 0.5s ease-in-out;
   }
 
@@ -221,8 +221,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    max-height: 55vh;
+    gap: 0.4rem;
+    max-height: 40vh;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(184, 134, 11, 0.4) transparent;
@@ -272,7 +272,7 @@
 
   .splash-image {
     width: 100%;
-    max-height: 90px;
+    max-height: 70px;
     object-fit: cover;
     border-radius: 4px;
     border: 1px solid rgba(184, 134, 11, 0.3);
