@@ -2,6 +2,9 @@ Adventure 14: The Shadow of the Void-Caller
 Goal: Find the Obsidian Sanctum and defeat Malphas, the Void-Caller.
 
 Introduction
+
+![The Obsidian Sanctum — entrance to the Horrid Chamber](assets/Tile_HorridChamber_Entrance.png)
+
 A thick, unnatural fog has begun to seep out of the Firestorm Peak tunnels, chilling the surrounding villages and draining the life from the land. Whispers from the local rangers speak of a rogue sorcerer named Malphas who has occupied a forgotten ritual chamber deep in the mountain. He is said to be weaving a "Void Gate" that will swallow the light of the world. You must penetrate the depths, find his sanctum, and sever his connection to the void before the eclipse is complete.
 
 Setup
@@ -35,6 +38,9 @@ Victory: The Heroes win if they defeat Malphas, the Void-Caller.
 Defeat: The Heroes lose if any Hero is at 0 Hit Points and there are no Healing Surges remaining.
 
 New Villain: Malphas, the Void-Caller
+
+![Malphas, the Void-Caller (use the Cultist Shaman miniature)](assets/Monster_Cultist.png)
+
 AC: 16
 
 HP: 12 (Adjust for number of players: +4 HP per additional Hero)
