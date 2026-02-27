@@ -18,26 +18,12 @@
   
   // Determine arrow direction - arrow points to the opposite side
   const arrowDirection = $derived(side === 'left' ? '→' : '←');
-  
-  // Determine rotation based on edge
-  const getRotation = () => {
-    switch (edge) {
-      case 'top': return 180;
-      case 'left': return 90;
-      case 'right': return -90;
-      case 'bottom': return 0;
-      default: return 0;
-    }
-  };
-  
-  const rotation = getRotation();
 </script>
 
 <div 
   class="duplicate-panel" 
   class:left={side === 'left'}
   class:right={side === 'right'}
-  style="transform: rotate({rotation}deg);"
   data-testid="duplicate-panel-{hero.id}-{side}"
 >
   <button 
