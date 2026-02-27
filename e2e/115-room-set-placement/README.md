@@ -34,6 +34,6 @@ The full chamber layout is visible: start tile (blue) → chamber entrance → 4
 - ✅ Log entry mentions "Chamber Entrance revealed"
 - ✅ Log entry mentions "Obsidian Sanctum" room set placement
 - ✅ Room set tiles positioned correctly relative to entrance (forward/right offsets)
-- ✅ **Room set tiles have zero unexplored edges** — they form a fully closed chamber (no wall-edge connections)
-- ✅ Chamber entrance has no unexplored edges on its wall sides (east/west)
+- ✅ **No wall edges appear as unexplored** — tile connections validated against image-analysed edge configuration (`tools/validate_tiles.py`)
+- ✅ Chamber entrance east wall side has no unexplored edge
 - ✅ Animation IDs cleared after villain phase ends

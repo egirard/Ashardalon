@@ -114,22 +114,35 @@ test.describe('115 - Room Set Placement on Chamber Reveal', () => {
           expect(tile, `Expected ${tileType} to be placed`).toBeDefined();
         }
 
-        // Room set tiles must not connect through walls — verify no unexplored edges
-        // remain on the room set tiles (they form a closed chamber with only wall exteriors)
+        // Room set tiles must not connect through wall edges — verify that wall-facing sides
+        // on room set tiles never appear as unexplored edges in the dungeon state.
+        // (Wall sides are definitively closed; only open edges can be unexplored.)
         const roomSetTileIds = (state.game.recentlyPlacedRoomSetTileIds as string[]);
-        const roomSetUnexploredEdges = state.game.dungeon.unexploredEdges.filter(
-          (e: any) => roomSetTileIds.includes(e.tileId)
+        const roomSetTiles = state.game.dungeon.tiles.filter(
+          (t: any) => roomSetTileIds.includes(t.id)
         );
-        expect(roomSetUnexploredEdges).toHaveLength(0);
+        for (const tile of roomSetTiles) {
+          const unexploredForTile = state.game.dungeon.unexploredEdges.filter(
+            (e: any) => e.tileId === tile.id
+          );
+          for (const edge of unexploredForTile) {
+            // Any unexplored edge must be an open edge, not a wall
+            expect(
+              tile.edges[edge.direction],
+              `Tile ${tile.tileType} has wall edge ${edge.direction} marked as unexplored`
+            ).not.toBe('wall');
+          }
+        }
 
-        // Chamber entrance must not have unexplored edges on its wall sides (east/west)
+        // Chamber entrance must not have unexplored edges on its wall side (east only,
+        // since image analysis confirmed west is open on the entrance tile)
         const entranceUnexplored = state.game.dungeon.unexploredEdges.filter(
           (e: any) => e.tileId === entranceTile.id
         );
-        const hasEastOrWestUnexplored = entranceUnexplored.some(
-          (e: any) => e.direction === 'east' || e.direction === 'west'
+        const hasEastUnexplored = entranceUnexplored.some(
+          (e: any) => e.direction === 'east'
         );
-        expect(hasEastOrWestUnexplored).toBe(false);
+        expect(hasEastUnexplored).toBe(false);
 
         // Chamber should be revealed
         expect(state.game.scenario.chamberRevealed).toBe(true);

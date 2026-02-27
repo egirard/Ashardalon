@@ -128,6 +128,7 @@ _TILE_DEF_RE = re.compile(
     r"imagePath:\s*'([^']+)',\s*"
     r"defaultEdges:\s*\{([^}]+)\},\s*"
     r"isBlackTile:\s*(true|false),\s*"
+    r"(?:\w+:\s*(?:true|false|'[^']*'|\d+),\s*)*"
     r"scorchMarkPosition:\s*\{\s*x:\s*(\d+),\s*y:\s*(\d+)\s*\}\s*"
     r"\}",
     re.MULTILINE,

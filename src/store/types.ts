@@ -733,19 +733,19 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 1, y: 1 } },  // E/W open, white arrow points east
   // Chamber Entrance tile — marks the boundary of the final chamber; triggers chamber-reveal when placed
   // Corridor-style entrance: open on north (into chamber) and south (from dungeon), walls on east/west
-  { tileType: 'tile-chamber-entrance', imagePath: 'assets/Tile_DireChamber_Entrance.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'wall' }, isBlackTile: true, isChamberEntrance: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-chamber-entrance', imagePath: 'assets/Tile_DireChamber_Entrance.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'open' }, isBlackTile: true, isChamberEntrance: true, scorchMarkPosition: { x: 2, y: 2 } },
   // Horrid Chamber room tiles — placed as a set when the Chamber Entrance is revealed (Adventure 14)
   // Canonical orientation for north exploration: tile01=bottom-left, tile02=bottom-right,
   // tile03=top-left, tile04=top-right. Rotated when exploration direction is not north.
-  { tileType: 'tile-horrid-chamber-01', imagePath: 'assets/Tile_HorridChamber_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
-  { tileType: 'tile-horrid-chamber-02', imagePath: 'assets/Tile_HorridChamber_02.png', defaultEdges: { north: 'open', south: 'wall', east: 'wall', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
-  { tileType: 'tile-horrid-chamber-03', imagePath: 'assets/Tile_HorridChamber_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-horrid-chamber-01', imagePath: 'assets/Tile_HorridChamber_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-horrid-chamber-02', imagePath: 'assets/Tile_HorridChamber_02.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-horrid-chamber-03', imagePath: 'assets/Tile_HorridChamber_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
   { tileType: 'tile-horrid-chamber-04', imagePath: 'assets/Tile_HorridChamber_04.png', defaultEdges: { north: 'wall', south: 'open', east: 'wall', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
   // Dire Chamber room tiles — placed as a set when the Chamber Entrance is revealed (Adventure 15)
   // Same canonical edge layout as Horrid Chamber tiles.
-  { tileType: 'tile-dire-chamber-01', imagePath: 'assets/Tile_DireChamber_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
-  { tileType: 'tile-dire-chamber-02', imagePath: 'assets/Tile_DireChamber_02.png', defaultEdges: { north: 'open', south: 'wall', east: 'wall', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
-  { tileType: 'tile-dire-chamber-03', imagePath: 'assets/Tile_DireChamber_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'wall' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-dire-chamber-01', imagePath: 'assets/Tile_DireChamber_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-dire-chamber-02', imagePath: 'assets/Tile_DireChamber_02.png', defaultEdges: { north: 'open', south: 'open', east: 'wall', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  { tileType: 'tile-dire-chamber-03', imagePath: 'assets/Tile_DireChamber_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
   { tileType: 'tile-dire-chamber-04', imagePath: 'assets/Tile_DireChamber_04.png', defaultEdges: { north: 'wall', south: 'open', east: 'wall', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
 ];
 
