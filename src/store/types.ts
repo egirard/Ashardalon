@@ -448,6 +448,8 @@ export interface ScenarioState {
   instructions?: string;
   /** Whether the scenario introduction has been shown to the player */
   introductionShown: boolean;
+  /** Whether the Chamber Entrance tile has been placed (triggers chamber-reveal) */
+  chamberRevealed: boolean;
 }
 
 /**
@@ -638,6 +640,11 @@ export interface TileDefinition {
    * unless both the Long Hallway AND the additional tile are white arrow tiles.
    */
   isLongHallway?: boolean;
+  /**
+   * Whether this tile is the Chamber Entrance.
+   * When placed, this tile triggers the chamber-reveal event for scenario-specific effects.
+   */
+  isChamberEntrance?: boolean;
   /** 
    * Position of the scorch mark (spawn marker) in default orientation.
    * This is in local tile coordinates (0-3, 0-3) and represents where
@@ -692,6 +699,8 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   // Rotated 90° CW when placed for N/S exploration, so arrow points toward entrance.
   { tileType: 'tile-long-hallway-black', imagePath: 'assets/Tile_Named_LongHallwayBlack.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: true, isLongHallway: true, scorchMarkPosition: { x: 1, y: 2 } },  // E/W open, black arrow points east
   { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 1, y: 1 } },  // E/W open, white arrow points east
+  // Chamber Entrance tile — marks the boundary of the final chamber; triggers chamber-reveal when placed
+  { tileType: 'tile-chamber-entrance', imagePath: 'assets/Tile_DireChamber_Entrance.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberEntrance: true, scorchMarkPosition: { x: 2, y: 2 } },
 ];
 
 /**
@@ -709,6 +718,13 @@ export const INITIAL_TILE_DECK: string[] = [
   // Long Hallway named tiles
   'tile-long-hallway-black', 'tile-long-hallway-white',
 ];
+
+/**
+ * Tile type ID for the Chamber Entrance tile.
+ * This tile is NOT included in INITIAL_TILE_DECK; it is injected at a specific
+ * position by applyDeckSetup when a scenario requires it.
+ */
+export const CHAMBER_ENTRANCE_TILE_ID = 'tile-chamber-entrance';
 
 /**
  * Sub-tile identifier for the start tile.
