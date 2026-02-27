@@ -7,6 +7,7 @@
   import PowerCardSelection from './PowerCardSelection.svelte';
   import SideIndicator from './SideIndicator.svelte';
   import DuplicateCharacterPanel from './DuplicateCharacterPanel.svelte';
+  import ScenarioBook from './ScenarioBook.svelte';
   import { CheckIcon } from './icons';
   
   let selectedHeroes: Hero[] = $state([]);
@@ -158,9 +159,13 @@
 </script>
 
 <div class="character-select" data-testid="character-select">
+  <!-- Hidden selected count for test compatibility -->
+  <span data-testid="selected-count" class="sr-only">{selectedHeroes.length} heroes selected</span>
+
   <!-- Top edge - heroes rotated 180° for player sitting at top -->
   <div class="edge-zone edge-top" data-testid="edge-top">
     <div class="hero-row-container">
+      <p class="choose-hero-label">Choose your hero</p>
       <!-- Duplicate panels for heroes on same edge -->
       {#if getHeroesOnEdge('top').length >= 2}
         {#each getHeroesOnEdge('top') as hero (hero.id)}
@@ -233,6 +238,7 @@
     <!-- Left edge - heroes rotated 270° (90° counter-clockwise) for player sitting at left -->
     <div class="edge-zone edge-left" data-testid="edge-left">
       <div class="hero-column-container">
+        <p class="choose-hero-label">Choose your hero</p>
         <!-- Duplicate panels for heroes on same edge -->
         {#if getHeroesOnEdge('left').length >= 2}
           {#each getHeroesOnEdge('left') as hero (hero.id)}
@@ -300,30 +306,15 @@
       </div>
     </div>
 
-    <!-- Center area with instructions and start button -->
+    <!-- Center area – scenario book -->
     <div class="center-zone" data-testid="center-zone">
-      <h1>Select Your Heroes</h1>
-      <p class="instructions">Choose 1-5 heroes for your adventure</p>
-      <p class="instructions">Tap a hero from your edge of the table</p>
-      <p class="instructions">Optionally tap the power icon (⚡) to customize powers</p>
-      
-      <div class="selection-info">
-        <span data-testid="selected-count">{selectedHeroes.length} heroes selected</span>
-      </div>
-      
-      <button
-        class="start-button"
-        data-testid="start-game-button"
-        onclick={handleStartGame}
-        disabled={!canStartGame()}
-      >
-        Start Adventure
-      </button>
+      <ScenarioBook canStart={canStartGame()} onStart={handleStartGame} />
     </div>
 
     <!-- Right edge - heroes rotated 90° clockwise for player sitting at right -->
     <div class="edge-zone edge-right" data-testid="edge-right">
       <div class="hero-column-container">
+        <p class="choose-hero-label">Choose your hero</p>
         <!-- Duplicate panels for heroes on same edge -->
         {#if getHeroesOnEdge('right').length >= 2}
           {#each getHeroesOnEdge('right') as hero (hero.id)}
@@ -395,6 +386,7 @@
   <!-- Bottom edge - heroes at 0° for player sitting at bottom (standard orientation) -->
   <div class="edge-zone edge-bottom" data-testid="edge-bottom">
     <div class="hero-row-container">
+      <p class="choose-hero-label">Choose your hero</p>
       <!-- Duplicate panels for heroes on same edge -->
       {#if getHeroesOnEdge('bottom').length >= 2}
         {#each getHeroesOnEdge('bottom') as hero (hero.id)}
@@ -556,17 +548,28 @@
     align-items: center;
     padding: 1rem;
   }
-  
-  h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  }
-  
-  .instructions {
-    color: #aaa;
-    margin: 0.25rem 0;
+
+  /* "Choose your hero" subtle label shown above each hero line */
+  .choose-hero-label {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.35);
     text-align: center;
+    letter-spacing: 0.05em;
+    font-style: italic;
+  }
+
+  /* Screen-reader only helper for the hidden selected-count span */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   
   .hero-card {
@@ -736,30 +739,5 @@
   
   .power-status.incomplete {
     color: #ffa726;
-  }
-
-  .start-button {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-    font-weight: bold;
-    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-    color: #1a1a2e;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    min-width: 44px;
-    min-height: 44px;
-  }
-  
-  .start-button:hover:not(:disabled) {
-    transform: scale(1.05);
-    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
-  }
-  
-  .start-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #666;
   }
 </style>
