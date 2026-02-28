@@ -156,12 +156,28 @@ export function getNewTilePosition(
 }
 
 /**
+ * Determine the canonical arrow direction from a tile's scorch mark position.
+ * Scorch mark positions map to arrow directions per physical tile analysis:
+ *   (1,2) → south  (most common for standard tiles)
+ *   (2,1) → north
+ *   (1,1) → west
+ *   (2,2) → east
+ */
+export function getCanonicalArrowDirection(tileDef: TileDefinition): Direction {
+  const { x, y } = tileDef.scorchMarkPosition;
+  if (x === 2 && y === 1) return 'north';
+  if (x === 1 && y === 1) return 'west';
+  if (x === 2 && y === 2) return 'east';
+  return 'south'; // default: (1,2) and anything else
+}
+
+/**
  * Calculate the rotation needed for a new tile so that one of its openings
- * aligns with the connecting edge AND the arrow points towards the hero.
+ * aligns with the connecting edge AND the arrow points towards that edge.
  * 
- * The arrow on a tile (black triangle) points south in the default orientation (0 degrees).
- * When a hero explores, the arrow should point back towards the hero, which means
- * it should point towards the connecting edge.
+ * The arrow on a tile indicates its entrance edge in the canonical orientation.
+ * When placed, the tile is rotated so the arrow faces back toward the connecting
+ * edge (the direction the hero explored from).
  * 
  * @param explorationDirection - The direction the hero explored from (on the existing tile)
  * @param tileDef - The tile definition with default edge configuration
@@ -171,21 +187,12 @@ export function calculateTileRotation(explorationDirection: Direction, tileDef: 
   // The connecting edge on the new tile is opposite to the exploration direction
   const connectingEdge = getOppositeDirection(explorationDirection);
   
-  // Arrow points south by default (0 degrees)
-  // We need to rotate the tile so the arrow points towards the connecting edge
-  // Rotation is clockwise:
-  // - 0°: arrow points south
-  // - 90°: arrow points west
-  // - 180°: arrow points north
-  // - 270°: arrow points east
-  const arrowRotationMap: Record<Direction, number> = {
-    south: 0,
-    west: 90,
-    north: 180,
-    east: 270,
-  };
-  
-  const preferredRotation = arrowRotationMap[connectingEdge];
+  // Determine the canonical arrow direction from the tile's scorch mark position.
+  // Rotate the tile so the arrow faces the connecting edge.
+  // Rotation is clockwise; south=0°, west=90°, north=180°, east=270°.
+  const canonicalArrowDir = getCanonicalArrowDirection(tileDef);
+  const dirAngle: Record<Direction, number> = { south: 0, west: 90, north: 180, east: 270 };
+  const preferredRotation = (dirAngle[connectingEdge] - dirAngle[canonicalArrowDir] + 360) % 360;
   
   // Verify that this rotation places an opening at the connecting edge
   const rotatedEdges = rotateEdges(tileDef.defaultEdges, preferredRotation);
@@ -495,137 +502,13 @@ export function updateDungeonAfterExploration(
     );
 
     if (adjacentTile) {
-      // Adjacent tile already exists — connect the edges instead of marking unexplored
-      newTileEdges[dir] = 'open';
       const adjacentConnectingDir = getOppositeDirection(dir);
-      updatedTiles = updatedTiles.map(tile => {
-        if (tile.id === adjacentTile.id) {
-          return {
-            ...tile,
-            edges: { ...tile.edges, [adjacentConnectingDir]: 'open' as const },
-          };
-        }
-        return tile;
-      });
-      updatedUnexploredEdges = updatedUnexploredEdges.filter(
-        e => !(e.tileId === adjacentTile.id && e.direction === adjacentConnectingDir)
-      );
-    } else {
-      newUnexploredEdges.push({ tileId: newTile.id, direction: dir });
-    }
-  }
-  
-  return {
-    tiles: [...updatedTiles, { ...newTile, edges: newTileEdges }],
-    unexploredEdges: [...updatedUnexploredEdges, ...newUnexploredEdges],
-    tileDeck: dungeon.tileDeck,
-  };
-}
-
-/**
- * Compute the absolute grid position for a room set tile given:
- * - The entrance tile's grid position
- * - The exploration direction (the direction the hero explored to reach the entrance)
- * - The tile's forward and right offsets (relative to the exploration direction)
- *
- * "Forward" is in the exploration direction; "right" is clockwise from forward.
- */
-export function computeRoomSetTilePosition(
-  entrancePosition: GridPosition,
-  explorationDirection: Direction,
-  forwardOffset: number,
-  rightOffset: number
-): GridPosition {
-  const { col, row } = entrancePosition;
-
-  switch (explorationDirection) {
-    case 'north':
-      // forward = decreasing row, right = increasing col
-      return { col: col + rightOffset, row: row - forwardOffset };
-    case 'south':
-      // forward = increasing row, right = decreasing col
-      return { col: col - rightOffset, row: row + forwardOffset };
-    case 'east':
-      // forward = increasing col, right = increasing row
-      return { col: col + forwardOffset, row: row + rightOffset };
-    case 'west':
-      // forward = decreasing col, right = decreasing row
-      return { col: col - forwardOffset, row: row - rightOffset };
-  }
-}
-
-/**
- * Rotation degrees to apply for each exploration direction.
- * Room set tiles are defined in canonical "north" orientation.
- * When the chamber is reached from a different direction, rotate to match.
- */
-const EXPLORATION_DIRECTION_ROTATION: Record<Direction, number> = {
-  north: 0,
-  east: 90,
-  south: 180,
-  west: 270,
-};
-
-/**
- * Add a single room set tile to the dungeon at the given absolute grid position.
- *
- * Unlike normal tile placement this does not require an explored edge — the tile is
- * inserted at a fixed absolute position.
- *
- * The tile's `defaultEdges` are defined for the canonical "north exploration" orientation.
- * `explorationDirection` is used to rotate the edges (and tile image) so the room always
- * faces the correct way regardless of which direction the hero came from.
- *
- * Only connects to an adjacent tile when the adjacent tile's connecting edge is not a
- * wall — prevents room set tiles from bridging through solid walls of existing tiles.
- *
- * `roomSetPositions` is the full set of positions that will be occupied by tiles in this
- * room set placement batch.  Open edges that face a position in this set remain
- * 'unexplored' (the matching tile will be placed later and connect to them).  Open edges
- * that face a position NOT in this set AND have no existing adjacent tile are sealed as
- * 'wall' — these are exterior edges of the chamber that should not form dangling corridors.
- */
-export function addRoomSetTile(
-  dungeon: DungeonState,
-  tileType: string,
-  position: GridPosition,
-  tileId: string,
-  explorationDirection: Direction = 'north',
-  roomSetPositions: GridPosition[] = []
-): DungeonState {
-  const tileDef = getTileDefinition(tileType);
-  if (!tileDef) return dungeon;
-
-  const rotation = EXPLORATION_DIRECTION_ROTATION[explorationDirection];
-  // Rotate the canonical defaultEdges to match the actual exploration direction
-  const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
-
-  const directions: Direction[] = ['north', 'south', 'east', 'west'];
-
-  let updatedTiles = [...dungeon.tiles];
-  let updatedUnexploredEdges = [...dungeon.unexploredEdges];
-
-  // Start with rotated edges: walls stay as walls, open edges start as 'unexplored'
-  const newTileEdges: { north: EdgeType; south: EdgeType; east: EdgeType; west: EdgeType } = {
-    north: rotatedEdges.north === 'wall' ? 'wall' : 'unexplored',
-    south: rotatedEdges.south === 'wall' ? 'wall' : 'unexplored',
-    east: rotatedEdges.east === 'wall' ? 'wall' : 'unexplored',
-    west: rotatedEdges.west === 'wall' ? 'wall' : 'unexplored',
-  };
-  const newUnexploredEdges: TileEdge[] = [];
-
-  for (const dir of directions) {
-    if (newTileEdges[dir] === 'wall') continue;
-
-    const adjacentPos = getAdjacentPosition(position, dir);
-    const adjacentTile = updatedTiles.find(
-      t => t.position.col === adjacentPos.col && t.position.row === adjacentPos.row
-    );
-
-    if (adjacentTile) {
-      const adjacentConnectingDir = getOppositeDirection(dir);
-      // Only connect through valid (non-wall) edges on the adjacent tile
-      if (adjacentTile.edges[adjacentConnectingDir] !== 'wall') {
+      // Only connect if the adjacent tile's edge is also open — never bridge through a wall
+      if (adjacentTile.edges[adjacentConnectingDir] === 'wall') {
+        // Adjacent tile has a wall facing this new tile's open edge — seal both
+        newTileEdges[dir] = 'wall';
+      } else {
+        // Adjacent tile already exists — connect the edges instead of marking unexplored
         newTileEdges[dir] = 'open';
         updatedTiles = updatedTiles.map(tile => {
           if (tile.id === adjacentTile.id) {
@@ -640,32 +523,13 @@ export function addRoomSetTile(
           e => !(e.tileId === adjacentTile.id && e.direction === adjacentConnectingDir)
         );
       }
-      // (direction is physically blocked by adjacent tile's wall — no connection or unexplored edge)
     } else {
-      // No existing tile adjacent.  Check whether this position is reserved for a
-      // later room set tile (interior connection) or truly exterior (seal it).
-      const isRoomSetNeighbor = roomSetPositions.some(
-        p => p.col === adjacentPos.col && p.row === adjacentPos.row
-      );
-      if (isRoomSetNeighbor) {
-        newUnexploredEdges.push({ tileId: tileId, direction: dir });
-      } else {
-        // Exterior edge — seal it so no dangling corridor indicator appears
-        newTileEdges[dir] = 'wall';
-      }
+      newUnexploredEdges.push({ tileId: newTile.id, direction: dir });
     }
   }
-
-  const newTile: PlacedTile = {
-    id: tileId,
-    tileType,
-    position,
-    rotation,
-    edges: newTileEdges,
-  };
-
+  
   return {
-    tiles: [...updatedTiles, newTile],
+    tiles: [...updatedTiles, { ...newTile, edges: newTileEdges }],
     unexploredEdges: [...updatedUnexploredEdges, ...newUnexploredEdges],
     tileDeck: dungeon.tileDeck,
   };

@@ -102,10 +102,10 @@ export const SCENARIOS: ScenarioDefinition[] = [
     roomSet: {
       name: 'Obsidian Sanctum',
       tiles: [
-        { tileType: 'tile-horrid-chamber-01', forwardOffset: 1, rightOffset: 0 },
-        { tileType: 'tile-horrid-chamber-02', forwardOffset: 1, rightOffset: 1 },
-        { tileType: 'tile-horrid-chamber-03', forwardOffset: 2, rightOffset: 0 },
-        { tileType: 'tile-horrid-chamber-04', forwardOffset: 2, rightOffset: 1 },
+        { tileType: 'tile-horrid-chamber-01' },
+        { tileType: 'tile-horrid-chamber-02' },
+        { tileType: 'tile-horrid-chamber-03' },
+        { tileType: 'tile-horrid-chamber-04' },
       ],
     },
   },
@@ -128,10 +128,10 @@ export const SCENARIOS: ScenarioDefinition[] = [
     roomSet: {
       name: 'Infernal Workshop',
       tiles: [
-        { tileType: 'tile-dire-chamber-01', forwardOffset: 1, rightOffset: 0 },
-        { tileType: 'tile-dire-chamber-02', forwardOffset: 1, rightOffset: 1 },
-        { tileType: 'tile-dire-chamber-03', forwardOffset: 2, rightOffset: 0 },
-        { tileType: 'tile-dire-chamber-04', forwardOffset: 2, rightOffset: 1 },
+        { tileType: 'tile-dire-chamber-01' },
+        { tileType: 'tile-dire-chamber-02' },
+        { tileType: 'tile-dire-chamber-03' },
+        { tileType: 'tile-dire-chamber-04' },
       ],
     },
   },

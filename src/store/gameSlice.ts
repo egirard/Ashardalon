@@ -47,8 +47,6 @@ import {
   moveBottomTileToTop,
   drawTileFromBottom,
   shuffleTileDeck,
-  addRoomSetTile,
-  computeRoomSetTilePosition,
 } from "./exploration";
 import {
   initializeMonsterDeck,
@@ -1933,39 +1931,43 @@ export const gameSlice = createSlice({
           const scenarioDef = getScenarioById(state.selectedScenarioId);
           if (scenarioDef.roomSet) {
             const roomSetTileIds: string[] = [];
-            // Pre-compute ALL room set tile positions so each addRoomSetTile call knows
-            // which neighbours are interior (will be connected later) vs. exterior (seal).
-            const allRoomSetPositions = scenarioDef.roomSet.tiles.map(rt =>
-              computeRoomSetTilePosition(
-                newTile.position,
-                exploredEdge.direction,
-                rt.forwardOffset,
-                rt.rightOffset
-              )
-            );
+            // Track IDs placed so far so we can pick their unexplored edges for subsequent tiles
+            const placedRoomSetIds = new Set<string>([newTile.id]);
+
             for (const roomTile of scenarioDef.roomSet.tiles) {
-              const roomTileId = `tile-room-set-${state.dungeon.tiles.length}`;
-              const roomTilePosition = computeRoomSetTilePosition(
-                newTile.position,
-                exploredEdge.direction,
-                roomTile.forwardOffset,
-                roomTile.rightOffset
-              );
-              state.dungeon = addRoomSetTile(
-                state.dungeon,
-                roomTile.tileType,
-                roomTilePosition,
-                roomTileId,
-                exploredEdge.direction,
-                allRoomSetPositions
-              );
-              roomSetTileIds.push(roomTileId);
+              // Collect all unexplored edges from the entrance tile and already-placed room set tiles.
+              // For the very first tile, only the entrance is available.
+              // For subsequent tiles, prefer edges on room set tiles (placed first in sort order),
+              // falling back to entrance edges, using direction order N → E → W → S for determinism.
+              const dirOrder: Record<string, number> = { north: 0, east: 1, west: 2, south: 3 };
+              const availableEdges = state.dungeon.unexploredEdges
+                .filter(e => placedRoomSetIds.has(e.tileId))
+                .sort((a, b) => {
+                  // entrance tile (newTile.id) comes last so room set tiles' open edges are preferred
+                  const aIsEntrance = a.tileId === newTile.id ? 1 : 0;
+                  const bIsEntrance = b.tileId === newTile.id ? 1 : 0;
+                  if (aIsEntrance !== bIsEntrance) return aIsEntrance - bIsEntrance;
+                  const aOrder = roomSetTileIds.indexOf(a.tileId);
+                  const bOrder = roomSetTileIds.indexOf(b.tileId);
+                  if (aOrder !== bOrder) return aOrder - bOrder;
+                  return (dirOrder[a.direction] ?? 9) - (dirOrder[b.direction] ?? 9);
+                });
+
+              if (availableEdges.length === 0) break;
+              const edge = availableEdges[0];
+
+              const placedRoomTile = placeTile(edge, roomTile.tileType, state.dungeon);
+              if (!placedRoomTile) break;
+
+              state.dungeon = updateDungeonAfterExploration(state.dungeon, edge, placedRoomTile);
+              roomSetTileIds.push(placedRoomTile.id);
+              placedRoomSetIds.add(placedRoomTile.id);
               state.logEntries.push({
                 id: state.logEntryCounter++,
                 timestamp: Date.now(),
                 type: 'exploration',
                 message: `🏛️ ${scenarioDef.roomSet.name}: placed ${roomTile.tileType}`,
-                details: `Room set tile placed at col:${roomTilePosition.col} row:${roomTilePosition.row}`,
+                details: `Room set tile placed at col:${placedRoomTile.position.col} row:${placedRoomTile.position.row}`,
               });
             }
             state.recentlyPlacedRoomSetTileIds = roomSetTileIds;
