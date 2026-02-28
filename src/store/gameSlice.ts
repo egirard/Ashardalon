@@ -428,6 +428,11 @@ export interface GameState {
   villainAreaAttackResults: AttackResult[] | null;
   /** Hero IDs targeted by villain area attack. */
   villainAreaAttackTargetIds: string[] | null;
+  /**
+   * Whether the villain has already activated during the current hero's villain phase.
+   * Resets to false when endVillainPhase is dispatched.
+   */
+  villainActivatedThisTurn: boolean;
 }
 
 /**
@@ -799,6 +804,7 @@ const initialState: GameState = {
   villainAttackName: null,
   villainAreaAttackResults: null,
   villainAreaAttackTargetIds: null,
+  villainActivatedThisTurn: false,
 };
 
 /**
@@ -2469,6 +2475,12 @@ export const gameSlice = createSlice({
       
       // Clear villain phase state
       state.villainPhaseMonsterIndex = 0;
+      state.villainActivatedThisTurn = false;
+      state.villainAttackResult = null;
+      state.villainAttackTargetId = null;
+      state.villainAttackName = null;
+      state.villainAreaAttackResults = null;
+      state.villainAreaAttackTargetIds = null;
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
@@ -4521,6 +4533,12 @@ export const gameSlice = createSlice({
       state.monsters = action.payload;
     },
     /**
+     * Set villain state directly (for testing purposes)
+     */
+    setVillain: (state, action: PayloadAction<VillainInstance | null>) => {
+      state.villain = action.payload;
+    },
+    /**
      * Set monster deck directly (for testing purposes)
      */
     setMonsterDeck: (state, action: PayloadAction<MonsterDeck>) => {
@@ -5244,6 +5262,9 @@ export const gameSlice = createSlice({
       if (state.turnState.currentPhase !== "villain-phase") return;
       if (!state.villain) return;
 
+      // Mark villain as activated for this turn (prevents double-activation)
+      state.villainActivatedThisTurn = true;
+
       const randomFn = action.payload?.randomFn ?? Math.random;
       const villain = state.villain;
 
@@ -5252,7 +5273,9 @@ export const gameSlice = createSlice({
       const heroAcMap: Record<string, number> = {};
       for (const hp of state.heroHp) {
         heroHpMap[hp.heroId] = hp.currentHp;
-        heroAcMap[hp.heroId] = getModifiedAC(hp);
+        const hero = AVAILABLE_HEROES.find(h => h.id === hp.heroId);
+        const baseAC = hero ? HERO_LEVELS[hp.heroId][`level${hp.level}`].ac : hp.ac;
+        heroAcMap[hp.heroId] = getModifiedAC(hp.statuses ?? [], baseAC);
       }
 
       // Run villain AI
@@ -6635,6 +6658,7 @@ export const {
   dismissDefeatNotification,
   setDefeatNotification,
   setMonsters,
+  setVillain,
   setMonsterDeck,
   setMonsterGroups,
   incrementMonsterCounter,

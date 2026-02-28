@@ -260,8 +260,8 @@
   let villainAttackTargetId: string | null = $state(null);
   let villainAttackName: string | null = $state(null);
   let selectedScenarioId: string = $state('default');
-  /** Tracks whether the villain has already activated in the current villain phase. Reset on phase change. */
-  let villainActivatedThisPhase: boolean = $state(false);
+  /** Tracks whether the villain has already activated in this hero's villain phase (from Redux state). */
+  let villainActivatedThisTurn: boolean = $state(false);
   let pendingMonsterDisplayId: string | null = $state(null);
   let poisonedDamageNotification: { heroId: string; damage: number } | null = $state(null);
   let poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null = $state(null);
@@ -414,6 +414,7 @@
       villainAttackTargetId = state.game.villainAttackTargetId;
       villainAttackName = state.game.villainAttackName;
       selectedScenarioId = state.game.selectedScenarioId;
+      villainActivatedThisTurn = state.game.villainActivatedThisTurn;
 
       // Auto-advance exploration phase steps based on current step
       if (state.game.turnState.currentPhase === 'exploration-phase') {
@@ -533,6 +534,7 @@
     villainAttackTargetId = state.game.villainAttackTargetId;
     villainAttackName = state.game.villainAttackName;
     selectedScenarioId = state.game.selectedScenarioId;
+    villainActivatedThisTurn = state.game.villainActivatedThisTurn;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
@@ -671,16 +673,6 @@
     );
   });
 
-  // Reset villain activation flag when entering a new villain phase
-  $effect(() => {
-    if (turnState.currentPhase === "villain-phase") {
-      // Reset at start of each villain phase turn (when monsterIndex resets to 0)
-      if (villainPhaseMonsterIndex === 0) {
-        villainActivatedThisPhase = false;
-      }
-    }
-  });
-
   // Auto-activate monsters during villain phase
   // This effect triggers when:
   // 1. Entering villain phase (to start the first monster)
@@ -690,9 +682,6 @@
     
     // Don't auto-activate if there's an action result being displayed
     if (monsterAttackResult !== null || monsterMoveActionId !== null) return;
-    
-    // Don't auto-activate while a villain attack result is being displayed
-    if (villainAttackResult !== null) return;
     
     // Don't auto-activate while a monster exploration notification is showing
     if (monsterExplorationEvent !== null) return;
@@ -704,13 +693,18 @@
     
     // Check if all monsters have been activated
     if (villainPhaseMonsterIndex >= controlledMonsters.length) {
-      // All monsters activated — now activate villain (if present and not yet done this phase)
-      if (villain && !villainActivatedThisPhase) {
-        villainActivatedThisPhase = true;
+      // All monsters activated — now activate villain (if present and not yet done this turn)
+      // villainActivatedThisTurn is tracked in Redux state and reset by endVillainPhase
+      if (villain && !villainActivatedThisTurn) {
         store.dispatch(activateVillain({}));
         return;
       }
       // Villain done (or no villain) — end the villain phase
+      // If there is a pending villain attack result, dismiss it first
+      if (villainAttackResult !== null) {
+        store.dispatch(dismissVillainAttackResult());
+        return;
+      }
       store.dispatch(endVillainPhase());
       return;
     }
