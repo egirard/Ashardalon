@@ -104,6 +104,7 @@
     VillainInstance,
   } from "../store/types";
   import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES, ENCOUNTER_CARDS, VILLAIN_DEFINITIONS } from "../store/types";
+  import { isVillainShielded, getVillainDefForScenario } from "../store/villainAI";
   import { assetPath } from "../utils";
   import MovementOverlay from "./MovementOverlay.svelte";
   import TileDeckCounter from "./TileDeckCounter.svelte";
@@ -258,6 +259,7 @@
   let villainAttackResult: AttackResult | null = $state(null);
   let villainAttackTargetId: string | null = $state(null);
   let villainAttackName: string | null = $state(null);
+  let selectedScenarioId: string = $state('default');
   /** Tracks whether the villain has already activated in the current villain phase. Reset on phase change. */
   let villainActivatedThisPhase: boolean = $state(false);
   let pendingMonsterDisplayId: string | null = $state(null);
@@ -411,6 +413,7 @@
       villainAttackResult = state.game.villainAttackResult;
       villainAttackTargetId = state.game.villainAttackTargetId;
       villainAttackName = state.game.villainAttackName;
+      selectedScenarioId = state.game.selectedScenarioId;
 
       // Auto-advance exploration phase steps based on current step
       if (state.game.turnState.currentPhase === 'exploration-phase') {
@@ -529,6 +532,7 @@
     villainAttackResult = state.game.villainAttackResult;
     villainAttackTargetId = state.game.villainAttackTargetId;
     villainAttackName = state.game.villainAttackName;
+    selectedScenarioId = state.game.selectedScenarioId;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
@@ -3390,10 +3394,10 @@
 
         <!-- Villain token -->
         {#if villain}
-          {@const villainDef = VILLAIN_DEFINITIONS.find(d => d.id === villain.villainId)}
+          {@const villainDef = getVillainDefForScenario(selectedScenarioId)}
           {@const isVillainTargetable = turnState.currentPhase === "hero-phase" && !mapControlMode && heroTurnActions.canAttack}
           {@const isVillainSelected = selectedTargetId === villain.instanceId && selectedTargetType === 'monster'}
-          {@const villainShielded = villainDef?.shieldedWhileGuardsAdjacent === true && monsters.length > 0}
+          {@const villainShielded = villainDef != null ? isVillainShielded(villain, villainDef, monsters, dungeon) : false}
           <VillainToken
             {villain}
             cellSize={TILE_CELL_SIZE}

@@ -56,7 +56,9 @@ function bfsDistance(
   const queue: { pos: Position; dist: number }[] = [{ pos: from, dist: 0 }];
 
   while (queue.length > 0) {
-    const { pos, dist } = queue.shift()!;
+    const item = queue.shift();
+    if (!item) break;
+    const { pos, dist } = item;
     if (pos.x === to.x && pos.y === to.y) return dist;
 
     for (const adj of getAdjacentPositions(pos, dungeon)) {
