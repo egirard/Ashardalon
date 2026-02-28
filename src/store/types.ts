@@ -731,10 +731,10 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   // All four edges open (image analysis confirmed); scorch mark at (2,2) = east entrance arrow
   { tileType: 'tile-chamber-entrance', imagePath: 'assets/Tile_DireChamber_Entrance.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberEntrance: true, scorchMarkPosition: { x: 2, y: 2 } },
   // Horrid Chamber room tiles — placed as a set when the Chamber Entrance is revealed (Adventure 14)
-  // Image analysis: all four tiles have south/east/west open; horrid-01/02 have north open (arrow there),
-  // horrid-03/04 have north wall. Entrance arrow (scorch) at south (1,2) for all four tiles.
-  { tileType: 'tile-horrid-chamber-01', imagePath: 'assets/Tile_HorridChamber_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
-  { tileType: 'tile-horrid-chamber-02', imagePath: 'assets/Tile_HorridChamber_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
+  // Image analysis (validate_tiles.py): all four tiles have south/east/west open; north is wall
+  // for all four tiles (confirmed by cell (1,0) dark% > 80%). Scorch at south (1,2) for all four tiles.
+  { tileType: 'tile-horrid-chamber-01', imagePath: 'assets/Tile_HorridChamber_01.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
+  { tileType: 'tile-horrid-chamber-02', imagePath: 'assets/Tile_HorridChamber_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
   { tileType: 'tile-horrid-chamber-03', imagePath: 'assets/Tile_HorridChamber_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
   { tileType: 'tile-horrid-chamber-04', imagePath: 'assets/Tile_HorridChamber_04.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
   // Dire Chamber room tiles — placed as a set when the Chamber Entrance is revealed (Adventure 15)
