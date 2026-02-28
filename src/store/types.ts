@@ -1697,6 +1697,7 @@ export const VILLAIN_DEFINITIONS: VillainDefinition[] = [
         maxRangeTiles: 1,
         attackBonus: 8,
         damage: 2,
+        hitStatusEffect: 'slowed',
         aoe: 'adjacent-tiles',
       },
       {
@@ -1704,6 +1705,7 @@ export const VILLAIN_DEFINITIONS: VillainDefinition[] = [
         maxRangeTiles: 2,
         attackBonus: 7,
         damage: 1,
+        hitStatusEffect: 'dazed',
         aoe: 'single',
         moveBefore: true,
       },
@@ -1731,6 +1733,7 @@ export const VILLAIN_DEFINITIONS: VillainDefinition[] = [
         maxRangeTiles: 0,
         attackBonus: 9,
         damage: 2,
+        hitStatusEffect: 'immobilized',
         aoe: 'single',
       },
       {

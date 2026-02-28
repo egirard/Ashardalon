@@ -322,11 +322,13 @@ describe('villainAI', () => {
       const malphas = VILLAIN_DEFINITIONS.find(d => d.id === 'malphas')!;
       expect(malphas.tactics[0].name).toBe('Void Rip');
       expect(malphas.tactics[0].aoe).toBe('adjacent-tiles');
+      expect(malphas.tactics[0].hitStatusEffect).toBe('slowed');
     });
 
     it('Vraxos has Crushing Grip as first tactic', () => {
       const vraxos = VILLAIN_DEFINITIONS.find(d => d.id === 'vraxos')!;
       expect(vraxos.tactics[0].name).toBe('Crushing Grip');
+      expect(vraxos.tactics[0].hitStatusEffect).toBe('immobilized');
     });
 
     it('Malphas last tactic is a spawn-monster fallback', () => {
