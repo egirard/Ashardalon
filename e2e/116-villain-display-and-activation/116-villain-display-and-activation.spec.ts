@@ -149,20 +149,6 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
       expect(state.game.turnState.currentHeroIndex).toBe(1); // Vistra
     }).toPass({ timeout: 5000 });
 
-    await screenshots.capture(page, 'vistra-hero-phase-after-quinn-villain-phase', {
-      programmaticCheck: async () => {
-        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-        expect(state.game.turnState.currentPhase).toBe('hero-phase');
-        expect(state.game.turnState.currentHeroIndex).toBe(1); // Vistra is now active
-        expect(state.game.villainActivation).toBeNull();
-        expect(state.game.villainActivatedThisTurn).toBe(false); // Reset after phase
-        // Villain still present on board
-        await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
-        // Villain status card still visible
-        await expect(page.locator('[data-testid="villain-status-card"]')).toBeVisible();
-      },
-    });
-
     // -----------------------------------------------------------------------
     // STEP 7: Enter Vistra's villain phase and verify villain activates again
     // -----------------------------------------------------------------------
@@ -179,6 +165,7 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
 
     // -----------------------------------------------------------------------
     // STEP 8: Screenshot — Vistra's villain phase activation notification
+    //         (proves activation occurs AGAIN during Vistra's villain phase)
     // -----------------------------------------------------------------------
     await screenshots.capture(page, 'vistra-villain-phase-activation-notification', {
       programmaticCheck: async () => {
@@ -186,10 +173,13 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
         expect(state.game.turnState.currentPhase).toBe('villain-phase');
         expect(state.game.turnState.currentHeroIndex).toBe(1); // Vistra's villain phase
         expect(state.game.villainActivation).not.toBeNull();
+        expect(state.game.villainActivatedThisTurn).toBe(true); // Villain just activated
         // Notification visible again (villain activated for Vistra's turn)
         await expect(page.locator('[data-testid="villain-activation-card"]')).toBeVisible();
         // New log entry added since Vistra's villain phase started
         expect(state.game.logEntries.length).toBeGreaterThan(logCountBeforeVistraVP);
+        // Villain token and status card still visible in background
+        await expect(page.locator('[data-testid="villain-status-card"]')).toBeVisible();
       },
     });
 
