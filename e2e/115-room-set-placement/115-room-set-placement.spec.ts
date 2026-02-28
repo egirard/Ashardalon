@@ -122,6 +122,13 @@ test.describe('115 - Room Set Placement on Chamber Reveal', () => {
         );
         expect(roomSetUnexploredEdges).toHaveLength(0);
 
+        // DOM check: confirm no unexplored-edge indicators are rendered on any room set tile.
+        // This verifies the visual state, not just the Redux state.
+        for (const tileId of roomSetTileIds) {
+          const indicatorCount = await page.locator(`[data-tile-id="${tileId}"] [data-testid="unexplored-edge"]`).count();
+          expect(indicatorCount, `Expected no unexplored edge indicators in DOM for tile ${tileId}`).toBe(0);
+        }
+
         // Chamber entrance must not have unexplored edges on its wall side (east only,
         // since image analysis confirmed west is open on the entrance tile)
         const entranceUnexplored = state.game.dungeon.unexploredEdges.filter(
