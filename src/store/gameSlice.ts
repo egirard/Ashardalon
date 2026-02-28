@@ -33,7 +33,15 @@ import {
   MONSTERS,
   ENCOUNTER_CANCEL_COST,
   PendingMonsterDecision,
+  VillainInstance,
 } from "./types";
+import {
+  executeVillainTurn,
+  getVillainGlobalPosition,
+  getVillainDefForScenario,
+  calculateVillainHp,
+  isVillainShielded,
+} from "./villainAI";
 import { applyDeckSetup } from "./scenarioEngine";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
 import {
@@ -200,6 +208,7 @@ const DEFAULT_SCENARIO_STATE: ScenarioState = {
   instructions: "Work together to explore the dungeon tiles. When you explore, draw from the Monster Deck and place monsters on the board. Defeat monsters to gain XP and level up your heroes.",
   introductionShown: false,
   chamberRevealed: false,
+  villainInstanceId: null,
 };
 
 /**
@@ -401,6 +410,24 @@ export interface GameState {
   encounterCancelCost: number;
   /** Current villain phase step message for display in turn progress (encounter drawing/skipped) */
   villainPhaseStepMessage: string | null;
+  /**
+   * Active villain instance on the board (null until the chamber is revealed).
+   * Set when the Chamber Entrance tile is placed.
+   */
+  villain: VillainInstance | null;
+  /**
+   * Attack result from the most recent villain activation (for UI display).
+   * Cleared when the player dismisses the result.
+   */
+  villainAttackResult: AttackResult | null;
+  /** Hero ID targeted by the most recent villain attack. */
+  villainAttackTargetId: string | null;
+  /** Name of the tactic used in the most recent villain activation. */
+  villainAttackName: string | null;
+  /** Results of villain area-attack (displayed sequentially, like monsterAreaAttackResults). */
+  villainAreaAttackResults: AttackResult[] | null;
+  /** Hero IDs targeted by villain area attack. */
+  villainAreaAttackTargetIds: string[] | null;
 }
 
 /**
@@ -766,6 +793,12 @@ const initialState: GameState = {
   pendingPowerCardFlips: [],
   encounterCancelCost: ENCOUNTER_CANCEL_COST,
   villainPhaseStepMessage: null,
+  villain: null,
+  villainAttackResult: null,
+  villainAttackTargetId: null,
+  villainAttackName: null,
+  villainAreaAttackResults: null,
+  villainAreaAttackTargetIds: null,
 };
 
 /**
@@ -1083,6 +1116,21 @@ function getModifiedEncounterCancelCost(
   return Math.max(0, baseCost - heroesOnTile.length);
 }
 
+/**
+ * Convert a global position back to local tile coordinates for the villain.
+ * Falls back to the original position if the tile is not found.
+ */
+function globalToLocalForVillain(
+  globalPos: Position,
+  tileId: string,
+  dungeon: DungeonState
+): Position {
+  const tile = dungeon.tiles.find(t => t.id === tileId);
+  if (!tile) return globalPos;
+  const b = getTileBounds(tile);
+  return { x: globalPos.x - b.minX, y: globalPos.y - b.minY };
+}
+
 export const gameSlice = createSlice({
   name: "game",
   initialState,
@@ -1189,7 +1237,16 @@ export const gameSlice = createSlice({
         description: scenarioDef.intro,
         introductionShown: false,
         chamberRevealed: false,
+        villainInstanceId: null,
       };
+
+      // Reset villain state
+      state.villain = null;
+      state.villainAttackResult = null;
+      state.villainAttackTargetId = null;
+      state.villainAttackName = null;
+      state.villainAreaAttackResults = null;
+      state.villainAreaAttackTargetIds = null;
 
       // Initialize party resources (XP starts at 0)
       state.partyResources = { ...DEFAULT_PARTY_RESOURCES };
@@ -1972,7 +2029,45 @@ export const gameSlice = createSlice({
             }
             state.recentlyPlacedRoomSetTileIds = roomSetTileIds;
           }
+
+          // Spawn the scenario villain if this scenario has one
+          const villainDef = getVillainDefForScenario(state.selectedScenarioId);
+          if (villainDef && !state.villain) {
+            // Determine which tile to spawn on: first room-set tile, or the chamber entrance itself
+            const allRoomTiles = state.dungeon.tiles.filter(
+              t => state.recentlyPlacedRoomSetTileIds.includes(t.id)
+            );
+            const spawnTile = allRoomTiles.length > 0 ? allRoomTiles[0] : newTile;
+
+            // Get the scorch mark position for the spawn tile
+            const spawnPos = getMonsterSpawnPosition(spawnTile, state.monsters);
+            if (spawnPos) {
+              const heroCount = state.heroTokens.length;
+              const maxHp = calculateVillainHp(villainDef, heroCount);
+              const instanceId = `villain-${villainDef.id}`;
+              const villain: VillainInstance = {
+                villainId: villainDef.id,
+                instanceId,
+                position: spawnPos,
+                tileId: spawnTile.id,
+                currentHp: maxHp,
+                maxHp,
+                statuses: [],
+              };
+              state.villain = villain;
+              state.scenario.villainInstanceId = instanceId;
+
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'exploration',
+                message: `⚔️ ${villainDef.name} appears!`,
+                details: `The villain spawns with ${maxHp} HP (AC ${villainDef.ac}).`,
+              });
+            }
+          }
         }
+
         
         // Long Hallway special rule: automatically draw and place a second tile on its unexplored edge
         if (tileDef?.isLongHallway && state.dungeon.tileDeck.length > 0) {
@@ -3842,6 +3937,44 @@ export const gameSlice = createSlice({
             }
           }
         }
+
+        // Apply damage to villain if it is the target
+        if (state.villain && state.villain.instanceId === targetInstanceId) {
+          const villainDef = getVillainDefForScenario(state.selectedScenarioId);
+          const shielded = villainDef
+            ? isVillainShielded(state.villain, villainDef, state.monsters, state.dungeon)
+            : false;
+
+          if (!shielded) {
+            state.villain.currentHp = Math.max(0, state.villain.currentHp - actualDamage);
+
+            if (state.villain.currentHp <= 0) {
+              // Villain defeated — victory!
+              state.scenario.villainInstanceId = null;
+              const defeatedName = villainDef?.name ?? 'the Villain';
+              state.defeatedMonsterName = defeatedName;
+              state.defeatedMonsterXp = 0; // Villains don't award XP (win condition)
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'combat',
+                message: `⚔️ ${defeatedName} has been defeated! Victory!`,
+              });
+              state.currentScreen = "victory";
+            }
+          } else {
+            // Shield is active — damage is blocked
+            state.logEntries.push({
+              id: state.logEntryCounter++,
+              timestamp: Date.now(),
+              type: 'combat',
+              message: `🛡️ ${villainDef?.name ?? 'Villain'}'s shield absorbs the attack!`,
+              details: 'Defeat all adjacent guards to remove the shield.',
+            });
+            // Override attack result to show 0 damage (absorbed)
+            state.attackResult = { ...result, damage: 0, isHit: false };
+          }
+        }
       }
       
       // Check for level up on natural 20 with 5+ XP (check AFTER XP is awarded from defeating monster)
@@ -5101,6 +5234,220 @@ export const gameSlice = createSlice({
      */
     setTestMode: (state, action: PayloadAction<boolean>) => {
       state.testMode = action.payload;
+    },
+    /**
+     * Activate the villain during the villain phase.
+     * Should be called once per hero turn (after all controlled monsters activate).
+     * Only applies when a villain is present (chamber has been revealed).
+     */
+    activateVillain: (state, action: PayloadAction<{ randomFn?: () => number }>) => {
+      if (state.turnState.currentPhase !== "villain-phase") return;
+      if (!state.villain) return;
+
+      const randomFn = action.payload?.randomFn ?? Math.random;
+      const villain = state.villain;
+
+      // Build helper maps
+      const heroHpMap: Record<string, number> = {};
+      const heroAcMap: Record<string, number> = {};
+      for (const hp of state.heroHp) {
+        heroHpMap[hp.heroId] = hp.currentHp;
+        heroAcMap[hp.heroId] = getModifiedAC(hp);
+      }
+
+      // Run villain AI
+      const result = executeVillainTurn(
+        villain,
+        state.heroTokens,
+        heroHpMap,
+        heroAcMap,
+        state.monsters,
+        state.dungeon,
+        randomFn
+      );
+
+      // Look up villain definition for logging
+      const villainDef = getVillainDefForScenario(state.selectedScenarioId);
+      const villainName = villainDef?.name ?? 'Villain';
+
+      switch (result.type) {
+        case 'move': {
+          // Update villain position
+          state.villain.position = globalToLocalForVillain(result.destination, result.newTileId, state.dungeon);
+          state.villain.tileId = result.newTileId;
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'combat',
+            message: `${villainName} moves.`,
+          });
+          break;
+        }
+
+        case 'attack': {
+          // Update position if villain moved before attacking
+          if (result.newPosition !== undefined && result.newTileId !== undefined) {
+            state.villain.position = globalToLocalForVillain(result.newPosition, result.newTileId, state.dungeon);
+            state.villain.tileId = result.newTileId;
+          }
+
+          // Apply damage and status effects to each targeted hero
+          for (let i = 0; i < result.targetHeroIds.length; i++) {
+            const heroId = result.targetHeroIds[i];
+            const attackResult = result.results[i];
+            if (!attackResult) continue;
+
+            const hpIdx = state.heroHp.findIndex(h => h.heroId === heroId);
+            if (hpIdx === -1) continue;
+
+            if (attackResult.isHit) {
+              state.heroHp[hpIdx] = {
+                ...state.heroHp[hpIdx],
+                currentHp: Math.max(0, state.heroHp[hpIdx].currentHp - attackResult.damage),
+              };
+            }
+          }
+
+          // Store first result for UI display (others queued in area array)
+          if (result.results.length > 0) {
+            state.villainAttackResult = result.results[0];
+            state.villainAttackTargetId = result.targetHeroIds[0] ?? null;
+            state.villainAttackName = result.tacticName;
+
+            if (result.results.length > 1) {
+              state.villainAreaAttackResults = result.results.slice(1);
+              state.villainAreaAttackTargetIds = result.targetHeroIds.slice(1);
+            }
+          }
+
+          // Apply hit status effects for each target
+          const tacticDef = villainDef?.tactics.find(t => t.name === result.tacticName);
+          if (tacticDef?.hitStatusEffect) {
+            for (let i = 0; i < result.targetHeroIds.length; i++) {
+              const attackResult = result.results[i];
+              if (!attackResult?.isHit) continue;
+              const heroId = result.targetHeroIds[i];
+              const hpIdx = state.heroHp.findIndex(h => h.heroId === heroId);
+              if (hpIdx === -1) continue;
+              state.heroHp[hpIdx] = {
+                ...state.heroHp[hpIdx],
+                statuses: applyStatusEffect(
+                  state.heroHp[hpIdx].statuses ?? [],
+                  tacticDef.hitStatusEffect,
+                  villain.instanceId,
+                  state.turnState.turnNumber
+                ),
+              };
+            }
+          }
+
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'combat',
+            message: `${villainName} uses ${result.tacticName}.`,
+            details: result.targetHeroIds.map((id, i) => {
+              const r = result.results[i];
+              return r ? `${id}: roll ${r.roll}${r.isHit ? ` HIT ${r.damage} dmg` : ' MISS'}` : '';
+            }).join('; '),
+          });
+
+          // Check for party defeat
+          if (state.heroHp.every(h => h.currentHp <= 0)) {
+            state.defeatReason = `The party was defeated by ${villainName}.`;
+            state.currentScreen = "defeat";
+          }
+          break;
+        }
+
+        case 'spawn-monster': {
+          // Update villain position
+          state.villain.position = globalToLocalForVillain(result.destination, result.newTileId, state.dungeon);
+          state.villain.tileId = result.newTileId;
+
+          // Draw a monster from the deck and spawn it adjacent to the villain
+          const { monster: newMonsterId, deck: updatedDeck } = drawMonster(state.monsterDeck);
+          state.monsterDeck = updatedDeck;
+          if (newMonsterId) {
+            const spawnTile = state.dungeon.tiles.find(t => t.id === result.newTileId);
+            if (spawnTile) {
+              const spawnPos = getMonsterSpawnPosition(spawnTile, state.monsters);
+              if (spawnPos) {
+                const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId ?? 'unknown';
+                const newMonster: MonsterState = createMonsterInstance(
+                  newMonsterId,
+                  spawnPos,
+                  spawnTile.id,
+                  currentHeroId,
+                  state.monsterInstanceCounter
+                );
+                state.monsters.push(newMonster);
+                state.monsterInstanceCounter += 1;
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'exploration',
+                  message: `${villainName} summons a ${newMonsterId}!`,
+                });
+              }
+            }
+          }
+          break;
+        }
+
+        case 'auto-damage': {
+          // Update villain position
+          state.villain.position = globalToLocalForVillain(result.newPosition, result.newTileId, state.dungeon);
+          state.villain.tileId = result.newTileId;
+
+          // Apply automatic damage to each adjacent hero (no roll)
+          for (const heroId of result.targetHeroIds) {
+            const hpIdx = state.heroHp.findIndex(h => h.heroId === heroId);
+            if (hpIdx === -1) continue;
+            state.heroHp[hpIdx] = {
+              ...state.heroHp[hpIdx],
+              currentHp: Math.max(0, state.heroHp[hpIdx].currentHp - result.damage),
+            };
+          }
+
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'combat',
+            message: `${villainName} charges and deals ${result.damage} automatic damage!`,
+            details: `Targets: ${result.targetHeroIds.join(', ')}`,
+          });
+
+          // Check for party defeat
+          if (state.heroHp.every(h => h.currentHp <= 0)) {
+            state.defeatReason = `The party was defeated by ${villainName}.`;
+            state.currentScreen = "defeat";
+          }
+          break;
+        }
+
+        default:
+          break;
+      }
+    },
+    /**
+     * Dismiss villain attack result (advance sequential area-attack display)
+     */
+    dismissVillainAttackResult: (state) => {
+      const remaining = state.villainAreaAttackResults;
+      const remainingTargets = state.villainAreaAttackTargetIds ?? [];
+      if (remaining && remaining.length > 0) {
+        state.villainAttackResult = remaining[0];
+        state.villainAttackTargetId = remainingTargets[0] ?? null;
+        state.villainAreaAttackResults = remaining.slice(1).length > 0 ? remaining.slice(1) : null;
+        state.villainAreaAttackTargetIds = remainingTargets.slice(1).length > 0 ? remainingTargets.slice(1) : null;
+      } else {
+        state.villainAttackResult = null;
+        state.villainAttackTargetId = null;
+        state.villainAttackName = null;
+        state.villainAreaAttackResults = null;
+        state.villainAreaAttackTargetIds = null;
+      }
     },
     /**
      * Activate all traps and hazards during villain phase
@@ -6374,5 +6721,7 @@ export const {
   registerEventHooks,
   clearPendingPowerCardFlips,
   unregisterEventHookForCard,
+  activateVillain,
+  dismissVillainAttackResult,
 } = gameSlice.actions;
 export default gameSlice.reducer;
