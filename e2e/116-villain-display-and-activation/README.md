@@ -45,11 +45,15 @@ Both hero panels visible on left. Villain status card (top-right) shows HP.
 
 ![Quinn's villain phase activation notification](116-villain-display-and-activation.spec.ts-snapshots/001-quinn-villain-phase-activation-notification-chromium-linux.png)
 
-#### Screenshot 002 — Vistra's villain phase: Malphas activates again
-Villain activates a second time (Vistra's villain phase) — proves per-hero-turn activation (twice per round).
-Villain status card and token both still visible in the background.
+#### Screenshot 002 — Vistra's hero-phase (after Quinn's villain phase ends)
+After dismissing notification, Vistra becomes the active hero.
 
-![Vistra's villain phase activation notification](116-villain-display-and-activation.spec.ts-snapshots/002-vistra-villain-phase-activation-notification-chromium-linux.png)
+![Vistra's hero-phase after Quinn's villain phase](116-villain-display-and-activation.spec.ts-snapshots/002-vistra-hero-phase-after-quinn-villain-phase-chromium-linux.png)
+
+#### Screenshot 003 — Vistra's villain phase: Malphas activates again
+Villain activates a second time proving per-hero-turn activation (twice per round).
+
+![Vistra's villain phase activation notification](116-villain-display-and-activation.spec.ts-snapshots/003-vistra-villain-phase-activation-notification-chromium-linux.png)
 
 ### Test 2
 
