@@ -450,6 +450,11 @@ export interface ScenarioState {
   introductionShown: boolean;
   /** Whether the Chamber Entrance tile has been placed (triggers chamber-reveal) */
   chamberRevealed: boolean;
+  /**
+   * Runtime instance ID of the villain once spawned; null until the chamber is revealed.
+   * Matches VillainInstance.instanceId in the game state.
+   */
+  villainInstanceId: string | null;
 }
 
 /**
@@ -1585,3 +1590,168 @@ export interface PendingMonsterDecision {
   /** Context for the decision (e.g., "attack", "movement", "spawn") */
   context: string;
 }
+
+// ---------------------------------------------------------------------------
+// Villain System types
+// ---------------------------------------------------------------------------
+
+/**
+ * A single tactic entry for villain activation.
+ * Tactics are evaluated in order; the first matching condition fires.
+ */
+export interface VillainTactic {
+  /** Human-readable tactic name (e.g. "Void Rip"). */
+  name: string;
+  /**
+   * Maximum tile distance to the closest Hero for this tactic to trigger.
+   * 0 = same tile or adjacent square; 1 = within 1 tile (≈4 squares), etc.
+   * A special value of Infinity means "otherwise" (always matches as a fallback).
+   */
+  maxRangeTiles: number;
+  /** Attack bonus to use for this attack (0 = no roll, automatic damage). */
+  attackBonus: number;
+  /** Damage dealt on a hit (or automatically if attackBonus === 0 and spawnMonster is false). */
+  damage: number;
+  /** Status effect applied on hit, if any. */
+  hitStatusEffect?: import('./statusEffects').StatusEffectType;
+  /**
+   * Area of effect pattern:
+   * - 'self-tile': all heroes on the villain's tile
+   * - 'adjacent-tiles': all heroes on the villain's tile AND adjacent tiles
+   * - 'within-range': all heroes within `maxRangeTiles` tiles
+   * - 'single': single closest hero
+   */
+  aoe?: 'self-tile' | 'adjacent-tiles' | 'within-range' | 'single';
+  /** If true, move toward the closest Hero before attacking. */
+  moveBefore?: boolean;
+  /** If true, draw a Monster Card and spawn the monster adjacent to the villain instead of attacking. */
+  spawnMonster?: boolean;
+  /**
+   * Automatic damage dealt when the villain ends movement adjacent to a hero (no attack roll).
+   * Used for Vraxos's charge attack.
+   */
+  autoAdjacentDamage?: number;
+}
+
+/**
+ * Static definition for a scenario villain (Malphas, Vraxos, etc.).
+ * Loaded from VILLAIN_DEFINITIONS at game initialisation; does not change at runtime.
+ */
+export interface VillainDefinition {
+  /** Unique identifier matching the scenario villain field. */
+  id: string;
+  /** Display name. */
+  name: string;
+  /** Armor class. */
+  ac: number;
+  /** Base hit points (before per-hero bonus). */
+  baseHp: number;
+  /** Additional HP added per hero beyond the first. */
+  perHeroHp: number;
+  /** Ordered list of tactic options; first matching condition fires. */
+  tactics: VillainTactic[];
+  /**
+   * When true, the villain cannot be damaged while any regular monster is on
+   * the villain's tile or an adjacent tile.
+   */
+  shieldedWhileGuardsAdjacent?: boolean;
+  /** Path to the villain token image asset. */
+  tokenAsset: string;
+}
+
+/**
+ * Runtime state for a villain instance placed on the board.
+ */
+export interface VillainInstance {
+  /** Links to VillainDefinition.id */
+  villainId: string;
+  /** Unique runtime instance ID (e.g. "villain-malphas") */
+  instanceId: string;
+  /** Current position in tile-local coordinates */
+  position: Position;
+  /** Tile the villain is on */
+  tileId: string;
+  /** Current hit points */
+  currentHp: number;
+  /** Maximum hit points (calculated at spawn time from baseHp + perHeroHp * extra heroes) */
+  maxHp: number;
+  /** Active status effects on the villain */
+  statuses?: import('./statusEffects').StatusEffect[];
+}
+
+/**
+ * Villain definitions for all implemented villains.
+ */
+export const VILLAIN_DEFINITIONS: VillainDefinition[] = [
+  {
+    id: 'malphas',
+    name: 'Malphas, the Void-Caller',
+    ac: 16,
+    baseHp: 12,
+    perHeroHp: 4,
+    shieldedWhileGuardsAdjacent: true,
+    tokenAsset: 'assets/Villain_Malphas.png',
+    tactics: [
+      {
+        name: 'Void Rip',
+        maxRangeTiles: 1,
+        attackBonus: 8,
+        damage: 2,
+        hitStatusEffect: 'slowed',
+        aoe: 'adjacent-tiles',
+      },
+      {
+        name: 'Shadow Lash',
+        maxRangeTiles: 2,
+        attackBonus: 7,
+        damage: 1,
+        hitStatusEffect: 'dazed',
+        aoe: 'single',
+        moveBefore: true,
+      },
+      {
+        name: 'Summon Void Spawn',
+        maxRangeTiles: Infinity,
+        attackBonus: 0,
+        damage: 0,
+        aoe: 'single',
+        moveBefore: true,
+        spawnMonster: true,
+      },
+    ],
+  },
+  {
+    id: 'vraxos',
+    name: 'Vraxos, the Cursed Sentinel',
+    ac: 18,
+    baseHp: 10,
+    perHeroHp: 5,
+    tokenAsset: 'assets/Villain_Vraxos.png',
+    tactics: [
+      {
+        name: 'Crushing Grip',
+        maxRangeTiles: 0,
+        attackBonus: 9,
+        damage: 2,
+        hitStatusEffect: 'immobilized',
+        aoe: 'single',
+      },
+      {
+        name: 'Steam Vent',
+        maxRangeTiles: 2,
+        attackBonus: 7,
+        damage: 1,
+        aoe: 'within-range',
+      },
+      {
+        name: 'Charge',
+        maxRangeTiles: Infinity,
+        attackBonus: 0,
+        damage: 0,
+        aoe: 'single',
+        moveBefore: true,
+        autoAdjacentDamage: 1,
+      },
+    ],
+  },
+];

@@ -71,6 +71,8 @@
     clearPendingPowerCardFlips,
     unregisterEventHookForCard,
     registerEventHooks,
+    activateVillain,
+    dismissVillainAttackResult,
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
@@ -99,13 +101,15 @@
     ScenarioState,
     PartyResources,
     EncounterCard as EncounterCardType,
+    VillainInstance,
   } from "../store/types";
-  import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES, ENCOUNTER_CARDS } from "../store/types";
+  import { TILE_DEFINITIONS, MONSTERS, AVAILABLE_HEROES, ENCOUNTER_CARDS, VILLAIN_DEFINITIONS } from "../store/types";
   import { assetPath } from "../utils";
   import MovementOverlay from "./MovementOverlay.svelte";
   import TileDeckCounter from "./TileDeckCounter.svelte";
   import UnexploredEdgeIndicator from "./UnexploredEdgeIndicator.svelte";
   import MonsterToken from "./MonsterToken.svelte";
+  import VillainToken from "./VillainToken.svelte";
   import MonsterCard from "./MonsterCard.svelte";
   import MonsterCardMini from "./MonsterCardMini.svelte";
   import EncounterCard from "./EncounterCard.svelte";
@@ -234,7 +238,7 @@
   let villainPhaseMonsterIndex: number = $state(0);
   let monsterMoveActionId: string | null = $state(null);
   let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
-  let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" });
+  let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", introductionShown: false, chamberRevealed: false, title: '', description: '', villainInstanceId: null });
   let partyResources: PartyResources = $state({ xp: 0, healingSurges: 2 });
   let defeatedMonsterXp: number | null = $state(null);
   let defeatedMonsterName: string | null = $state(null);
@@ -249,6 +253,13 @@
   let explorationPhase: import('../store/gameSlice').ExplorationPhaseState = $state({ step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null });
   let recentlyPlacedTileId: string | null = $state(null);
   let recentlyPlacedRoomSetTileIds: string[] = $state([]);
+  // Villain state
+  let villain: VillainInstance | null = $state(null);
+  let villainAttackResult: AttackResult | null = $state(null);
+  let villainAttackTargetId: string | null = $state(null);
+  let villainAttackName: string | null = $state(null);
+  /** Tracks whether the villain has already activated in the current villain phase. Reset on phase change. */
+  let villainActivatedThisPhase: boolean = $state(false);
   let pendingMonsterDisplayId: string | null = $state(null);
   let poisonedDamageNotification: { heroId: string; damage: number } | null = $state(null);
   let poisonRecoveryNotification: { heroId: string; roll: number; recovered: boolean } | null = $state(null);
@@ -395,6 +406,11 @@
       recentlyPlacedTileId = state.game.recentlyPlacedTileId;
       recentlyPlacedRoomSetTileIds = state.game.recentlyPlacedRoomSetTileIds;
       pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
+      // Villain state
+      villain = state.game.villain;
+      villainAttackResult = state.game.villainAttackResult;
+      villainAttackTargetId = state.game.villainAttackTargetId;
+      villainAttackName = state.game.villainAttackName;
 
       // Auto-advance exploration phase steps based on current step
       if (state.game.turnState.currentPhase === 'exploration-phase') {
@@ -508,6 +524,11 @@
     pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
     poisonedDamageNotification = state.game.poisonedDamageNotification;
     poisonRecoveryNotification = state.game.poisonRecoveryNotification;
+    // Villain state
+    villain = state.game.villain;
+    villainAttackResult = state.game.villainAttackResult;
+    villainAttackTargetId = state.game.villainAttackTargetId;
+    villainAttackName = state.game.villainAttackName;
     heroPowerCards = state.heroes.heroPowerCards;
     attackName = state.game.attackName;
     drawnEncounter = state.game.drawnEncounter;
@@ -646,6 +667,16 @@
     );
   });
 
+  // Reset villain activation flag when entering a new villain phase
+  $effect(() => {
+    if (turnState.currentPhase === "villain-phase") {
+      // Reset at start of each villain phase turn (when monsterIndex resets to 0)
+      if (villainPhaseMonsterIndex === 0) {
+        villainActivatedThisPhase = false;
+      }
+    }
+  });
+
   // Auto-activate monsters during villain phase
   // This effect triggers when:
   // 1. Entering villain phase (to start the first monster)
@@ -655,6 +686,9 @@
     
     // Don't auto-activate if there's an action result being displayed
     if (monsterAttackResult !== null || monsterMoveActionId !== null) return;
+    
+    // Don't auto-activate while a villain attack result is being displayed
+    if (villainAttackResult !== null) return;
     
     // Don't auto-activate while a monster exploration notification is showing
     if (monsterExplorationEvent !== null) return;
@@ -666,7 +700,13 @@
     
     // Check if all monsters have been activated
     if (villainPhaseMonsterIndex >= controlledMonsters.length) {
-      // All monsters activated, auto-end villain phase
+      // All monsters activated — now activate villain (if present and not yet done this phase)
+      if (villain && !villainActivatedThisPhase) {
+        villainActivatedThisPhase = true;
+        store.dispatch(activateVillain({}));
+        return;
+      }
+      // Villain done (or no villain) — end the villain phase
       store.dispatch(endVillainPhase());
       return;
     }
@@ -3347,6 +3387,25 @@
           />
           {/if}
         {/each}
+
+        <!-- Villain token -->
+        {#if villain}
+          {@const villainDef = VILLAIN_DEFINITIONS.find(d => d.id === villain.villainId)}
+          {@const isVillainTargetable = turnState.currentPhase === "hero-phase" && !mapControlMode && heroTurnActions.canAttack}
+          {@const isVillainSelected = selectedTargetId === villain.instanceId && selectedTargetType === 'monster'}
+          {@const villainShielded = villainDef?.shieldedWhileGuardsAdjacent === true && monsters.length > 0}
+          <VillainToken
+            {villain}
+            cellSize={TILE_CELL_SIZE}
+            tileOffsetX={TOKEN_OFFSET_X}
+            tileOffsetY={TOKEN_OFFSET_Y}
+            tilePixelOffset={getTilePixelOffsetById(villain.tileId)}
+            isTargetable={isVillainTargetable}
+            isSelected={isVillainSelected}
+            isShielded={villainShielded}
+            onClick={() => handleTargetClick(villain.instanceId, 'monster')}
+          />
+        {/if}
         
         <!-- Trap markers -->
         {#each traps as trap (trap.id)}
