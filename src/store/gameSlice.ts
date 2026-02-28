@@ -416,6 +416,30 @@ export interface GameState {
    */
   villain: VillainInstance | null;
   /**
+   * Summary of the most recent villain activation, displayed as a dismissable
+   * notification panel (like monster attack/move notifications).
+   * Cleared when the player clicks to dismiss.
+   */
+  villainActivation: {
+    villainName: string;
+    /** Type of action taken: 'attack', 'move', 'auto-damage', 'spawn', or 'idle' */
+    actionType: 'attack' | 'move' | 'auto-damage' | 'spawn' | 'idle';
+    /** Tactic or action description shown in the header */
+    tacticName: string;
+    /** Primary attack result (if actionType === 'attack') */
+    attackResult: AttackResult | null;
+    /** Primary target hero ID */
+    targetHeroId: string | null;
+    /** All target IDs (AoE) */
+    targetHeroIds: string[];
+    /** Auto-damage amount (if actionType === 'auto-damage') */
+    autoDamage: number;
+    /** Remaining area-attack results to show sequentially */
+    remainingResults: AttackResult[];
+    /** Remaining area-attack target hero IDs */
+    remainingTargetIds: string[];
+  } | null;
+  /**
    * Attack result from the most recent villain activation (for UI display).
    * Cleared when the player dismisses the result.
    */
@@ -799,6 +823,7 @@ const initialState: GameState = {
   encounterCancelCost: ENCOUNTER_CANCEL_COST,
   villainPhaseStepMessage: null,
   villain: null,
+  villainActivation: null,
   villainAttackResult: null,
   villainAttackTargetId: null,
   villainAttackName: null,
@@ -2476,6 +2501,7 @@ export const gameSlice = createSlice({
       // Clear villain phase state
       state.villainPhaseMonsterIndex = 0;
       state.villainActivatedThisTurn = false;
+      state.villainActivation = null;
       state.villainAttackResult = null;
       state.villainAttackTargetId = null;
       state.villainAttackName = null;
@@ -5304,6 +5330,18 @@ export const gameSlice = createSlice({
             type: 'combat',
             message: `${villainName} moves.`,
           });
+          // Show villain activation notification
+          state.villainActivation = {
+            villainName,
+            actionType: 'move',
+            tacticName: 'Moves',
+            attackResult: null,
+            targetHeroId: null,
+            targetHeroIds: [],
+            autoDamage: 0,
+            remainingResults: [],
+            remainingTargetIds: [],
+          };
           break;
         }
 
@@ -5341,6 +5379,19 @@ export const gameSlice = createSlice({
               state.villainAreaAttackResults = result.results.slice(1);
               state.villainAreaAttackTargetIds = result.targetHeroIds.slice(1);
             }
+
+            // Show villain activation notification panel
+            state.villainActivation = {
+              villainName,
+              actionType: 'attack',
+              tacticName: result.tacticName,
+              attackResult: result.results[0],
+              targetHeroId: result.targetHeroIds[0] ?? null,
+              targetHeroIds: result.targetHeroIds,
+              autoDamage: 0,
+              remainingResults: result.results.slice(1),
+              remainingTargetIds: result.targetHeroIds.slice(1),
+            };
           }
 
           // Apply hit status effects for each target
@@ -5412,6 +5463,18 @@ export const gameSlice = createSlice({
                   type: 'exploration',
                   message: `${villainName} summons a ${newMonsterId}!`,
                 });
+                // Show villain activation notification
+                state.villainActivation = {
+                  villainName,
+                  actionType: 'spawn',
+                  tacticName: `Summons ${newMonsterId}!`,
+                  attackResult: null,
+                  targetHeroId: null,
+                  targetHeroIds: [],
+                  autoDamage: 0,
+                  remainingResults: [],
+                  remainingTargetIds: [],
+                };
               }
             }
           }
@@ -5440,6 +5503,19 @@ export const gameSlice = createSlice({
             message: `${villainName} charges and deals ${result.damage} automatic damage!`,
             details: `Targets: ${result.targetHeroIds.join(', ')}`,
           });
+
+          // Show villain activation notification
+          state.villainActivation = {
+            villainName,
+            actionType: 'auto-damage',
+            tacticName: 'Charges!',
+            attackResult: null,
+            targetHeroId: result.targetHeroIds[0] ?? null,
+            targetHeroIds: result.targetHeroIds,
+            autoDamage: result.damage,
+            remainingResults: [],
+            remainingTargetIds: [],
+          };
 
           // Check for party defeat
           if (state.heroHp.every(h => h.currentHp <= 0)) {
@@ -5471,6 +5547,30 @@ export const gameSlice = createSlice({
         state.villainAreaAttackResults = null;
         state.villainAreaAttackTargetIds = null;
       }
+    },
+    /**
+     * Dismiss the villain activation notification panel.
+     * For attack results, also advances sequential area-attack display.
+     */
+    dismissVillainActivation: (state) => {
+      if (!state.villainActivation) return;
+      if (state.villainActivation.actionType === 'attack') {
+        // Advance area attack sequence
+        const remaining = state.villainActivation.remainingResults;
+        const remainingTargets = state.villainActivation.remainingTargetIds;
+        if (remaining.length > 0) {
+          // Show next target in the area attack
+          state.villainActivation = {
+            ...state.villainActivation,
+            attackResult: remaining[0],
+            targetHeroId: remainingTargets[0] ?? null,
+            remainingResults: remaining.slice(1),
+            remainingTargetIds: remainingTargets.slice(1),
+          };
+          return;
+        }
+      }
+      state.villainActivation = null;
     },
     /**
      * Activate all traps and hazards during villain phase
@@ -6747,5 +6847,6 @@ export const {
   unregisterEventHookForCard,
   activateVillain,
   dismissVillainAttackResult,
+  dismissVillainActivation,
 } = gameSlice.actions;
 export default gameSlice.reducer;
