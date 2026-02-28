@@ -73,6 +73,7 @@
     registerEventHooks,
     activateVillain,
     dismissVillainAttackResult,
+    dismissVillainActivation,
     type MultiAttackState,
     type PendingMoveAttackState,
     type PendingMoveAfterAttackState,
@@ -111,6 +112,7 @@
   import UnexploredEdgeIndicator from "./UnexploredEdgeIndicator.svelte";
   import MonsterToken from "./MonsterToken.svelte";
   import VillainToken from "./VillainToken.svelte";
+  import VillainActivationDisplay from "./VillainActivationDisplay.svelte";
   import MonsterCard from "./MonsterCard.svelte";
   import MonsterCardMini from "./MonsterCardMini.svelte";
   import EncounterCard from "./EncounterCard.svelte";
@@ -256,6 +258,17 @@
   let recentlyPlacedRoomSetTileIds: string[] = $state([]);
   // Villain state
   let villain: VillainInstance | null = $state(null);
+  let villainActivation: {
+    villainName: string;
+    actionType: 'attack' | 'move' | 'auto-damage' | 'spawn' | 'idle';
+    tacticName: string;
+    attackResult: AttackResult | null;
+    targetHeroId: string | null;
+    targetHeroIds: string[];
+    autoDamage: number;
+    remainingResults: AttackResult[];
+    remainingTargetIds: string[];
+  } | null = $state(null);
   let villainAttackResult: AttackResult | null = $state(null);
   let villainAttackTargetId: string | null = $state(null);
   let villainAttackName: string | null = $state(null);
@@ -410,6 +423,7 @@
       pendingMonsterDisplayId = state.game.pendingMonsterDisplayId;
       // Villain state
       villain = state.game.villain;
+      villainActivation = state.game.villainActivation;
       villainAttackResult = state.game.villainAttackResult;
       villainAttackTargetId = state.game.villainAttackTargetId;
       villainAttackName = state.game.villainAttackName;
@@ -530,6 +544,7 @@
     poisonRecoveryNotification = state.game.poisonRecoveryNotification;
     // Villain state
     villain = state.game.villain;
+    villainActivation = state.game.villainActivation;
     villainAttackResult = state.game.villainAttackResult;
     villainAttackTargetId = state.game.villainAttackTargetId;
     villainAttackName = state.game.villainAttackName;
@@ -689,6 +704,10 @@
     // Don't auto-end if there's an encounter card being displayed
     if (drawnEncounter !== null) return;
     
+    // Don't auto-advance while the villain activation notification is showing
+    // (player must click to dismiss it)
+    if (villainActivation !== null) return;
+    
     const controlledMonsters = getControlledMonsters();
     
     // Check if all monsters have been activated
@@ -700,11 +719,6 @@
         return;
       }
       // Villain done (or no villain) — end the villain phase
-      // If there is a pending villain attack result, dismiss it first
-      if (villainAttackResult !== null) {
-        store.dispatch(dismissVillainAttackResult());
-        return;
-      }
       store.dispatch(endVillainPhase());
       return;
     }
@@ -1841,6 +1855,11 @@
   // Handle dismissing the monster attack result
   function handleDismissMonsterAttackResult() {
     store.dispatch(dismissMonsterAttackResult());
+  }
+
+  // Handle dismissing the villain activation notification
+  function handleDismissVillainActivation() {
+    store.dispatch(dismissVillainActivation());
   }
 
   // Handle dismissing the monster move action display
@@ -3490,6 +3509,23 @@
             {scenario.monstersDefeated} / {scenario.monstersToDefeat} defeated
           </span>
         </button>
+
+        <!-- Villain Status Card (shown when villain is present) -->
+        {#if villain}
+          {@const villainDef = VILLAIN_DEFINITIONS.find(d => d.id === villain.villainId)}
+          {@const villainShielded = villainDef ? isVillainShielded(villain, villainDef, monsters, dungeon) : false}
+          <div class="villain-status-card" data-testid="villain-status-card">
+            <span class="villain-status-label" data-testid="villain-status-label">
+              ⚔️ {villainDef?.name ?? 'Villain'}
+            </span>
+            <div class="villain-status-hp" data-testid="villain-status-hp">
+              <span class="villain-hp-value">{villain.currentHp}/{villain.maxHp} HP</span>
+              {#if villainShielded}
+                <span class="villain-shield-indicator" data-testid="villain-status-shield" title="Shielded by guards">🛡️ Shielded</span>
+              {/if}
+            </div>
+          </div>
+        {/if}
         
         <!-- Party Resources (XP & Healing Surges) -->
         <div class="party-resources">
@@ -3791,6 +3827,14 @@
       targetName={getMonsterAttackTargetName()}
       onDismiss={handleDismissMonsterAttackResult}
       edge={getActivePlayerEdge()}
+    />
+  {/if}
+
+  <!-- Villain Activation Display (shown when villain activates during villain phase) -->
+  {#if villainActivation}
+    <VillainActivationDisplay
+      activation={villainActivation}
+      onDismiss={handleDismissVillainActivation}
     />
   {/if}
 
@@ -4394,6 +4438,48 @@
     font-size: 0.75rem;
     color: #4ade80;
     font-weight: bold;
+  }
+
+  /* Villain status card (shown in the right panel when villain is present) */
+  .villain-status-card {
+    background: rgba(40, 0, 70, 0.85);
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #7b2fbf;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+    text-align: right;
+  }
+
+  .villain-status-label {
+    font-size: 0.75rem;
+    color: #d09ef5;
+    font-weight: bold;
+  }
+
+  .villain-status-hp {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .villain-hp-value {
+    font-size: 0.8rem;
+    color: #ff80ff;
+    font-weight: bold;
+  }
+
+  .villain-shield-indicator {
+    font-size: 0.7rem;
+    color: #b0a0e0;
+    background: rgba(120, 80, 200, 0.35);
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid rgba(120, 80, 200, 0.5);
   }
 
   /* Party resources container */

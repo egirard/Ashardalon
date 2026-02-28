@@ -5,18 +5,22 @@ import { createScreenshotHelper } from '../helpers/screenshot-helper';
  * Test 116 - Villain Display and Per-Turn Activation
  *
  * User Story:
- * As a player in Adventure 14 (Malphas), once the chamber is revealed
- * the villain token appears on the board showing HP and status badges.
- * During every hero's villain phase, Malphas activates once — meaning
- * in a 2-hero game he activates twice per round (once per hero).
- * This test verifies:
- *   1. The villain token renders on the board (HP bar, name label).
- *   2. Malphas activates (logs an entry) during Hero 1's villain phase.
- *   3. Malphas activates again during Hero 2's villain phase.
+ * As a player in Adventure 14 (Malphas), once the villain appears:
+ *
+ *  1. The villain token renders on the board with HP bar.
+ *  2. A villain status card appears in the objective panel showing HP and shield status.
+ *  3. During Quinn's villain phase, Malphas activates and a purple notification panel
+ *     appears (like a monster attack result). The player must click to dismiss it.
+ *  4. After Quinn's phase ends, Vistra becomes the active hero.
+ *  5. During Vistra's villain phase, Malphas activates again — proving the villain
+ *     activates once per hero's villain phase (twice per round in a 2-hero game).
+ *
+ * The second test verifies the shield badge on the villain token and the villain
+ * status card's shield indicator when a guard is adjacent.
  */
 
 test.describe('116 - Villain Display and Per-Turn Activation', () => {
-  test('Villain token appears and activates each player turn', async ({ page }) => {
+  test('Villain token appears and activates with notification each player turn', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
     // -----------------------------------------------------------------------
@@ -55,16 +59,19 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
     });
 
     // -----------------------------------------------------------------------
-    // STEP 2: Inject Malphas during hero-phase so we can screenshot the token
-    //         Note: villain token renders whenever villain != null (any phase)
-    //         Heroes placed at valid non-staircase positions (staircase is 1-2, 3-4)
+    // STEP 2: Inject Malphas, set positions, stay in hero-phase for screenshot
     // -----------------------------------------------------------------------
+    // Fix Math.random for deterministic attack rolls in screenshots
+    await page.evaluate(() => {
+      (window as any).__origRandom = Math.random;
+      Math.random = () => 0.7; // deterministic: roll ~15 on d20, usually hits
+    });
+
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      // Heroes at non-staircase positions
       store.dispatch({ type: 'game/setHeroPosition', payload: { heroId: 'quinn', position: { x: 3, y: 2 } } });
       store.dispatch({ type: 'game/setHeroPosition', payload: { heroId: 'vistra', position: { x: 3, y: 5 } } });
-      // Place Malphas at a valid non-staircase position reachable by BFS from heroes
+      // Malphas at valid non-staircase position (staircase: 1-2, 3-4)
       store.dispatch({
         type: 'game/setVillain',
         payload: {
@@ -77,77 +84,87 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
       });
     });
 
-    // Wait for villain token to appear on board (in hero-phase)
+    // Wait for villain token to render
     await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
+    // Wait for villain status card to appear in objective panel
+    await expect(page.locator('[data-testid="villain-status-card"]')).toBeVisible();
 
     // -----------------------------------------------------------------------
-    // STEP 3: Screenshot — villain token visible on board during hero-phase
+    // STEP 3: Screenshot — Quinn's hero-phase with villain token and status card
+    //         Both Quinn's panel (active hero) and Vistra's panel visible
     // -----------------------------------------------------------------------
-    await screenshots.capture(page, 'villain-token-visible-hero-phase', {
+    await screenshots.capture(page, 'quinn-hero-phase-villain-token-and-status-card', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-        // Villain is set
+        // Villain present
         expect(state.game.villain).not.toBeNull();
         expect(state.game.villain.villainId).toBe('malphas');
-        expect(state.game.villain.currentHp).toBe(20);
-        // Still in hero-phase (villain was injected without phase change)
         expect(state.game.turnState.currentPhase).toBe('hero-phase');
-        // Villain token visible
+        expect(state.game.turnState.currentHeroIndex).toBe(0); // Quinn's turn
+        // Villain token on board
         await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
-        await expect(page.locator('[data-testid="villain-hp-bar"]')).toBeVisible();
-        // HP bar shows correct values
         await expect(page.locator('[data-testid="villain-hp-bar"]')).toContainText('20/20');
+        // Villain status card in objective panel
+        await expect(page.locator('[data-testid="villain-status-card"]')).toBeVisible();
+        await expect(page.locator('[data-testid="villain-status-hp"]')).toContainText('20/20 HP');
       },
     });
 
     // -----------------------------------------------------------------------
-    // STEP 4: Enter Quinn's villain phase and wait for auto-advance to complete
-    //         The $effect will: dispatch activateVillain → log entry → endVillainPhase
+    // STEP 4: Enter Quinn's villain phase — villain activates and shows notification
     // -----------------------------------------------------------------------
-    // Fix Math.random to make villain attack rolls deterministic for stable screenshots
-    await page.evaluate(() => {
-      (window as any).__fixedRandom = Math.random;
-      Math.random = () => 0.5; // Fixed roll: deterministic attack outcomes
-    });
-
     await page.evaluate(() => {
       (window as any).__REDUX_STORE__.dispatch({ type: 'game/setCurrentPhase', payload: 'villain-phase' });
     });
 
-    // The villain phase auto-advances through Svelte's $effect:
-    // villain → activateVillain → villainActivatedThisTurn=true → endVillainPhase
-    await expect(async () => {
-      const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-      expect(state.game.turnState.currentPhase).toBe('hero-phase');
-    }).toPass({ timeout: 5000 });
+    // Wait for the villain activation notification to appear
+    await expect(page.locator('[data-testid="villain-activation-overlay"]')).toBeVisible();
 
-    // Villain activation was logged during Quinn's villain phase
-    const stateAfterQuinnVP = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-    expect(stateAfterQuinnVP.game.turnState.currentHeroIndex).toBe(1); // Vistra is now active
-
-    const logAfterQuinnVP = stateAfterQuinnVP.game.logEntries as Array<{ message: string }>;
-    const quinnVillainLog = logAfterQuinnVP.some(
-      (e) => e.message.includes('Malphas') && e.message !== '⚔️ Malphas, the Void-Caller appears!'
-    );
-    expect(quinnVillainLog).toBe(true);
-
-    await screenshots.capture(page, 'after-villain-activates-quinn-villain-phase', {
+    // -----------------------------------------------------------------------
+    // STEP 5: Screenshot — villain activation notification during Quinn's villain phase
+    // -----------------------------------------------------------------------
+    await screenshots.capture(page, 'quinn-villain-phase-activation-notification', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-        // Moved to Vistra's hero-phase
-        expect(state.game.turnState.currentPhase).toBe('hero-phase');
-        expect(state.game.turnState.currentHeroIndex).toBe(1); // Vistra
-        // Villain still present
-        expect(state.game.villain).not.toBeNull();
-        // villainActivatedThisTurn reset to false after phase ended
-        expect(state.game.villainActivatedThisTurn).toBe(false);
-        // Villain token still visible
-        await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
+        // Still in villain phase — notification blocks auto-advance
+        expect(state.game.turnState.currentPhase).toBe('villain-phase');
+        expect(state.game.turnState.currentHeroIndex).toBe(0); // Quinn's villain phase
+        expect(state.game.villainActivation).not.toBeNull();
+        expect(state.game.villainActivation.villainName).toBe('Malphas, the Void-Caller');
+        // Notification is visible
+        await expect(page.locator('[data-testid="villain-activation-card"]')).toBeVisible();
+        await expect(page.locator('[data-testid="villain-activation-name"]')).toContainText('Malphas');
       },
     });
 
     // -----------------------------------------------------------------------
-    // STEP 5: Enter Vistra's villain phase and verify villain activates again
+    // STEP 6: Dismiss notification → villain phase ends → Vistra's hero-phase
+    // -----------------------------------------------------------------------
+    await page.locator('[data-testid="dismiss-villain-activation"]').click();
+
+    // After dismissal: villain phase should end and move to Vistra's hero-phase
+    await expect(async () => {
+      const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(state.game.turnState.currentPhase).toBe('hero-phase');
+      expect(state.game.turnState.currentHeroIndex).toBe(1); // Vistra
+    }).toPass({ timeout: 5000 });
+
+    await screenshots.capture(page, 'vistra-hero-phase-after-quinn-villain-phase', {
+      programmaticCheck: async () => {
+        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+        expect(state.game.turnState.currentPhase).toBe('hero-phase');
+        expect(state.game.turnState.currentHeroIndex).toBe(1); // Vistra is now active
+        expect(state.game.villainActivation).toBeNull();
+        expect(state.game.villainActivatedThisTurn).toBe(false); // Reset after phase
+        // Villain still present on board
+        await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
+        // Villain status card still visible
+        await expect(page.locator('[data-testid="villain-status-card"]')).toBeVisible();
+      },
+    });
+
+    // -----------------------------------------------------------------------
+    // STEP 7: Enter Vistra's villain phase and verify villain activates again
     // -----------------------------------------------------------------------
     const logCountBeforeVistraVP = await page.evaluate(() =>
       (window as any).__REDUX_STORE__.getState().game.logEntries.length
@@ -157,40 +174,50 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
       (window as any).__REDUX_STORE__.dispatch({ type: 'game/setCurrentPhase', payload: 'villain-phase' });
     });
 
-    // Wait for villain phase to auto-complete again
+    // Wait for villain activation notification again
+    await expect(page.locator('[data-testid="villain-activation-overlay"]')).toBeVisible();
+
+    // -----------------------------------------------------------------------
+    // STEP 8: Screenshot — Vistra's villain phase activation notification
+    // -----------------------------------------------------------------------
+    await screenshots.capture(page, 'vistra-villain-phase-activation-notification', {
+      programmaticCheck: async () => {
+        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+        expect(state.game.turnState.currentPhase).toBe('villain-phase');
+        expect(state.game.turnState.currentHeroIndex).toBe(1); // Vistra's villain phase
+        expect(state.game.villainActivation).not.toBeNull();
+        // Notification visible again (villain activated for Vistra's turn)
+        await expect(page.locator('[data-testid="villain-activation-card"]')).toBeVisible();
+        // New log entry added since Vistra's villain phase started
+        expect(state.game.logEntries.length).toBeGreaterThan(logCountBeforeVistraVP);
+      },
+    });
+
+    // Dismiss and verify Vistra's villain phase ends
+    await page.locator('[data-testid="dismiss-villain-activation"]').click();
+
     await expect(async () => {
       const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
       expect(state.game.turnState.currentPhase).toBe('hero-phase');
     }).toPass({ timeout: 5000 });
 
-    // Verify villain logged something new during Vistra's villain phase
-    const logAfterVistraVP = await page.evaluate(() =>
-      (window as any).__REDUX_STORE__.getState().game.logEntries as Array<{ message: string }>
+    // Final programmatic check — villain activated at least twice (once per hero turn)
+    const finalState = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+    const log = finalState.game.logEntries as Array<{ message: string }>;
+    const activationLogs = log.filter(
+      (e) =>
+        e.message.includes('Malphas') &&
+        e.message !== '⚔️ Malphas, the Void-Caller appears!'
     );
-    const newVillainLogs = logAfterVistraVP.slice(logCountBeforeVistraVP).filter(
-      (e) => e.message.includes('Malphas')
-    );
-    expect(newVillainLogs.length).toBeGreaterThan(0);
+    expect(activationLogs.length).toBeGreaterThanOrEqual(2);
 
-    await screenshots.capture(page, 'villain-activated-both-villain-phases', {
-      programmaticCheck: async () => {
-        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-        expect(state.game.turnState.currentPhase).toBe('hero-phase');
-        // Villain activated at least twice (once per hero's villain phase)
-        const log = state.game.logEntries as Array<{ message: string }>;
-        const activationLogs = log.filter(
-          (e) =>
-            e.message.includes('Malphas') &&
-            e.message !== '⚔️ Malphas, the Void-Caller appears!'
-        );
-        expect(activationLogs.length).toBeGreaterThanOrEqual(2);
-        // Villain token still visible
-        await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
-      },
+    // Restore Math.random
+    await page.evaluate(() => {
+      Math.random = (window as any).__origRandom ?? Math.random;
     });
   });
 
-  test('Villain token shows HP bar and shield badge when guards adjacent (Malphas)', async ({ page }) => {
+  test('Villain status card shows HP bar and shield badge when guards adjacent (Malphas)', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
     // -----------------------------------------------------------------------
@@ -220,7 +247,7 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
     });
 
     // -----------------------------------------------------------------------
-    // STEP 2: Inject villain + guard monster
+    // STEP 2: Inject villain with partial HP + guard monster adjacent
     // -----------------------------------------------------------------------
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -234,7 +261,7 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
           currentHp: 12, maxHp: 16, statuses: [],
         },
       });
-      // Kobold guard adjacent to Malphas at (3,2)
+      // Kobold guard at (3,2) — adjacent to Malphas at (2,2)
       store.dispatch({
         type: 'game/setMonsters',
         payload: [{
@@ -249,30 +276,38 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
     });
 
     await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
+    await expect(page.locator('[data-testid="villain-status-card"]')).toBeVisible();
 
     // -----------------------------------------------------------------------
-    // STEP 3: Screenshot — villain token with HP bar
+    // STEP 3: Screenshot — villain token + status card (HP partial, guard adjacent)
     // -----------------------------------------------------------------------
-    await screenshots.capture(page, 'villain-token-with-hp-bar', {
+    await screenshots.capture(page, 'villain-token-and-status-card-with-hp-bar', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
         expect(state.game.villain.currentHp).toBe(12);
+        // Token HP bar
         await expect(page.locator('[data-testid="villain-hp-bar"]')).toContainText('12/16');
+        // Status card HP
+        await expect(page.locator('[data-testid="villain-status-hp"]')).toContainText('12/16 HP');
         await expect(page.locator('[data-testid="villain-token"]')).toBeVisible();
       },
     });
 
     // -----------------------------------------------------------------------
-    // STEP 4: Screenshot — shield badge visible when guard is adjacent
+    // STEP 4: Screenshot — shield badge on token AND shield indicator on status card
     // -----------------------------------------------------------------------
     await screenshots.capture(page, 'villain-shield-badge-when-guard-adjacent', {
       programmaticCheck: async () => {
+        // Shield badge on the board token
         await expect(page.locator('[data-testid="villain-shield-badge"]')).toBeVisible();
+        // Shield indicator in the status card
+        await expect(page.locator('[data-testid="villain-status-shield"]')).toBeVisible();
+        await expect(page.locator('[data-testid="villain-status-shield"]')).toContainText('Shielded');
       },
     });
 
     // -----------------------------------------------------------------------
-    // STEP 5: Remove guard — shield badge should disappear
+    // STEP 5: Remove guard — shield should disappear from both token and status card
     // -----------------------------------------------------------------------
     await page.evaluate(() => {
       (window as any).__REDUX_STORE__.dispatch({ type: 'game/setMonsters', payload: [] });
@@ -281,6 +316,7 @@ test.describe('116 - Villain Display and Per-Turn Activation', () => {
     await screenshots.capture(page, 'villain-no-shield-when-no-guards', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="villain-shield-badge"]')).not.toBeVisible();
+        await expect(page.locator('[data-testid="villain-status-shield"]')).not.toBeVisible();
       },
     });
   });
