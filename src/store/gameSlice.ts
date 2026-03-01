@@ -178,6 +178,7 @@ import type {
   HeroPhaseEndEvent,
   TileRevealEvent,
   ChamberRevealEvent,
+  EncounterDrawEvent,
 } from './gameEvents';
 
 /**
@@ -1962,6 +1963,46 @@ export const gameSlice = createSlice({
         }
       }
       
+      // Fire hero-phase-end event for scenario hooks (e.g. Heat Exhaustion for Adventure 15)
+      const heroPhaseEndToken = state.heroTokens[state.turnState.currentHeroIndex];
+      if (heroPhaseEndToken) {
+        const heroTileForEnd = findTileAtPosition(heroPhaseEndToken.position, state.dungeon);
+        const heroTileDefForEnd = heroTileForEnd ? getTileDefinition(heroTileForEnd.tileType) : null;
+        const heroPhaseEndEvent: HeroPhaseEndEvent = {
+          type: 'hero-phase-end',
+          heroId: heroPhaseEndToken.heroId,
+          turnNumber: state.turnState.turnNumber,
+          currentTileFeatures: heroTileDefForEnd?.terrainFeatures ?? [],
+        };
+        const heroPhaseEndResult = triggerGameEvent(state.eventHooks, heroPhaseEndEvent);
+        // Apply status effects (e.g. Heat Exhaustion → Slowed on Volcanic Vent tiles)
+        for (const effect of heroPhaseEndResult.applyHeroStatusEffects) {
+          const heroIds = effect.heroId === '*'
+            ? state.heroTokens.map(t => t.heroId)
+            : [effect.heroId];
+          for (const hId of heroIds) {
+            const heroHpIdx = state.heroHp.findIndex(h => h.heroId === hId);
+            if (heroHpIdx !== -1) {
+              state.heroHp[heroHpIdx].statuses = applyStatusEffect(
+                state.heroHp[heroHpIdx].statuses ?? [],
+                effect.statusType,
+                'scenario-hero-phase-end',
+                state.turnState.turnNumber,
+                effect.duration
+              );
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'game-event',
+                message: `🌋 Heat Exhaustion: ${hId} is ${effect.statusType}`,
+                details: `Duration: ${effect.duration ?? 'indefinite'} turn(s).`,
+                heroId: hId,
+              });
+            }
+          }
+        }
+      }
+
       // Transition to exploration phase
       state.turnState.currentPhase = "exploration-phase";
     },
@@ -2616,6 +2657,47 @@ export const gameSlice = createSlice({
               message: `Encounter: ${encounter.name} (${encounter.type})${cancelInfo}`,
               details: encounter.flavorText,
             });
+
+            // Fire encounter-draw event for scenario hooks (e.g. Adventure 15 Automated Defense)
+            const encounterHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId ?? '';
+            const encounterHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+            const encounterHeroTile = encounterHeroToken
+              ? findTileAtPosition(encounterHeroToken.position, state.dungeon)
+              : null;
+            const hasExistingTrap = encounterHeroTile
+              ? state.boardTokens.some(t => t.tileId === encounterHeroTile.id && t.type === 'blade-barrier')
+              : false;
+            const encounterKeywords: string[] = encounter.effect.type === 'trap' ? ['trap'] : [];
+            const encounterDrawEvent: EncounterDrawEvent = {
+              type: 'encounter-draw',
+              heroId: encounterHeroId,
+              turnNumber: state.turnState.turnNumber,
+              encounterId,
+              currentXp: state.partyResources.xp,
+              baseCancelCost: state.encounterCancelCost,
+              encounterKeywords,
+              hasExistingTrapOnTile: hasExistingTrap,
+            };
+            const encounterDrawResult = triggerGameEvent(state.eventHooks, encounterDrawEvent);
+            // Handle scenario hook: dealDamageToHero (e.g. Automated Defense stacking trap)
+            if (encounterDrawResult.dealDamageToHero) {
+              const { heroId: encHeroId, damage: encDamage, reason: encReason } = encounterDrawResult.dealDamageToHero;
+              const encHeroHpIdx = state.heroHp.findIndex(h => h.heroId === encHeroId);
+              if (encHeroHpIdx !== -1) {
+                state.heroHp[encHeroHpIdx].currentHp = Math.max(
+                  0,
+                  state.heroHp[encHeroHpIdx].currentHp - encDamage
+                );
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'game-event',
+                  message: `🔩 ${encReason}: ${encDamage} damage`,
+                  details: `${encHeroId} takes ${encDamage} damage from Automated Defense.`,
+                  heroId: encHeroId,
+                });
+              }
+            }
           }
         }
       } else {
@@ -3951,8 +4033,28 @@ export const gameSlice = createSlice({
           attackResult: result,
           powerCardId: cardId,
         };
-        triggerGameEvent(state.eventHooks, attackMissEvent);
+        const attackMissHookResult = triggerGameEvent(state.eventHooks, attackMissEvent);
         // Note: Inspiring Advice reroll is handled via UI interaction using pendingPowerCardFlips
+
+        // Handle scenario hooks: dealDamageToHero (e.g. Adventure 14 Reflect Natural-One)
+        if (attackMissHookResult.dealDamageToHero) {
+          const { heroId: damagedHeroId, damage: reflectDamage, reason: reflectReason } = attackMissHookResult.dealDamageToHero;
+          const reflectHeroHpIndex = state.heroHp.findIndex(h => h.heroId === damagedHeroId);
+          if (reflectHeroHpIndex !== -1) {
+            state.heroHp[reflectHeroHpIndex].currentHp = Math.max(
+              0,
+              state.heroHp[reflectHeroHpIndex].currentHp - reflectDamage
+            );
+            state.logEntries.push({
+              id: state.logEntryCounter++,
+              timestamp: Date.now(),
+              type: 'game-event',
+              message: `💫 ${reflectReason}: ${reflectDamage} damage`,
+              details: `${damagedHeroId} takes ${reflectDamage} damage from void reflection.`,
+              heroId: damagedHeroId,
+            });
+          }
+        }
       }
 
       // Always store the result with calculated damage for display consistency

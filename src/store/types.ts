@@ -766,10 +766,11 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   // Dire Chamber room tiles — placed as a set when the Chamber Entrance is revealed (Adventure 15)
   // Image analysis: all four tiles have south/east/west open, north wall.
   // dire-04 scorch at (2,2) = east entrance arrow (confirmed from image); others at (1,2) = south arrow.
-  { tileType: 'tile-dire-chamber-01', imagePath: 'assets/Tile_DireChamber_01.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
-  { tileType: 'tile-dire-chamber-02', imagePath: 'assets/Tile_DireChamber_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
-  { tileType: 'tile-dire-chamber-03', imagePath: 'assets/Tile_DireChamber_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 } },
-  { tileType: 'tile-dire-chamber-04', imagePath: 'assets/Tile_DireChamber_04.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 } },
+  // All dire-chamber tiles carry the 'volcanic-vent' terrain feature for Adventure 15's Heat Exhaustion rule.
+  { tileType: 'tile-dire-chamber-01', imagePath: 'assets/Tile_DireChamber_01.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 }, terrainFeatures: ['volcanic-vent'] },
+  { tileType: 'tile-dire-chamber-02', imagePath: 'assets/Tile_DireChamber_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 }, terrainFeatures: ['volcanic-vent'] },
+  { tileType: 'tile-dire-chamber-03', imagePath: 'assets/Tile_DireChamber_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 1, y: 2 }, terrainFeatures: ['volcanic-vent'] },
+  { tileType: 'tile-dire-chamber-04', imagePath: 'assets/Tile_DireChamber_04.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberTile: true, scorchMarkPosition: { x: 2, y: 2 }, terrainFeatures: ['volcanic-vent'] },
 ];
 
 /**
