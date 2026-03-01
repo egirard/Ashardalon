@@ -406,10 +406,8 @@ export function hasReflectNaturalOne(modifiers: PersistentModifier[]): boolean {
 
 /**
  * Check if any two heroes in the provided positions list are "adjacent" —
- * defined as being on the same tile (same tileId) or within 1 grid step.
- *
- * For the Creeping Void check, two heroes are adjacent if the Chebyshev
- * distance between their grid positions is ≤ 1.
+ * defined as being within 1 Chebyshev distance step of each other
+ * (i.e. dx ≤ 1 AND dy ≤ 1 in global board coordinates).
  */
 export function areHeroesAdjacent(
   positions: Array<{ heroId: string; position: Position }>

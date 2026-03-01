@@ -2166,10 +2166,15 @@ export const gameSlice = createSlice({
             if (chamberResult.activatePersistentModifiers.length > 0) {
               state.scenario.activePersistentModifiers.push(...chamberResult.activatePersistentModifiers);
               for (const mod of chamberResult.activatePersistentModifiers) {
-                const modDesc =
-                  mod.type === 'hero-daily-damage-bonus' ? `+${mod.bonus} Daily Power damage`
-                  : mod.type === 'monster-ac-bonus' ? `+${mod.bonus} Monster AC`
-                  : `Reflect natural-1 (${mod.damage} damage)`;
+                // Build a human-readable description for the log entry
+                let modDesc: string;
+                if (mod.type === 'hero-daily-damage-bonus') {
+                  modDesc = `+${mod.bonus} Daily Power damage`;
+                } else if (mod.type === 'monster-ac-bonus') {
+                  modDesc = `+${mod.bonus} Monster AC`;
+                } else {
+                  modDesc = `Reflect natural-1 (${mod.damage} damage)`;
+                }
                 state.logEntries.push({
                   id: state.logEntryCounter++,
                   timestamp: Date.now(),

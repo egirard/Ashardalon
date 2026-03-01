@@ -234,7 +234,10 @@ export interface EventHookResponse {
   drawExtraEncounter?: boolean;
   /**
    * Apply status effects to one or more heroes.
-   * Use heroId '*' to target all heroes.
+   * Use heroId `'*'` to target all heroes on the board; otherwise list each
+   * hero's ID individually. The game slice expands `'*'` to all current heroes.
+   *
+   * Example: `[{ heroId: '*', statusType: 'dazed', duration: 1 }]`
    */
   applyHeroStatusEffects?: Array<{
     heroId: string;
