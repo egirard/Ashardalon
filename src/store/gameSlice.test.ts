@@ -77,7 +77,7 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     villainPhaseMonsterIndex: 0,
     monsterMoveActionId: null,
     heroTurnActions: { actionsTaken: [], canMove: true, canAttack: true },
-    scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+    scenario: { scenarioId: 'default', monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
     partyResources: { xp: 0, healingSurges: 2 },
     defeatedMonsterXp: null,
     defeatedMonsterName: null,
@@ -2555,7 +2555,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+        scenario: { scenarioId: 'default', monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2582,7 +2582,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+        scenario: { scenarioId: 'default', monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2609,7 +2609,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-1", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 11, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+        scenario: { scenarioId: 'default', monstersDefeated: 11, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2637,7 +2637,7 @@ describe("gameSlice", () => {
         monsters: [
           { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
-        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+        scenario: { scenarioId: 'default', monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
       });
 
       const state = gameReducer(initialState, setAttackResult({
@@ -2676,7 +2676,7 @@ describe("gameSlice", () => {
         ],
         heroHp: [{ heroId: "quinn", currentHp: 1, maxHp: 8 }],
         villainPhaseMonsterIndex: 0,
-        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+        scenario: { scenarioId: 'default', monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
       });
 
       // Use a deterministic random function that will result in a hit and damage
@@ -2722,7 +2722,7 @@ describe("gameSlice", () => {
           { heroId: "vistra", currentHp: 10, maxHp: 10 },
         ],
         villainPhaseMonsterIndex: 0,
-        scenario: { monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+        scenario: { scenarioId: 'default', monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
       });
 
       // Use a deterministic random function that will result in a hit and damage
@@ -2740,7 +2740,7 @@ describe("gameSlice", () => {
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
-        scenario: { monstersDefeated: 5, monstersToDefeat: 12, objective: "Defeat 12 monsters" },
+        scenario: { scenarioId: 'default', monstersDefeated: 5, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
       });
 
       const state = gameReducer(gameInProgress, resetGame());

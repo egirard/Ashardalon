@@ -42,7 +42,7 @@ import {
   calculateVillainHp,
   isVillainShielded,
 } from "./villainAI";
-import { applyDeckSetup } from "./scenarioEngine";
+import { applyDeckSetup, registerScenarioHooks, registerDynamicScenarioHook, createReflectNaturalOneHandler, evaluateWinConditions, evaluateLossConditions, getHeroDailyDamageBonus, getMonsterAcBonus } from "./scenarioEngine";
 import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
 import {
   initializeDungeon,
@@ -174,6 +174,10 @@ import type {
   AttackHitOnHeroEvent,
   MonsterSpawnEvent,
   MonsterActivationEvent,
+  VillainPhaseStartEvent,
+  HeroPhaseEndEvent,
+  TileRevealEvent,
+  ChamberRevealEvent,
 } from './gameEvents';
 
 /**
@@ -200,6 +204,7 @@ const DEFAULT_HERO_TURN_ACTIONS: HeroTurnActions = {
  * Default scenario state for MVP: Defeat 12 monsters
  */
 const DEFAULT_SCENARIO_STATE: ScenarioState = {
+  scenarioId: 'default',
   monstersDefeated: 0,
   monstersToDefeat: 12,
   objective: "Defeat 12 monsters",
@@ -209,6 +214,7 @@ const DEFAULT_SCENARIO_STATE: ScenarioState = {
   introductionShown: false,
   chamberRevealed: false,
   villainInstanceId: null,
+  activePersistentModifiers: [],
 };
 
 /**
@@ -1261,6 +1267,7 @@ export const gameSlice = createSlice({
 
       // Initialize scenario state from the selected scenario definition
       state.scenario = {
+        scenarioId: state.selectedScenarioId,
         monstersDefeated: 0,
         monstersToDefeat: scenarioDef.monstersToDefeat,
         objective: scenarioDef.goal,
@@ -1269,6 +1276,7 @@ export const gameSlice = createSlice({
         introductionShown: false,
         chamberRevealed: false,
         villainInstanceId: null,
+        activePersistentModifiers: [],
       };
 
       // Reset villain state
@@ -1315,8 +1323,8 @@ export const gameSlice = createSlice({
       state.encounterEffectMessage = null;
       state.badLuckExtraEncounterPending = false;
 
-      // Initialize event hook system
-      state.eventHooks = initializeEventHooks();
+      // Initialize event hook system and register scenario-scoped hooks
+      state.eventHooks = registerScenarioHooks(scenarioDef, initializeEventHooks());
       state.pendingPowerCardFlips = [];
       state.encounterCancelCost = ENCOUNTER_CANCEL_COST;
 
@@ -2004,6 +2012,21 @@ export const gameSlice = createSlice({
           details: `Tile type: ${drawnTile} | New exits added to dungeon`,
         });
 
+        // Fire the tile-reveal event for scenario hooks (e.g. Heat Exhaustion terrain check)
+        const tileRevealHero = state.heroTokens[state.turnState.currentHeroIndex];
+        if (tileRevealHero) {
+          const tileRevealEvent: TileRevealEvent = {
+            type: 'tile-reveal',
+            heroId: tileRevealHero.heroId,
+            turnNumber: state.turnState.turnNumber,
+            tileId: newTile.id,
+            tileType: drawnTile,
+            terrainFeatures: tileDef?.terrainFeatures ?? [],
+            position: newTile.position,
+          };
+          triggerGameEvent(state.eventHooks, tileRevealEvent);
+        }
+
         // Detect Chamber Entrance placement and mark it as revealed
         if (tileDef?.isChamberEntrance) {
           state.scenario.chamberRevealed = true;
@@ -2095,6 +2118,77 @@ export const gameSlice = createSlice({
                 message: `⚔️ ${villainDef.name} appears!`,
                 details: `The villain spawns with ${maxHp} HP (AC ${villainDef.ac}).`,
               });
+            }
+          }
+
+          // Fire the chamber-reveal event for scenario hooks
+          // (e.g. daze-all-heroes for Adventure 14, forge-awakens for Adventure 15)
+          const chamberRevealHero = state.heroTokens[state.turnState.currentHeroIndex];
+          if (chamberRevealHero) {
+            const chamberRevealEvent: ChamberRevealEvent = {
+              type: 'chamber-reveal',
+              heroId: chamberRevealHero.heroId,
+              turnNumber: state.turnState.turnNumber,
+              chamberType: getScenarioById(state.selectedScenarioId).roomSet?.name ?? 'chamber',
+              position: newTile.position,
+              heroIds: state.heroTokens.map(t => t.heroId),
+            };
+            const chamberResult = triggerGameEvent(state.eventHooks, chamberRevealEvent);
+
+            // Apply hero status effects from chamber reveal (e.g. Daze all heroes)
+            for (const effect of chamberResult.applyHeroStatusEffects) {
+              const heroIds = effect.heroId === '*'
+                ? state.heroTokens.map(t => t.heroId)
+                : [effect.heroId];
+              for (const heroId of heroIds) {
+                const heroHp = state.heroHp.find(h => h.heroId === heroId);
+                if (heroHp) {
+                  heroHp.statuses = applyStatusEffect(
+                    heroHp.statuses ?? [],
+                    effect.statusType,
+                    'scenario-chamber-reveal',
+                    state.turnState.turnNumber,
+                    effect.duration
+                  );
+                  state.logEntries.push({
+                    id: state.logEntryCounter++,
+                    timestamp: Date.now(),
+                    type: 'game-event',
+                    message: `✨ ${heroId} is ${effect.statusType} (chamber reveal effect)`,
+                    details: `Duration: ${effect.duration ?? 'indefinite'} turn(s).`,
+                    heroId,
+                  });
+                }
+              }
+            }
+
+            // Activate persistent modifiers (e.g. forge-awakens workshop aura)
+            if (chamberResult.activatePersistentModifiers.length > 0) {
+              state.scenario.activePersistentModifiers.push(...chamberResult.activatePersistentModifiers);
+              for (const mod of chamberResult.activatePersistentModifiers) {
+                const modDesc =
+                  mod.type === 'hero-daily-damage-bonus' ? `+${mod.bonus} Daily Power damage`
+                  : mod.type === 'monster-ac-bonus' ? `+${mod.bonus} Monster AC`
+                  : `Reflect natural-1 (${mod.damage} damage)`;
+                state.logEntries.push({
+                  id: state.logEntryCounter++,
+                  timestamp: Date.now(),
+                  type: 'game-event',
+                  message: `🔥 Workshop Aura: ${modDesc}`,
+                  details: 'Persistent modifier active for the rest of the game.',
+                });
+              }
+            }
+
+            // Register the reflect-natural-one hook dynamically if Adventure 14 chamber is revealed
+            const chamberScenarioDef = getScenarioById(state.selectedScenarioId);
+            if (chamberScenarioDef.id === 'adventure-14') {
+              state.eventHooks = registerDynamicScenarioHook(
+                state.eventHooks,
+                'attack-miss',
+                createReflectNaturalOneHandler(),
+                100
+              );
             }
           }
         }
@@ -2430,6 +2524,27 @@ export const gameSlice = createSlice({
       // Reset villain phase monster index to start activating from the first monster
       state.villainPhaseMonsterIndex = 0;
       // Clear any previous monster action results
+
+      // Fire the villain-phase-start event with hero positions for scenario hooks
+      const currentHeroForVillainPhase = state.heroTokens[state.turnState.currentHeroIndex];
+      const villainPhaseStartEvent: VillainPhaseStartEvent = {
+        type: 'villain-phase-start',
+        heroId: currentHeroForVillainPhase?.heroId ?? '',
+        turnNumber: state.turnState.turnNumber,
+        heroPositions: state.heroTokens.map(t => ({ heroId: t.heroId, position: t.position })),
+      };
+      const villainPhaseResult = triggerGameEvent(state.eventHooks, villainPhaseStartEvent);
+      // Handle scenario effects from the villain-phase-start event
+      if (villainPhaseResult.drawExtraEncounter) {
+        state.badLuckExtraEncounterPending = true; // reuse the pending-extra-encounter flag
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'game-event',
+          message: '🌑 The Creeping Void draws an additional Encounter Card',
+          details: 'No heroes are adjacent — the void grows stronger.',
+        });
+      }
       state.monsterAttackResult = null;
       state.monsterAttackTargetId = null;
       state.monsterAttackerId = null;
