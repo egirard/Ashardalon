@@ -9,17 +9,20 @@
     monstersToDefeat: 12, 
     objective: "Defeat 12 monsters" 
   });
+  let victoryReason: string | null = $state(null);
   
   // Subscribe to store updates
   $effect(() => {
     const unsubscribe = store.subscribe(() => {
       const state = store.getState();
       scenario = state.game.scenario;
+      victoryReason = state.game.victoryReason;
     });
     
     // Initialize state
     const state = store.getState();
     scenario = state.game.scenario;
+    victoryReason = state.game.victoryReason;
     
     return unsubscribe;
   });
@@ -35,7 +38,13 @@
       <TrophyIcon size={80} ariaLabel="Victory" />
     </div>
     <h1 class="victory-title">Victory!</h1>
-    <p class="victory-message">You have defeated {scenario.monstersDefeated} monsters and completed the objective!</p>
+    <p class="victory-message" data-testid="victory-message">
+      {#if victoryReason}
+        {victoryReason}
+      {:else}
+        You have completed the objective!
+      {/if}
+    </p>
     <div class="victory-objective">
       <span class="objective-label">Objective Complete:</span>
       <span class="objective-text">{scenario.objective}</span>
