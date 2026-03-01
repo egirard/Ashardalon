@@ -3,8 +3,7 @@
  *
  * Each entry contains the presentational metadata needed by the lobby book and
  * the scenario introduction modal.  Game-mechanics fields (win conditions, hooks,
- * villain stats, etc.) will be added in later implementation stages as described
- * in docs/scenario_design.md.
+ * villain stats, etc.) are defined here per docs/scenario_design.md.
  */
 
 import type { RoomSetDefinition } from './types';
@@ -32,6 +31,36 @@ export interface DeckSetupConfig {
   chamberEntrancePosition: number;
   /** Total number of regular tiles in the mini-stack drawn before the Chamber Entrance group. */
   miniStackSize: number;
+}
+
+/**
+ * Win condition for a scenario.
+ * Evaluated after relevant state changes (monster defeat, villain defeat, etc.)
+ */
+export type WinCondition =
+  | { type: 'defeat-villain'; villainId: string }
+  | { type: 'defeat-n-monsters'; count: number };
+
+/**
+ * Loss condition for a scenario.
+ * Evaluated after relevant state changes.
+ */
+export type LossCondition =
+  | { type: 'hero-defeated-no-surges' }
+  | { type: 'tile-deck-exhausted-before-chamber' };
+
+/**
+ * Definition for a scenario-scoped event hook.
+ * Registered once when the game starts and active for the entire game.
+ * The `handlerId` maps to a handler factory in scenarioEngine.ts.
+ */
+export interface ScenarioHookDefinition {
+  /** The game event type this hook responds to */
+  eventType: string;
+  /** Handler identifier mapped to a pure factory in scenarioEngine.ts */
+  handlerId: string;
+  /** Optional configuration passed to the handler factory */
+  config?: Record<string, unknown>;
 }
 
 export interface ScenarioDefinition {
@@ -67,6 +96,21 @@ export interface ScenarioDefinition {
    * in the direction the hero explored. Tiles are placed sequentially with animations.
    */
   roomSet?: RoomSetDefinition;
+  /**
+   * Scenario-scoped event hooks registered at game start.
+   * Each entry maps an event type to a named handler in scenarioEngine.ts.
+   */
+  eventHooks?: ScenarioHookDefinition[];
+  /**
+   * Win conditions for this scenario.
+   * Evaluated after relevant state changes.
+   */
+  winConditions?: WinCondition[];
+  /**
+   * Loss conditions for this scenario.
+   * Evaluated after relevant state changes.
+   */
+  lossConditions?: LossCondition[];
 }
 
 /** All selectable scenarios, in the order they appear in the lobby book. */
@@ -82,6 +126,8 @@ export const SCENARIOS: ScenarioDefinition[] = [
     villain: 'Ashardalon',
     splashImage: 'assets/Villain_Ashardalon.png',
     monstersToDefeat: 12,
+    winConditions: [{ type: 'defeat-n-monsters', count: 12 }],
+    lossConditions: [{ type: 'hero-defeated-no-surges' }],
   },
   {
     id: 'adventure-14',
@@ -108,6 +154,16 @@ export const SCENARIOS: ScenarioDefinition[] = [
         { tileType: 'tile-horrid-chamber-04' },
       ],
     },
+    winConditions: [{ type: 'defeat-villain', villainId: 'malphas' }],
+    lossConditions: [{ type: 'hero-defeated-no-surges' }],
+    eventHooks: [
+      // Adventure 14 Special Rule: The Creeping Void
+      // At the start of each Villain Phase, if no hero is adjacent to another hero,
+      // the active player draws an additional Encounter Card.
+      { eventType: 'villain-phase-start', handlerId: 'creeping-void' },
+      // Adventure 14 Chamber Reveal Effect: Daze all heroes when the Obsidian Sanctum opens
+      { eventType: 'chamber-reveal', handlerId: 'daze-all-heroes' },
+    ],
   },
   {
     id: 'adventure-15',
@@ -134,6 +190,24 @@ export const SCENARIOS: ScenarioDefinition[] = [
         { tileType: 'tile-dire-chamber-04' },
       ],
     },
+    winConditions: [{ type: 'defeat-villain', villainId: 'vraxos' }],
+    lossConditions: [
+      { type: 'hero-defeated-no-surges' },
+      { type: 'tile-deck-exhausted-before-chamber' },
+    ],
+    eventHooks: [
+      // Adventure 15 Special Rule: Heat Exhaustion
+      // At the end of a hero's turn, if they are on a Volcanic Vent tile, roll d6;
+      // on a result of 5 or lower, they gain the Slowed condition.
+      { eventType: 'hero-phase-end', handlerId: 'heat-exhaustion' },
+      // Adventure 15 Special Rule: Automated Defense
+      // When a Trap encounter card is drawn, place a Blade Trap token on the active
+      // hero's tile. If a Blade Trap is already present, deal 1 damage instead.
+      { eventType: 'encounter-draw', handlerId: 'automated-defense' },
+      // Adventure 15 Chamber Reveal Effect: The Forge Awakens
+      // Activates persistent modifiers: +1 daily power damage, +2 monster AC.
+      { eventType: 'chamber-reveal', handlerId: 'forge-awakens' },
+    ],
   },
 ];
 

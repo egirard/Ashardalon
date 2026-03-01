@@ -430,10 +430,21 @@ export interface PartyResources {
 export type GameScreen = 'character-select' | 'game-board' | 'victory' | 'defeat';
 
 /**
+ * Persistent modifier applied to game rules while a scenario condition is active
+ * (e.g. workshop aura: +1 daily power damage, +2 monster AC).
+ */
+export type PersistentModifier =
+  | { type: 'hero-daily-damage-bonus'; bonus: number }
+  | { type: 'monster-ac-bonus'; bonus: number }
+  | { type: 'reflect-natural-one'; damage: number };
+
+/**
  * Scenario state for tracking win/loss conditions
  * MVP scenario: Defeat 2 monsters to win
  */
 export interface ScenarioState {
+  /** ID of the active scenario (matches ScenarioDefinition.id) */
+  scenarioId: string;
   /** Number of monsters defeated */
   monstersDefeated: number;
   /** Monsters needed to win (MVP: 2) */
@@ -455,6 +466,11 @@ export interface ScenarioState {
    * Matches VillainInstance.instanceId in the game state.
    */
   villainInstanceId: string | null;
+  /**
+   * Active persistent modifiers registered by the current scenario.
+   * Used by combat and monster AI to apply scenario-specific bonuses.
+   */
+  activePersistentModifiers: PersistentModifier[];
 }
 
 /**
@@ -656,6 +672,11 @@ export interface TileDefinition {
    * relative to the Chamber Entrance tile.
    */
   isChamberTile?: boolean;
+  /**
+   * Semantic terrain features present on this tile.
+   * Used by scenario hooks to apply special rules (e.g. 'volcanic-vent' → Heat Exhaustion).
+   */
+  terrainFeatures?: string[];
   /** 
    * Position of the scorch mark (spawn marker) in default orientation.
    * This is in local tile coordinates (0-3, 0-3) and represents where

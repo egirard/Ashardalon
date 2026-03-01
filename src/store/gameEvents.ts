@@ -1,13 +1,15 @@
 /**
  * Game event system for triggering power card effects and other conditional logic.
- * This system allows power cards to register hooks that respond to game events like
- * attacks, encounters, monster spawns, etc.
+ * This system allows power cards and scenario rules to register hooks that respond
+ * to game events like attacks, encounters, monster spawns, tile reveals, etc.
  */
 
-import type { AttackResult, Position } from './types';
+import type { AttackResult, Position, GridPosition } from './types';
+import type { StatusEffectType } from './statusEffects';
+import type { PersistentModifier } from './types';
 
 /**
- * Types of game events that can trigger power card effects
+ * Types of game events that can trigger power card effects and scenario rules
  */
 export type GameEventType =
   | 'encounter-draw'        // When an encounter card is drawn
@@ -19,7 +21,9 @@ export type GameEventType =
   | 'hero-phase-start'     // At the start of a hero's turn
   | 'hero-phase-end'       // At the end of a hero's turn
   | 'villain-phase-start'  // At the start of villain phase
-  | 'exploration-phase-end'; // At the end of exploration phase
+  | 'exploration-phase-end' // At the end of exploration phase
+  | 'tile-reveal'          // When a dungeon tile is drawn and placed
+  | 'chamber-reveal';      // When the Chamber Entrance tile is placed
 
 /**
  * Base interface for all game events
@@ -43,6 +47,10 @@ export interface EncounterDrawEvent extends GameEvent {
   currentXp: number;
   /** Base cost to cancel the encounter (5 XP) */
   baseCancelCost: number;
+  /** Keyword tags on the encounter card (e.g. ['trap', 'monster']) */
+  encounterKeywords?: string[];
+  /** Whether the active hero's current tile already has a Blade Trap token on it */
+  hasExistingTrapOnTile?: boolean;
 }
 
 /**
@@ -140,6 +148,8 @@ export interface HeroPhaseStartEvent extends GameEvent {
  */
 export interface HeroPhaseEndEvent extends GameEvent {
   type: 'hero-phase-end';
+  /** Terrain features of the tile the hero is currently on (e.g. ['volcanic-vent']) */
+  currentTileFeatures?: string[];
 }
 
 /**
@@ -147,6 +157,8 @@ export interface HeroPhaseEndEvent extends GameEvent {
  */
 export interface VillainPhaseStartEvent extends GameEvent {
   type: 'villain-phase-start';
+  /** Positions of all heroes on the board (used by scenario hooks like Creeping Void) */
+  heroPositions?: Array<{ heroId: string; position: Position }>;
 }
 
 /**
@@ -154,6 +166,34 @@ export interface VillainPhaseStartEvent extends GameEvent {
  */
 export interface ExplorationPhaseEndEvent extends GameEvent {
   type: 'exploration-phase-end';
+}
+
+/**
+ * Event fired when a dungeon tile is drawn and placed on the board
+ */
+export interface TileRevealEvent extends GameEvent {
+  type: 'tile-reveal';
+  /** The tile ID that was placed */
+  tileId: string;
+  /** The tile type identifier (e.g. 'tile-black-2exit-a') */
+  tileType: string;
+  /** Terrain features on this tile (e.g. ['volcanic-vent']) */
+  terrainFeatures: string[];
+  /** Grid position where the tile was placed */
+  position: GridPosition;
+}
+
+/**
+ * Event fired when the Chamber Entrance tile is placed (triggers villain spawn)
+ */
+export interface ChamberRevealEvent extends GameEvent {
+  type: 'chamber-reveal';
+  /** The chamber type (e.g. 'horrid', 'dire') derived from scenario */
+  chamberType: string;
+  /** Grid position of the chamber entrance tile */
+  position: GridPosition;
+  /** IDs of all heroes currently on the board */
+  heroIds: string[];
 }
 
 /**
@@ -169,7 +209,9 @@ export type AnyGameEvent =
   | HeroPhaseStartEvent
   | HeroPhaseEndEvent
   | VillainPhaseStartEvent
-  | ExplorationPhaseEndEvent;
+  | ExplorationPhaseEndEvent
+  | TileRevealEvent
+  | ChamberRevealEvent;
 
 /**
  * Response from an event hook indicating what action to take
@@ -185,6 +227,28 @@ export interface EventHookResponse {
   flipPowerCard?: number;
   /** Whether the power card should NOT be flipped even if it normally would */
   keepPowerCard?: boolean;
+
+  // --- Scenario-specific effect fields ---
+
+  /** Draw an additional encounter card (e.g. Creeping Void) */
+  drawExtraEncounter?: boolean;
+  /**
+   * Apply status effects to one or more heroes.
+   * Use heroId '*' to target all heroes.
+   */
+  applyHeroStatusEffects?: Array<{
+    heroId: string;
+    statusType: StatusEffectType;
+    duration?: number;
+  }>;
+  /** Deal damage directly to a hero (no attack roll) */
+  dealDamageToHero?: { heroId: string; damage: number; reason: string };
+  /** Persistent modifiers to activate in ScenarioState (e.g. workshop aura) */
+  activatePersistentModifiers?: PersistentModifier[];
+  /** Multiply monster spawns for the current encounter resolution */
+  monsterSpawnMultiplier?: number;
+  /** Place a trap token on the active hero's current tile */
+  placeTrapToken?: boolean;
 }
 
 /**
@@ -308,8 +372,9 @@ export function getHooksForEvent(
 }
 
 /**
- * Trigger an event and execute all registered hooks
- * Returns the potentially modified event and list of power cards to flip
+ * Trigger an event and execute all registered hooks.
+ * Returns the potentially modified event, list of power cards to flip,
+ * and any accumulated scenario-specific effects.
  */
 export function triggerEvent<T extends AnyGameEvent>(
   state: EventHookState,
@@ -319,12 +384,24 @@ export function triggerEvent<T extends AnyGameEvent>(
   powerCardsToFlip: Array<{ powerCardId: number; heroId: string }>;
   powerCardsToKeep: Array<{ powerCardId: number; heroId: string }>;
   preventedDefault: boolean;
+  drawExtraEncounter: boolean;
+  applyHeroStatusEffects: Array<{ heroId: string; statusType: StatusEffectType; duration?: number }>;
+  dealDamageToHero: Array<{ heroId: string; damage: number; reason: string }>;
+  activatePersistentModifiers: PersistentModifier[];
+  monsterSpawnMultiplier: number;
+  placeTrapToken: boolean;
 } {
   const hooks = getHooksForEvent(state, event.type);
   let currentEvent = { ...event };
   const powerCardsToFlip: Array<{ powerCardId: number; heroId: string }> = [];
   const powerCardsToKeep: Array<{ powerCardId: number; heroId: string }> = [];
   let preventedDefault = false;
+  let drawExtraEncounter = false;
+  const applyHeroStatusEffects: Array<{ heroId: string; statusType: StatusEffectType; duration?: number }> = [];
+  const dealDamageToHero: Array<{ heroId: string; damage: number; reason: string }> = [];
+  const activatePersistentModifiers: PersistentModifier[] = [];
+  let monsterSpawnMultiplier = 1;
+  let placeTrapToken = false;
   
   for (const registration of hooks) {
     const response = registration.hook(currentEvent);
@@ -356,6 +433,26 @@ export function triggerEvent<T extends AnyGameEvent>(
     if (response.modifiedEvent) {
       currentEvent = { ...currentEvent, ...response.modifiedEvent } as T;
     }
+
+    // Accumulate scenario-specific effects
+    if (response.drawExtraEncounter) {
+      drawExtraEncounter = true;
+    }
+    if (response.applyHeroStatusEffects) {
+      applyHeroStatusEffects.push(...response.applyHeroStatusEffects);
+    }
+    if (response.dealDamageToHero) {
+      dealDamageToHero.push(response.dealDamageToHero);
+    }
+    if (response.activatePersistentModifiers) {
+      activatePersistentModifiers.push(...response.activatePersistentModifiers);
+    }
+    if (response.monsterSpawnMultiplier !== undefined && response.monsterSpawnMultiplier > monsterSpawnMultiplier) {
+      monsterSpawnMultiplier = response.monsterSpawnMultiplier;
+    }
+    if (response.placeTrapToken) {
+      placeTrapToken = true;
+    }
     
     // Stop processing if requested
     if (response.stopPropagation) {
@@ -368,6 +465,12 @@ export function triggerEvent<T extends AnyGameEvent>(
     powerCardsToFlip,
     powerCardsToKeep,
     preventedDefault,
+    drawExtraEncounter,
+    applyHeroStatusEffects,
+    dealDamageToHero,
+    activatePersistentModifiers,
+    monsterSpawnMultiplier,
+    placeTrapToken,
   };
 }
 

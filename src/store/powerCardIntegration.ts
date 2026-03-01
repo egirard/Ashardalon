@@ -115,6 +115,18 @@ export interface EventTriggerResult<T extends AnyGameEvent> {
   powerCardsToKeep: Array<{ powerCardId: number; heroId: string }>;
   /** Whether any hook prevented default behavior */
   preventedDefault: boolean;
+  /** Whether any hook requested an extra encounter draw (Creeping Void) */
+  drawExtraEncounter: boolean;
+  /** Status effects to apply to heroes as requested by scenario hooks */
+  applyHeroStatusEffects: Array<{ heroId: string; statusType: import('./statusEffects').StatusEffectType; duration?: number }>;
+  /** Direct damage to apply to heroes as requested by scenario hooks */
+  dealDamageToHero: Array<{ heroId: string; damage: number; reason: string }>;
+  /** Persistent modifiers to activate in scenario state */
+  activatePersistentModifiers: import('./types').PersistentModifier[];
+  /** Monster spawn multiplier for current encounter resolution */
+  monsterSpawnMultiplier: number;
+  /** Whether a trap token should be placed on the active hero's tile */
+  placeTrapToken: boolean;
 }
 
 /**
@@ -132,6 +144,12 @@ export function triggerGameEvent<T extends AnyGameEvent>(
     powerCardsToFlip: result.powerCardsToFlip,
     powerCardsToKeep: result.powerCardsToKeep,
     preventedDefault: result.preventedDefault,
+    drawExtraEncounter: result.drawExtraEncounter,
+    applyHeroStatusEffects: result.applyHeroStatusEffects,
+    dealDamageToHero: result.dealDamageToHero,
+    activatePersistentModifiers: result.activatePersistentModifiers,
+    monsterSpawnMultiplier: result.monsterSpawnMultiplier,
+    placeTrapToken: result.placeTrapToken,
   };
 }
 
