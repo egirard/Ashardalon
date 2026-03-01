@@ -308,6 +308,8 @@ export interface GameState {
   healingSurgeHpRestored: number | null;
   /** Reason for defeat (for displaying on defeat screen) */
   defeatReason: string | null;
+  /** Reason for victory (for displaying on victory screen) */
+  victoryReason: string | null;
   /** Encounter deck for drawing encounters when no exploration occurs */
   encounterDeck: EncounterDeck;
   /** Currently drawn encounter card (displayed during villain phase) */
@@ -774,6 +776,7 @@ const initialState: GameState = {
   healingSurgeUsedHeroId: null,
   healingSurgeHpRestored: null,
   defeatReason: null,
+  victoryReason: null,
   encounterDeck: { drawPile: [], discardPile: [] },
   drawnEncounter: null,
   encounterResult: null,
@@ -1733,6 +1736,7 @@ export const gameSlice = createSlice({
       state.healingSurgeUsedHeroId = null;
       state.healingSurgeHpRestored = null;
       state.defeatReason = null;
+      state.victoryReason = null;
       state.encounterDeck = { drawPile: [], discardPile: [] };
       state.drawnEncounter = null;
       state.activeEnvironmentId = null;
@@ -1756,6 +1760,14 @@ export const gameSlice = createSlice({
       state.encounterEffectMessage = null;
       state.badLuckExtraEncounterPending = false;
       state.trapDisableResult = null;
+      state.villain = null;
+      state.villainActivation = null;
+      state.villainAttackResult = null;
+      state.villainAttackTargetId = null;
+      state.villainAttackName = null;
+      state.villainAreaAttackResults = null;
+      state.villainAreaAttackTargetIds = null;
+      state.villainActivatedThisTurn = false;
     },
     /**
      * End the hero phase and trigger exploration if hero is on an unexplored edge
@@ -4091,6 +4103,7 @@ export const gameSlice = createSlice({
             
             // Check for victory condition (MVP: defeat 2 monsters)
             if (state.scenario.monstersDefeated >= state.scenario.monstersToDefeat) {
+              state.victoryReason = `You have defeated ${state.scenario.monstersDefeated} monsters and completed the objective!`;
               state.currentScreen = "victory";
             }
           }
@@ -4118,6 +4131,7 @@ export const gameSlice = createSlice({
                 type: 'combat',
                 message: `⚔️ ${defeatedName} has been defeated! Victory!`,
               });
+              state.victoryReason = `You have defeated ${defeatedName} and completed the scenario!`;
               state.currentScreen = "victory";
             }
           } else {
