@@ -58,6 +58,11 @@ export async function setupDeterministicGame(page: Page): Promise<void> {
 export interface ScreenshotOptions {
   fullPage?: boolean;
   programmaticCheck?: () => Promise<void>;
+  maxDiffPixels?: number;
+}
+
+export interface ScreenshotHelperOptions {
+  defaultMaxDiffPixels?: number;
 }
 
 export interface ScreenshotHelper {
@@ -69,8 +74,9 @@ export interface ScreenshotHelper {
 /**
  * Creates a screenshot helper for numbered screenshots in E2E tests.
  * Screenshots are captured after programmatic verification passes.
+ * @param helperOptions - Optional configuration for the helper (e.g., defaultMaxDiffPixels)
  */
-export function createScreenshotHelper(): ScreenshotHelper {
+export function createScreenshotHelper(helperOptions: ScreenshotHelperOptions = {}): ScreenshotHelper {
   let counter = 0;
 
   return {
@@ -84,11 +90,15 @@ export function createScreenshotHelper(): ScreenshotHelper {
       const counterStr = counter.toString().padStart(3, '0');
       const screenshotName = `${counterStr}-${description}`;
       
+      // Determine effective maxDiffPixels (per-call overrides helper default)
+      const maxDiffPixels = options.maxDiffPixels ?? helperOptions.defaultMaxDiffPixels;
+      
       // Use Playwright's built-in screenshot comparison
       await expect(page).toHaveScreenshot(`${screenshotName}.png`, {
         fullPage: options.fullPage ?? false,
         animations: "disabled",
         timeout: 10000,
+        ...(maxDiffPixels !== undefined ? { maxDiffPixels } : {}),
       });
 
       counter++;
@@ -102,6 +112,27 @@ export function createScreenshotHelper(): ScreenshotHelper {
       return counter;
     },
   };
+}
+
+/**
+ * Dismisses all pending encounter cards from the Redux store.
+ * Handles the case where a first encounter dismissal triggers a second (e.g. Bad Luck curse / Creeping Void).
+ * Keeps dismissing until no more encounter cards are pending.
+ * 
+ * @param page - The Playwright page object
+ * @param maxDismissals - Safety limit on dismissals (default 10)
+ */
+export async function dismissPendingEncounterCards(page: Page, maxDismissals = 10): Promise<void> {
+  for (let i = 0; i < maxDismissals; i++) {
+    const hasEncounter = await page.evaluate(() =>
+      (window as any).__REDUX_STORE__.getState().game.drawnEncounter !== null
+    );
+    if (!hasEncounter) break;
+    await page.evaluate(() => {
+      (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissEncounterCard' });
+    });
+    await page.waitForTimeout(50);
+  }
 }
 
 /**

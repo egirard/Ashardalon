@@ -2680,8 +2680,7 @@ export const gameSlice = createSlice({
             };
             const encounterDrawResult = triggerGameEvent(state.eventHooks, encounterDrawEvent);
             // Handle scenario hook: dealDamageToHero (e.g. Automated Defense stacking trap)
-            if (encounterDrawResult.dealDamageToHero) {
-              const { heroId: encHeroId, damage: encDamage, reason: encReason } = encounterDrawResult.dealDamageToHero;
+            for (const { heroId: encHeroId, damage: encDamage, reason: encReason } of encounterDrawResult.dealDamageToHero) {
               const encHeroHpIdx = state.heroHp.findIndex(h => h.heroId === encHeroId);
               if (encHeroHpIdx !== -1) {
                 state.heroHp[encHeroHpIdx].currentHp = Math.max(
@@ -4037,8 +4036,7 @@ export const gameSlice = createSlice({
         // Note: Inspiring Advice reroll is handled via UI interaction using pendingPowerCardFlips
 
         // Handle scenario hooks: dealDamageToHero (e.g. Adventure 14 Reflect Natural-One)
-        if (attackMissHookResult.dealDamageToHero) {
-          const { heroId: damagedHeroId, damage: reflectDamage, reason: reflectReason } = attackMissHookResult.dealDamageToHero;
+        for (const { heroId: damagedHeroId, damage: reflectDamage, reason: reflectReason } of attackMissHookResult.dealDamageToHero) {
           const reflectHeroHpIndex = state.heroHp.findIndex(h => h.heroId === damagedHeroId);
           if (reflectHeroHpIndex !== -1) {
             state.heroHp[reflectHeroHpIndex].currentHp = Math.max(

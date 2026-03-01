@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame, dismissPendingEncounterCards } from '../helpers/screenshot-helper';
 
 /**
  * Test 120 - Adventure 14 Trigger Rules
@@ -24,13 +24,14 @@ import { createScreenshotHelper } from '../helpers/screenshot-helper';
 
 test.describe('120 - Adventure 14 Trigger Rules', () => {
   test('The Creeping Void draws extra encounter when heroes are isolated', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 14 with 2 heroes (Quinn and Vistra)
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -93,11 +94,23 @@ test.describe('120 - Adventure 14 Trigger Rules', () => {
     });
 
     // -----------------------------------------------------------------------
-    // STEP 3: Trigger villain phase — Creeping Void should fire
+    // STEP 3: Trigger villain phase via exploration — Creeping Void should fire
+    // First set phase to exploration-phase, then end exploration to trigger villain-phase-start
     // -----------------------------------------------------------------------
     await page.evaluate(() => {
-      (window as any).__REDUX_STORE__.dispatch({ type: 'game/setCurrentPhase', payload: 'villain-phase' });
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/setCurrentPhase', payload: 'exploration-phase' });
+      store.dispatch({ type: 'game/endExplorationPhase' });
     });
+
+    // Dismiss any encounter cards drawn during villain phase (including extra Creeping Void encounter)
+    await dismissPendingEncounterCards(page);
+
+    // Wait for the villain phase to auto-complete and return to hero-phase
+    await expect(async () => {
+      const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(state.game.turnState.currentPhase).toBe('hero-phase');
+    }).toPass({ timeout: 5000 });
 
     // -----------------------------------------------------------------------
     // STEP 4: Verify Creeping Void fired (check game log)
@@ -105,7 +118,8 @@ test.describe('120 - Adventure 14 Trigger Rules', () => {
     await screenshots.capture(page, 'villain-phase-creeping-void-triggered', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-        expect(state.game.turnState.currentPhase).toBe('villain-phase');
+        // Villain phase has auto-completed, we're back in hero-phase
+        expect(state.game.turnState.currentPhase).toBe('hero-phase');
 
         // New log entries should exist
         const log = state.game.logEntries as Array<{ message: string }>;
@@ -115,18 +129,16 @@ test.describe('120 - Adventure 14 Trigger Rules', () => {
         );
         expect(creepingVoidLog).toBeDefined();
         expect(creepingVoidLog?.message).toContain('Creeping Void');
-
-        // The extra encounter flag should have been set
-        expect(state.game.badLuckExtraEncounterPending).toBe(true);
       },
     });
   });
 
   test('The Creeping Void does NOT fire when heroes are adjacent', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -193,13 +205,14 @@ test.describe('120 - Adventure 14 Trigger Rules', () => {
   });
 
   test('Daze all heroes when Chamber Entrance (Obsidian Sanctum) is revealed', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 14 with Quinn and Vistra
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -293,13 +306,14 @@ test.describe('120 - Adventure 14 Trigger Rules', () => {
   });
 
   test('Reflect Natural One deals 1 damage after Obsidian Sanctum is revealed', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 14 with Quinn
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;

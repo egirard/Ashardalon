@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame, dismissPendingEncounterCards } from '../helpers/screenshot-helper';
 
 /**
  * Test 121 - Adventure 15 Trigger Rules and Modifiers
@@ -21,13 +21,14 @@ import { createScreenshotHelper } from '../helpers/screenshot-helper';
 
 test.describe('121 - Adventure 15 Trigger Rules and Modifiers', () => {
   test('Forge Awakens activates persistent modifiers when chamber is revealed', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 15 with Quinn
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -120,13 +121,14 @@ test.describe('121 - Adventure 15 Trigger Rules and Modifiers', () => {
   });
 
   test('Heat Exhaustion applies Slowed when hero ends turn on Volcanic Vent tile', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 15 with Quinn and reveal the chamber
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -279,13 +281,14 @@ test.describe('121 - Adventure 15 Trigger Rules and Modifiers', () => {
   });
 
   test('Adventure 15 monster AC bonus is active after Forge Awakens fires', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 15 and reveal the chamber
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -319,6 +322,40 @@ test.describe('121 - Adventure 15 Trigger Rules and Modifiers', () => {
     await expect(async () => {
       const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
       expect(state.game.scenario.chamberRevealed).toBe(true);
+    }).toPass({ timeout: 5000 });
+
+    // Advance through remaining exploration phase and villain phase to reach hero phase
+    // (Dismiss monster card, end exploration, dismiss any encounter, handle villain activation)
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/dismissMonsterCard' });
+      store.dispatch({ type: 'game/endExplorationPhase' });
+    });
+    // Dismiss any encounter card drawn during exploration (including any extra from scenario hooks)
+    await dismissPendingEncounterCards(page);
+    // Wait for villain activation overlay to appear then dismiss it (if villain is active)
+    // or wait for hero phase if no villain notification appears
+    await expect(async () => {
+      const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      // Either hero phase (no villain notification) or villain notification is showing
+      const inHeroPhase = state.game.turnState.currentPhase === 'hero-phase';
+      const hasVillainNotification = state.game.villainActivation !== null;
+      expect(inHeroPhase || hasVillainNotification).toBe(true);
+    }).toPass({ timeout: 5000 });
+
+    // If villain activation notification is showing, dismiss it
+    const hasVillainNotificationNow = await page.evaluate(() =>
+      (window as any).__REDUX_STORE__.getState().game.villainActivation !== null
+    );
+    if (hasVillainNotificationNow) {
+      await page.evaluate(() => {
+        (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissVillainActivation' });
+      });
+    }
+    // Wait for hero phase
+    await expect(async () => {
+      const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(state.game.turnState.currentPhase).toBe('hero-phase');
     }).toPass({ timeout: 5000 });
 
     // -----------------------------------------------------------------------

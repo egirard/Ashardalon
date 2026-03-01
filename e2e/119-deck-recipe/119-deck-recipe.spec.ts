@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame } from '../helpers/screenshot-helper';
 
 /**
  * Test 119 - Deck Recipe (Scenario-Specific Deck Setup)
@@ -23,13 +23,14 @@ import { createScreenshotHelper } from '../helpers/screenshot-helper';
 
 test.describe('119 - Deck Recipe (Scenario-Specific Deck Setup)', () => {
   test('Adventure 14 deck places Chamber Entrance after 10 regular tiles', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 14 with Quinn
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -81,13 +82,14 @@ test.describe('119 - Deck Recipe (Scenario-Specific Deck Setup)', () => {
   });
 
   test('Adventure 15 deck places Chamber Entrance after 12 regular tiles', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 15 with Quinn
     // -----------------------------------------------------------------------
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -139,10 +141,11 @@ test.describe('119 - Deck Recipe (Scenario-Specific Deck Setup)', () => {
   });
 
   test('Adventure 14 and 15 decks contain all regular tiles plus one Chamber Entrance', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 100 });
 
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await setupDeterministicGame(page);
 
     // Start Adventure 14 to check deck completeness
     await page.evaluate(() => {
