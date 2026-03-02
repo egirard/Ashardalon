@@ -1514,7 +1514,13 @@
         
         switch (parsed.attack.targetType) {
           case 'adjacent':
-            cardCanTarget = arePositionsAdjacent(currentToken.position, monsterGlobalPos);
+            // For cards with a placement step (e.g. "Choose one Monster within 1 tile,
+            // place it adjacent, then attack"), use the selection range for eligibility.
+            if (parsed.attack.placementSelectionRange !== undefined) {
+              cardCanTarget = isWithinTileRange(currentToken.position, monsterGlobalPos, parsed.attack.placementSelectionRange);
+            } else {
+              cardCanTarget = arePositionsAdjacent(currentToken.position, monsterGlobalPos);
+            }
             break;
           case 'tile':
             const heroTile = findTileAtPosition(currentToken.position, dungeon);

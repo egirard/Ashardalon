@@ -162,7 +162,7 @@ describe('actionCardParser', () => {
     });
 
     describe('Divine Challenge (placement then adjacent attack)', () => {
-      it('should parse as adjacent attack despite "within 1 tile" in placement action', () => {
+      it('should parse as adjacent attack with placementSelectionRange set from "within 1 tile" selection step', () => {
         const card = getPowerCardById(22); // Divine Challenge
         expect(card).toBeDefined();
         // Rule: "Choose one Monster within 1 tile of you. Place that Monster adjacent to your Hero.\nAttack one adjacent Monster."
@@ -174,6 +174,9 @@ describe('actionCardParser', () => {
         expect(parsed.attack?.range).toBe(0);
         expect(parsed.attack?.attackCount).toBe(1);
         expect(parsed.attack?.maxTargets).toBe(1);
+        // The selection range should be 1 tile (from the "Choose one Monster within 1 tile" step)
+        // so that the card is eligible when a monster is within 1 tile (not just adjacent)
+        expect(parsed.attack?.placementSelectionRange).toBe(1);
       });
     });
 
