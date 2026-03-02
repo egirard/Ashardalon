@@ -5424,7 +5424,7 @@ export const gameSlice = createSlice({
                   timestamp: Date.now(),
                   type: 'exploration',
                   message: `${spawnedMonsterName} spawned on new tile`,
-                  details: `Monster appeared at position (${blackSquarePos.x}, ${blackSquarePos.y})`,
+                  details: `Spawned at position: (${spawnResult.monsters[0].position.x}, ${spawnResult.monsters[0].position.y})`,
                 });
               }
               
