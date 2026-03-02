@@ -2005,7 +2005,8 @@ describe("gameSlice", () => {
 
     it("should activate a newly placed monster after exploration", () => {
       // Reproduce the bug: hero explores east, Kobold Dragonshield spawns on new tile,
-      // villain phase starts, Kobold should activate (explore or move, not skip)
+      // villain phase starts, Kobold should move toward the heroes, NOT explore the new tile's
+      // unexplored edge (heroes are reachable on the adjacent start tile).
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 3, y: 1 } }], // East edge, north sub-tile
@@ -2066,20 +2067,17 @@ describe("gameSlice", () => {
       // Kobold should still be in state.monsters
       expect(afterEndExploration.monsters).toHaveLength(1);
 
-      // Step 6: Activate next monster - Kobold should take an action
+      // Step 6: Activate next monster - Kobold should move toward Quinn (not explore)
       const afterActivation = gameReducer(afterEndExploration, activateNextMonster({}));
 
       // Kobold was activated - villainPhaseMonsterIndex should have incremented
       expect(afterActivation.villainPhaseMonsterIndex).toBe(1);
 
-      // Kobold on a tile with an unexplored edge and no heroes → should explore
-      // OR if it can't explore, should move toward Quinn
-      // Either way: monsterExplorationEvent OR monsterMoveActionId should be set
-      const koboldTookVisibleAction =
-        afterActivation.monsterExplorationEvent !== null ||
-        afterActivation.monsterMoveActionId !== null ||
-        afterActivation.monsterAttackResult !== null;
-      expect(koboldTookVisibleAction).toBe(true);
+      // Kobold should move toward Quinn (heroes are reachable on the adjacent start tile),
+      // NOT explore the new tile's unexplored edge.
+      // monsterMoveActionId should be set (move) and monsterExplorationEvent should NOT be set
+      expect(afterActivation.monsterMoveActionId).not.toBeNull();
+      expect(afterActivation.monsterExplorationEvent).toBeFalsy();
     });
   });
 
