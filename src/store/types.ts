@@ -471,6 +471,15 @@ export interface ScenarioState {
    * Used by combat and monster AI to apply scenario-specific bonuses.
    */
   activePersistentModifiers: PersistentModifier[];
+  /**
+   * Total number of tiles the heroes must explore before the chamber entrance is revealed.
+   * Null for scenarios where monster defeat count is the primary progress indicator.
+   */
+  tilesForChamber?: number | null;
+  /** Number of exploration tiles placed so far before the chamber was revealed. */
+  tilesExplored?: number;
+  /** Name of the room set / final chamber to find (e.g. "Obsidian Sanctum"). Null if not applicable. */
+  roomSetName?: string | null;
 }
 
 /**

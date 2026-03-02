@@ -216,6 +216,9 @@ const DEFAULT_SCENARIO_STATE: ScenarioState = {
   chamberRevealed: false,
   villainInstanceId: null,
   activePersistentModifiers: [],
+  tilesForChamber: null,
+  tilesExplored: 0,
+  roomSetName: null,
 };
 
 /**
@@ -1270,6 +1273,7 @@ export const gameSlice = createSlice({
       state.heroTurnActions = { ...DEFAULT_HERO_TURN_ACTIONS };
 
       // Initialize scenario state from the selected scenario definition
+      const hasVillainWinCondition = scenarioDef.winConditions?.some(c => c.type === 'defeat-villain') ?? false;
       state.scenario = {
         scenarioId: state.selectedScenarioId,
         monstersDefeated: 0,
@@ -1281,6 +1285,11 @@ export const gameSlice = createSlice({
         chamberRevealed: false,
         villainInstanceId: null,
         activePersistentModifiers: [],
+        // For villain-hunt scenarios, the mini-stack tiles are the tiles players must explore
+        // before the chamber entrance appears, so miniStackSize equals the number of tiles to find the chamber.
+        tilesForChamber: hasVillainWinCondition && scenarioDef.deckSetup ? scenarioDef.deckSetup.miniStackSize : null,
+        tilesExplored: 0,
+        roomSetName: scenarioDef.roomSet?.name ?? null,
       };
 
       // Reset villain state
@@ -2078,6 +2087,11 @@ export const gameSlice = createSlice({
             position: newTile.position,
           };
           triggerGameEvent(state.eventHooks, tileRevealEvent);
+        }
+
+        // Track tiles explored towards finding the chamber (before chamber is revealed)
+        if (state.scenario.tilesForChamber != null && !state.scenario.chamberRevealed && !tileDef?.isChamberEntrance) {
+          state.scenario.tilesExplored = (state.scenario.tilesExplored ?? 0) + 1;
         }
 
         // Detect Chamber Entrance placement and mark it as revealed
