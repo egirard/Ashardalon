@@ -140,6 +140,33 @@ describe("exploration", () => {
         expect(rotation).toBe(270);
       });
     });
+
+    describe("arrow direction for tiles with south-pointing default arrow", () => {
+      // These tiles previously had incorrect scorchMarkPosition: { x: 2, y: 1 } (north)
+      // The actual tile images have their arrows pointing south, so scorchMarkPosition
+      // should be { x: 1, y: 2 } (south). This suite verifies the fix.
+      const southArrowTiles = [
+        'tile-white-2exit-c',
+        'tile-white-2exit-d',
+        'tile-white-2exit-e',
+        'tile-black-2exit-b',
+        'tile-black-3exit-a',
+        'tile-white-3exit-c',
+        'tile-black-4exit-a',
+      ];
+
+      for (const tileType of southArrowTiles) {
+        it(`should rotate ${tileType} arrow to point west (90°) when exploring east`, () => {
+          const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType)!;
+          // Hero explores east → connecting edge is west → arrow must point west (toward hero)
+          const rotation = calculateTileRotation("east", tileDef);
+          const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+          expect(rotatedEdges.west).toBe('open');
+          // Rotation should be 90° (south arrow rotated CW → west), not 270° (north → west would be wrong)
+          expect(rotation).toBe(90);
+        });
+      }
+    });
   });
 
   describe("checkExploration", () => {
