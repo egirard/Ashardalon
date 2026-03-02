@@ -709,8 +709,12 @@ export function executeMonsterTurn(
       const unexploredEdge = findUnexploredEdgeOnMonsterTile(monster, dungeon);
       
       if (unexploredEdge) {
-        // Monster will explore this edge
-        return { type: 'explore', edge: unexploredEdge };
+        // Only explore if no heroes are reachable via pathfinding.
+        // If heroes can be reached (even on a different tile), move toward them instead.
+        const closestHero = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
+        if (!closestHero) {
+          return { type: 'explore', edge: unexploredEdge };
+        }
       }
     }
   }

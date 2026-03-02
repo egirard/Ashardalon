@@ -610,6 +610,111 @@ describe('monsterAI', () => {
       // Kobold has attack-only tactic, so it should just move (not move-and-attack)
       expect(result.type).toBe('move');
     });
+
+    it('kobold should move toward reachable heroes even when tile has unexplored edges', () => {
+      // Set up a two-tile dungeon: start tile (heroes) + new tile (kobold with unexplored east edge)
+      const startTile: PlacedTile = {
+        id: 'start-tile',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        rotation: 0,
+        edges: { north: 'unexplored', south: 'unexplored', east: 'open', west: 'wall' },
+      };
+      const newTile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-white-2exit-c',
+        position: { col: 1, row: 0 },
+        rotation: 90,
+        edges: { north: 'wall', south: 'wall', east: 'unexplored', west: 'open' },
+      };
+      const dungeon: DungeonState = {
+        tiles: [startTile, newTile],
+        unexploredEdges: [
+          { tileId: 'start-tile', direction: 'north' },
+          { tileId: 'start-tile', direction: 'south' },
+          { tileId: 'tile-1', direction: 'east' },
+        ],
+        tileDeck: ['tile-black-2exit-a'],
+      };
+
+      // Kobold spawned on new tile (local pos 1,1 = global pos 5,1)
+      const monster: MonsterState = {
+        monsterId: 'kobold',
+        instanceId: 'kobold-0',
+        position: { x: 1, y: 1 }, // local position on tile-1
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'tile-1',
+      };
+
+      // Quinn on start tile at east edge
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 3, y: 1 } }, // global position
+      ];
+
+      const heroHpMap = { quinn: 8 };
+      const heroAcMap = { quinn: 17 };
+
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon
+      );
+
+      // Kobold should move toward Quinn (heroes are reachable), NOT explore the east edge
+      expect(result.type).toBe('move');
+    });
+
+    it('kobold should explore when no heroes are reachable', () => {
+      // New tile only - no connected start tile, Kobold isolated from heroes
+      const newTile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-white-2exit-c',
+        position: { col: 1, row: 0 },
+        rotation: 90,
+        edges: { north: 'wall', south: 'wall', east: 'unexplored', west: 'unexplored' },
+      };
+      const dungeon: DungeonState = {
+        tiles: [newTile],
+        unexploredEdges: [
+          { tileId: 'tile-1', direction: 'east' },
+          { tileId: 'tile-1', direction: 'west' },
+        ],
+        tileDeck: ['tile-black-2exit-a'],
+      };
+
+      const monster: MonsterState = {
+        monsterId: 'kobold',
+        instanceId: 'kobold-0',
+        position: { x: 1, y: 1 },
+        currentHp: 1,
+        controllerId: 'quinn',
+        tileId: 'tile-1',
+      };
+
+      // Hero is present but unreachable (on a disconnected tile)
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 3, y: 1 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+      const heroAcMap = { quinn: 17 };
+
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon
+      );
+
+      // Kobold should explore since heroes are not reachable
+      expect(result.type).toBe('explore');
+    });
   });
 
   describe('findHeroWithinTileRange', () => {
