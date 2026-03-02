@@ -2002,6 +2002,85 @@ describe("gameSlice", () => {
       const state = gameReducer(initialState, activateNextMonster({}));
       expect(state.villainPhaseMonsterIndex).toBe(1);
     });
+
+    it("should activate a newly placed monster after exploration", () => {
+      // Reproduce the bug: hero explores east, Kobold Dragonshield spawns on new tile,
+      // villain phase starts, Kobold should activate (explore or move, not skip)
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 3, y: 1 } }], // East edge, north sub-tile
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "hero-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "wall" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "start-tile", direction: "north" },
+            { tileId: "start-tile", direction: "south" },
+            { tileId: "start-tile", direction: "east", subTileId: "start-tile-north" },
+            { tileId: "start-tile", direction: "east", subTileId: "start-tile-south" },
+          ],
+          tileDeck: ["tile-white-2exit-c", "tile-black-2exit-a"],
+        },
+        monsterDeck: {
+          drawPile: ["kobold", "snake"],
+          discardPile: [],
+        },
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        monsters: [],
+        monsterInstanceCounter: 0,
+      });
+
+      // Step 1: End hero phase -> sets up exploration (awaiting-tile)
+      const afterHeroPhase = gameReducer(gameInProgress, endHeroPhase());
+      expect(afterHeroPhase.explorationPhase.step).toBe("awaiting-tile");
+
+      // Step 2: Place tile -> places tile (awaiting-monster)
+      const afterTilePlaced = gameReducer(afterHeroPhase, placeExplorationTile());
+      expect(afterTilePlaced.explorationPhase.step).toBe("awaiting-monster");
+
+      // Step 3: Add monster -> spawns Kobold on new tile
+      const afterMonsterAdded = gameReducer(afterTilePlaced, addExplorationMonster());
+      expect(afterMonsterAdded.monsters).toHaveLength(1);
+      expect(afterMonsterAdded.monsters[0].monsterId).toBe("kobold");
+      expect(afterMonsterAdded.monsters[0].controllerId).toBe("quinn");
+
+      // Step 4: Dismiss monster card
+      const afterDismiss = gameReducer(afterMonsterAdded, dismissMonsterCard());
+      expect(afterDismiss.explorationPhase.step).toBe("complete");
+
+      // Step 5: End exploration phase -> villain phase starts
+      const afterEndExploration = gameReducer(afterDismiss, endExplorationPhase());
+      expect(afterEndExploration.turnState.currentPhase).toBe("villain-phase");
+      expect(afterEndExploration.villainPhaseMonsterIndex).toBe(0);
+      // Kobold should still be in state.monsters
+      expect(afterEndExploration.monsters).toHaveLength(1);
+
+      // Step 6: Activate next monster - Kobold should take an action
+      const afterActivation = gameReducer(afterEndExploration, activateNextMonster({}));
+
+      // Kobold was activated - villainPhaseMonsterIndex should have incremented
+      expect(afterActivation.villainPhaseMonsterIndex).toBe(1);
+
+      // Kobold on a tile with an unexplored edge and no heroes → should explore
+      // OR if it can't explore, should move toward Quinn
+      // Either way: monsterExplorationEvent OR monsterMoveActionId should be set
+      const koboldTookVisibleAction =
+        afterActivation.monsterExplorationEvent !== null ||
+        afterActivation.monsterMoveActionId !== null ||
+        afterActivation.monsterAttackResult !== null;
+      expect(koboldTookVisibleAction).toBe(true);
+    });
   });
 
   describe("dismissMonsterAttackResult", () => {
