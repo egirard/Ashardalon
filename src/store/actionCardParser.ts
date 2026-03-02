@@ -24,6 +24,12 @@ export interface ParsedAttack {
   range: number;
   /** Whether to attack the same target each time (e.g., Reaping Strike) */
   sameTarget: boolean;
+  /**
+   * For cards with a placement step before the attack (e.g. "Choose one Monster within 1 tile,
+   * place it adjacent, then attack"), this is the tile range for the initial monster selection.
+   * The eligibility check should use this range instead of `range` when present.
+   */
+  placementSelectionRange?: number;
 }
 
 /**
@@ -195,6 +201,15 @@ function parseAttackPattern(rule: string): ParsedAttack | undefined {
   // First check if the attack explicitly mentions "adjacent" after "attack"
   const attackAdjacentMatch = rule.match(/attack\s+(?:one|up to (?:two|three|four)|two|three|four)\s+adjacent/i);
   
+  // Detect placement-before-attack pattern:
+  // "Choose one Monster within X tile(s) of you. Place that Monster adjacent to your Hero. Attack one adjacent Monster."
+  // The eligibility range for these cards is the selection range, not the attack range.
+  let placementSelectionRange: number | undefined;
+  const placementMatch = rule.match(/choose\s+one\s+monster\s+within\s+(\d+)\s+tiles?\s+of\s+you.*?place\s+that\s+monster\s+adjacent/s);
+  if (placementMatch && attackAdjacentMatch) {
+    placementSelectionRange = parseInt(placementMatch[1], 10);
+  }
+
   if (attackAdjacentMatch) {
     // Explicit "attack ... adjacent" - keep default adjacent targeting
     targetType = 'adjacent';
@@ -224,6 +239,7 @@ function parseAttackPattern(rule: string): ParsedAttack | undefined {
     targetType,
     range,
     sameTarget,
+    ...(placementSelectionRange !== undefined ? { placementSelectionRange } : {}),
   };
 }
 
