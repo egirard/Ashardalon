@@ -8,8 +8,9 @@ As a player, I want to be able to submit feedback or report bugs directly from t
 
 This test verifies that:
 1. The Submit Feedback button is visible and accessible on the game board
-2. The button can be clicked and triggers the feedback mechanism
-3. Clicking the button opens a pre-filled GitHub issue form in a new tab
+2. The button remains enabled when a modal is displayed (e.g. the scenario introduction)
+3. The button can be clicked and triggers the feedback mechanism
+4. Clicking the button opens a pre-filled GitHub issue form in a new tab
 
 ## Screenshots
 
@@ -31,7 +32,21 @@ This test verifies that:
 - Game board is visible
 - Home button (part of corner controls) is visible
 
-### Screenshot 001: After Feedback Button Click
+### Screenshot 001: Feedback Button with Modal Open
+
+![000-feedback-button-with-modal-open](041-feedback-button.spec.ts-snapshots/000-feedback-button-with-modal-open-chromium-linux.png)
+
+**What to verify:**
+- The scenario introduction modal is visible
+- The feedback button is still visible and enabled despite the modal being displayed
+- The corner controls render above the modal overlay (z-index 2200, above all modals)
+
+**Programmatic checks:**
+- Scenario introduction modal is visible
+- Feedback button is still visible
+- Feedback button is still enabled
+
+### Screenshot 002: After Feedback Button Click
 
 ![000-after-feedback-button-click](041-feedback-button.spec.ts-snapshots/000-after-feedback-button-click-chromium-linux.png)
 

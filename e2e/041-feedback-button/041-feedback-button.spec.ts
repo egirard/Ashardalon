@@ -42,6 +42,34 @@ test.describe('041 - Submit Feedback Button', () => {
     });
   });
 
+  test('feedback button remains enabled when a modal is displayed', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // STEP 1: Navigate to game board and start the game WITHOUT dismissing the modal
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await selectDefaultPowerCards(page, 'quinn');
+    await setupDeterministicGame(page);
+
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // STEP 2: Verify the scenario introduction modal is visible (the modal under test)
+    await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'feedback-button-with-modal-open', {
+      programmaticCheck: async () => {
+        // Verify the modal is visible
+        await expect(page.locator('[data-testid="scenario-introduction-overlay"]')).toBeVisible();
+
+        // Verify the feedback button is still visible and enabled despite the modal
+        await expect(page.locator('[data-testid="corner-feedback-button"]').first()).toBeVisible();
+        await expect(page.locator('[data-testid="corner-feedback-button"]').first()).toBeEnabled();
+      }
+    });
+  });
+
   test('feedback button triggers window.open when clicked', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 

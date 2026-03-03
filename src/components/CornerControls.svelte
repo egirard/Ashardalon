@@ -426,7 +426,7 @@ ${logEntriesSection}
     position: absolute;
     display: flex;
     gap: 0.25rem;
-    z-index: 1000;
+    z-index: 2200;
   }
   
   .corner-nw {
