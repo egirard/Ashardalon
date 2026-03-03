@@ -34,6 +34,7 @@ import {
   ENCOUNTER_CANCEL_COST,
   PendingMonsterDecision,
   VillainInstance,
+  PlacedTile,
 } from "./types";
 import {
   executeVillainTurn,
@@ -1111,6 +1112,167 @@ function handleQuickAdvanceEffect(state: GameState, chosenMonster: MonsterState)
   }
 }
 
+/**
+ * Handle the full chamber entrance reveal sequence: mark revealed, place room set tiles,
+ * spawn villain, fire chamber-reveal event, and register scenario hooks.
+ * Called from both hero exploration and monster-triggered exploration.
+ */
+function handleChamberEntranceRevealed(state: GameState, newTile: DungeonTile): void {
+  state.scenario.chamberRevealed = true;
+  state.logEntries.push({
+    id: state.logEntryCounter++,
+    timestamp: Date.now(),
+    type: 'exploration',
+    message: `🚪 Chamber Entrance revealed!`,
+    details: `The way to the final chamber is open.`,
+  });
+
+  // Place room set tiles if the scenario defines one
+  const scenarioDef = getScenarioById(state.selectedScenarioId);
+  if (scenarioDef.roomSet) {
+    const roomSetTileIds: string[] = [];
+    const placedRoomSetIds = new Set<string>([newTile.id]);
+
+    for (const roomTile of scenarioDef.roomSet.tiles) {
+      const dirOrder: Record<string, number> = { north: 0, east: 1, west: 2, south: 3 };
+      const availableEdges = state.dungeon.unexploredEdges
+        .filter(e => placedRoomSetIds.has(e.tileId))
+        .sort((a, b) => {
+          const aIsEntrance = a.tileId === newTile.id ? 1 : 0;
+          const bIsEntrance = b.tileId === newTile.id ? 1 : 0;
+          if (aIsEntrance !== bIsEntrance) return aIsEntrance - bIsEntrance;
+          const aOrder = roomSetTileIds.indexOf(a.tileId);
+          const bOrder = roomSetTileIds.indexOf(b.tileId);
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          return (dirOrder[a.direction] ?? 9) - (dirOrder[b.direction] ?? 9);
+        });
+
+      if (availableEdges.length === 0) break;
+      const edge = availableEdges[0];
+
+      const placedRoomTile = placeTile(edge, roomTile.tileType, state.dungeon);
+      if (!placedRoomTile) break;
+
+      state.dungeon = updateDungeonAfterExploration(state.dungeon, edge, placedRoomTile);
+      roomSetTileIds.push(placedRoomTile.id);
+      placedRoomSetIds.add(placedRoomTile.id);
+      state.logEntries.push({
+        id: state.logEntryCounter++,
+        timestamp: Date.now(),
+        type: 'exploration',
+        message: `🏛️ ${scenarioDef.roomSet.name}: placed ${roomTile.tileType}`,
+        details: `Room set tile placed at col:${placedRoomTile.position.col} row:${placedRoomTile.position.row}`,
+      });
+    }
+    state.recentlyPlacedRoomSetTileIds = roomSetTileIds;
+  }
+
+  // Spawn the scenario villain if this scenario has one
+  const villainDef = getVillainDefForScenario(state.selectedScenarioId);
+  if (villainDef && !state.villain) {
+    const allRoomTiles = state.dungeon.tiles.filter(
+      t => state.recentlyPlacedRoomSetTileIds.includes(t.id)
+    );
+    const spawnTile = allRoomTiles.length > 0 ? allRoomTiles[0] : newTile;
+    const spawnPos = getMonsterSpawnPosition(spawnTile, state.monsters);
+    if (spawnPos) {
+      const heroCount = state.heroTokens.length;
+      const maxHp = calculateVillainHp(villainDef, heroCount);
+      const instanceId = `villain-${villainDef.id}`;
+      const villain: VillainInstance = {
+        villainId: villainDef.id,
+        instanceId,
+        position: spawnPos,
+        tileId: spawnTile.id,
+        currentHp: maxHp,
+        maxHp,
+        statuses: [],
+      };
+      state.villain = villain;
+      state.scenario.villainInstanceId = instanceId;
+
+      state.logEntries.push({
+        id: state.logEntryCounter++,
+        timestamp: Date.now(),
+        type: 'exploration',
+        message: `⚔️ ${villainDef.name} appears!`,
+        details: `The villain spawns with ${maxHp} HP (AC ${villainDef.ac}).`,
+      });
+    }
+  }
+
+  // Fire the chamber-reveal event for scenario hooks
+  const chamberRevealHero = state.heroTokens[state.turnState.currentHeroIndex];
+  if (chamberRevealHero) {
+    const chamberRevealEvent: ChamberRevealEvent = {
+      type: 'chamber-reveal',
+      heroId: chamberRevealHero.heroId,
+      turnNumber: state.turnState.turnNumber,
+      chamberType: getScenarioById(state.selectedScenarioId).roomSet?.name ?? 'chamber',
+      position: newTile.position,
+      heroIds: state.heroTokens.map(t => t.heroId),
+    };
+    const chamberResult = triggerGameEvent(state.eventHooks, chamberRevealEvent);
+
+    for (const effect of chamberResult.applyHeroStatusEffects) {
+      const heroIds = effect.heroId === '*'
+        ? state.heroTokens.map(t => t.heroId)
+        : [effect.heroId];
+      for (const heroId of heroIds) {
+        const heroHp = state.heroHp.find(h => h.heroId === heroId);
+        if (heroHp) {
+          heroHp.statuses = applyStatusEffect(
+            heroHp.statuses ?? [],
+            effect.statusType,
+            'scenario-chamber-reveal',
+            state.turnState.turnNumber,
+            effect.duration
+          );
+          state.logEntries.push({
+            id: state.logEntryCounter++,
+            timestamp: Date.now(),
+            type: 'game-event',
+            message: `✨ ${heroId} is ${effect.statusType} (chamber reveal effect)`,
+            details: `Duration: ${effect.duration ?? 'indefinite'} turn(s).`,
+            heroId,
+          });
+        }
+      }
+    }
+
+    if (chamberResult.activatePersistentModifiers.length > 0) {
+      state.scenario.activePersistentModifiers.push(...chamberResult.activatePersistentModifiers);
+      for (const mod of chamberResult.activatePersistentModifiers) {
+        let modDesc: string;
+        if (mod.type === 'hero-daily-damage-bonus') {
+          modDesc = `+${mod.bonus} Daily Power damage`;
+        } else if (mod.type === 'monster-ac-bonus') {
+          modDesc = `+${mod.bonus} Monster AC`;
+        } else {
+          modDesc = `Reflect natural-1 (${mod.damage} damage)`;
+        }
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'game-event',
+          message: `🔥 Workshop Aura: ${modDesc}`,
+          details: 'Persistent modifier active for the rest of the game.',
+        });
+      }
+    }
+
+    const chamberScenarioDef = getScenarioById(state.selectedScenarioId);
+    if (chamberScenarioDef.id === 'adventure-14') {
+      state.eventHooks = registerDynamicScenarioHook(
+        state.eventHooks,
+        'attack-miss',
+        createReflectNaturalOneHandler(),
+        100
+      );
+    }
+  }
+}
+
 export interface StartGamePayload {
   heroIds: string[];
   /** Optional positions for deterministic testing. If not provided, positions are randomly assigned. */
@@ -2094,175 +2256,9 @@ export const gameSlice = createSlice({
           state.scenario.tilesExplored = (state.scenario.tilesExplored ?? 0) + 1;
         }
 
-        // Detect Chamber Entrance placement and mark it as revealed
+        // Detect Chamber Entrance placement and trigger full reveal sequence
         if (tileDef?.isChamberEntrance) {
-          state.scenario.chamberRevealed = true;
-          state.logEntries.push({
-            id: state.logEntryCounter++,
-            timestamp: Date.now(),
-            type: 'exploration',
-            message: `🚪 Chamber Entrance revealed!`,
-            details: `The way to the final chamber is open.`,
-          });
-
-          // Place room set tiles if the scenario defines one
-          const scenarioDef = getScenarioById(state.selectedScenarioId);
-          if (scenarioDef.roomSet) {
-            const roomSetTileIds: string[] = [];
-            // Track IDs placed so far so we can pick their unexplored edges for subsequent tiles
-            const placedRoomSetIds = new Set<string>([newTile.id]);
-
-            for (const roomTile of scenarioDef.roomSet.tiles) {
-              // Collect all unexplored edges from the entrance tile and already-placed room set tiles.
-              // For the very first tile, only the entrance is available.
-              // For subsequent tiles, prefer edges on room set tiles (placed first in sort order),
-              // falling back to entrance edges, using direction order N → E → W → S for determinism.
-              const dirOrder: Record<string, number> = { north: 0, east: 1, west: 2, south: 3 };
-              const availableEdges = state.dungeon.unexploredEdges
-                .filter(e => placedRoomSetIds.has(e.tileId))
-                .sort((a, b) => {
-                  // entrance tile (newTile.id) comes last so room set tiles' open edges are preferred
-                  const aIsEntrance = a.tileId === newTile.id ? 1 : 0;
-                  const bIsEntrance = b.tileId === newTile.id ? 1 : 0;
-                  if (aIsEntrance !== bIsEntrance) return aIsEntrance - bIsEntrance;
-                  const aOrder = roomSetTileIds.indexOf(a.tileId);
-                  const bOrder = roomSetTileIds.indexOf(b.tileId);
-                  if (aOrder !== bOrder) return aOrder - bOrder;
-                  return (dirOrder[a.direction] ?? 9) - (dirOrder[b.direction] ?? 9);
-                });
-
-              if (availableEdges.length === 0) break;
-              const edge = availableEdges[0];
-
-              const placedRoomTile = placeTile(edge, roomTile.tileType, state.dungeon);
-              if (!placedRoomTile) break;
-
-              state.dungeon = updateDungeonAfterExploration(state.dungeon, edge, placedRoomTile);
-              roomSetTileIds.push(placedRoomTile.id);
-              placedRoomSetIds.add(placedRoomTile.id);
-              state.logEntries.push({
-                id: state.logEntryCounter++,
-                timestamp: Date.now(),
-                type: 'exploration',
-                message: `🏛️ ${scenarioDef.roomSet.name}: placed ${roomTile.tileType}`,
-                details: `Room set tile placed at col:${placedRoomTile.position.col} row:${placedRoomTile.position.row}`,
-              });
-            }
-            state.recentlyPlacedRoomSetTileIds = roomSetTileIds;
-          }
-
-          // Spawn the scenario villain if this scenario has one
-          const villainDef = getVillainDefForScenario(state.selectedScenarioId);
-          if (villainDef && !state.villain) {
-            // Determine which tile to spawn on: first room-set tile, or the chamber entrance itself
-            const allRoomTiles = state.dungeon.tiles.filter(
-              t => state.recentlyPlacedRoomSetTileIds.includes(t.id)
-            );
-            const spawnTile = allRoomTiles.length > 0 ? allRoomTiles[0] : newTile;
-
-            // Get the scorch mark position for the spawn tile
-            const spawnPos = getMonsterSpawnPosition(spawnTile, state.monsters);
-            if (spawnPos) {
-              const heroCount = state.heroTokens.length;
-              const maxHp = calculateVillainHp(villainDef, heroCount);
-              const instanceId = `villain-${villainDef.id}`;
-              const villain: VillainInstance = {
-                villainId: villainDef.id,
-                instanceId,
-                position: spawnPos,
-                tileId: spawnTile.id,
-                currentHp: maxHp,
-                maxHp,
-                statuses: [],
-              };
-              state.villain = villain;
-              state.scenario.villainInstanceId = instanceId;
-
-              state.logEntries.push({
-                id: state.logEntryCounter++,
-                timestamp: Date.now(),
-                type: 'exploration',
-                message: `⚔️ ${villainDef.name} appears!`,
-                details: `The villain spawns with ${maxHp} HP (AC ${villainDef.ac}).`,
-              });
-            }
-          }
-
-          // Fire the chamber-reveal event for scenario hooks
-          // (e.g. daze-all-heroes for Adventure 14, forge-awakens for Adventure 15)
-          const chamberRevealHero = state.heroTokens[state.turnState.currentHeroIndex];
-          if (chamberRevealHero) {
-            const chamberRevealEvent: ChamberRevealEvent = {
-              type: 'chamber-reveal',
-              heroId: chamberRevealHero.heroId,
-              turnNumber: state.turnState.turnNumber,
-              chamberType: getScenarioById(state.selectedScenarioId).roomSet?.name ?? 'chamber',
-              position: newTile.position,
-              heroIds: state.heroTokens.map(t => t.heroId),
-            };
-            const chamberResult = triggerGameEvent(state.eventHooks, chamberRevealEvent);
-
-            // Apply hero status effects from chamber reveal (e.g. Daze all heroes)
-            for (const effect of chamberResult.applyHeroStatusEffects) {
-              const heroIds = effect.heroId === '*'
-                ? state.heroTokens.map(t => t.heroId)
-                : [effect.heroId];
-              for (const heroId of heroIds) {
-                const heroHp = state.heroHp.find(h => h.heroId === heroId);
-                if (heroHp) {
-                  heroHp.statuses = applyStatusEffect(
-                    heroHp.statuses ?? [],
-                    effect.statusType,
-                    'scenario-chamber-reveal',
-                    state.turnState.turnNumber,
-                    effect.duration
-                  );
-                  state.logEntries.push({
-                    id: state.logEntryCounter++,
-                    timestamp: Date.now(),
-                    type: 'game-event',
-                    message: `✨ ${heroId} is ${effect.statusType} (chamber reveal effect)`,
-                    details: `Duration: ${effect.duration ?? 'indefinite'} turn(s).`,
-                    heroId,
-                  });
-                }
-              }
-            }
-
-            // Activate persistent modifiers (e.g. forge-awakens workshop aura)
-            if (chamberResult.activatePersistentModifiers.length > 0) {
-              state.scenario.activePersistentModifiers.push(...chamberResult.activatePersistentModifiers);
-              for (const mod of chamberResult.activatePersistentModifiers) {
-                // Build a human-readable description for the log entry
-                let modDesc: string;
-                if (mod.type === 'hero-daily-damage-bonus') {
-                  modDesc = `+${mod.bonus} Daily Power damage`;
-                } else if (mod.type === 'monster-ac-bonus') {
-                  modDesc = `+${mod.bonus} Monster AC`;
-                } else {
-                  modDesc = `Reflect natural-1 (${mod.damage} damage)`;
-                }
-                state.logEntries.push({
-                  id: state.logEntryCounter++,
-                  timestamp: Date.now(),
-                  type: 'game-event',
-                  message: `🔥 Workshop Aura: ${modDesc}`,
-                  details: 'Persistent modifier active for the rest of the game.',
-                });
-              }
-            }
-
-            // Register the reflect-natural-one hook dynamically if Adventure 14 chamber is revealed
-            const chamberScenarioDef = getScenarioById(state.selectedScenarioId);
-            if (chamberScenarioDef.id === 'adventure-14') {
-              state.eventHooks = registerDynamicScenarioHook(
-                state.eventHooks,
-                'attack-miss',
-                createReflectNaturalOneHandler(),
-                100
-              );
-            }
-          }
+          handleChamberEntranceRevealed(state, newTile);
         }
 
         
@@ -5383,9 +5379,9 @@ export const gameSlice = createSlice({
               state.scenario.tilesExplored = (state.scenario.tilesExplored ?? 0) + 1;
             }
 
-            // Detect Chamber Entrance placement and mark it as revealed
+            // Detect Chamber Entrance placement and trigger full reveal sequence
             if (tileDef?.isChamberEntrance) {
-              state.scenario.chamberRevealed = true;
+              handleChamberEntranceRevealed(state, newTile);
             }
 
             // Log the exploration
