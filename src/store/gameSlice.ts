@@ -5377,7 +5377,17 @@ export const gameSlice = createSlice({
             // Get tile definition to check if it's a black tile
             const tileDef = getTileDefinition(drawnTile);
             const isBlackTile = tileDef?.isBlackTile ?? true;
-            
+
+            // Track tiles explored towards finding the chamber (before chamber is revealed)
+            if (state.scenario.tilesForChamber != null && !state.scenario.chamberRevealed && !tileDef?.isChamberEntrance) {
+              state.scenario.tilesExplored = (state.scenario.tilesExplored ?? 0) + 1;
+            }
+
+            // Detect Chamber Entrance placement and mark it as revealed
+            if (tileDef?.isChamberEntrance) {
+              state.scenario.chamberRevealed = true;
+            }
+
             // Log the exploration
             const monsterDef = getMonsterById(monster.monsterId);
             const monsterName = monsterDef?.name ?? 'Monster';
