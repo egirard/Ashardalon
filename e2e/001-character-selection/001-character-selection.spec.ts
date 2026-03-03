@@ -130,7 +130,7 @@ test.describe('001 - Character Selection to Game Board (Tabletop Layout)', () =>
         await expect(page.locator('[data-testid="hero-token"].active')).toBeVisible();
         
         // Verify reset button is accessible
-        await expect(page.locator('[data-testid="reset-button"]')).toBeVisible();
+        await expect(page.locator('[data-testid="reset-view-button"]')).toBeVisible();
         
         // Verify Redux store state
         const storeState = await page.evaluate(() => {
