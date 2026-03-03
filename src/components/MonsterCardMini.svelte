@@ -8,9 +8,10 @@
     monster: MonsterState;
     isActivating?: boolean;
     isNew?: boolean;
+    onclick?: () => void;
   }
   
-  let { monster, isActivating = false, isNew = false }: Props = $props();
+  let { monster, isActivating = false, isNew = false, onclick }: Props = $props();
   
   // Get monster definition
   const monsterDef = $derived(MONSTERS.find(m => m.id === monster.monsterId));
@@ -42,8 +43,14 @@
     class="monster-card-mini"
     class:activating={isActivating}
     class:card-appears={isNew}
+    class:clickable={!!onclick}
     data-testid="monster-card-mini"
     data-monster-id={monster.instanceId}
+    onclick={onclick}
+    onkeydown={onclick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onclick(); } } : undefined}
+    role={onclick ? 'button' : undefined}
+    tabindex={onclick ? 0 : undefined}
+    aria-label={onclick ? `View ${monsterDef?.name} details` : undefined}
   >
     <div class="mini-header">
       <img 
@@ -107,7 +114,16 @@
     transition: all 0.3s ease;
     min-width: 140px;
   }
-  
+
+  .monster-card-mini.clickable {
+    cursor: pointer;
+  }
+
+  .monster-card-mini.clickable:hover {
+    border-color: rgba(255, 102, 102, 0.9);
+    background: rgba(60, 25, 25, 0.9);
+  }
+
   .monster-card-mini.activating {
     border-color: #ff6666;
     background: rgba(60, 25, 25, 0.95);

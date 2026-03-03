@@ -231,6 +231,8 @@
   let recentlySpawnedMonsterId: string | null = $state(null);
   /** Tracks which monster's card was just dismissed - used to trigger mini-card entrance animation */
   let newlyDismissedMonsterId: string | null = $state(null);
+  /** Tracks which monster mini-card was clicked to show the full monster card */
+  let viewingMonsterId: string | null = $state(null);
   let attackResult: AttackResult | null = $state(null);
   let attackTargetId: string | null = $state(null);
   let heroHp: HeroHpState[] = $state([]);
@@ -1334,6 +1336,14 @@
     store.dispatch(dismissMonsterCard());
     // Clear the newly dismissed ID after animation completes (600ms)
     setTimeout(() => { newlyDismissedMonsterId = null; }, 600);
+  }
+
+  function handleViewMonsterMini(monsterId: string) {
+    viewingMonsterId = monsterId;
+  }
+
+  function handleDismissViewedMonster() {
+    viewingMonsterId = null;
   }
 
   // Handle dismissing the scenario introduction modal
@@ -3699,6 +3709,7 @@
                     {monster}
                     isActivating={activatingMonsterId === monster.instanceId}
                     isNew={newlyDismissedMonsterId === monster.instanceId}
+                    onclick={() => handleViewMonsterMini(monster.monsterId)}
                   />
                 {/each}
               </div>
@@ -3787,6 +3798,14 @@
         edge={getActivePlayerEdge()}
       />
     {/if}
+  {/if}
+
+  <!-- Monster Card Detail View (shown when clicking a monster mini-card) -->
+  {#if viewingMonsterId}
+    <MonsterCard
+      monsterId={viewingMonsterId}
+      onDismiss={handleDismissViewedMonster}
+    />
   {/if}
 
   <!-- Trap Disable Result Display (shown after trap disable attempt) -->
