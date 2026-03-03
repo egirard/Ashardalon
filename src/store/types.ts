@@ -478,6 +478,11 @@ export interface ScenarioState {
   tilesForChamber?: number | null;
   /** Number of exploration tiles placed so far before the chamber was revealed. */
   tilesExplored?: number;
+  /**
+   * Whether the total tile count for the chamber is unknown (e.g. after a deck shuffle from the "Lost" encounter).
+   * When true, the UI should display "??" instead of the tile count.
+   */
+  tilesForChamberUnknown?: boolean;
   /** Name of the room set / final chamber to find (e.g. "Obsidian Sanctum"). Null if not applicable. */
   roomSetName?: string | null;
 }

@@ -3146,6 +3146,9 @@ export const gameSlice = createSlice({
             const deckSize = state.dungeon.tileDeck.length;
             state.dungeon.tileDeck = shuffleTileDeck(state.dungeon.tileDeck);
             state.encounterEffectMessage = `Tile deck shuffled (${deckSize} tiles remaining)`;
+            if (state.scenario.tilesForChamber != null && !state.scenario.chamberRevealed) {
+              state.scenario.tilesForChamberUnknown = true;
+            }
           }
           
           // Occupied Lair: Place tile from bottom near hero, spawn monster, place treasure token

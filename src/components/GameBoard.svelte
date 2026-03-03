@@ -243,7 +243,7 @@
   let villainPhaseMonsterIndex: number = $state(0);
   let monsterMoveActionId: string | null = $state(null);
   let heroTurnActions: HeroTurnActions = $state({ actionsTaken: [], canMove: true, canAttack: true });
-  let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", introductionShown: false, chamberRevealed: false, title: '', description: '', villainInstanceId: null, activePersistentModifiers: [], tilesForChamber: null, tilesExplored: 0, roomSetName: null });
+  let scenario: ScenarioState = $state({ monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", introductionShown: false, chamberRevealed: false, title: '', description: '', villainInstanceId: null, activePersistentModifiers: [], tilesForChamber: null, tilesExplored: 0, tilesForChamberUnknown: false, roomSetName: null });
   let partyResources: PartyResources = $state({ xp: 0, healingSurges: 2 });
   let defeatedMonsterXp: number | null = $state(null);
   let defeatedMonsterName: string | null = $state(null);
@@ -3523,7 +3523,7 @@
           <span class="objective-text">{scenario.objective}</span>
           <span class="objective-progress" data-testid="objective-progress">
             {#if scenario.tilesForChamber != null && !scenario.chamberRevealed}
-              Find {scenario.roomSetName ?? 'Chamber'} ({scenario.tilesExplored ?? 0} of {scenario.tilesForChamber} tiles)
+              Find {scenario.roomSetName ?? 'Chamber'} ({scenario.tilesExplored ?? 0} of {scenario.tilesForChamberUnknown ? '??' : scenario.tilesForChamber} tiles)
             {:else if scenario.tilesForChamber != null && scenario.chamberRevealed}
               Chamber found — defeat the villain
             {:else}
