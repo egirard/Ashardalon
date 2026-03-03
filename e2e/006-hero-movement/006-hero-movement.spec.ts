@@ -170,9 +170,7 @@ test.describe('006 - Move a Hero', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
     
-    // Select power cards for both heroes
-    await selectDefaultPowerCards(page, 'quinn');
-    await selectDefaultPowerCards(page, 'vistra');
+    // Power cards are auto-selected when heroes are chosen (DuplicateCharacterPanel used for 2+ heroes on same edge)
     
     // CRITICAL: Set deterministic seed before starting game
     await setupDeterministicGame(page);
