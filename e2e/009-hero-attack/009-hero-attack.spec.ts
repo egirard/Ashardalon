@@ -16,29 +16,14 @@ test.describe('009 - Hero Attacks Monster', () => {
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
 
-    // STEP 2: Move Quinn to the north edge to trigger exploration
-    await page.locator('[data-testid="start-tile"]').click();
-    await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible' });
-    
-    // Get Quinn's current position
-    let currentPos = await page.evaluate(() => {
-      return (window as any).__REDUX_STORE__.getState().game.heroTokens[0].position;
-    });
-    
-    // Close movement overlay
-    await page.locator('[data-testid="start-tile"]').click();
-    await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
-    
-    // Move Quinn to north edge for deterministic positioning
-    if (currentPos.y !== 0) {
-      await page.evaluate(() => {
-        const store = (window as any).__REDUX_STORE__;
-        store.dispatch({
-          type: 'game/setHeroPosition',
-          payload: { heroId: 'quinn', position: { x: 2, y: 0 } }
-        });
+    // STEP 2: Move Quinn to the north edge for deterministic positioning
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 2, y: 0 } }
       });
-    }
+    });
 
     // Verify Quinn is at north edge
     await expect(async () => {
