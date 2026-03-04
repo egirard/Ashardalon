@@ -108,8 +108,6 @@ test.describe('085 - Gap in the Armor Curse Effect', () => {
       store.dispatch({ type: 'game/endVillainPhase' });
     });
     
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'hero-phase-with-curse-active', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -159,8 +157,6 @@ test.describe('085 - Gap in the Armor Curse Effect', () => {
       });
     }, heroPosition);
     
-    await page.waitForTimeout(300);
-    
     await screenshots.capture(page, 'hero-moved-curse-still-active', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -183,8 +179,6 @@ test.describe('085 - Gap in the Armor Curse Effect', () => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({ type: 'game/endHeroPhase' });
     });
-    
-    await page.waitForTimeout(300);
     
     await screenshots.capture(page, 'curse-persists-after-moving', {
       programmaticCheck: async () => {
@@ -237,15 +231,11 @@ test.describe('085 - Gap in the Armor Curse Effect', () => {
       store.dispatch({ type: 'game/endVillainPhase' });
     });
     
-    await page.waitForTimeout(300);
-    
     // STEP 9: End Hero Phase WITHOUT moving (to trigger curse removal)
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({ type: 'game/endHeroPhase' });
     });
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'curse-removed-did-not-move', {
       programmaticCheck: async () => {

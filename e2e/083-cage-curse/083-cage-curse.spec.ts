@@ -136,8 +136,6 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
       });
     });
     
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'heroes-on-same-tile', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -161,7 +159,6 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
     
     // STEP 6: Click the "Free Ally" action card to open details panel
     await page.click('[data-testid="cage-escape-action"]');
-    await page.waitForTimeout(300);
     
     await screenshots.capture(page, 'cage-escape-details-opened', {
       programmaticCheck: async () => {
@@ -192,8 +189,6 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
     
     console.log('Escape attempt result:', escapeResult);
     
-    await page.waitForTimeout(500);
-    
     // Dismiss the message before taking screenshot (for deterministic rendering)
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
@@ -201,8 +196,6 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
         type: 'game/dismissEncounterEffectMessage'
       });
     });
-    
-    await page.waitForTimeout(300);
     
     await screenshots.capture(page, 'cage-escape-attempted', {
       programmaticCheck: async () => {
@@ -246,8 +239,6 @@ test.describe('083 - Cage Curse Complete Lifecycle', () => {
       
       console.log(`Cage escape succeeded after ${attempts} attempts`);
     });
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'cage-curse-removed', {
       programmaticCheck: async () => {

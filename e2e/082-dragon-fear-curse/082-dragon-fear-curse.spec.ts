@@ -93,8 +93,6 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
       store.dispatch({ type: 'game/endVillainPhase' });
     });
     
-    await page.waitForTimeout(500);
-    
     const hpBeforeMove = await page.evaluate(() => {
       const state = (window as any).__REDUX_STORE__.getState();
       const quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
@@ -138,8 +136,6 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
       store.dispatch({ type: 'game/initiateMove' });
     });
     
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'movement-overlay-shown', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -175,8 +171,6 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
         }
       });
     }, sameTilePosition);
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'moved-within-same-tile-no-damage', {
       programmaticCheck: async () => {
@@ -221,8 +215,6 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
       });
     }, differentTilePosition);
     
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'moved-to-different-subtile-damage-applied', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -258,8 +250,6 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
       });
     });
     
-    await page.waitForTimeout(300);
-    
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
@@ -268,8 +258,6 @@ test.describe('082 - Dragon Fear Curse Movement Damage', () => {
         type: 'game/endHeroPhase'
       });
     });
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'end-hero-phase-curse-removal-attempt', {
       programmaticCheck: async () => {
