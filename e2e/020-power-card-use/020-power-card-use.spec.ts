@@ -58,12 +58,11 @@ test.describe('020 - Power Card Use', () => {
         
         // Verify power cards are finalized for Quinn
         expect(storeState.heroes.heroPowerCards.quinn).toBeDefined();
-        // atWills are the first two cards from the shuffled deck (order may vary by hero seed)
-        expect(storeState.heroes.heroPowerCards.quinn.atWills).toHaveLength(2);
-        expect(storeState.heroes.heroPowerCards.quinn.atWills).toContain(2); // Cleric's Shield
-        expect(storeState.heroes.heroPowerCards.quinn.atWills).toContain(3); // Righteous Advance
-        // Daily card is auto-selected from shuffled deck
-        expect(storeState.heroes.heroPowerCards.quinn.daily).toBeTruthy();
+        // atWills are seeded by hero ID (heroIdToSeed('quinn') = 107947845),
+        // giving a deterministic shuffle: [3, 2] (Righteous Advance, Cleric's Shield)
+        expect(storeState.heroes.heroPowerCards.quinn.atWills).toEqual([3, 2]);
+        // Daily is the first card of the seeded daily shuffle: 6 (Cause Fear)
+        expect(storeState.heroes.heroPowerCards.quinn.daily).toBe(6);
         
         // Verify all cards start unflipped
         const cardStates = storeState.heroes.heroPowerCards.quinn.cardStates;
@@ -232,14 +231,17 @@ test.describe('020 - Power Card Use', () => {
         
         // Verify power cards are initialized for Quinn
         expect(storeState.heroes.heroPowerCards.quinn).toBeDefined();
+        // Daily is deterministically seeded: ID 6 (Cause Fear) for hero 'quinn'
+        expect(storeState.heroes.heroPowerCards.quinn.daily).toBe(6);
+        // The daily card should start unflipped
         const cardStates = storeState.heroes.heroPowerCards.quinn.cardStates;
-        expect(cardStates.length).toBeGreaterThan(0);
-        // All cards start unflipped
-        expect(cardStates.every((s: { isFlipped: boolean }) => s.isFlipped === false)).toBe(true);
+        const dailyCardState = cardStates.find((s: { cardId: number }) => s.cardId === 6);
+        expect(dailyCardState).toBeDefined();
+        expect(dailyCardState.isFlipped).toBe(false);
       }
     });
 
-    // Note: Quinn's default daily (Blade Barrier, ID 5) doesn't have attackBonus
+    // Note: Quinn's auto-selected daily (Cause Fear, ID 6) doesn't have attackBonus
     // so it won't appear in the attack panel. This test verifies the panel behavior.
     // For a complete test, we would need a hero with a daily that has attackBonus.
     
