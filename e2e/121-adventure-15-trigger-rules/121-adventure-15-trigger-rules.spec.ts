@@ -250,8 +250,11 @@ test.describe('121 - Adventure 15 Trigger Rules and Modifiers', () => {
     });
 
     await page.locator('[data-testid="end-phase-button"]').click();
-    // Wait briefly for exploration phase or villain phase
-    await page.waitForTimeout(500);
+    // Wait for exploration phase or villain phase
+    await page.waitForFunction(() => {
+      const phase = (window as any).__REDUX_STORE__.getState().game.turnState.currentPhase;
+      return phase === 'exploration-phase' || phase === 'villain-phase';
+    });
 
     // Restore Math.random
     await page.evaluate(() => {

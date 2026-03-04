@@ -86,8 +86,6 @@ test.describe('109 - Occupied Lair Encounter Card', () => {
       }
     });
 
-    await page.waitForTimeout(500);
-
     await screenshots.capture(page, 'effect-applied-tile-monster-treasure', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());

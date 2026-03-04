@@ -80,8 +80,6 @@ test.describe('110 - Lost Encounter Card', () => {
       }
     });
 
-    await page.waitForTimeout(500);
-
     await screenshots.capture(page, 'effect-applied-deck-shuffled', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());

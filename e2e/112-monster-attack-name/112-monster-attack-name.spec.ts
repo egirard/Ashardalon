@@ -62,13 +62,15 @@ test.describe('112 - Monster Attack Name Display', () => {
       store.dispatch({ type: 'game/endExplorationPhase' });
     });
 
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() =>
+      (window as any).__REDUX_STORE__.getState().game.turnState.currentPhase === 'villain-phase'
+    );
 
     // Dismiss any encounter card that may have appeared despite cleared deck
     const encounterDismissButton = page.locator('[data-testid="dismiss-encounter-card"]');
     if (await encounterDismissButton.isVisible({ timeout: 500 }).catch(() => false)) {
       await encounterDismissButton.click();
-      await page.waitForTimeout(100);
+      await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
     }
     // Also dismiss any encounter result popup
     const encounterResultPopup = page.locator('[data-testid="encounter-result-popup"]');
