@@ -173,7 +173,6 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
     
     // Dismiss encounter card overlay if shown
-    await page.waitForTimeout(500);
     const encounterOverlay = page.locator('[data-testid="encounter-card-overlay"]');
     try {
       if (await encounterOverlay.isVisible({ timeout: 2000 })) {
@@ -229,8 +228,15 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     const turnPhaseLocator = page.locator('[data-testid="turn-phase"]');
     let currentPhase = await turnPhaseLocator.textContent();
     while (currentPhase && !currentPhase.includes('Villain Phase')) {
+      const previousPhase = currentPhase;
       await page.locator('[data-testid="end-phase-button"]').click();
-      await page.waitForTimeout(200);
+      await page.waitForFunction(
+        (prev) => {
+          const el = document.querySelector('[data-testid="turn-phase"]');
+          return el !== null && el.textContent !== prev;
+        },
+        previousPhase
+      );
       currentPhase = await turnPhaseLocator.textContent();
     }
     
@@ -238,7 +244,6 @@ test.describe('022 - Multi-Player UI Orientation', () => {
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
     
     // Dismiss encounter card overlay if shown
-    await page.waitForTimeout(500);
     const encounterOverlay2 = page.locator('[data-testid="encounter-card-overlay"]');
     try {
       if (await encounterOverlay2.isVisible({ timeout: 2000 })) {

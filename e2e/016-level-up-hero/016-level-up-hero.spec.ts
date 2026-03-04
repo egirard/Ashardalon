@@ -537,9 +537,6 @@ test.describe('016 - Level Up Hero', () => {
       });
     });
 
-    // Wait a bit for Svelte to re-render
-    await page.waitForTimeout(1000);
-
     // Check if we're on victory screen now
     if (await victoryScreen.isVisible({ timeout: 1000 }).catch(() => false)) {
       // Game ended in victory. Verify the hero is still level 2.

@@ -113,9 +113,6 @@ test.describe('009 - Hero Attacks Monster', () => {
     // Wait for movement overlay to close
     await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
     
-    // Wait for UI to update
-    await page.waitForTimeout(100);
-    
     // STEP 6: Verify the attack button appears when adjacent to monster
     // Programmatic verification (no screenshot due to random tile/monster variation)
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
