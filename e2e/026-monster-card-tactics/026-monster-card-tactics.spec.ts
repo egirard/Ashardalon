@@ -47,9 +47,6 @@ test.describe('026 - Monster Card Tactics', () => {
       });
     });
     
-    // Wait for UI to update and capture screenshot showing snake positioned
-    await page.waitForTimeout(100);
-    
     await screenshots.capture(page, 'snake-positioned', {
       programmaticCheck: async () => {
         // Verify snake is on the board
@@ -68,14 +65,11 @@ test.describe('026 - Monster Card Tactics', () => {
       store.dispatch({ type: 'game/endExplorationPhase' });
     });
     
-    // Wait a moment for encounter card to appear (if any)
-    await page.waitForTimeout(200);
-    
     // Dismiss any encounter card that may have appeared (drawn at start of villain phase)
     const encounterDismissButton = page.locator('[data-testid="dismiss-encounter-card"]');
     if (await encounterDismissButton.isVisible({ timeout: 1000 }).catch(() => false)) {
       await encounterDismissButton.click();
-      await page.waitForTimeout(100);
+      await encounterDismissButton.waitFor({ state: 'hidden' });
     }
     
     // Now trigger monster activation
@@ -103,8 +97,6 @@ test.describe('026 - Monster Card Tactics', () => {
     expect(dx <= 1 && dy <= 1).toBe(true);
 
     // Wait for the monster attack result UI to be visible
-    await page.waitForTimeout(100);
-
     await screenshots.capture(page, 'snake-moved-and-attacked', {
       programmaticCheck: async () => {
         // Verify the attack result is displayed

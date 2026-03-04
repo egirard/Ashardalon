@@ -166,7 +166,6 @@ test.describe('039 - Ranged Attacks', () => {
         } catch (e) {
           // Continue trying
         }
-        await page.waitForTimeout(200);
       }
     }
     
