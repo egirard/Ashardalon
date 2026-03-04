@@ -17,7 +17,7 @@ test.describe('020 - Power Card Use', () => {
       programmaticCheck: async () => {
         // Verify Quinn is selected with powers
         await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
+        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('5 of 5 Powers');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
@@ -58,8 +58,12 @@ test.describe('020 - Power Card Use', () => {
         
         // Verify power cards are finalized for Quinn
         expect(storeState.heroes.heroPowerCards.quinn).toBeDefined();
-        expect(storeState.heroes.heroPowerCards.quinn.atWills).toEqual([2, 3]); // Cleric's Shield, Righteous Advance
-        expect(storeState.heroes.heroPowerCards.quinn.daily).toBe(5); // Blade Barrier
+        // atWills are the first two cards from the shuffled deck (order may vary by hero seed)
+        expect(storeState.heroes.heroPowerCards.quinn.atWills).toHaveLength(2);
+        expect(storeState.heroes.heroPowerCards.quinn.atWills).toContain(2); // Cleric's Shield
+        expect(storeState.heroes.heroPowerCards.quinn.atWills).toContain(3); // Righteous Advance
+        // Daily card is auto-selected from shuffled deck
+        expect(storeState.heroes.heroPowerCards.quinn.daily).toBeTruthy();
         
         // Verify all cards start unflipped
         const cardStates = storeState.heroes.heroPowerCards.quinn.cardStates;
@@ -91,26 +95,27 @@ test.describe('020 - Power Card Use', () => {
       expect(storeState.game.monsters.length).toBe(1);
     }).toPass();
 
-    // STEP 4: Verify power card attack panel appears when adjacent to monster
+    // STEP 4: Verify player power cards panel appears when adjacent to monster
     await screenshots.capture(page, 'attack-panel-visible', {
       programmaticCheck: async () => {
-        // Verify the power card attack panel is visible
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        // Verify the player power cards panel is visible
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify attack cards are shown (at-wills with attack bonus)
-        await expect(page.locator('[data-testid="attack-card-2"]')).toBeVisible(); // Cleric's Shield
-        await expect(page.locator('[data-testid="attack-card-3"]')).toBeVisible(); // Righteous Advance
+        await expect(page.locator('[data-testid="power-card-2"]')).toBeVisible(); // Cleric's Shield
+        await expect(page.locator('[data-testid="power-card-3"]')).toBeVisible(); // Righteous Advance
       }
     });
 
     // STEP 5: Select an at-will power card and attack
-    await page.locator('[data-testid="attack-card-2"]').click(); // Select Cleric's Shield
+    await page.locator('[data-testid="power-card-2"]').click(); // Expand Cleric's Shield
+    await page.locator('[data-testid="attack-card-expanded-2"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'atwill-card-selected', {
       programmaticCheck: async () => {
-        // Verify the card is selected and target selection appears
-        await expect(page.locator('[data-testid="attack-card-2"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
+        // Verify the card is expanded and target selection appears
+        await expect(page.locator('[data-testid="attack-card-expanded-2"]')).toBeVisible();
+        await expect(page.locator('[data-testid="attack-target-kobold-test-1"]')).toBeVisible();
       }
     });
 
@@ -225,12 +230,12 @@ test.describe('020 - Power Card Use', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         
-        // Daily card (Wrathful Thunder, ID 7) should be unflipped
-        // Note: Quinn's default daily is Blade Barrier (ID 5) which doesn't have attackBonus
-        // We need to check if there's a daily with attack - Wrathful Thunder (ID 7) has attackBonus
+        // Verify power cards are initialized for Quinn
+        expect(storeState.heroes.heroPowerCards.quinn).toBeDefined();
         const cardStates = storeState.heroes.heroPowerCards.quinn.cardStates;
-        const dailyCard = cardStates.find((s: { cardId: number }) => s.cardId === 5);
-        expect(dailyCard?.isFlipped).toBe(false);
+        expect(cardStates.length).toBeGreaterThan(0);
+        // All cards start unflipped
+        expect(cardStates.every((s: { isFlipped: boolean }) => s.isFlipped === false)).toBe(true);
       }
     });
 
@@ -241,9 +246,9 @@ test.describe('020 - Power Card Use', () => {
     await screenshots.capture(page, 'attack-panel-shows-atwills', {
       programmaticCheck: async () => {
         // Panel should show at-will cards with attack bonus
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
-        await expect(page.locator('[data-testid="attack-card-2"]')).toBeVisible();
-        await expect(page.locator('[data-testid="attack-card-3"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-2"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-3"]')).toBeVisible();
       }
     });
   });
