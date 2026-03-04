@@ -137,7 +137,7 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     });
 
     // STEP 4: Attack panel should show with Righteous Advance enabled
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
 
     await screenshots.capture(page, 'righteous-advance-in-panel', {
       programmaticCheck: async () => {
@@ -146,11 +146,11 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
         });
         
         // Verify attack panel is visible
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify Righteous Advance card is visible and enabled
-        await expect(page.locator('[data-testid="attack-card-3"]')).toBeVisible();
-        await expect(page.locator('[data-testid="attack-card-3"]')).not.toBeDisabled();
+        await expect(page.locator('[data-testid="power-card-3"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-3"]')).not.toBeDisabled();
         
         // Verify hero has Righteous Advance card available (ID: 3)
         const heroPowerCards = storeState.heroes.heroPowerCards.quinn;
@@ -159,10 +159,8 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     });
 
     // STEP 5: Player clicks Righteous Advance card to select it
-    await page.locator('[data-testid="attack-card-3"]').click();
-    
-    // Wait for target selection to appear
-    await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="power-card-3"]').click();
+    await page.locator('[data-testid="attack-card-expanded-3"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'target-selection-appears', {
       programmaticCheck: async () => {
@@ -340,8 +338,9 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     });
 
     // Attack with Righteous Advance
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
-    await page.locator('[data-testid="attack-card-3"]').click();
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="power-card-3"]').click();
+    await page.locator('[data-testid="attack-card-expanded-3"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
     
     // Seed random for attack
@@ -525,8 +524,9 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     });
 
     // Attack with Righteous Advance
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
-    await page.locator('[data-testid="attack-card-3"]').click();
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="power-card-3"]').click();
+    await page.locator('[data-testid="attack-card-expanded-3"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
     
     // Seed random for attack

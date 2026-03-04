@@ -141,7 +141,7 @@ test.describe('046 - Movement Before Attack', () => {
     // STEP 4: Attack panel should show with Charge enabled
     // With the new implementation, Charge should be enabled because monster is within movement+attack range
     // (Hero at 3,2 can move up to 5 squares + 1 attack = 6 total distance, monster at 3,4 is only 2 away)
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
 
     await screenshots.capture(page, 'charge-card-visible-in-panel', {
       programmaticCheck: async () => {
@@ -150,11 +150,11 @@ test.describe('046 - Movement Before Attack', () => {
         });
         
         // Verify attack panel is visible
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify Charge card is visible and enabled
-        await expect(page.locator('[data-testid="attack-card-12"]')).toBeVisible();
-        await expect(page.locator('[data-testid="attack-card-12"]')).not.toBeDisabled();
+        await expect(page.locator('[data-testid="power-card-12"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-12"]')).not.toBeDisabled();
         
         // Verify hero has Charge card available (ID: 12)
         const heroPowerCards = storeState.heroes.heroPowerCards.vistra;
@@ -169,7 +169,7 @@ test.describe('046 - Movement Before Attack', () => {
     });
 
     // STEP 5a: Player clicks Charge card to activate it
-    await page.locator('[data-testid="attack-card-12"]').click();
+    await page.locator('[data-testid="power-card-12"]').click();
     
     // STEP 5b: Movement UI should appear after activating Charge
     await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
@@ -396,8 +396,8 @@ test.describe('046 - Movement Before Attack', () => {
     });
 
     // Click Charge to initiate movement
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
-    await page.locator('[data-testid="attack-card-12"]').click();
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="power-card-12"]').click();
     await page.locator('[data-testid="movement-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
 
     await screenshots.capture(page, 'cancel-test-charge-initiated', {

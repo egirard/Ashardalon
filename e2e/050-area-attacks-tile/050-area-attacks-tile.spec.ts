@@ -118,27 +118,28 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       }
     });
     
-    // STEP 3: Verify power card attack panel appears and Hurled Breath is available
+    // STEP 3: Verify player power cards panel appears and Hurled Breath is available
     await screenshots.capture(page, 'attack-panel-shows-hurled-breath', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         // Hurled Breath (ID 41) should be visible as custom ability
-        await expect(page.locator('[data-testid="attack-card-41"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-41"]')).toBeVisible();
       }
     });
     
     // STEP 4: Click Hurled Breath card
     // Note: Using JavaScript click to avoid overlay issues
-    await page.locator('[data-testid="attack-card-41"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="attack-card-41"]').evaluate((el: HTMLElement) => el.click());
+    await page.locator('[data-testid="power-card-41"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="power-card-41"]').evaluate((el: HTMLElement) => el.click());
+    await page.locator('[data-testid="attack-card-expanded-41"]').waitFor({ state: 'visible' });
     
     // Wait for selection state to update
     await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'hurled-breath-selected', {
       programmaticCheck: async () => {
-        // Check if card is selected
-        const cardElement = page.locator('[data-testid="attack-card-41"]');
+        // Check if expanded card is visible
+        const cardElement = page.locator('[data-testid="attack-card-expanded-41"]');
         const classes = await cardElement.getAttribute('class');
         console.log('Card classes:', classes);
         
@@ -368,18 +369,19 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       }
     });
     
-    // STEP 3: Verify power card attack panel appears and Shock Sphere is available
+    // STEP 3: Verify player power cards panel appears and Shock Sphere is available
     await screenshots.capture(page, 'attack-panel-shows-shock-sphere', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         // Shock Sphere (ID 46) should be visible as daily
-        await expect(page.locator('[data-testid="attack-card-46"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-46"]')).toBeVisible();
       }
     });
     
     // STEP 4: Click Shock Sphere card
-    await page.locator('[data-testid="attack-card-46"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="attack-card-46"]').evaluate((el: HTMLElement) => el.click());
+    await page.locator('[data-testid="power-card-46"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="power-card-46"]').evaluate((el: HTMLElement) => el.click());
+    await page.locator('[data-testid="attack-card-expanded-46"]').waitFor({ state: 'visible' });
     
     // Wait for selection state to update
     await page.waitForTimeout(500);
@@ -638,10 +640,10 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
         expect(state.game.monsters.every((m: any) => m.tileId === 'start-tile')).toBe(true);
         
         // Verify attack panel is visible
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify that at-will and custom abilities are shown
-        const visibleCards = await page.locator('[data-testid^="attack-card-"]').count();
+        const visibleCards = await page.locator('[data-testid^="power-card-"]').count();
         expect(visibleCards).toBeGreaterThan(0);
       }
     });

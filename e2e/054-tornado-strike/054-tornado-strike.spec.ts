@@ -49,7 +49,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
       programmaticCheck: async () => {
         // Verify Tarak is selected with powers
         await expect(page.locator('[data-testid="hero-tarak-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="select-powers-tarak"]')).toContainText('Powers Selected');
+        await expect(page.locator('[data-testid="select-powers-tarak"]')).toContainText('5 of 5 Powers');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
@@ -145,11 +145,11 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
 
     await screenshots.capture(page, 'game-with-three-monsters', {
       programmaticCheck: async () => {
-        // Verify the power card attack panel is visible
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        // Verify the player power cards panel is visible
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify Tornado Strike is shown (daily #37)
-        await expect(page.locator('[data-testid="attack-card-37"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-37"]')).toBeVisible();
         
         // Verify Tornado Strike has the x4 badge indicating it attacks four times
         await expect(page.locator('[data-testid="special-badge-37"]')).toHaveText('x4');
@@ -157,12 +157,13 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     });
 
     // STEP 4: Select Tornado Strike and verify the UI shows it attacks four times
-    await page.locator('[data-testid="attack-card-37"]').click(); // Select Tornado Strike
+    await page.locator('[data-testid="power-card-37"]').click(); // Select Tornado Strike
+    await page.locator('[data-testid="attack-card-expanded-37"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'tornado-strike-selected', {
       programmaticCheck: async () => {
-        // Verify the card is selected
-        await expect(page.locator('[data-testid="attack-card-37"]')).toHaveClass(/selected/);
+        // Verify the expanded card is visible
+        await expect(page.locator('[data-testid="attack-card-expanded-37"]')).toBeVisible();
         
         // Verify target selection appears
         await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();

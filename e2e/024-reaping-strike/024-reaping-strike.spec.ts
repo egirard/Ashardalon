@@ -34,7 +34,7 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
       programmaticCheck: async () => {
         // Verify Vistra is selected with powers
         await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="select-powers-vistra"]')).toContainText('Powers Selected');
+        await expect(page.locator('[data-testid="select-powers-vistra"]')).toContainText('5 of 5 Powers');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
@@ -111,10 +111,10 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     await screenshots.capture(page, 'game-with-cultist-adjacent', {
       programmaticCheck: async () => {
         // Verify the power card attack panel is visible
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify Reaping Strike is shown (at-will #13)
-        await expect(page.locator('[data-testid="attack-card-13"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-13"]')).toBeVisible();
         
         // Verify Reaping Strike has the x2 badge indicating it attacks twice
         await expect(page.locator('[data-testid="special-badge-13"]')).toHaveText('x2');
@@ -122,12 +122,13 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     });
 
     // STEP 4: Select Reaping Strike and verify the UI shows it attacks twice
-    await page.locator('[data-testid="attack-card-13"]').click(); // Select Reaping Strike
+    await page.locator('[data-testid="power-card-13"]').click(); // Select Reaping Strike
+    await page.locator('[data-testid="attack-card-expanded-13"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'reaping-strike-selected', {
       programmaticCheck: async () => {
-        // Verify the card is selected
-        await expect(page.locator('[data-testid="attack-card-13"]')).toHaveClass(/selected/);
+        // Verify the card is selected (expanded form visible)
+        await expect(page.locator('[data-testid="attack-card-expanded-13"]')).toBeVisible();
         
         // Verify target selection appears
         await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
@@ -317,8 +318,8 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
           // Treasure card UI will be shown
           await expect(page.locator('[data-testid="treasure-card"]')).toBeVisible();
         } else {
-          // If no treasure, power card attack panel should be visible
-          await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+          // If no treasure, player power cards should be visible
+          await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         }
         
         // Verify multi-attack info is no longer displayed
@@ -385,8 +386,8 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
     await screenshots.capture(page, 'attack-panel-with-special-badges', {
       programmaticCheck: async () => {
         // Panel should show Reaping Strike with x2 badge
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
-        await expect(page.locator('[data-testid="attack-card-13"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-13"]')).toBeVisible();
         await expect(page.locator('[data-testid="special-badge-13"]')).toBeVisible();
         
         // Verify the card effect description is shown

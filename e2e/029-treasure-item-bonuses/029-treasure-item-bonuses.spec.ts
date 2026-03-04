@@ -84,8 +84,8 @@ test.describe('029 - Treasure Item Bonuses Integration', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(state.game.monsters.length).toBe(1);
-        // Power card attack panel should show attack options
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        // Player power cards should show attack options
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
       }
     });
 
@@ -93,7 +93,8 @@ test.describe('029 - Treasure Item Bonuses Integration', () => {
     // The attack bonus from the +1 Magic Sword should be applied
     // Quinn's base at-will attack (Cleric's Shield, card ID 2) is +6, with +1 Magic Sword = +7 total
     // First select the attack card
-    await page.locator('[data-testid="attack-card-2"]').click();
+    await page.locator('[data-testid="power-card-2"]').click();
+    await page.locator('[data-testid="attack-card-expanded-2"]').waitFor({ state: 'visible' });
     // Then select the target monster
     await page.locator('[data-testid="attack-target-kobold-test"]').click();
     

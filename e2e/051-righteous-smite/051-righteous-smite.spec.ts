@@ -91,7 +91,7 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     });
 
     // Wait for setup to complete and attack panel to be visible
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'setup-complete', {
       programmaticCheck: async () => {
@@ -103,7 +103,8 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
     });
 
     // STEP 3: Attack with Righteous Smite (guaranteed hit)
-    await page.locator('[data-testid="attack-card-27"]').click();
+    await page.locator('[data-testid="power-card-27"]').click();
+    await page.locator('[data-testid="attack-card-expanded-27"]').waitFor({ state: 'visible' });
 
     await page.evaluate(() => {
       (window as any).__originalRandom = Math.random;
@@ -211,7 +212,7 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
       });
     });
 
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'setup-for-miss', {
       programmaticCheck: async () => {
@@ -221,7 +222,8 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
       }
     });
 
-    await page.locator('[data-testid="attack-card-27"]').click();
+    await page.locator('[data-testid="power-card-27"]').click();
+    await page.locator('[data-testid="attack-card-expanded-27"]').waitFor({ state: 'visible' });
 
     await page.evaluate(() => {
       (window as any).__originalRandom = Math.random;
@@ -342,7 +344,7 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
       });
     });
 
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'three-heroes-setup', {
       programmaticCheck: async () => {
@@ -353,7 +355,8 @@ test.describe('051 - Righteous Smite (ID: 27)', () => {
       }
     });
 
-    await page.locator('[data-testid="attack-card-27"]').click();
+    await page.locator('[data-testid="power-card-27"]').click();
+    await page.locator('[data-testid="attack-card-expanded-27"]').waitFor({ state: 'visible' });
 
     await page.evaluate(() => {
       (window as any).__originalRandom = Math.random;
