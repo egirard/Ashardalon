@@ -169,9 +169,6 @@ test.describe('060 - Attack Cards Valid Targets', () => {
       });
     });
 
-    // Wait for update to propagate
-    await page.waitForTimeout(500);
-
     await expect(async () => {
       const storeState = await page.evaluate(() => {
         return (window as any).__REDUX_STORE__.getState();
@@ -233,9 +230,6 @@ test.describe('060 - Attack Cards Valid Targets', () => {
       });
       expect(storeState.game.monsters.length).toBe(0);
     }).toPass();
-
-    // Wait for UI to update
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, '006-monsters-removed-attacks-ineligible', {
       programmaticCheck: async () => {

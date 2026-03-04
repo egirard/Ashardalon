@@ -68,7 +68,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     });
     
     // Wait for modal to be gone
-    await page.waitForTimeout(1000);
+    await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'hidden' }).catch(() => {});
 
     // Set deterministic position for the hero
     await page.evaluate(() => {
@@ -185,9 +185,9 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     await attackTargetButton.click();
     await restoreDiceRoll(page);
     
-    // Wait longer and check if combat result appears
-    await page.waitForTimeout(2000);
-    
+    // Wait for combat result to appear
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 10000 });
+
     // Check if element exists
     const combatResultCount = await page.locator('[data-testid="combat-result"]').count();
     console.log(`Combat result count after 2s: ${combatResultCount}`);
@@ -441,9 +441,6 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
 
     // STEP 10: Confirm the hero placement
     await page.locator('[data-testid="confirm-hero-placement"]').click();
-    
-    // Give it a moment to process
-    await page.waitForTimeout(500);
     
     // Wait for placement to complete
     await expect(async () => {

@@ -109,9 +109,6 @@ test.describe('065 - Cross-Tile Adjacency', () => {
       });
     });
 
-    // Wait for tile placement
-    await page.waitForTimeout(500);
-
     await screenshots.capture(page, '003-east-tile-placed', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
@@ -144,9 +141,6 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         }]
       });
     });
-
-    // Wait for monster spawn
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, '004-monster-on-adjacent-tile', {
       programmaticCheck: async () => {
@@ -239,8 +233,6 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         }]
       });
     });
-
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, '006-monster-on-north-tile', {
       programmaticCheck: async () => {

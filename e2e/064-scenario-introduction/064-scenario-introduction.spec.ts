@@ -71,9 +71,6 @@ test.describe('064 - Scenario Introduction Modal', () => {
       const button = document.querySelector('[data-testid="rotate-to-top"]') as HTMLButtonElement;
       if (button) button.click();
     });
-    
-    // Wait for rotation animation to complete
-    await page.waitForTimeout(350);
 
     await screenshots.capture(page, 'scenario-rotated-to-top', {
       programmaticCheck: async () => {
@@ -95,9 +92,6 @@ test.describe('064 - Scenario Introduction Modal', () => {
       const button = document.querySelector('[data-testid="rotate-to-left"]') as HTMLButtonElement;
       if (button) button.click();
     });
-    
-    // Wait for rotation animation to complete
-    await page.waitForTimeout(350);
 
     await screenshots.capture(page, 'scenario-rotated-to-left', {
       programmaticCheck: async () => {
@@ -112,9 +106,6 @@ test.describe('064 - Scenario Introduction Modal', () => {
       const button = document.querySelector('[data-testid="rotate-to-bottom"]') as HTMLButtonElement;
       if (button) button.click();
     });
-    
-    // Wait for rotation animation to complete
-    await page.waitForTimeout(350);
 
     await screenshots.capture(page, 'scenario-rotated-back-to-bottom', {
       programmaticCheck: async () => {
