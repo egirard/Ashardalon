@@ -140,10 +140,13 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
       store.dispatch({ type: 'game/activateNextMonster', payload: {} });
     });
     
+    // Notification is optional; ignore timeout if neither event fires within 5 s
     await page.waitForFunction(() => {
       const s = (window as any).__REDUX_STORE__.getState();
+      // monsterExplorationEvent is set when exploration happens, OR a new monster (not
+      // the duergar-explorer itself) appears in state, signalling a spawn occurred
       return s.game.monsterExplorationEvent !== null || s.game.monsters.some((m: any) => m.instanceId !== 'duergar-explorer');
-    }, { timeout: 5000 }).catch(() => {});
+    }, { timeout: 5000 }).catch(() => { /* exploration notification is optional */ });
     
     // STEP 6: Check if monster exploration notification appeared and capture it
     const notificationVisible = await page.locator('[data-testid="monster-exploration-notification"]')
