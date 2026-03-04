@@ -95,8 +95,6 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
         payload: 1
       });
     });
-    
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'three-legion-devils-spawned', {
       programmaticCheck: async () => {
@@ -185,9 +183,6 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
         }
       });
     });
-    
-    // Give time for the Redux state to update
-    await page.waitForTimeout(500);
     
     // Now wait for defeat notification to appear (no combat result this time)
     await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible({ timeout: 3000 });
@@ -301,9 +296,6 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
       });
     });
     
-    // Give time for the Redux state to update
-    await page.waitForTimeout(500);
-    
     // Now wait for defeat notification to appear
     await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible({ timeout: 3000 });
     
@@ -398,9 +390,6 @@ test.describe('101 - Legion Devil Multi-Monster Spawn', () => {
         }
       });
     });
-    
-    // Give time for the Redux state to update
-    await page.waitForTimeout(500);
     
     // Now wait for defeat notification to appear
     await expect(page.locator('[data-testid="defeat-notification"]')).toBeVisible({ timeout: 3000 });

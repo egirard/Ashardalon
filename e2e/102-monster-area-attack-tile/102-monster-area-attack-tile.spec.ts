@@ -33,9 +33,6 @@ test.describe('102 - Monster Area Attack on All Heroes on Tile', () => {
       document.head.appendChild(style);
     });
     
-    // Wait for render to settle
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'game-started-two-heroes', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -175,7 +172,7 @@ test.describe('102 - Monster Area Attack on All Heroes on Tile', () => {
       if (hasEncounterCard) {
         await page.keyboard.press('Enter');
         encountersDismissed++;
-        await page.waitForTimeout(1500); // Longer wait for card animation and any chain effects
+        await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
       } else {
         break;
       }
@@ -183,9 +180,6 @@ test.describe('102 - Monster Area Attack on All Heroes on Tile', () => {
     
     // Ensure encounter cards are fully dismissed before taking screenshot
     await expect(page.locator('[data-testid="encounter-card"]')).not.toBeVisible({ timeout: 3000 }).catch(() => {});
-    
-    // Additional wait to ensure UI has settled
-    await page.waitForTimeout(1000);
     
     await screenshots.capture(page, 'villain-phase-ready', {
       programmaticCheck: async () => {
@@ -200,7 +194,7 @@ test.describe('102 - Monster Area Attack on All Heroes on Tile', () => {
     // STEP 5: Wait for monster auto-activation
     // NOTE: Monsters auto-activate during villain phase
     // Wait for potential combat result or monster action
-    await page.waitForTimeout(1000);
+    await page.locator('[data-testid="combat-result"], [data-testid="monster-move-dialog"]').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
     
     // Seed random for deterministic combat if needed
     // This is here for future implementation of area attacks
@@ -208,10 +202,7 @@ test.describe('102 - Monster Area Attack on All Heroes on Tile', () => {
       (window as any).__originalRandom = Math.random;
       Math.random = () => 0.75; // Produces roll of 16 on d20
     });
-    
-    // Wait briefly for monster action to complete
-    await page.waitForTimeout(500);
-    
+
     await page.evaluate(() => {
       if ((window as any).__originalRandom) {
         Math.random = (window as any).__originalRandom;

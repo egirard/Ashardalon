@@ -80,7 +80,7 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
     await page.locator('[data-testid="power-card-45"]').click();
     
     // Wait for details panel to appear
-    await page.waitForTimeout(300);
+    await page.locator('[data-testid="power-card-details-panel"]').waitFor({ state: 'visible' });
     
     // Verify Power Card Details Panel is shown
     await expect(page.locator('[data-testid="power-card-details-panel"]')).toBeVisible();
@@ -96,12 +96,9 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
     // STEP 4: Click the "Activate" button to start flaming sphere placement
     await page.locator('[data-testid="activate-flaming-sphere-button"]').click();
     
-    // Wait for square selection mode
-    await page.waitForTimeout(300);
-    
-    // Verify selectable squares appear
+    // Wait for selectable squares to appear
     const selectableSquares = page.locator('[data-testid^="selectable-square-"]');
-    await expect(selectableSquares.first()).toBeVisible();
+    await selectableSquares.first().waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'square-selection-ui', {
       programmaticCheck: async () => {
@@ -120,7 +117,6 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
 
     // STEP 5: Click a square on the map
     await selectableSquares.first().click();
-    await page.waitForTimeout(150);
 
     await screenshots.capture(page, 'square-selected', {
       programmaticCheck: async () => {
@@ -142,7 +138,7 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
     await confirmButton.click();
     
     // Wait for token to be placed
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => (window as any).__REDUX_STORE__.getState().game.boardTokens.length === 1);
     
     // Verify token was placed
     const tokensPlaced = await page.evaluate(() => {
@@ -151,9 +147,6 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
     });
     
     expect(tokensPlaced).toBe(1);
-    
-    // Wait for UI to update
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'token-placed-on-board', {
       programmaticCheck: async () => {
@@ -167,9 +160,6 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
         expect(storeState.game.boardTokens[0].ownerId).toBe('haskan');
         expect(storeState.game.boardTokens[0].charges).toBe(3);
         expect(storeState.game.boardTokens[0].canMove).toBe(true);
-        
-        // Wait for rendering
-        await page.waitForTimeout(500);
         
         // Verify token is rendered on the board
         const boardTokens = page.locator('[data-testid="board-token"]');

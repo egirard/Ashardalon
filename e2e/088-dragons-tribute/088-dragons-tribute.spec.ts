@@ -113,7 +113,8 @@ test.describe('088 - Dragon\'s Tribute Environment Card', () => {
       });
     });
     
-    await page.waitForTimeout(1000);
+    // Wait for Dragons Tribute modal to appear (if the action triggers it)
+    await page.locator('[data-testid="dragons-tribute-modal"]').waitFor({ state: 'visible', timeout: 2000 }).catch(() => {});
     
     // Check if Dragons Tribute modal appears
     const modalVisible = await page.locator('[data-testid="dragons-tribute-modal"]').isVisible().catch(() => false);
