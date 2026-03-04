@@ -46,9 +46,6 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       document.head.appendChild(style);
     });
     
-    // Wait for render to settle
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'game-started-haskan', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -132,10 +129,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     await page.locator('[data-testid="power-card-41"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="power-card-41"]').evaluate((el: HTMLElement) => el.click());
     await page.locator('[data-testid="attack-card-expanded-41"]').waitFor({ state: 'visible' });
-    
-    // Wait for selection state to update
-    await page.waitForTimeout(500);
-    
+
     await screenshots.capture(page, 'hurled-breath-selected', {
       programmaticCheck: async () => {
         // Check if expanded card is visible
@@ -289,9 +283,6 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       document.head.appendChild(style);
     });
     
-    // Wait for render to settle
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'game-started-with-shock-sphere', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -382,10 +373,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     await page.locator('[data-testid="power-card-46"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="power-card-46"]').evaluate((el: HTMLElement) => el.click());
     await page.locator('[data-testid="attack-card-expanded-46"]').waitFor({ state: 'visible' });
-    
-    // Wait for selection state to update
-    await page.waitForTimeout(500);
-    
+
     await screenshots.capture(page, 'shock-sphere-selected', {
       programmaticCheck: async () => {
         // Target selection should appear
@@ -522,9 +510,6 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
       style.textContent = '* { animation: none !important; transition: none !important; }';
       document.head.appendChild(style);
     });
-    
-    // Wait for render to settle
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'game-started-wizard', {
       programmaticCheck: async () => {

@@ -112,9 +112,6 @@ test.describe('059 - Attack Power Dashboard Expanded', () => {
     
     await chargeCard.click();
 
-    // Wait for expansion
-    await page.waitForTimeout(300);
-
     await screenshots.capture(page, '003-attack-card-expanded', {
       programmaticCheck: async () => {
         // Verify card is expanded
@@ -195,8 +192,7 @@ test.describe('059 - Attack Power Dashboard Expanded', () => {
     } else {
       // Just collapse the card by clicking it again
       await chargeCard.click();
-      await page.waitForTimeout(200);
-      
+
       await screenshots.capture(page, '005-card-collapsed', {
         programmaticCheck: async () => {
           const expandedView = page.locator('[data-testid="attack-card-expanded-12"]');

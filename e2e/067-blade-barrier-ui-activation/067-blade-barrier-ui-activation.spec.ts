@@ -74,9 +74,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     // STEP 3: Click the Blade Barrier card to show Power Card Details Panel
     await page.locator('[data-testid="power-card-5"]').click();
     
-    // Wait for details panel to appear
-    await page.waitForTimeout(300);
-    
     // Verify Power Card Details Panel is shown
     await expect(page.locator('[data-testid="power-card-details-panel"]')).toBeVisible();
 
@@ -95,9 +92,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     
     // STEP 4: Click the "Activate" button to start blade barrier selection
     await page.locator('[data-testid="activate-blade-barrier-button"]').click();
-    
-    // Wait for tile to become selectable (purple overlay appears)
-    await page.waitForTimeout(300);
     
     // Verify the start tile has the selectable-tile class
     await expect(page.locator('[data-testid="start-tile"]')).toHaveClass(/selectable-tile/);
@@ -119,9 +113,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
 
     // STEP 5: Click directly on the start tile on the map
     await page.locator('[data-testid="start-tile"]').click();
-    
-    // Wait for square selection mode to appear
-    await page.waitForTimeout(300);
     
     // Verify selectable squares appear
     const selectableSquares = page.locator('[data-testid^="selectable-square-"]');
@@ -155,7 +146,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     // Click first 5 squares
     for (let i = 0; i < Math.min(5, squareCount); i++) {
       await squares.nth(i).click();
-      await page.waitForTimeout(150); // Brief wait for UI to update
     }
 
     await screenshots.capture(page, 'five-squares-selected-on-map', {
@@ -185,9 +175,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     // Click the button - this should now work after fixing the Svelte state descriptor issue
     await confirmButton.click();
     
-    // Wait for tokens to be placed
-    await page.waitForTimeout(500);
-    
     // Verify tokens were placed
     const tokensPlaced = await page.evaluate(() => {
       const state = (window as any).__REDUX_STORE__.getState();
@@ -195,9 +182,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     });
     
     expect(tokensPlaced).toBe(5);
-    
-    // Wait for UI to update
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'tokens-placed-card-used', {
       programmaticCheck: async () => {
@@ -206,9 +190,6 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.game.boardTokens).toHaveLength(5);
-        
-        // Wait a bit for rendering
-        await page.waitForTimeout(500);
         
         // Verify tokens are rendered on the board
         const boardTokens = page.locator('[data-testid="board-token"]');
