@@ -78,8 +78,6 @@ test.describe('111 - Ancient Spirit\'s Blessing Encounter Card', () => {
       }
     });
 
-    await page.waitForTimeout(500);
-
     await screenshots.capture(page, 'no-daily-powers-to-restore', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -170,8 +168,6 @@ test.describe('111 - Ancient Spirit\'s Blessing Encounter Card', () => {
         (card as HTMLElement).style.display = 'none';
       }
     });
-
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'daily-power-restored', {
       programmaticCheck: async () => {
@@ -272,8 +268,6 @@ test.describe('111 - Ancient Spirit\'s Blessing Encounter Card', () => {
         (card as HTMLElement).style.display = 'none';
       }
     });
-
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'daily-power-restored-multi-hero', {
       programmaticCheck: async () => {

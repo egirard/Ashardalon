@@ -71,8 +71,6 @@ test.describe('108 - Quick Advance Encounter Card', () => {
       }
     });
 
-    await page.waitForTimeout(500);
-
     await screenshots.capture(page, 'card-discarded-no-effect', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -179,8 +177,6 @@ test.describe('108 - Quick Advance Encounter Card', () => {
         (card as HTMLElement).style.display = 'none';
       }
     });
-
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'monster-moved-closer', {
       programmaticCheck: async () => {
@@ -347,8 +343,6 @@ test.describe('108 - Quick Advance Encounter Card', () => {
         (modal as HTMLElement).style.display = 'none';
       }
     });
-
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'monster-selected-effect-applied', {
       programmaticCheck: async () => {

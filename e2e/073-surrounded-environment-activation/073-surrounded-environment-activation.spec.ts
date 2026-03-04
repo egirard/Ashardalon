@@ -187,9 +187,6 @@ test.describe('073 - Surrounded Environment Activation', () => {
     // The monster card shows after a delay (4 seconds for animation sequencing)
     await page.locator('[data-testid="monster-card"]').waitFor({ state: 'visible', timeout: 10000 });
     
-    // Wait a moment for animations to complete
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'surrounded-monster-card-shown', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {

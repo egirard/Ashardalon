@@ -146,9 +146,6 @@ test.describe('103 - Wandering Monsters Event Card', () => {
     // Wait for encounter card to disappear
     await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
     
-    // Wait for tile selection state to be set
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'tile-selection-prompt', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="encounter-card"]')).not.toBeVisible();
@@ -189,9 +186,6 @@ test.describe('103 - Wandering Monsters Event Card', () => {
         payload: { tileId }
       });
     }, selectedTileId);
-    
-    // Wait for monster spawn to complete
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'monster-spawned-on-selected-tile', {
       programmaticCheck: async () => {
@@ -237,9 +231,6 @@ test.describe('103 - Wandering Monsters Event Card', () => {
         type: 'game/dismissEncounterEffectMessage'
       });
     });
-    
-    // Wait for message to be dismissed
-    await page.waitForTimeout(200);
     
     await screenshots.capture(page, 'message-dismissed', {
       programmaticCheck: async () => {

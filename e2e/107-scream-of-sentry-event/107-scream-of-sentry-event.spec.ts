@@ -70,8 +70,6 @@ test.describe('107 - Scream of the Sentry Encounter Card', () => {
         (card as HTMLElement).style.display = 'none';
       }
     });
-    
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'card-discarded-no-effect', {
       programmaticCheck: async () => {
@@ -172,8 +170,6 @@ test.describe('107 - Scream of the Sentry Encounter Card', () => {
         (card as HTMLElement).style.display = 'none';
       }
     });
-    
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'effect-applied-tile-and-monster-spawned', {
       programmaticCheck: async () => {
@@ -362,8 +358,6 @@ test.describe('107 - Scream of the Sentry Encounter Card', () => {
         (modal as HTMLElement).style.display = 'none';
       }
     });
-    
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'monster-selected-effect-applied', {
       programmaticCheck: async () => {

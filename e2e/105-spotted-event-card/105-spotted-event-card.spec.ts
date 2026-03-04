@@ -104,8 +104,6 @@ test.describe('105 - Spotted! Encounter Card', () => {
       }
     });
     
-    await page.waitForTimeout(500);
-
     await screenshots.capture(page, 'spotted-effect-applied', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
