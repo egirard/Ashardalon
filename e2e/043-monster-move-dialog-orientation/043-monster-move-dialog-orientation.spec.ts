@@ -54,9 +54,6 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
       });
     });
 
-    // Wait for any animations to complete
-    await page.waitForTimeout(500);
-
     // Verify monster setup (no screenshot - too flaky due to non-deterministic visuals)
     const stateBeforeVillain = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
     expect(stateBeforeVillain.game.monsters.length).toBe(1);
@@ -71,7 +68,6 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
     });
 
     // Wait for and dismiss exploration phase notification if present
-    await page.waitForTimeout(200);
     const explorationNotification = page.locator('[data-testid="exploration-phase-notification"]');
     if (await explorationNotification.isVisible({ timeout: 1000 }).catch(() => false)) {
       // Wait for it to auto-dismiss or dismiss it programmatically
@@ -83,7 +79,6 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
     }
     
     // Wait for encounter card and dismiss if present
-    await page.waitForTimeout(200);
     const encounterDismissButton = page.locator('[data-testid="dismiss-encounter-card"]');
     if (await encounterDismissButton.isVisible({ timeout: 1000 }).catch(() => false)) {
       await encounterDismissButton.click();
@@ -98,9 +93,6 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
 
     // Wait for the monster move dialog to appear
     await page.locator('[data-testid="monster-move-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
-    
-    // Wait a bit for any animations or dynamic content to settle
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'monster-move-dialog-vistra-top', {
       programmaticCheck: async () => {

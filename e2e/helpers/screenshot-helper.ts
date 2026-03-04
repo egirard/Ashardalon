@@ -131,7 +131,6 @@ export async function dismissPendingEncounterCards(page: Page, maxDismissals = 1
     await page.evaluate(() => {
       (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissEncounterCard' });
     });
-    await page.waitForTimeout(50);
   }
 }
 
