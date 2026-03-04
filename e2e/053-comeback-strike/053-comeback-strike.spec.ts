@@ -33,7 +33,7 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     await screenshots.capture(page, 'vistra-with-comeback-strike', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="select-powers-vistra"]')).toContainText('Powers Selected');
+        await expect(page.locator('[data-testid="select-powers-vistra"]')).toContainText('5 of 5 Powers');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
@@ -96,11 +96,11 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
 
     await screenshots.capture(page, 'game-ready-with-monster', {
       programmaticCheck: async () => {
-        // Verify the power card attack panel is visible
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        // Verify the player power cards panel is visible
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         
         // Verify Comeback Strike (card 15) is available
-        await expect(page.locator('[data-testid="attack-card-15"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-15"]')).toBeVisible();
         
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -114,11 +114,12 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     });
 
     // STEP 4: Select Comeback Strike and attack (will hit)
-    await page.locator('[data-testid="attack-card-15"]').click();
+    await page.locator('[data-testid="power-card-15"]').click();
+    await page.locator('[data-testid="attack-card-expanded-15"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'comeback-strike-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="attack-card-15"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="attack-card-expanded-15"]')).toBeVisible();
         await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
       }
     });
@@ -257,8 +258,8 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
 
     await screenshots.capture(page, 'ready-for-miss-test', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
-        await expect(page.locator('[data-testid="attack-card-15"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-15"]')).toBeVisible();
         
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -275,11 +276,12 @@ test.describe('053 - Comeback Strike On-Hit Healing and Miss No-Flip', () => {
     });
 
     // STEP 4: Select Comeback Strike and miss the attack
-    await page.locator('[data-testid="attack-card-15"]').click();
+    await page.locator('[data-testid="power-card-15"]').click();
+    await page.locator('[data-testid="attack-card-expanded-15"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'comeback-strike-selected-for-miss', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="attack-card-15"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="attack-card-expanded-15"]')).toBeVisible();
         await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
       }
     });

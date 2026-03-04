@@ -194,8 +194,8 @@ test.describe('060 - Attack Cards Valid Targets', () => {
         console.log('[TEST] Monster position:', storeState.game.monsters[0].position);
         console.log('[TEST] Can attack:', storeState.game.heroTurnActions.canAttack);
         
-        // Check if PowerCardAttackPanel is visible (this is the main attack panel)
-        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        // Check if PlayerPowerCards panel is visible (this is the main attack panel)
+        const attackPanel = page.locator('[data-testid="player-power-cards"]');
         const panelVisible = await attackPanel.isVisible();
         console.log('[TEST] Attack panel visible:', panelVisible);
         
@@ -216,7 +216,7 @@ test.describe('060 - Attack Cards Valid Targets', () => {
     await screenshots.capture(page, '005-attack-panel-still-visible', {
       programmaticCheck: async () => {
         // Attack panel should still be visible with monster adjacent
-        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        const attackPanel = page.locator('[data-testid="player-power-cards"]');
         await expect(attackPanel).toBeVisible();
       }
     });
@@ -250,7 +250,7 @@ test.describe('060 - Attack Cards Valid Targets', () => {
         expect(storeState.game.monsters.length).toBe(0);
         
         // Attack panel should now be hidden (no valid targets)
-        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        const attackPanel = page.locator('[data-testid="player-power-cards"]');
         await expect(attackPanel).not.toBeVisible();
         
         console.log('[TEST] Attack panel hidden after monsters removed - Fix working!');

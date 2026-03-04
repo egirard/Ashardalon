@@ -59,7 +59,7 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     });
 
     // Wait for attack panel to be visible
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'setup-complete', {
       programmaticCheck: async () => {
@@ -70,7 +70,8 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     });
 
     // STEP 3: Attack with Cleric's Shield (guaranteed hit)
-    await page.locator('[data-testid="attack-card-2"]').click();
+    await page.locator('[data-testid="power-card-2"]').click();
+    await page.locator('[data-testid="attack-card-expanded-2"]').waitFor({ state: 'visible' });
 
     await page.evaluate(() => {
       (window as any).__originalRandom = Math.random;
@@ -151,7 +152,7 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
       });
     });
 
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'setup-for-miss', {
       programmaticCheck: async () => {
@@ -161,7 +162,8 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     });
 
     // Attack with Cleric's Shield (guaranteed miss)
-    await page.locator('[data-testid="attack-card-2"]').click();
+    await page.locator('[data-testid="power-card-2"]').click();
+    await page.locator('[data-testid="attack-card-expanded-2"]').waitFor({ state: 'visible' });
 
     await page.evaluate(() => {
       (window as any).__originalRandom = Math.random;
@@ -259,7 +261,7 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
       });
     });
 
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'initial-setup', {
       programmaticCheck: async () => {
@@ -269,7 +271,8 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     });
 
     // First use of Cleric's Shield
-    await page.locator('[data-testid="attack-card-2"]').click();
+    await page.locator('[data-testid="power-card-2"]').click();
+    await page.locator('[data-testid="attack-card-expanded-2"]').waitFor({ state: 'visible' });
     await page.evaluate(() => {
       Math.random = () => 0.85; // Hit
     });
@@ -303,7 +306,8 @@ test.describe('052 - Cleric\'s Shield (ID: 2)', () => {
     });
 
     // Second use of Cleric's Shield - bonus should reset/reapply
-    await page.locator('[data-testid="attack-card-2"]').click();
+    await page.locator('[data-testid="power-card-2"]').click();
+    await page.locator('[data-testid="attack-card-expanded-2"]').waitFor({ state: 'visible' });
     await page.evaluate(() => {
       Math.random = () => 0.85; // Hit
     });

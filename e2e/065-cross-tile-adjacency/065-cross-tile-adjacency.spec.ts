@@ -156,7 +156,7 @@ test.describe('065 - Cross-Tile Adjacency', () => {
     await screenshots.capture(page, '005-attack-panel-visible', {
       programmaticCheck: async () => {
         // The attack panel should be visible since monster is adjacent in global coords
-        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        const attackPanel = page.locator('[data-testid="player-power-cards"]');
         const panelVisible = await attackPanel.isVisible();
         
         expect(panelVisible).toBe(true);
@@ -231,7 +231,7 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         expect(storeState.game.monsters[0].tileId).toBe('test-north-tile');
         
         // Verify attack panel still visible
-        const attackPanel = page.locator('[data-testid="power-card-attack-panel"]');
+        const attackPanel = page.locator('[data-testid="player-power-cards"]');
         await expect(attackPanel).toBeVisible();
       }
     });

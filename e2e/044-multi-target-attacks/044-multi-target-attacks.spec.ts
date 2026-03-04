@@ -106,18 +106,19 @@ test.describe('044 - Multi-Target Attacks', () => {
     
     await screenshots.capture(page, 'attack-panel-available', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         // The assigned daily power should be visible
-        await expect(page.locator(`[data-testid="attack-card-${dailyPowerCardId}"]`)).toBeVisible();
+        await expect(page.locator(`[data-testid="power-card-${dailyPowerCardId}"]`)).toBeVisible();
       }
     });
     
     // STEP 4: Click the daily power card (whatever it is)
-    await page.locator(`[data-testid="attack-card-${dailyPowerCardId}"]`).click();
+    await page.locator(`[data-testid="power-card-${dailyPowerCardId}"]`).click();
+    await page.locator(`[data-testid="attack-card-expanded-${dailyPowerCardId}"]`).waitFor({ state: 'visible' });
     
     await screenshots.capture(page, 'daily-power-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator(`[data-testid="attack-card-${dailyPowerCardId}"]`)).toHaveClass(/selected/);
+        await expect(page.locator(`[data-testid="attack-card-expanded-${dailyPowerCardId}"]`)).toBeVisible();
         await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
         // Should see both monsters as available targets
         await expect(page.locator('[data-testid="attack-target-kobold-1-test"]')).toBeVisible();
@@ -343,21 +344,22 @@ test.describe('044 - Multi-Target Attacks', () => {
       }
     });
     
-    // STEP 3: Verify power card attack panel appears
+    // STEP 3: Verify player power cards panel appears
     await screenshots.capture(page, 'attack-panel-available', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
         // Hurled Breath (ID 41) should be visible as custom ability
-        await expect(page.locator('[data-testid="attack-card-41"]')).toBeVisible();
+        await expect(page.locator('[data-testid="power-card-41"]')).toBeVisible();
       }
     });
     
     // STEP 4: Click Hurled Breath card
-    await page.locator('[data-testid="attack-card-41"]').click();
+    await page.locator('[data-testid="power-card-41"]').click();
+    await page.locator('[data-testid="attack-card-expanded-41"]').waitFor({ state: 'visible' });
     
     await screenshots.capture(page, 'hurled-breath-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="attack-card-41"]')).toHaveClass(/selected/);
+        await expect(page.locator('[data-testid="attack-card-expanded-41"]')).toBeVisible();
         // For tile-based area attacks, might show tile selection or monster selection
         const hasTargetSelection = await page.locator('[data-testid="target-selection"]').isVisible();
         expect(hasTargetSelection).toBe(true);

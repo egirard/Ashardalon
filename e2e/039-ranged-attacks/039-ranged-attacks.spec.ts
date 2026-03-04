@@ -189,34 +189,37 @@ test.describe('039 - Ranged Attacks', () => {
       }
     });
     
-    // Wait for and verify power card attack panel is visible
-    await page.locator('[data-testid="power-card-attack-panel"]').waitFor({ state: 'visible', timeout: 5000 });
+    // Wait for and verify player power cards panel is visible
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
     
     await screenshots.capture(page, 'ranged-attack-panel-available', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="power-card-attack-panel"]')).toBeVisible();
-        const attackCards = await page.locator('[data-testid^="attack-card-"]').count();
+        await expect(page.locator('[data-testid="player-power-cards"]')).toBeVisible();
+        const attackCards = await page.locator('[data-testid^="power-card-"]').count();
         expect(attackCards).toBeGreaterThan(0);
       }
     });
     
     // Select Ray of Frost or Arc Lightning for ranged attack
-    const rayOfFrostCard = page.locator('[data-testid="attack-card-44"]');
-    const arcLightningCard = page.locator('[data-testid="attack-card-42"]');
+    const rayOfFrostCard = page.locator('[data-testid="power-card-44"]');
+    const arcLightningCard = page.locator('[data-testid="power-card-42"]');
     
     let cardToUse = rayOfFrostCard;
+    let expandedId = 'attack-card-expanded-44';
     let cardName = 'Ray of Frost';
     
     if (await arcLightningCard.isVisible()) {
       cardToUse = arcLightningCard;
+      expandedId = 'attack-card-expanded-42';
       cardName = 'Arc Lightning';
     }
     
     await cardToUse.click();
+    await page.locator(`[data-testid="${expandedId}"]`).waitFor({ state: 'visible' });
     
     await screenshots.capture(page, 'ranged-card-selected', {
       programmaticCheck: async () => {
-        await expect(cardToUse).toHaveClass(/selected/);
+        await expect(page.locator(`[data-testid="${expandedId}"]`)).toBeVisible();
         await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
       }
     });
