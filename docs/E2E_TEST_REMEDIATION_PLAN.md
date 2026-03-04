@@ -220,6 +220,22 @@ Each step: commit fixed test + regenerated screenshots together.
 
 ---
 
+### Phase 2 Migration Notes (2026-03-04)
+
+**Status:** Phase 2 selector migration complete.
+
+**Root cause confirmed:** The `power-card-attack-panel` selector was already absent from all spec files before this fix. The remaining broken selectors were `attack-card-list` and `button[data-testid^="attack-card-"]` (from the orphaned `PowerCardAttackPanel` component) used in tests 060 and 065.
+
+**Changes made:**
+
+- **Test 060** (`060-attack-cards-valid-targets.spec.ts`): Replaced `attack-card-list` container check and `button[data-testid^="attack-card-"]` count with `button[data-testid^="power-card-"]` count scoped to the already-referenced `attackPanel` locator.
+
+- **Test 065** (`065-cross-tile-adjacency.spec.ts`): Replaced `attack-card-list` container check and `button[data-testid^="attack-card-"]` count with `button[data-testid^="power-card-"]` count. Replaced `[data-testid^="monster-target-"]` (non-existent in live UI) with `button.power-card-mini.eligible` count, which correctly verifies that attack cards are eligible (i.e., monsters are in range).
+
+**Tests with selectors already migrated (no changes needed):** 020, 024, 029, 039, 044, 046, 048, 050, 051, 052, 053, 054, 059, 082 — these were already using the correct `player-power-cards` and `attack-card-expanded-{id}` selectors.
+
+---
+
 ### Phase 3: Replace Arbitrary `waitForTimeout` (Stability, ~4-6 hrs)
 
 Work through the 42 tests with arbitrary delays, replacing each `waitForTimeout` with a proper condition. Do this in batches of 5-10 tests per PR.

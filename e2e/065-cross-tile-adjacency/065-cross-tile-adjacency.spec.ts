@@ -82,17 +82,29 @@ test.describe('065 - Cross-Tile Adjacency', () => {
     // STEP 4: Place an east tile adjacent to the start tile
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      
-      // Place a tile to the east (col=1, row=0)
+      const state = store.getState();
+
+      // Filter out the east edge of start tile (now explored) and add east tile's edges
+      const newUnexploredEdges = state.game.dungeon.unexploredEdges.filter(
+        (e: any) => !(e.tileId === 'start-tile' && e.direction === 'east')
+      );
+
       store.dispatch({
-        type: 'game/placeTile',
+        type: 'game/addDungeonTiles',
         payload: {
-          tile: {
+          tiles: [{
             id: 'test-east-tile',
             tileType: 'black-1',
             position: { col: 1, row: 0 },
-            rotation: 0
-          }
+            rotation: 0,
+            edges: {
+              north: 'wall',
+              south: 'wall',
+              east: 'wall',
+              west: 'open', // Connects to start tile's east edge
+            }
+          }],
+          unexploredEdges: newUnexploredEdges,
         }
       });
     });
@@ -161,16 +173,13 @@ test.describe('065 - Cross-Tile Adjacency', () => {
         
         expect(panelVisible).toBe(true);
         
-        // Verify attack cards are shown
-        const attackCardList = page.locator('[data-testid="attack-card-list"]');
-        await expect(attackCardList).toBeVisible();
-        
-        const attackCards = await attackCardList.locator('button[data-testid^="attack-card-"]').count();
-        expect(attackCards).toBeGreaterThan(0);
-        
-        // Verify the monster shows up in the targetable list
-        const monsterTargets = await attackPanel.locator('[data-testid^="monster-target-"]').count();
-        expect(monsterTargets).toBeGreaterThan(0);
+        // Verify attack cards are shown (power-card-{id} buttons in PlayerPowerCards)
+        const powerCards = await attackPanel.locator('button[data-testid^="power-card-"]').count();
+        expect(powerCards).toBeGreaterThan(0);
+
+        // Verify at least one attack card is eligible (has valid targets in range)
+        const eligibleCards = await attackPanel.locator('button.power-card-mini.eligible').count();
+        expect(eligibleCards).toBeGreaterThan(0);
       }
     });
 
@@ -187,16 +196,29 @@ test.describe('065 - Cross-Tile Adjacency', () => {
     // Place a north tile
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      
+      const state = store.getState();
+
+      // Filter out the north edge of start tile (now explored) and add north tile's edges
+      const newUnexploredEdges = state.game.dungeon.unexploredEdges.filter(
+        (e: any) => !(e.tileId === 'start-tile' && e.direction === 'north')
+      );
+
       store.dispatch({
-        type: 'game/placeTile',
+        type: 'game/addDungeonTiles',
         payload: {
-          tile: {
+          tiles: [{
             id: 'test-north-tile',
             tileType: 'black-2',
             position: { col: 0, row: -1 },
-            rotation: 0
-          }
+            rotation: 0,
+            edges: {
+              north: 'wall',
+              south: 'open', // Connects to start tile's north edge
+              east: 'wall',
+              west: 'wall',
+            }
+          }],
+          unexploredEdges: newUnexploredEdges,
         }
       });
     });

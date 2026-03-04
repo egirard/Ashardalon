@@ -202,13 +202,10 @@ test.describe('060 - Attack Cards Valid Targets', () => {
         // The attack panel should now be visible since there are adjacent monsters
         expect(panelVisible).toBe(true);
         
-        // The panel should show attack cards
-        const attackCardList = page.locator('[data-testid="attack-card-list"]');
-        await expect(attackCardList).toBeVisible();
-        
-        const attackCards = await attackCardList.locator('button[data-testid^="attack-card-"]').count();
-        console.log('[TEST] Attack cards in panel:', attackCards);
-        expect(attackCards).toBeGreaterThan(0);
+        // The panel shows power cards with data-testid="power-card-{id}" in PlayerPowerCards
+        const powerCards = await attackPanel.locator('button[data-testid^="power-card-"]').count();
+        console.log('[TEST] Attack cards in panel:', powerCards);
+        expect(powerCards).toBeGreaterThan(0);
       }
     });
 
@@ -240,7 +237,7 @@ test.describe('060 - Attack Cards Valid Targets', () => {
     // Wait for UI to update
     await page.waitForTimeout(500);
 
-    await screenshots.capture(page, '006-monsters-removed-panel-hidden', {
+    await screenshots.capture(page, '006-monsters-removed-attacks-ineligible', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
@@ -249,11 +246,23 @@ test.describe('060 - Attack Cards Valid Targets', () => {
         // Verify no monsters exist
         expect(storeState.game.monsters.length).toBe(0);
         
-        // Attack panel should now be hidden (no valid targets)
+        // PlayerPowerCards panel remains visible but attack cards are now ineligible
+        // (no valid targets — panel only hides if hero has no power cards at all)
         const attackPanel = page.locator('[data-testid="player-power-cards"]');
-        await expect(attackPanel).not.toBeVisible();
+        await expect(attackPanel).toBeVisible();
+
+        // Vistra's attack cards (with attackBonus) should be ineligible — no monsters in range.
+        // Note: utility cards like Dwarven Resilience (id 11) may still be eligible.
+        const attackCardIds = [12, 13, 15]; // Charge, Reaping Strike, Comeback Strike
+        for (const cardId of attackCardIds) {
+          const card = attackPanel.locator(`[data-testid="power-card-${cardId}"]`);
+          if (await card.isVisible()) {
+            const isEligible = await card.evaluate((el) => el.classList.contains('eligible'));
+            expect(isEligible).toBe(false);
+          }
+        }
         
-        console.log('[TEST] Attack panel hidden after monsters removed - Fix working!');
+        console.log('[TEST] Attack cards ineligible after monsters removed - Fix working!');
       }
     });
   });
