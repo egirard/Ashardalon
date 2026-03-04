@@ -4179,6 +4179,7 @@
     right: 0;
     margin: 0 auto;
     width: fit-content;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.6);
   }
 
   /* Bottom edge - at bottom center */
@@ -4197,6 +4198,7 @@
     bottom: 0;
     margin: auto 0;
     height: fit-content;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.6);
   }
 
   /* Right edge - at right center */
@@ -4206,6 +4208,7 @@
     bottom: 0;
     margin: auto 0;
     height: fit-content;
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.6);
   }
   
   /* Side-by-side positioning for top/bottom edges */
