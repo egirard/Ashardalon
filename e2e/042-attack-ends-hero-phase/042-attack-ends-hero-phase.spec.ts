@@ -45,8 +45,6 @@ test.describe('042 - Attack Ends Hero Phase', () => {
       };
     });
     
-    await page.waitForTimeout(100);
-    
     await screenshots.capture(page, 'before-attack', {
       programmaticCheck: async () => {
         // Verify we're in hero phase
@@ -102,9 +100,7 @@ test.describe('042 - Attack Ends Hero Phase', () => {
       }
     });
     
-    // STEP 7: Wait a bit to ensure phase doesn't auto-advance while result is displayed
-    await page.waitForTimeout(500);
-    
+    // STEP 7: Verify phase doesn't auto-advance while result is displayed
     await screenshots.capture(page, 'still-hero-phase-after-wait', {
       programmaticCheck: async () => {
         // Verify we're STILL in hero phase after waiting
@@ -122,8 +118,6 @@ test.describe('042 - Attack Ends Hero Phase', () => {
     
     // STEP 9: Verify phase is still hero-phase (because shouldAutoEndHeroTurn requires move+attack)
     // In this test, we only have an attack action, so auto-end shouldn't trigger
-    await page.waitForTimeout(300);
-    
     const stateAfterDismiss = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState();
     });
@@ -218,9 +212,6 @@ test.describe('042 - Attack Ends Hero Phase', () => {
       store.dispatch({ type: 'game/endHeroPhase' });
     });
     
-    // Wait a moment
-    await page.waitForTimeout(200);
-    
     // Phase should still be hero-phase because our guard blocked it
     const stateAfterAttemptedEnd = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState().game.turnState.currentPhase;
@@ -232,8 +223,6 @@ test.describe('042 - Attack Ends Hero Phase', () => {
     await page.locator('[data-testid="dismiss-combat-result"]').click();
     
     // STEP 6: Verify phase is still hero-phase (attack alone doesn't complete turn)
-    await page.waitForTimeout(200);
-    
     const stateAfterDismiss = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState().game.turnState.currentPhase;
     });

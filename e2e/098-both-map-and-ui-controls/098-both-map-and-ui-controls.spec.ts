@@ -51,7 +51,7 @@ test.describe('098 - Both Map Control and UI Scale Controls', () => {
 
     // STEP 3: Activate map control mode to show map zoom controls
     await page.locator('[data-testid="corner-controls-se"] [data-testid="corner-map-button"]').click();
-    await page.waitForTimeout(500);
+    await page.locator('[data-testid="map-zoom-controls"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'map-controls-active', {
       programmaticCheck: async () => {
@@ -72,7 +72,7 @@ test.describe('098 - Both Map Control and UI Scale Controls', () => {
     // STEP 4: Use map zoom controls
     await page.locator('[data-testid="zoom-in-button"]').click();
     await page.locator('[data-testid="zoom-in-button"]').click();
-    await page.waitForTimeout(500);
+    await expect(page.locator('[data-testid="zoom-level"]')).toContainText('120%');
 
     await screenshots.capture(page, 'map-zoomed-in', {
       programmaticCheck: async () => {
@@ -83,7 +83,7 @@ test.describe('098 - Both Map Control and UI Scale Controls', () => {
 
     // STEP 5: Exit map control mode
     await page.locator('[data-testid="corner-controls-se"] [data-testid="corner-map-button"]').click();
-    await page.waitForTimeout(500);
+    await page.locator('[data-testid="map-zoom-controls"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'map-controls-closed', {
       programmaticCheck: async () => {
@@ -97,7 +97,7 @@ test.describe('098 - Both Map Control and UI Scale Controls', () => {
 
     // STEP 6: Activate UI scale controls
     await page.locator('[data-testid="corner-controls-se"] [data-testid="corner-font-scale-button"]').click();
-    await page.waitForTimeout(500);
+    await page.locator('[data-testid="font-scale-controls"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'ui-scale-controls-active', {
       programmaticCheck: async () => {
@@ -119,7 +119,7 @@ test.describe('098 - Both Map Control and UI Scale Controls', () => {
     await page.locator('[data-testid="font-scale-increase"]').click();
     await page.locator('[data-testid="font-scale-increase"]').click();
     await page.locator('[data-testid="font-scale-increase"]').click();
-    await page.waitForTimeout(800);
+    await expect(page.locator('[data-testid="font-scale-value"]')).toContainText('130%');
 
     await screenshots.capture(page, 'ui-scaled-to-130', {
       programmaticCheck: async () => {
@@ -130,7 +130,7 @@ test.describe('098 - Both Map Control and UI Scale Controls', () => {
 
     // STEP 8: Close UI scale controls
     await page.locator('[data-testid="corner-controls-se"] [data-testid="corner-font-scale-button"]').click();
-    await page.waitForTimeout(500);
+    await page.locator('[data-testid="font-scale-controls"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'both-controls-closed', {
       programmaticCheck: async () => {

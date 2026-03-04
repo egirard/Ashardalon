@@ -16,9 +16,6 @@ test.describe('045 - Poisoned Status Effect', () => {
     await page.locator('[data-testid="start-game-button"]').click();
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
     await dismissScenarioIntroduction(page);
-    
-    // Wait for initial animations to complete
-    await page.waitForTimeout(1000);
 
     // Capture initial state screenshot
     await screenshots.capture(page, 'initial-no-poison', {
