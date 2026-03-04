@@ -14,7 +14,11 @@ import {
   drawMonsterFromBottom,
   filterMonsterDeckByCategory,
   healMonster,
+  getMonsterMoveToTilePosition,
+  getScorchMarkPosition,
+  getValidTilePositions,
 } from './monsters';
+import { getTileBounds } from './movement';
 import type { MonsterDeck, MonsterState, PlacedTile } from './types';
 import { INITIAL_MONSTER_DECK, MONSTERS } from './types';
 
@@ -578,7 +582,6 @@ describe('monsters', () => {
 
   describe('getMonsterMoveToTilePosition', () => {
     it('should return scorch mark position when it is unoccupied', () => {
-      const { getMonsterMoveToTilePosition } = require('./monsters');
       const tile: PlacedTile = {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
@@ -604,7 +607,6 @@ describe('monsters', () => {
     });
 
     it('should return "occupied" when scorch mark has a monster', () => {
-      const { getMonsterMoveToTilePosition, getScorchMarkPosition } = require('./monsters');
       const tile: PlacedTile = {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
@@ -640,8 +642,6 @@ describe('monsters', () => {
     });
 
     it('should return "occupied" when scorch mark has a hero', () => {
-      const { getMonsterMoveToTilePosition, getScorchMarkPosition } = require('./monsters');
-      const { getTileBounds } = require('./movement');
       
       const tile: PlacedTile = {
         id: 'tile-1',
@@ -684,7 +684,6 @@ describe('monsters', () => {
 
   describe('getValidTilePositions', () => {
     it('should return all positions when tile is empty', () => {
-      const { getValidTilePositions } = require('./monsters');
       const tile: PlacedTile = {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
@@ -708,7 +707,6 @@ describe('monsters', () => {
     });
 
     it('should exclude positions occupied by monsters', () => {
-      const { getValidTilePositions } = require('./monsters');
       const tile: PlacedTile = {
         id: 'tile-1',
         tileType: 'tile-black-2exit-a',
@@ -749,8 +747,6 @@ describe('monsters', () => {
     });
 
     it('should exclude positions occupied by heroes', () => {
-      const { getValidTilePositions } = require('./monsters');
-      const { getTileBounds } = require('./movement');
       
       const tile: PlacedTile = {
         id: 'tile-1',
