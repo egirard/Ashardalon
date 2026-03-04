@@ -236,32 +236,46 @@ Each step: commit fixed test + regenerated screenshots together.
 
 ---
 
-### Phase 3: Replace Arbitrary `waitForTimeout` (Stability, ~4-6 hrs)
+### Phase 3: Replace Arbitrary `waitForTimeout` (Stability, ~4-6 hrs) ✅ COMPLETED
 
-Work through the 42 tests with arbitrary delays, replacing each `waitForTimeout` with a proper condition. Do this in batches of 5-10 tests per PR.
+**Status (2026-03-04):** All `waitForTimeout` calls eliminated from the E2E test suite. 0 remaining calls.
 
-**Replacement patterns:**
+**Total fixed:** 43 test files + 1 helper file (120+ individual `waitForTimeout` calls removed or replaced).
+
+**Patterns used:**
 
 ```typescript
-// Instead of waiting for an arbitrary time:
-await page.waitForTimeout(500);
+// REMOVED: Before screenshots.capture() with programmaticCheck — auto-retry handles waiting
+// Before: await page.waitForTimeout(500);
+// After:  (removed — programmaticCheck assertions retry automatically)
 
-// Wait for a specific element to appear:
-await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
+// REPLACED: Waiting for UI element to appear
+// Before: await page.waitForTimeout(500);
+// After:  await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
 
-// Or wait for a condition:
-await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase');
+// REPLACED: Waiting for UI element to disappear
+// Before: await page.waitForTimeout(500);
+// After:  await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
 
-// Or use expect.toPass for polling:
-await expect(async () => {
-  const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-  expect(state.game.turnState.currentPhase).toBe('villain-phase');
-}).toPass();
+// REPLACED: Waiting for text to update
+// Before: await page.waitForTimeout(800);
+// After:  await expect(page.locator('[data-testid="font-scale-value"]')).toContainText('130%');
+
+// REPLACED: Waiting for Redux phase transition
+// Before: await page.waitForTimeout(500);
+// After:  await page.waitForFunction(() =>
+//           (window as any).__REDUX_STORE__.getState().game.turnState.currentPhase === 'villain-phase'
+//         );
 ```
 
-**Batch 3.1** — Fix tests 050, 081, 082 (highest timeout offenders)
-**Batch 3.2** — Fix tests 096, 097, 111 (next highest)
-**Batch 3.3** — Fix remaining tests in groups of 5
+**Tests fixed (by batch):**
+
+- Batch 3.1: helpers/screenshot-helper.ts, 042, 043, 045, 097, 098
+- Batch 3.2: 081, 082, 083, 084, 085, 096
+- Batch 3.3: 050, 054, 059, 060, 064, 065, 067
+- Batch 3.4: 069, 070, 071, 087, 088, 092, 101-legion, 101-monster-move, 102
+- Batch 3.5: 073, 103, 105, 107, 108, 109, 110, 111, 112, 121
+- Batch 3.6: 009, 016, 022, 026, 039
 
 ---
 
