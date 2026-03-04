@@ -83,9 +83,11 @@ Key action types that need verification:
 
 ### Root Cause 5: Stale Screenshot Baselines (Widespread)
 
-Visual changes to the application have made many existing screenshot baselines outdated. Even test 001 (the simplest test) fails with a 71% pixel difference when run against the current UI. This means the entire baseline corpus needs to be regenerated after all logic/selector fixes are applied.
+Visual changes to the application have made many existing screenshot baselines outdated. This means the entire baseline corpus needs to be regenerated after all logic/selector fixes are applied.
 
-**Scope:** Essentially all tests with screenshot comparisons will need baseline regeneration. This is best done via the `update-screenshots.yml` workflow in filtered batches after all logic fixes are in place.
+**Update (2026-03-04):** Test 001 screenshot baselines are now current and the test passes cleanly. The earlier note about a 71% pixel difference on test 001 is no longer accurate — screenshots appear to have been regenerated. Other tests may still have stale baselines.
+
+**Scope:** Tests with logic errors or selector migrations (see Root Cause 1) will also need baseline regeneration. This is best done via the `update-screenshots.yml` workflow in filtered batches after all logic fixes are in place.
 
 ---
 
@@ -121,7 +123,7 @@ bun run test:e2e -- --grep "042" --update-snapshots
 
 ## Step-by-Step Remediation Plan
 
-### Phase 1: Validate a Known-Good Test Baseline (~15 min)
+### Phase 1: Validate a Known-Good Test Baseline (~15 min) ✅ COMPLETED
 
 Before making any changes, verify that a simple test that does NOT touch attack flows passes cleanly. This establishes a known-good baseline.
 
@@ -130,7 +132,13 @@ Before making any changes, verify that a simple test that does NOT touch attack 
 bun run test:e2e -- --grep "001"
 ```
 
-If test 001 fails, there is a deeper environmental problem to resolve first (build, server, Playwright configuration).
+**Findings (2026-03-04):**
+
+Test 001 passes cleanly in 1 attempt (~7s). All three screenshot baselines are current and match. The note in Root Cause 5 about test 001 failing with a 71% pixel difference is no longer accurate — screenshots appear to have been regenerated at some point and the baseline is now in sync with the current UI.
+
+No environmental problems found. The build, dev server, and Playwright configuration are all working correctly.
+
+**Conclusion:** Phase 1 baseline is confirmed. Proceed to Phase 2.
 
 ---
 
