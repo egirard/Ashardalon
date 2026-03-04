@@ -78,9 +78,6 @@ test.describe('092 - Trap Disable Interaction', () => {
     // Wait for trap marker to appear
     await page.locator('[data-testid="trap-marker"]').waitFor({ state: 'visible' });
     
-    // Wait a moment for any animations to complete
-    await page.waitForTimeout(100);
-    
     await screenshots.capture(page, 'trap-placed-on-hero-tile', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {

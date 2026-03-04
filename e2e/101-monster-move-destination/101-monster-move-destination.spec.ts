@@ -244,8 +244,8 @@ test.describe('101 - Monster Move Destination Choice', () => {
       store.dispatch({ type: 'game/endHeroPhase' });
     });
     
-    // Wait for any monster decision prompts or movement to complete
-    await page.waitForTimeout(1000);
+    // Wait for villain phase or monster decision prompt to appear
+    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Villain Phase', { timeout: 5000 }).catch(() => {});
     
     // STEP 5: Capture state after monster moves
     await screenshots.capture(page, '005-after-scorch-move', {

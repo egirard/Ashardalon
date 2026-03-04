@@ -91,7 +91,6 @@ test.describe('070 - Flaming Sphere Movement UI', () => {
 
     // STEP 3: Click Flaming Sphere card to open details panel with action buttons
     await page.locator('[data-testid="power-card-45"]').click();
-    await page.waitForTimeout(300);
     
     // Wait for actions panel to appear
     await page.locator('[data-testid="flaming-sphere-actions"]').waitFor({ state: 'visible', timeout: 5000 });
@@ -112,7 +111,6 @@ test.describe('070 - Flaming Sphere Movement UI', () => {
 
     // STEP 4: Click Move Sphere button
     await page.locator('[data-testid="move-flaming-sphere-button"]').click();
-    await page.waitForTimeout(300);
 
     await screenshots.capture(page, 'movement-selection-started', {
       programmaticCheck: async () => {
@@ -145,7 +143,6 @@ test.describe('070 - Flaming Sphere Movement UI', () => {
     
     await targetSquare.click();
     // Movement auto-confirms, wait for it to complete
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'token-moved', {
       programmaticCheck: async () => {

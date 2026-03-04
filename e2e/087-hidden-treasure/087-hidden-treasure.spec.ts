@@ -113,9 +113,6 @@ test.describe('087 - Hidden Treasure Encounter Card', () => {
       // Encounter card might already be hidden
     });
     
-    // Brief wait for UI to stabilize after dismissing encounters
-    await page.waitForTimeout(300);
-    
     await screenshots.capture(page, 'treasure-token-placed-on-tile', {
       programmaticCheck: async () => {
         const storeState = await page.evaluate(() => {

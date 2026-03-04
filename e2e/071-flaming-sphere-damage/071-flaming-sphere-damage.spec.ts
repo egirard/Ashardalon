@@ -120,7 +120,6 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
 
     // STEP 3: Click Flaming Sphere card to open details panel with damage button
     await page.locator('[data-testid="power-card-45"]').click();
-    await page.waitForTimeout(300);
     
     // Wait for actions panel to appear
     await page.locator('[data-testid="flaming-sphere-actions"]').waitFor({ state: 'visible', timeout: 5000 });
@@ -141,7 +140,6 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
 
     // STEP 4: Click Activate Damage button
     await page.locator('[data-testid="activate-flaming-sphere-damage-button"]').click();
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'damage-applied-charge-decremented', {
       programmaticCheck: async () => {
@@ -161,7 +159,6 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
 
     // STEP 5: Activate damage again
     await page.locator('[data-testid="activate-flaming-sphere-damage-button"]').click();
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'second-activation', {
       programmaticCheck: async () => {
@@ -181,7 +178,6 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
 
     // STEP 6: Activate damage one more time (final charge)
     await page.locator('[data-testid="activate-flaming-sphere-damage-button"]').click();
-    await page.waitForTimeout(500);
 
     await screenshots.capture(page, 'token-removed-after-final-charge', {
       programmaticCheck: async () => {
