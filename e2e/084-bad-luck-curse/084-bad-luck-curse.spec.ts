@@ -91,23 +91,17 @@ test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
       store.dispatch({ type: 'game/endVillainPhase' });
     });
     
-    await page.waitForTimeout(500);
-    
     // End hero phase
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({ type: 'game/endHeroPhase' });
     });
     
-    await page.waitForTimeout(500);
-    
     // End exploration phase - this draws the first encounter
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({ type: 'game/endExplorationPhase' });
     });
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'first-encounter-drawn-with-bad-luck-flag-set', {
       programmaticCheck: async () => {
@@ -127,7 +121,7 @@ test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
     await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'visible' });
     await page.locator('[data-testid="encounter-continue"]').click();
     
-    await page.waitForTimeout(1000);
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'visible' });
     
     await screenshots.capture(page, 'extra-encounter-drawn-from-bad-luck', {
       programmaticCheck: async () => {
@@ -156,7 +150,7 @@ test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
       // No popup
     }
     
-    await page.waitForTimeout(500);
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
     
     await screenshots.capture(page, 'extra-encounter-dismissed', {
       programmaticCheck: async () => {
@@ -177,8 +171,6 @@ test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({ type: 'game/endVillainPhase' });
     });
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'curse-removal-roll-result', {
       programmaticCheck: async () => {

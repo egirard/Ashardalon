@@ -81,8 +81,6 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
       });
     });
     
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'duergar-guard-on-tile-with-unexplored-edges', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -124,13 +122,16 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
       store.dispatch({ type: 'game/endExplorationPhase' });
     });
     
-    await page.waitForTimeout(300);
+    await page.waitForFunction(() => {
+      const s = (window as any).__REDUX_STORE__.getState();
+      return s.game.turnState.currentPhase === 'villain-phase';
+    });
     
     // Dismiss encounter card if present
     const encounterButton = page.locator('[data-testid="dismiss-encounter-card"]');
     if (await encounterButton.isVisible({ timeout: 1000 }).catch(() => false)) {
       await encounterButton.click();
-      await page.waitForTimeout(200);
+      await encounterButton.waitFor({ state: 'hidden' });
     }
     
     // Activate the Duergar Guard - this should trigger real exploration
@@ -139,7 +140,10 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
       store.dispatch({ type: 'game/activateNextMonster', payload: {} });
     });
     
-    await page.waitForTimeout(500);
+    await page.waitForFunction(() => {
+      const s = (window as any).__REDUX_STORE__.getState();
+      return s.game.monsterExplorationEvent !== null || s.game.monsters.some((m: any) => m.instanceId !== 'duergar-explorer');
+    }, { timeout: 5000 }).catch(() => {});
     
     // STEP 6: Check if monster exploration notification appeared and capture it
     const notificationVisible = await page.locator('[data-testid="monster-exploration-notification"]')
@@ -169,7 +173,7 @@ test.describe('096 - Monster-Triggered Tile Exploration', () => {
         }
       });
       
-      await page.waitForTimeout(300);
+      await page.waitForFunction(() => (window as any).__REDUX_STORE__.getState().game.monsterExplorationEvent === null);
       
       // STEP 7: Capture final state showing expanded dungeon with new tile and spawned monster
       await screenshots.capture(page, 'final-expanded-dungeon-after-exploration', {

@@ -94,8 +94,6 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
     });
     
     // Wait a moment for state to update
-    await page.waitForTimeout(500);
-    
     await screenshots.capture(page, 'bloodlust-damage-applied', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => {
@@ -142,8 +140,6 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
         payload: [monster]
       });
     });
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'monster-spawned-ready-to-attack', {
       programmaticCheck: async () => {
@@ -201,8 +197,6 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
         }
       });
     });
-    
-    await page.waitForTimeout(500);
     
     await screenshots.capture(page, 'curse-removal-notification-displayed', {
       programmaticCheck: async () => {
