@@ -19,7 +19,7 @@ test.describe('040 - Monster Card Display', () => {
     // Accept pre-selected power cards
     // Note: Power cards are pre-selected by default (utility + 2 at-wills + daily).
     // Manual selection would trigger toggle behavior, deselecting pre-selected cards.
-    await page.locator('[data-testid="done-power-selection"]').click();
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     // STEP 3: Start the game

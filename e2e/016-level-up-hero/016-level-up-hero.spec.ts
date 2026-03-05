@@ -90,7 +90,8 @@ test.describe('016 - Level Up Hero', () => {
             damage: 2,
             isCritical: true
           },
-          targetInstanceId: 'kobold-level-test'
+          targetInstanceId: 'kobold-level-test',
+          attackName: 'Quarterstaff'
         }
       });
     });
@@ -245,7 +246,8 @@ test.describe('016 - Level Up Hero', () => {
             damage: 2,
             isCritical: true
           },
-          targetInstanceId: 'kobold-no-level'
+          targetInstanceId: 'kobold-no-level',
+          attackName: 'Quarterstaff'
         }
       });
     });
@@ -340,7 +342,8 @@ test.describe('016 - Level Up Hero', () => {
             damage: 2,
             isCritical: false
           },
-          targetInstanceId: 'kobold-normal-hit'
+          targetInstanceId: 'kobold-normal-hit',
+          attackName: 'Quarterstaff'
         }
       });
     });
@@ -431,7 +434,8 @@ test.describe('016 - Level Up Hero', () => {
             damage: 2,
             isCritical: true
           },
-          targetInstanceId: 'kobold-first-level'
+          targetInstanceId: 'kobold-first-level',
+          attackName: 'Quarterstaff'
         }
       });
     });
@@ -532,7 +536,8 @@ test.describe('016 - Level Up Hero', () => {
             damage: 2,
             isCritical: true
           },
-          targetInstanceId: 'kobold-second-attempt'
+          targetInstanceId: 'kobold-second-attempt',
+          attackName: 'Quarterstaff'
         }
       });
     });

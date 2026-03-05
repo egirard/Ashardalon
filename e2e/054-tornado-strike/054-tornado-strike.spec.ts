@@ -33,16 +33,16 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
     
     // The default selection has daily 35 (Acrobatic Onslaught) selected
     // We need to select daily 37 (Tornado Strike) instead
-    // Click to expand daily 37, then click select button
-    await page.locator('[data-testid="daily-card-37"]').click();
-    await page.locator('[data-testid="expanded-card"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="select-expanded-card"]').click();
+    // Click the info button to preview card 37, then select it via the detail panel
+    await page.locator('[data-testid="daily-card-37"] .card-info-btn').click();
+    await page.locator('[data-testid="power-detail-panel"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="detail-select-button"]').click();
     
-    // Verify the Done button is enabled (selection is complete)
-    await expect(page.locator('[data-testid="done-power-selection"]')).toBeEnabled();
+    // Verify the Close button is enabled (selection is complete)
+    await expect(page.locator('[data-testid="close-power-selection"]')).toBeEnabled();
     
     // Close modal
-    await page.locator('[data-testid="done-power-selection"]').click();
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'tarak-with-tornado-strike-selected', {

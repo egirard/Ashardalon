@@ -51,9 +51,9 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
         await expect(page.locator('[data-testid="game-board"]')).toBeVisible();
         
         // Verify map control button is visible and not active
-        const mapControlButton = page.locator('[data-testid="map-control-button"]');
+        const mapControlButton = page.locator('[data-testid="corner-map-button"]');
         await expect(mapControlButton).toBeVisible();
-        await expect(mapControlButton).toContainText('Control Map');
+        await expect(mapControlButton).not.toHaveAttribute('aria-pressed', 'true');
         
         // Verify zoom controls are NOT visible initially
         await expect(page.locator('[data-testid="map-zoom-controls"]')).not.toBeVisible();
@@ -61,13 +61,13 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
     });
 
     // STEP 2: Click the map control button to enter map control mode
-    await page.locator('[data-testid="map-control-button"]').click();
+    await page.locator('[data-testid="corner-map-button"]').click();
 
     await screenshots.capture(page, 'map-control-active', {
       programmaticCheck: async () => {
         // Verify map control button shows active state
-        const mapControlButton = page.locator('[data-testid="map-control-button"]');
-        await expect(mapControlButton).toContainText('Exit Map Control');
+        const mapControlButton = page.locator('[data-testid="corner-map-button"]');
+        await expect(mapControlButton).toHaveAttribute('aria-pressed', 'true');
         
         // Verify zoom controls are now visible
         await expect(page.locator('[data-testid="map-zoom-controls"]')).toBeVisible();
@@ -106,13 +106,13 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
     });
 
     // STEP 5: Exit map control mode
-    await page.locator('[data-testid="map-control-button"]').click();
+    await page.locator('[data-testid="corner-map-button"]').click();
 
     await screenshots.capture(page, 'map-control-exited', {
       programmaticCheck: async () => {
         // Verify map control button shows inactive state
-        const mapControlButton = page.locator('[data-testid="map-control-button"]');
-        await expect(mapControlButton).toContainText('Control Map');
+        const mapControlButton = page.locator('[data-testid="corner-map-button"]');
+        await expect(mapControlButton).not.toHaveAttribute('aria-pressed', 'true');
         
         // Verify zoom controls are hidden
         await expect(page.locator('[data-testid="map-zoom-controls"]')).not.toBeVisible();
@@ -140,7 +140,7 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
     });
 
     // Enter map control mode
-    await page.locator('[data-testid="map-control-button"]').click();
+    await page.locator('[data-testid="corner-map-button"]').click();
     await expect(page.locator('[data-testid="map-zoom-controls"]')).toBeVisible();
 
     // First zoom in, then zoom out
@@ -175,7 +175,7 @@ test.describe('028 - Map Zoom and Pan Controls', () => {
     });
 
     // Enter map control mode
-    await page.locator('[data-testid="map-control-button"]').click();
+    await page.locator('[data-testid="corner-map-button"]').click();
     await expect(page.locator('[data-testid="map-zoom-controls"]')).toBeVisible();
 
     // Use slider to set zoom to 150%
