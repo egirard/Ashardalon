@@ -35,14 +35,16 @@ test.describe('042 - Attack Ends Hero Phase', () => {
     // Directly manipulate state to simulate a completed turn scenario
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      const state = store.getState();
       
-      // Manually set the heroTurnActions to simulate move+attack taken
-      state.game.heroTurnActions = {
-        actionsTaken: ['move'],
-        canMove: true,
-        canAttack: true
-      };
+      // Set heroTurnActions to simulate a move already taken (via Redux action, not direct mutation)
+      store.dispatch({
+        type: 'game/setHeroTurnActions',
+        payload: {
+          actionsTaken: ['move'],
+          canMove: true,
+          canAttack: true,
+        },
+      });
     });
     
     await screenshots.capture(page, 'before-attack', {

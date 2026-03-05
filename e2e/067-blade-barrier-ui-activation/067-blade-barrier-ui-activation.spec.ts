@@ -14,13 +14,13 @@ test.describe('067 - Blade Barrier UI Activation with On-Map Selection', () => {
     await page.locator('[data-testid="select-powers-quinn"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
     
-    // Select Blade Barrier (ID 5) as daily
-    await page.locator('[data-testid="daily-card-5"]').click();
-    await page.locator('[data-testid="expanded-card"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="select-expanded-card"]').click();
+    // Blade Barrier (ID 5) is Quinn's default daily — already selected.
+    // Preview it via the info button to confirm, then close the modal.
+    await page.locator('[data-testid="daily-card-5"] .card-info-btn').click();
+    await page.locator('[data-testid="power-detail-panel"]').waitFor({ state: 'visible' });
     
     // Close power selection modal
-    await page.locator('[data-testid="done-power-selection"]').click();
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'hero-selected-with-blade-barrier', {

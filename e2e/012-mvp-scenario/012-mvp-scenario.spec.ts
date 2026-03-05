@@ -34,21 +34,21 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
         // Verify objective display elements
         await expect(page.locator('[data-testid="objective-display"]')).toBeVisible();
         await expect(page.locator('[data-testid="objective-display"]')).toContainText('🎯 Objective:');
-        await expect(page.locator('[data-testid="objective-display"]')).toContainText('Defeat 2 monsters');
-        await expect(page.locator('[data-testid="objective-progress"]')).toContainText('0 / 2 defeated');
+        await expect(page.locator('[data-testid="objective-display"]')).toContainText('Defeat 12 monsters');
+        await expect(page.locator('[data-testid="objective-progress"]')).toContainText('0 / 12 defeated');
         
         // Verify Redux store scenario state
         const storeState = await page.evaluate(() => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.game.scenario.monstersDefeated).toBe(0);
-        expect(storeState.game.scenario.monstersToDefeat).toBe(2);
-        expect(storeState.game.scenario.objective).toBe('Defeat 2 monsters');
+        expect(storeState.game.scenario.monstersToDefeat).toBe(12);
+        expect(storeState.game.scenario.objective).toBe('Defeat 12 monsters');
       }
     });
   });
 
-  test('Victory screen appears after defeating 2 monsters', async ({ page }) => {
+  test('Victory screen appears after defeating 12 monsters', async ({ page }) => {
     const screenshots = createScreenshotHelper();
 
     // STEP 1: Start game with Quinn
@@ -67,88 +67,63 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     // Verify we're in hero phase
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
 
-    // STEP 2: Simulate defeating 2 monsters by directly setting scenario state and screen
-    // This bypasses the combat flow to test the victory screen itself
+    // STEP 2: Simulate defeating 12 monsters by directly manipulating state via Redux actions
+    // This bypasses the combat flow to test the victory screen itself.
+    // Defeat monsters 1–11 in a loop (reset heroTurnActions between each), then defeat #12 for victory.
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      const state = store.getState();
-      
-      // Manually update scenario state to simulate 2 monsters defeated
-      // and transition to victory screen
-      store.dispatch({
-        type: 'game/setMonsters',
-        payload: [
-          { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'start-tile' }
-        ]
-      });
+      const hitResult = {
+        roll: 18,
+        attackBonus: 6,
+        total: 24,
+        targetAC: 14,
+        isHit: true,
+        damage: 5,
+        isCritical: false,
+      };
+      for (let i = 0; i < 11; i++) {
+        const instanceId = `kobold-setup-${i}`;
+        store.dispatch({
+          type: 'game/setMonsters',
+          payload: [{ monsterId: 'kobold', instanceId, position: { x: 2, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'start-tile' }],
+        });
+        store.dispatch({
+          type: 'game/setHeroTurnActions',
+          payload: { actionsTaken: [], canMove: true, canAttack: true },
+        });
+        store.dispatch({
+          type: 'game/setAttackResult',
+          payload: { result: hitResult, targetInstanceId: instanceId, attackName: 'Quarterstaff' },
+        });
+      }
     });
 
-    // Defeat first monster (in hero phase, can attack)
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({
-        type: 'game/setAttackResult',
-        payload: {
-          result: {
-            roll: 18,
-            attackBonus: 6,
-            total: 24,
-            targetAC: 14,
-            isHit: true,
-            damage: 5,
-            isCritical: false
-          },
-          targetInstanceId: 'kobold-0'
-        }
-      });
-    });
-
-    // Verify 1 monster defeated
+    // Verify 11 monsters defeated
     let storeState = await page.evaluate(() => {
       return (window as any).__REDUX_STORE__.getState();
     });
-    expect(storeState.game.scenario.monstersDefeated).toBe(1);
-    
-    // Dismiss combat result if visible
-    const combatResult = page.locator('[data-testid="combat-result"]');
-    if (await combatResult.isVisible()) {
-      await page.locator('[data-testid="dismiss-combat-result"]').click();
-    }
+    expect(storeState.game.scenario.monstersDefeated).toBe(11);
 
-    // Reset hero turn actions for next attack (simulate new turn)
+    // Add and defeat the 12th monster (this should trigger victory)
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      // End the current turn cycle to reset actions
-      store.dispatch({ type: 'game/endHeroPhase' });
-      store.dispatch({ type: 'game/endExplorationPhase' });
-      store.dispatch({ type: 'game/endVillainPhase' });
-      
-      // Add second monster
       store.dispatch({
         type: 'game/setMonsters',
         payload: [
-          { monsterId: 'kobold', instanceId: 'kobold-1', position: { x: 3, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'start-tile' }
-        ]
+          { monsterId: 'kobold', instanceId: 'kobold-final', position: { x: 3, y: 2 }, currentHp: 1, controllerId: 'quinn', tileId: 'start-tile' },
+        ],
       });
-    });
-
-    // Defeat second monster (this should trigger victory)
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroTurnActions',
+        payload: { actionsTaken: [], canMove: true, canAttack: true },
+      });
       store.dispatch({
         type: 'game/setAttackResult',
         payload: {
-          result: {
-            roll: 20,
-            attackBonus: 6,
-            total: 26,
-            targetAC: 14,
-            isHit: true,
-            damage: 5,
-            isCritical: true
-          },
-          targetInstanceId: 'kobold-1'
-        }
+          result: { roll: 20, attackBonus: 6, total: 26, targetAC: 14, isHit: true, damage: 5, isCritical: true },
+          targetInstanceId: 'kobold-final',
+          attackName: 'Quarterstaff',
+        },
       });
     });
 
@@ -171,7 +146,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
           return (window as any).__REDUX_STORE__.getState();
         });
         expect(storeState.game.currentScreen).toBe('victory');
-        expect(storeState.game.scenario.monstersDefeated).toBe(2);
+        expect(storeState.game.scenario.monstersDefeated).toBe(12);
       }
     });
 
