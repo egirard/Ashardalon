@@ -328,7 +328,19 @@ After all logic fixes are in place, run the screenshot update workflow in filter
 **Batch 5.7 — Mixed passing tests from 031–041:** `031`, `032`, `034`, `037`, `038`, `041`
 - Partially passed; screenshots regenerated for passing tests ✅
 
-**Total tests with new screenshots so far: ~77 PNG files across 27 test directories**
+**Batch 5.8 — Tests 043–044, 056, 059, 061–063, 065–066:**
+- 043, 056, 059, 061, 065 passed ✅ (044 partial, 062/066 fail — logic errors)
+
+**Batch 5.9 — Tests 074–080:**
+- 074, 075, 077, 078, 079, 080 passed ✅ (076 fails — `h1` text mismatch)
+
+**Batch 5.10 — Tests 086–091:**
+- 086, 087, 088, 089, 090 passed ✅ (091 fails — message text mismatch)
+
+**Batch 5.11 — Tests 093–095:**
+- All passed ✅ — 3 tests regenerated
+
+**Total tests with new screenshots: ~98 PNG files across 36 test directories**
 
 #### Tests confirmed failing (require Phase 4 logic fixes before screenshot regeneration)
 
