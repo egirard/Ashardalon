@@ -7,6 +7,7 @@ describe('heroesSlice', () => {
     availableHeroes: AVAILABLE_HEROES,
     selectedHeroes: [],
     heroEdgeMap: {},
+    heroSidePreferences: {},
     powerCardSelections: {},
     heroPowerCards: {},
   };

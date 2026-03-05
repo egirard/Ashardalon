@@ -114,9 +114,9 @@ describe('Monster Effects', () => {
   });
 
   describe('Monster Tactic Types', () => {
-    it('kobold should use attack-only tactics', () => {
+    it('kobold should use explore-or-attack tactics', () => {
       const tactics = MONSTER_TACTICS['kobold'];
-      expect(tactics.type).toBe('attack-only');
+      expect(tactics.type).toBe('explore-or-attack');
     });
 
     it('snake and cultist should use move-and-attack tactics', () => {
