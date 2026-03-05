@@ -390,9 +390,8 @@ test.describe('024 - Reaping Strike Multi-Attack', () => {
         await expect(page.locator('[data-testid="power-card-13"]')).toBeVisible();
         await expect(page.locator('[data-testid="special-badge-13"]')).toBeVisible();
         
-        // Verify the card effect description is shown
-        await expect(page.locator('[data-testid="card-effect-13"]')).toBeVisible();
-        await expect(page.locator('[data-testid="card-effect-13"]')).toContainText('Attack twice');
+        // Verify the special badge shows the attack-twice indicator
+        await expect(page.locator('[data-testid="special-badge-13"]')).toContainText('X2');
       }
     });
   });

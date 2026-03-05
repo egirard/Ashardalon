@@ -16,7 +16,7 @@ test.describe('033 - Board Tokens', () => {
     await screenshots.capture(page, 'hero-with-powers-selected', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('Powers Selected');
+        await expect(page.locator('[data-testid="select-powers-quinn"]')).toContainText('5 of 5 Powers');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
