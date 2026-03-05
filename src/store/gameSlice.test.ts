@@ -2779,6 +2779,7 @@ describe("gameSlice", () => {
         currentScreen: "game-board",
         heroTokens: [
           { heroId: "quinn", position: { x: 2, y: 2 } },
+          // Vistra placed far from kobold at (2,3) to avoid multiple adjacent heroes triggering needs-choice
           { heroId: "vistra", position: { x: 1, y: 6 } },
         ],
         turnState: {
