@@ -130,6 +130,11 @@ test.describe('008 - Movement Triggers Exploration', () => {
     const edgeSquare = page.locator(`[data-testid="move-square"][data-position-x="${targetEdge.x}"][data-position-y="${targetEdge.y}"]`);
     await edgeSquare.click();
 
+    // Explicitly complete the move (incremental movement keeps overlay visible with remaining points)
+    await page.evaluate(() => {
+      (window as any).__REDUX_STORE__.dispatch({ type: 'game/completeMove' });
+    });
+
     // Wait for movement to complete (overlay should disappear)
     await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
 
@@ -277,6 +282,11 @@ test.describe('008 - Movement Triggers Exploration', () => {
     await expect(southEdgeSquare).toBeVisible();
     await southEdgeSquare.click();
 
+    // Explicitly complete the move (incremental movement keeps overlay visible with remaining points)
+    await page.evaluate(() => {
+      (window as any).__REDUX_STORE__.dispatch({ type: 'game/completeMove' });
+    });
+
     // Wait for movement to complete
     await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
 
@@ -356,6 +366,11 @@ test.describe('008 - Movement Triggers Exploration', () => {
     const nonEdgeSquare = page.locator(`[data-testid="move-square"][data-position-x="${targetNonEdge.x}"][data-position-y="${targetNonEdge.y}"]`);
     await expect(nonEdgeSquare).toBeVisible();
     await nonEdgeSquare.click();
+
+    // Explicitly complete the move (incremental movement keeps overlay visible with remaining points)
+    await page.evaluate(() => {
+      (window as any).__REDUX_STORE__.dispatch({ type: 'game/completeMove' });
+    });
 
     // Wait for movement to complete
     await expect(page.locator('[data-testid="movement-overlay"]')).not.toBeVisible();
