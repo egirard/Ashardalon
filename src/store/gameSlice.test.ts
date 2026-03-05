@@ -93,6 +93,8 @@ function createGameState(overrides: Partial<GameState> = {}): GameState {
     hazards: [],
     trapInstanceCounter: 0,
     hazardInstanceCounter: 0,
+    treasureTokens: [],
+    treasureTokenInstanceCounter: 0,
     boardTokens: [],
     boardTokenInstanceCounter: 0,
     showActionSurgePrompt: false,
@@ -1227,7 +1229,7 @@ describe("gameSlice", () => {
       });
       const state = gameReducer(gameInProgress, endVillainPhase());
       expect(state.turnState.currentHeroIndex).toBe(0);
-      expect(state.turnState.turnNumber).toBe(12);
+      expect(state.turnState.turnNumber).toBe(2);
     });
 
     it("should not transition if not in villain phase", () => {
@@ -1268,7 +1270,7 @@ describe("gameSlice", () => {
         initialState,
         startGame({ heroIds: ["quinn"] }),
       );
-      expect(state.dungeon.tileDeck.length).toBe(16); // 8 black + 8 white tiles
+      expect(state.dungeon.tileDeck.length).toBe(18); // 8 black + 8 white + 2 long hallway tiles
     });
 
     it("should have unexplored edges on start tile", () => {
@@ -1276,8 +1278,8 @@ describe("gameSlice", () => {
         initialState,
         startGame({ heroIds: ["quinn"] }),
       );
-      // Start tile has 6 unexplored edges: north, south, 2 east (per sub-tile), 2 west (per sub-tile)
-      expect(state.dungeon.unexploredEdges).toHaveLength(6);
+      // Start tile has 4 unexplored edges: north, south, east (per north and south sub-tile)
+      expect(state.dungeon.unexploredEdges).toHaveLength(4);
     });
 
     it("should reset dungeon state on game reset", () => {
@@ -1319,8 +1321,8 @@ describe("gameSlice", () => {
       const state = gameReducer(gameInProgress, resetGame());
       expect(state.dungeon.tiles).toHaveLength(1);
       expect(state.dungeon.tiles[0].id).toBe("start-tile");
-      // Start tile has 6 unexplored edges: north, south, 2 east (per sub-tile), 2 west (per sub-tile)
-      expect(state.dungeon.unexploredEdges).toHaveLength(6);
+      // Start tile has 4 unexplored edges: north, south, east (per north and south sub-tile)
+      expect(state.dungeon.unexploredEdges).toHaveLength(4);
       expect(state.dungeon.tileDeck).toHaveLength(0);
       expect(state.monsters).toHaveLength(0);
       expect(state.monsterInstanceCounter).toBe(0);
@@ -1572,7 +1574,9 @@ describe("gameSlice", () => {
         monsterInstanceCounter: 0,
       });
 
-      const state = gameReducer(gameInProgress, endHeroPhase());
+      const afterHeroPhase = gameReducer(gameInProgress, endHeroPhase());
+      const afterTilePlaced = gameReducer(afterHeroPhase, placeExplorationTile());
+      const state = gameReducer(afterTilePlaced, addExplorationMonster());
 
       // Monster should be on the new tile (tile-1 is the first placed after start-tile)
       expect(state.monsters[0].tileId).toBe("tile-1");
@@ -1613,11 +1617,13 @@ describe("gameSlice", () => {
         monsterInstanceCounter: 0,
       });
 
-      const state = gameReducer(gameInProgress, endHeroPhase());
+      const afterHeroPhase = gameReducer(gameInProgress, endHeroPhase());
+      const afterTilePlaced = gameReducer(afterHeroPhase, placeExplorationTile());
+      const state = gameReducer(afterTilePlaced, addExplorationMonster());
 
       // Hero explores north edge, tile placed with 0° rotation (arrow points south)
-      // Black spot is at (2, 1) - the dark circular marking on the tile
-      expect(state.monsters[0].position).toEqual({ x: 2, y: 1 });
+      // Black spot is at (1, 2) - the dark circular marking on the tile
+      expect(state.monsters[0].position).toEqual({ x: 1, y: 2 });
     });
 
     it("should place monster at adjacent position when black spot is occupied", () => {
@@ -1652,12 +1658,12 @@ describe("gameSlice", () => {
           discardPile: [],
         },
         // Pre-place a monster at the black spot position on the tile that will be created
-        // Note: The new tile will get id "tile-1", and black spot at (2, 1) with 0° rotation
+        // Note: The new tile will get id "tile-1", and black spot at (1, 2) with 0° rotation
         monsters: [
           { 
             monsterId: "cultist", 
             instanceId: "cultist-0", 
-            position: { x: 2, y: 1 }, 
+            position: { x: 1, y: 2 }, 
             currentHp: 2, 
             controllerId: "quinn", 
             tileId: "tile-1"  // This is the id the new tile will get
@@ -1666,20 +1672,22 @@ describe("gameSlice", () => {
         monsterInstanceCounter: 1,
       });
 
-      const state = gameReducer(gameInProgress, endHeroPhase());
+      const afterHeroPhase = gameReducer(gameInProgress, endHeroPhase());
+      const afterTilePlaced = gameReducer(afterHeroPhase, placeExplorationTile());
+      const state = gameReducer(afterTilePlaced, addExplorationMonster());
 
-      // Should have 12 monsters now
+      // Should have 2 monsters now (pre-existing cultist + newly spawned kobold)
       expect(state.monsters).toHaveLength(2);
       
-      // The new monster should NOT be at the black spot (2, 1) since it's occupied
+      // The new monster should NOT be at the black spot (1, 2) since it's occupied
       const newMonster = state.monsters.find(m => m.instanceId === "kobold-1");
       expect(newMonster).not.toBeUndefined();
-      expect(newMonster?.position).not.toEqual({ x: 2, y: 1 });
+      expect(newMonster?.position).not.toEqual({ x: 1, y: 2 });
       
       // It should be at an adjacent position
       if (newMonster) {
-        const dx = Math.abs(newMonster.position.x - 2);
-        const dy = Math.abs(newMonster.position.y - 1);
+        const dx = Math.abs(newMonster.position.x - 1);
+        const dy = Math.abs(newMonster.position.y - 2);
         // Adjacent means dx <= 1 and dy <= 1 but not (0, 0)
         expect(dx <= 1 && dy <= 1 && (dx > 0 || dy > 0)).toBe(true);
       }
@@ -2771,7 +2779,7 @@ describe("gameSlice", () => {
         currentScreen: "game-board",
         heroTokens: [
           { heroId: "quinn", position: { x: 2, y: 2 } },
-          { heroId: "vistra", position: { x: 3, y: 3 } },
+          { heroId: "vistra", position: { x: 1, y: 6 } },
         ],
         turnState: {
           currentHeroIndex: 0,
@@ -2795,8 +2803,8 @@ describe("gameSlice", () => {
           { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
         heroHp: [
-          { heroId: "quinn", currentHp: 1, maxHp: 8 },
-          { heroId: "vistra", currentHp: 10, maxHp: 10 },
+          { heroId: "quinn", currentHp: 1, maxHp: 8, level: 1 as const, ac: 17, surgeValue: 4, attackBonus: 6 },
+          { heroId: "vistra", currentHp: 10, maxHp: 10, level: 1 as const, ac: 18, surgeValue: 5, attackBonus: 8 },
         ],
         villainPhaseMonsterIndex: 0,
         scenario: { scenarioId: 'default', monstersDefeated: 0, monstersToDefeat: 12, objective: "Defeat 12 monsters", title: "Into the Mountain", description: "", introductionShown: false, chamberRevealed: false, villainInstanceId: null, activePersistentModifiers: [] },
@@ -2836,7 +2844,7 @@ describe("gameSlice", () => {
       }));
 
       expect(state.partyResources.xp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(12);
+      expect(state.partyResources.healingSurges).toBe(2);
     });
 
     it("should award XP when monster is defeated", () => {
@@ -3008,7 +3016,7 @@ describe("gameSlice", () => {
       const state = gameReducer(gameInProgress, resetGame());
 
       expect(state.partyResources.xp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(12);
+      expect(state.partyResources.healingSurges).toBe(2);
       expect(state.defeatedMonsterXp).toBeNull();
       expect(state.defeatedMonsterName).toBeNull();
     });
@@ -3021,7 +3029,7 @@ describe("gameSlice", () => {
         seed: 12345,
       }));
 
-      expect(state.partyResources.healingSurges).toBe(12);
+      expect(state.partyResources.healingSurges).toBe(2);
     });
 
     it("should show action surge prompt when hero at 0 HP starts turn", () => {
@@ -3103,7 +3111,7 @@ describe("gameSlice", () => {
       // No prompt shown since HP > 0
       expect(state.showActionSurgePrompt).toBe(false);
       expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(1);
-      expect(state.partyResources.healingSurges).toBe(12);
+      expect(state.partyResources.healingSurges).toBe(2);
     });
 
     it("should trigger defeat if no surges available at 0 HP", () => {
@@ -3179,7 +3187,7 @@ describe("gameSlice", () => {
       const state = gameReducer(initialState, endVillainPhase());
 
       // Surges should still be 2 until player chooses to use
-      expect(state.partyResources.healingSurges).toBe(12);
+      expect(state.partyResources.healingSurges).toBe(2);
       expect(state.showActionSurgePrompt).toBe(true);
     });
 
@@ -3418,7 +3426,8 @@ describe("gameSlice", () => {
         monsterDeck: { drawPile: ["kobold"], discardPile: [] },
       });
 
-      const state = gameReducer(initialState, endHeroPhase());
+      const afterHeroPhase = gameReducer(initialState, endHeroPhase());
+      const state = gameReducer(afterHeroPhase, placeExplorationTile());
 
       expect(state.turnState.exploredThisTurn).toBe(true);
     });
@@ -4739,7 +4748,7 @@ describe("gameSlice", () => {
 
       // HP and surges should remain unchanged
       expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(12);
+      expect(state.partyResources.healingSurges).toBe(2);
     });
 
     it("should not allow using action surge during non-hero phase", () => {
@@ -4764,7 +4773,7 @@ describe("gameSlice", () => {
 
       // HP and surges should remain unchanged
       expect(state.heroHp.find(h => h.heroId === "quinn")?.currentHp).toBe(0);
-      expect(state.partyResources.healingSurges).toBe(12);
+      expect(state.partyResources.healingSurges).toBe(2);
     });
 
     it("should clear action surge prompt on reset", () => {

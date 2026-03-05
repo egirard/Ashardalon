@@ -850,9 +850,9 @@ describe("encounters", () => {
       };
       
       // Tile-1 is at col 1, row 0: x: 4-7, y: 0-3
-      // Tile-2 is at col 3, row 2: x: 12-15, y: 12-15
+      // Tile-2 is at col 3, row 2: x: 12-15, y: 8-11
       const pos1 = { x: 4, y: 0 }; // Tile-1 at (1, 0)
-      const pos2 = { x: 12, y: 12 }; // Tile-2 at (3, 2)
+      const pos2 = { x: 12, y: 8 }; // Tile-2 at (3, 2)
       
       expect(getTileDistance(pos1, pos2, dungeon)).toBe(4); // |3-1| + |2-0| = 4
     });
