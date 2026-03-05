@@ -294,18 +294,90 @@ Key tests to audit:
 
 ---
 
-### Phase 5: Regenerate Stale Screenshots (Cleanup, ~2-3 hrs)
+### Phase 5: Regenerate Stale Screenshots (Cleanup, ~2-3 hrs) 🔄 IN PROGRESS
 
 After all logic fixes are in place, run the screenshot update workflow in filtered batches using the `--grep` option to regenerate only the tests that have changed screenshots. Do NOT run `--update-snapshots` without `--grep` unless all tests are confirmed passing.
 
-**Use the update-screenshots GitHub Actions workflow:**
+**Approach:** Running `bunx playwright test --update-snapshots --grep "<filter>"` locally in filtered batches, committing passing results after each batch.
 
-1. Navigate to Actions → Update E2E Screenshots
-2. Trigger with `grep` filter for each batch, e.g.:
-   - `"001|006|007|008"` — early tests batch
-   - `"009|010|011|012"` — hero attack tests batch
-   - etc.
-3. Review and merge screenshot updates
+**Batch processing best practices followed:**
+- Each batch uses `--grep` to avoid running the full suite
+- Only regenerate screenshots for tests that actually pass
+- Commit after each batch so progress is preserved on timeout
+
+#### Completed Batches (2026-03-05)
+
+**Batch 5.1 — Known-good simple tests:** `001`, `006`, `011`, `019`, `020`, `026`
+- All passed ✅ — 6 tests regenerated
+
+**Batch 5.2 — Phase 3 waitForTimeout fixes:** `081`, `082`, `083`, `084` (1 fail), `085`
+- 4 of 5 passed ✅ — 084 fails (Redux `hasCurse` assertion mismatch — needs Phase 4 fix)
+
+**Batch 5.3 — Phase 3 fixes continued:** `092`, `097`, `098`
+- All passed ✅ — 3 tests regenerated
+
+**Batch 5.4 — Phase 3 fixes continued:** `101` (legion-devil-spawn + monster-move), `102`, `111`, `112`
+- All passed ✅ — 4 test groups regenerated
+
+**Batch 5.5 — Higher-number tests:** `103`, `105`, `107`, `108`, `109`, `110`
+- All passed ✅ — 6 tests regenerated
+
+**Batch 5.6 — Adventure rule tests:** `113`, `114`, `115`, `116`, `117`, `118`, `119`, `120`, `121`, `122`
+- All passed ✅ — 10 tests regenerated
+
+**Batch 5.7 — Mixed passing tests from 031–041:** `031`, `032`, `034`, `037`, `038`, `041`
+- Partially passed; screenshots regenerated for passing tests ✅
+
+**Total tests with new screenshots so far: ~77 PNG files across 27 test directories**
+
+#### Tests confirmed failing (require Phase 4 logic fixes before screenshot regeneration)
+
+| Test | Failure reason |
+|---|---|
+| 007 | `[data-testid="monster-card-mini"]` not found after tile exploration |
+| 008 | `movement-overlay` still visible after move |
+| 012 | Objective shows `1 / 12 defeated` instead of `1 / 2 defeated` |
+| 016 | Redux dispatch error in `setAttackResult` |
+| 021 | Exploration chain logic failure |
+| 022 | Multi-player UI orientation failure |
+| 023 | Start tile sub-tiles adjacency assertion |
+| 024 | `[data-testid="card-effect-13"]` not visible |
+| 027 | Encounter card overlay intercepting click in final test case |
+| 028 | `[data-testid="map-control-button"]` not found |
+| 030 | Missing `dismissScenarioIntroduction` import |
+| 033 | Board tokens failure |
+| 035 | Consumable items failure |
+| 036 | `encounter-continue` / `encounter-card` wait failure |
+| 040 | `[data-testid="done-power-selection"]` not found |
+| 042 | Multi-step Redux dispatch failure |
+| 045 | `[data-testid="notification-title"]` not found |
+| 054 | Tornado Strike target selection failure |
+| 064 | Scenario introduction rotation failure |
+| 067 | `[data-testid="expanded-card"]` not found |
+| 069–071 | Flaming Sphere `power-card-45` not found |
+| 073 | Encounter card overlay timing |
+| 084 | `hasCurse` assertion mismatch |
+| 096 | New tiles count is 0 after monster move |
+
+#### Remaining tests to regenerate (confirmed passing, screenshots may be stale)
+
+Run these when resuming work:
+```bash
+# Batch: Tests 009, 013, 014, 015, 018, 025, 027 (first 3 cases)
+bunx playwright test --update-snapshots --grep "009|013|014|015|018"
+
+# Batch: Tests 029, 039, 043, 044, 046, 048, 050, 051, 052, 053
+bunx playwright test --update-snapshots --grep "043|044|046|048"
+
+# Batch: Tests 056-066
+bunx playwright test --update-snapshots --grep "056|057|058|059|060|061|062|063|065|066"
+
+# Batch: Tests 074-100
+bunx playwright test --update-snapshots --grep "074|075|076|077|078|079|080|086|087|088|089|090|091|093|094|095|099|100"
+
+# Batch: Tests 103-110
+bunx playwright test --update-snapshots --grep "103|104|106"
+```
 
 ---
 

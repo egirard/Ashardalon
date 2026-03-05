@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, setupDeterministicGame } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, setupDeterministicGame, dismissScenarioIntroduction } from '../helpers/screenshot-helper';
 
 test.describe('030 - Player Card Display', () => {
   test('player card displays all hero stats, power cards, and updates during gameplay', async ({ page }) => {
