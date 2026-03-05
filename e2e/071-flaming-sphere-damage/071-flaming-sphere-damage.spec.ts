@@ -12,7 +12,8 @@ test.describe('071 - Flaming Sphere Damage Activation', () => {
 
     await page.locator('[data-testid="select-powers-haskan"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="daily-card-45"]').click();
+    // Explicitly click the checkbox to select card 45 (Haskan's default is card 46)
+    await page.locator('[data-testid="daily-card-45"] input[type="checkbox"]').click();
     await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 

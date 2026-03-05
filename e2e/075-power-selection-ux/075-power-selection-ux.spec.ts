@@ -123,7 +123,7 @@ test.describe('075 - Power Selection UX', () => {
     await screenshots.capture(page, 'no-done-button', {
       programmaticCheck: async () => {
         // Verify Done button does not exist
-        await expect(page.locator('[data-testid="done-power-selection"]')).not.toBeVisible();
+        await expect(page.locator('[data-testid="close-power-selection"]')).not.toBeVisible();
         
         // Verify close button (X) is present in panel header
         await expect(page.locator('[data-testid="close-power-selection"]')).toBeVisible();

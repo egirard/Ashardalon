@@ -19,10 +19,10 @@ test.describe('081 - Bloodlust Curse Complete Lifecycle', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Dismiss power selection modal if it appears
-    const doneButton = page.locator('[data-testid="done-power-selection"]');
+    const closeButton = page.locator('[data-testid="close-power-selection"]');
     try {
-      await doneButton.waitFor({ state: 'visible', timeout: 2000 });
-      await doneButton.click();
+      await closeButton.waitFor({ state: 'visible', timeout: 2000 });
+      await closeButton.click();
     } catch (e) {
       // Modal might not appear
     }

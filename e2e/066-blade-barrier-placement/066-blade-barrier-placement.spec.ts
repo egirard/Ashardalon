@@ -20,7 +20,7 @@ test.describe('066 - Blade Barrier Token Placement', () => {
     await page.locator('[data-testid="select-expanded-card"]').click();
     
     // Close power selection modal
-    await page.locator('[data-testid="done-power-selection"]').click();
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
 
     await screenshots.capture(page, 'hero-selected', {

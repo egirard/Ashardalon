@@ -19,7 +19,7 @@ test.describe('079 - Time Leap Curse Mechanical Effect', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     
     // Wait for and dismiss power selection modal
-    const quinnDoneButton = page.locator('[data-testid="done-power-selection"]');
+    const quinnDoneButton = page.locator('[data-testid="close-power-selection"]');
     try {
       await quinnDoneButton.waitFor({ state: 'visible', timeout: 2000 });
       await quinnDoneButton.click();
@@ -30,7 +30,7 @@ test.describe('079 - Time Leap Curse Mechanical Effect', () => {
     // Select Vistra from bottom edge
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
     
-    const vistraDoneButton = page.locator('[data-testid="done-power-selection"]');
+    const vistraDoneButton = page.locator('[data-testid="close-power-selection"]');
     try {
       await vistraDoneButton.waitFor({ state: 'visible', timeout: 2000 });
       await vistraDoneButton.click();
