@@ -14,8 +14,9 @@ test.describe('069 - Flaming Sphere Token Placement UI', () => {
     await page.locator('[data-testid="select-powers-haskan"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'visible' });
     
-    // Select Flaming Sphere (ID 45) as daily - need to expand and select
-    await page.locator('[data-testid="daily-card-45"]').click();
+    // Select Flaming Sphere (ID 45) as daily - explicitly click the checkbox to select it
+    // (Haskan's default daily is card 46; clicking the checkbox toggles selection to card 45)
+    await page.locator('[data-testid="daily-card-45"] input[type="checkbox"]').click();
     
     // Close power selection modal
     await page.locator('[data-testid="close-power-selection"]').click();

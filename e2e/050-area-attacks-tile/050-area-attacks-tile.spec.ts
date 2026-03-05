@@ -249,7 +249,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
     await page.locator('[data-testid="select-expanded-card"]').click();
     
     // Close power selection modal
-    await page.locator('[data-testid="done-power-selection"]').click();
+    await page.locator('[data-testid="close-power-selection"]').click();
     await page.locator('[data-testid="power-card-selection"]').waitFor({ state: 'hidden' });
     
     // Start the game
