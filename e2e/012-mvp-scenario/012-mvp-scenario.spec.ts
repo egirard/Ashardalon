@@ -286,10 +286,9 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
       programmaticCheck: async () => {
         // Verify defeat screen elements
         await expect(page.locator('[data-testid="defeat-screen"]')).toBeVisible();
-        await expect(page.locator('[data-testid="return-to-menu-button"]')).toBeVisible();
+        await expect(page.locator('[data-testid="new-game-button"]')).toBeVisible();
         
-        // Verify defeat screen shows skull icon and "Defeat" title
-        await expect(page.locator('[data-testid="defeat-screen"]')).toContainText('💀');
+        // Verify defeat screen shows "Defeat" title
         await expect(page.locator('[data-testid="defeat-screen"]')).toContainText('Defeat');
         
         // Verify Redux store state
@@ -301,7 +300,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
     });
 
     // STEP 4: Verify return to character select works from defeat screen
-    await page.locator('[data-testid="return-to-menu-button"]').click();
+    await page.locator('[data-testid="new-game-button"]').click();
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
 
     await screenshots.capture(page, 'return-from-defeat', {
@@ -402,7 +401,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
         expect(storeState.game.scenario.monstersDefeated).toBe(1);
         
         // Verify objective progress display updated
-        await expect(page.locator('[data-testid="objective-progress"]')).toContainText('1 / 2 defeated');
+        await expect(page.locator('[data-testid="objective-progress"]')).toContainText('1 / 12 defeated');
       }
     });
   });

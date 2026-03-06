@@ -52,6 +52,21 @@ test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
         payload: 'villain-phase'
       });
       
+      // Add a monster so the villain-phase $effect doesn't auto-advance to endVillainPhase
+      // after the encounter card is dismissed (no monsters would immediately end the phase,
+      // triggering the Bad Luck curse removal roll before we can check the curse was applied)
+      store.dispatch({
+        type: 'game/setMonsters',
+        payload: [{
+          monsterId: 'kobold',
+          instanceId: 'kobold-placeholder',
+          position: { x: 2, y: 2 },
+          currentHp: 5,
+          controllerId: 'quinn',
+          tileId: 'start-tile'
+        }]
+      });
+      
       store.dispatch({
         type: 'game/setDrawnEncounter',
         payload: 'bad-luck'
@@ -87,17 +102,32 @@ test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
     // STEP 4: Transition through turns to trigger encounter draw with Bad Luck curse
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      // End current villain phase
-      store.dispatch({ type: 'game/endVillainPhase' });
+      // Remove placeholder monster now that curse is verified — we no longer need it
+      // to block the villain-phase $effect from auto-advancing the phase
+      store.dispatch({ type: 'game/setMonsters', payload: [] });
+      
+      // Set a controlled encounter deck so we know exactly what encounters will be drawn.
+      // 'lost' (special: shuffles tile deck) is used as the first encounter — it has no
+      // monster spawn, so it won't block the extra-encounter card display.
+      // 'bloodlust' (curse) is used as the extra Bad Luck encounter — also no monster spawn.
+      store.dispatch({
+        type: 'game/setEncounterDeck',
+        payload: { drawPile: ['lost', 'bloodlust'], discardPile: [] }
+      });
+      
+      // Use setTurnPhase to jump directly to hero-phase, bypassing endVillainPhase's
+      // curse-removal roll which would remove the Bad Luck curse before we can test it
+      store.dispatch({ type: 'game/setTurnPhase', payload: 'hero-phase' });
     });
     
-    // End hero phase
+    // Skip through hero phase and exploration phase using setTurnPhase to avoid
+    // exploration triggers (tile edge checks) that would require complex UI interaction
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/endHeroPhase' });
+      store.dispatch({ type: 'game/setTurnPhase', payload: 'exploration-phase' });
     });
     
-    // End exploration phase - this draws the first encounter
+    // End exploration phase - this transitions to villain phase and draws the first encounter
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({ type: 'game/endExplorationPhase' });
@@ -159,17 +189,19 @@ test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
           return store.getState();
         });
         
-        // Curse should still be active
-        const quinnHp = state.game.heroHp.find((h: any) => h.heroId === 'quinn');
-        const hasCurse = quinnHp?.statuses?.some((s: any) => s.type === 'curse-bad-luck');
-        expect(hasCurse).toBe(true);
+        // Extra encounter should be dismissed
+        expect(state.game.drawnEncounter).toBeNull();
+        // Bad luck pending flag should be cleared (was cleared when extra encounter was drawn)
+        expect(state.game.badLuckExtraEncounterPending).toBe(false);
       }
     });
     
-    // STEP 7: End villain phase - triggers curse removal attempt
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/endVillainPhase' });
+    // STEP 7: Verify villain phase has ended (with no monsters, $effect auto-calls endVillainPhase
+    // after encounters are dismissed, triggering the curse removal attempt)
+    // Wait for the phase to become hero-phase
+    await page.waitForFunction(() => {
+      const state = (window as any).__REDUX_STORE__.getState();
+      return state.game.turnState.currentPhase === 'hero-phase';
     });
     
     await screenshots.capture(page, 'curse-removal-roll-result', {

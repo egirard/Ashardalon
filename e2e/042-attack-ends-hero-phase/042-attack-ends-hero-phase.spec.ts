@@ -40,7 +40,7 @@ test.describe('042 - Attack Ends Hero Phase', () => {
       store.dispatch({
         type: 'game/setHeroTurnActions',
         payload: {
-          actionsTaken: ['move'],
+          actionsTaken: [],
           canMove: true,
           canAttack: true,
         },
@@ -166,17 +166,7 @@ test.describe('042 - Attack Ends Hero Phase', () => {
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       
-      // First, ensure we're in hero phase with an attack taken
-      store.dispatch({
-        type: 'game/setHeroTurnActions',
-        payload: {
-          actionsTaken: ['attack'],
-          canMove: true,
-          canAttack: false
-        }
-      });
-      
-      // Create a mock attack result
+      // Create a mock attack result (setAttackResult requires canAttack=true to proceed)
       store.dispatch({
         type: 'game/setAttackResult',
         payload: {
