@@ -50,20 +50,13 @@ test.describe('009 - Hero Attacks Monster', () => {
     await page.locator('[data-testid="dismiss-monster-card"]').click();
     await expect(page.locator('[data-testid="monster-card"]')).not.toBeVisible();
 
-    // Dismiss any encounter cards that may appear after the monster card is dismissed
-    await dismissPendingEncounterCards(page);
-
-    // STEP 4: Reset to Hero Phase programmatically to avoid encounter card interference
-    // This is needed because encounter cards during exploration/villain phase can block UI interactions
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/setCurrentPhase', payload: 'hero-phase' });
-      store.dispatch({
-        type: 'game/setHeroTurnActions',
-        payload: { canMove: true, canAttack: true, actionsTaken: [] }
-      });
-    });
-    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+    // STEP 4: Wait for the game to return to Hero Phase
+    // Exploration phase auto-advances when complete; villain phase auto-ends after processing monsters.
+    // Dismiss any encounter cards that appear during villain phase processing.
+    await expect(async () => {
+      await dismissPendingEncounterCards(page);
+      await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+    }).toPass({ timeout: 15000 });
 
     // Replace the spawned monster with a kobold for consistent screenshots
     // Keep the same position (local coords) and tileId from the spawned monster
@@ -225,7 +218,7 @@ test.describe('009 - Hero Attacks Monster', () => {
             isCritical: false
           },
           targetInstanceId: 'kobold-test',
-          attackName: 'Test Attack'
+          attackName: 'Radiant Lance'
         }
       });
     });
@@ -285,7 +278,7 @@ test.describe('009 - Hero Attacks Monster', () => {
             isCritical: true
           },
           targetInstanceId: 'dragon-test',
-          attackName: 'Test Attack'
+          attackName: 'Radiant Lance'
         }
       });
     });
@@ -334,10 +327,20 @@ test.describe('009 - Hero Attacks Monster', () => {
       return (window as any).__REDUX_STORE__.getState().game.monsters;
     });
     expect(monstersBefore.length).toBeGreaterThan(0);
-    const targetInstanceId = 'kobold-defeat-test';
-    const monsterHp = 5;
-
-    // Dispatch a hit that does enough damage to defeat the monster (game is in hero phase)
+    
+    // Get the monster's instance ID and HP
+    const targetInstanceId = monstersBefore[0].instanceId;
+    const monsterHp = monstersBefore[0].currentHp;
+    
+    // Wait for the game to return to Hero Phase
+    // Exploration phase auto-advances when complete; villain phase auto-ends after processing monsters.
+    // Dismiss any encounter cards that appear during villain phase processing.
+    await expect(async () => {
+      await dismissPendingEncounterCards(page);
+      await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+    }).toPass({ timeout: 15000 });
+    
+    // Dispatch a hit that does enough damage to defeat the monster
     await page.evaluate((data: { targetId: string, damage: number }) => {
       const store = (window as any).__REDUX_STORE__;
       store.dispatch({
@@ -353,7 +356,7 @@ test.describe('009 - Hero Attacks Monster', () => {
             isCritical: false
           },
           targetInstanceId: data.targetId,
-          attackName: 'Test Attack'
+          attackName: 'Radiant Lance'
         }
       });
     }, { targetId: targetInstanceId, damage: monsterHp + 1 });
