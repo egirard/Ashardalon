@@ -67,9 +67,9 @@ test.describe('021 - Exploration on Newly Placed Tiles', () => {
         // Verify hero token is visible
         await expect(page.locator('[data-testid="hero-token"]')).toBeVisible();
         
-        // Verify 6 unexplored edges on start tile (north, south, 2 east per sub-tile, 2 west per sub-tile)
+        // Verify 4 unexplored edges on start tile (north, south, east, west)
         const unexploredEdges = page.locator('[data-testid="unexplored-edge"]');
-        await expect(unexploredEdges).toHaveCount(6);
+        await expect(unexploredEdges).toHaveCount(4);
         
         // Verify tile deck shows initial count
         await expect(page.locator('[data-testid="tile-deck-count"]')).toHaveText(String(INITIAL_TILE_DECK_SIZE));

@@ -99,9 +99,9 @@ test.describe('007 - Explore and Place New Tile', () => {
     await page.locator('[data-testid="end-phase-button"]').click();
 
     // Wait for auto-advance to place the tile and add the monster
-    // Both dungeon-tile appearing and monster mini-card appearing confirm both steps completed
+    // dungeon-tile appearing confirms tile placement; monster-card (full modal) confirms monster spawned
     await expect(page.locator('[data-testid="dungeon-tile"]')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('[data-testid="monster-card-mini"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="monster-card"]')).toBeVisible({ timeout: 5000 });
 
     await screenshots.capture(page, 'new-tile-placed', {
       programmaticCheck: async () => {
@@ -149,8 +149,8 @@ test.describe('007 - Explore and Place New Tile', () => {
         // Tile deck count should show the count after exploration
         await expect(page.locator('[data-testid="tile-deck-count"]')).toHaveText(String(TILE_DECK_SIZE_AFTER_EXPLORATION));
         
-        // Monster mini-card should be visible in the player area
-        await expect(page.locator('[data-testid="monster-card-mini"]')).toBeVisible();
+        // Monster card modal should be visible (full card shown when monster first spawns)
+        await expect(page.locator('[data-testid="monster-card"]')).toBeVisible();
       }
     });
   });

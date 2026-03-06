@@ -228,9 +228,17 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
     await page.locator('[data-testid="hero-quinn-bottom"]').click();
     await selectDefaultPowerCards(page, 'quinn');
     
-    // Select Vistra
+    // Select Vistra - power cards are auto-selected when hero is chosen
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
-    await selectDefaultPowerCards(page, 'vistra');
+    // When 2 heroes are on the same edge, the power select button is hidden;
+    // configure Vistra's power cards programmatically since they are auto-selected
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'heroes/selectUtilityCard', payload: { heroId: 'vistra', cardId: 18 } });
+      store.dispatch({ type: 'heroes/toggleAtWillCard', payload: { heroId: 'vistra', cardId: 12 } });
+      store.dispatch({ type: 'heroes/toggleAtWillCard', payload: { heroId: 'vistra', cardId: 13 } });
+      store.dispatch({ type: 'heroes/selectDailyCard', payload: { heroId: 'vistra', cardId: 15 } });
+    });
     
     // CRITICAL: Set deterministic seed before starting game
     await setupDeterministicGame(page);
