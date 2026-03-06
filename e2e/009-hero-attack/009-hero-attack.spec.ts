@@ -101,7 +101,7 @@ test.describe('009 - Hero Attacks Monster', () => {
       const START_TILE_WIDTH = 4;
       const START_TILE_HEIGHT = 8;
       
-      let minX: number, minY: number;
+      let minX = 0, minY = 0;
       const { col, row } = tile.position;
       
       if (tile.tileType === 'start') {
