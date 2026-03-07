@@ -26,14 +26,16 @@ Complete gameplay flow demonstrating the attack feature:
 **Note**: This test uses programmatic verification without screenshots because the tile type and monster spawned vary between runs due to the random deck draws.
 
 ### Test 2: Hero misses attack against monster
-1. Player starts game with Quinn
-2. An attack that misses (total < AC) is dispatched
-3. Combat result shows MISS
-4. No damage is displayed for misses
+
+Dispatches a miss via Redux (roll 3 + bonus 6 = total 9 < AC 14) and verifies the MISS result.
+
+![Miss combat result](009-hero-attack.spec.ts-snapshots/000-miss-combat-result-chromium-linux.png)
 
 ### Test 3: Critical hit on natural 20
-1. A natural 20 always hits regardless of AC
-2. Critical hit is specially displayed
+
+Dispatches a natural 20 hit and verifies the CRITICAL HIT result.
+
+![Critical hit combat result](009-hero-attack.spec.ts-snapshots/000-critical-hit-combat-result-chromium-linux.png)
 
 ### Test 4: Monster is defeated when HP reaches 0
 1. Monster spawns via exploration
