@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame, dismissPendingEncounterCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame, dismissPendingEncounterCards } from '../helpers/screenshot-helper';
 
 test.describe('009 - Hero Attacks Monster', () => {
   test('Hero attacks adjacent monster and sees result', async ({ page }) => {
@@ -189,6 +189,7 @@ test.describe('009 - Hero Attacks Monster', () => {
   });
 
   test('Hero misses attack against monster', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
     // Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
@@ -226,19 +227,16 @@ test.describe('009 - Hero Attacks Monster', () => {
     // Wait for combat result to appear
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
 
-    // Verify combat result display (no screenshot for miss to avoid flakiness)
-    await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
-    
-    // Verify dice roll information
-    await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('3');
-    await expect(page.locator('[data-testid="attack-total"]')).toHaveText('9');
-    await expect(page.locator('[data-testid="target-ac"]')).toHaveText('14');
-    
-    // Verify miss result
-    await expect(page.locator('[data-testid="result-text"]')).toContainText('MISS');
-    
-    // Damage info should NOT be visible for miss
-    await expect(page.locator('[data-testid="damage-info"]')).not.toBeVisible();
+    await screenshots.capture(page, 'miss-combat-result', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="combat-result"]')).toBeVisible();
+        await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('3');
+        await expect(page.locator('[data-testid="attack-total"]')).toHaveText('9');
+        await expect(page.locator('[data-testid="target-ac"]')).toHaveText('14');
+        await expect(page.locator('[data-testid="result-text"]')).toContainText('MISS');
+        await expect(page.locator('[data-testid="damage-info"]')).not.toBeVisible();
+      }
+    });
     
     // Verify Redux store state
     const storeState = await page.evaluate(() => {
@@ -249,6 +247,7 @@ test.describe('009 - Hero Attacks Monster', () => {
   });
 
   test('Critical hit on natural 20', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
     // Start game with Quinn
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
@@ -286,10 +285,13 @@ test.describe('009 - Hero Attacks Monster', () => {
     // Wait for combat result to appear
     await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible' });
 
-    // Verify critical hit display
-    await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('20');
-    await expect(page.locator('[data-testid="result-text"]')).toContainText('CRITICAL');
-    await expect(page.locator('[data-testid="damage-info"]')).toBeVisible();
+    await screenshots.capture(page, 'critical-hit-combat-result', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="dice-roll"]')).toHaveText('20');
+        await expect(page.locator('[data-testid="result-text"]')).toContainText('CRITICAL');
+        await expect(page.locator('[data-testid="damage-info"]')).toBeVisible();
+      }
+    });
   });
 
   test('Monster is defeated when HP reaches 0', async ({ page }) => {
