@@ -2,7 +2,7 @@
   import type { HeroPowerCards, PowerCard } from '../store/powerCards';
   import { getPowerCardById } from '../store/powerCards';
   import { XIcon, TargetIcon } from './icons';
-  import type { GameState } from '../store/gameSlice';
+  import type { GameState, MultiAttackState } from '../store/gameSlice';
   import type { MonsterState, Position } from '../store/types';
   import { MONSTERS } from '../store/types';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
@@ -98,6 +98,15 @@
      * Should only be provided for the active hero.
      */
     onExpandedCardChange?: (cardId: number | null) => void;
+    /**
+     * Multi-attack state (if a multi-attack sequence is in progress).
+     * When set, keeps the attack card expanded and shows progress info.
+     */
+    multiAttackState?: MultiAttackState | null;
+    /**
+     * Callback to cancel the current multi-attack sequence.
+     */
+    onCancelMultiAttack?: () => void;
   }
 
   let { 
@@ -123,6 +132,8 @@
     onAttemptCageEscape,
     isCurrentHeroCaged = false,
     onExpandedCardChange,
+    multiAttackState = null,
+    onCancelMultiAttack,
   }: Props = $props();
 
   // State for expanded attack card
@@ -181,6 +192,15 @@
     
     // Auto-select the Flaming Sphere card
     selectedCardForDetailsPanel = flamingSphereCard;
+  });
+
+  // Auto-expand the attack card when a multi-attack sequence is in progress
+  $effect(() => {
+    if (!multiAttackState) return;
+    // Keep the multi-attack card expanded so the player can select subsequent targets
+    if (expandedAttackCardId !== multiAttackState.cardId) {
+      expandedAttackCardId = multiAttackState.cardId;
+    }
   });
 
   // Get power cards for display with highlight state
@@ -560,6 +580,13 @@
               {card.rule}
             </div>
             
+            <!-- Multi-attack progress indicator -->
+            {#if multiAttackState && multiAttackState.cardId === card.id}
+              <div class="multi-attack-info" data-testid="multi-attack-info">
+                <span>Attack {multiAttackState.attacksCompleted + 1} of {multiAttackState.totalAttacks}</span>
+              </div>
+            {/if}
+            
             <!-- Monster selection -->
             {#if targetableMonsters.length > 0}
               <div class="monster-selection">
@@ -579,6 +606,15 @@
                       <span class="monster-hp">HP: {monster.hp}</span>
                     </button>
                   {/each}
+                  {#if multiAttackState && multiAttackState.cardId === card.id && onCancelMultiAttack}
+                    <button
+                      class="cancel-multi-attack-btn"
+                      onclick={onCancelMultiAttack}
+                      data-testid="cancel-multi-attack"
+                    >
+                      Cancel Remaining Attacks
+                    </button>
+                  {/if}
                 </div>
               </div>
             {:else}
@@ -1058,6 +1094,34 @@
     color: #999;
     font-size: 0.55rem;
     font-style: italic;
+  }
+
+  .multi-attack-info {
+    padding: 0.3rem 0.4rem;
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.4);
+    border-radius: 3px;
+    font-size: 0.55rem;
+    color: #ffa500;
+    text-align: center;
+    margin-bottom: 0.3rem;
+  }
+
+  .cancel-multi-attack-btn {
+    width: 100%;
+    padding: 0.3rem;
+    margin-top: 0.3rem;
+    background: rgba(255, 80, 80, 0.15);
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    border-radius: 3px;
+    font-size: 0.5rem;
+    color: #ff6347;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .cancel-multi-attack-btn:hover {
+    background: rgba(255, 80, 80, 0.3);
   }
 
   /* Pulse animation for eligible cards */
