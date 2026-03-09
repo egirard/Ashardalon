@@ -444,7 +444,7 @@ test.describe('054 - Tornado Strike Multi-Target Attack', () => {
       });
       // Hero placement should be cleared
       expect(storeState.game.pendingHeroPlacement).toBeNull();
-    }).toPass();
+    }).toPass({ timeout: 10000 });
 
     await screenshots.capture(page, 'after-hero-placement-complete', {
       programmaticCheck: async () => {

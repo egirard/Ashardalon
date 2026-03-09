@@ -30,7 +30,8 @@
 
   function handleConfirm() {
     if (selectedSquare) {
-      onSelect(selectedSquare);
+      // Convert Svelte 5 reactive proxy to plain object to avoid immer incompatibility
+      onSelect({ x: selectedSquare.x, y: selectedSquare.y });
     }
   }
 

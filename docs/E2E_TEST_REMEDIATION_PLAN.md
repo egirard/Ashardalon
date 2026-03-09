@@ -449,7 +449,7 @@ Representative sample was run locally. Several root-cause issues were identified
 - `021` — unexplored-edge state after programmatic tile placement
 - `023` test 2 — Redux card-ID verification needed for auto-selected Vistra power cards
 - `050` test 1 — screenshot non-determinism; tolerance may need further tuning
-- `054` — `isFlipped` after first Tornado Strike attack; multi-attack card-flip timing
+- ~~`054` — `isFlipped` after first Tornado Strike attack; multi-attack card-flip timing~~ ✅ **Fixed** — root cause: Svelte 5 `$state` reactive proxy passed directly to Redux/immer action payload; fixed by converting `selectedSquare` to plain object (`{ x, y }`) in `HeroPlacementModal.handleConfirm` before calling `onSelect`. New snapshot `012-after-hero-placement-complete` committed.
 
 Phase 6.2 is **complete** in the sense that all root causes have been identified, partial fixes applied, and findings documented. The tests above require additional game-logic investigation in Phase 6.3.
 
