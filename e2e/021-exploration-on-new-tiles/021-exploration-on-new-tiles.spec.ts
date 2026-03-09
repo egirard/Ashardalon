@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, dismissScenarioIntroduction, dismissVillainPhaseBlockers } from '../helpers/screenshot-helper';
 
 // Test constants for better readability
 const INITIAL_TILE_DECK_SIZE = 18;
@@ -39,6 +39,7 @@ test.describe('021 - Exploration on Newly Placed Tiles', () => {
     }, FIXED_SEED);
     
     await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
 
     // Set deterministic starting position for Quinn at the north edge
     const startPosition = { x: 2, y: 0 };
@@ -87,6 +88,12 @@ test.describe('021 - Exploration on Newly Placed Tiles', () => {
     await page.locator('[data-testid="end-phase-button"]').click();
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
 
+    // Wait for the exploration auto-advance timer to place the tile (~1s delay)
+    await expect(async () => {
+      const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(s.game.dungeon.tiles).toHaveLength(2);
+    }).toPass({ timeout: 5000 });
+
     await screenshots.capture(page, 'first-exploration-triggered', {
       programmaticCheck: async () => {
         // Verify we're in exploration phase
@@ -125,18 +132,13 @@ test.describe('021 - Exploration on Newly Placed Tiles', () => {
       }
     });
 
-    // STEP 3: Complete the turn cycle programmatically (exploration -> villain -> back to hero phase)
-    // Use programmatic dispatch to avoid UI blocking issues from monster cards/encounter cards
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/dismissMonsterCard' });
-      store.dispatch({ type: 'game/endExplorationPhase' });
-      store.dispatch({ type: 'game/dismissEncounterCard' });
-      store.dispatch({ type: 'game/endVillainPhase' });
-    });
-    
-    // Wait for hero phase
-    await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+    // STEP 3: Complete the turn cycle (exploration -> villain -> back to hero phase)
+    // The dismissVillainPhaseBlockers helper dismisses the monster spawn card so exploration
+    // can auto-complete, then dismisses any villain phase blockers until Hero Phase.
+    await expect(async () => {
+      await dismissVillainPhaseBlockers(page);
+      await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
+    }).toPass({ timeout: 20000 });
 
     // STEP 4: Move hero to the NEW tile's north edge to test exploration on a newly placed tile
     // The new tile is at (col: 0, row: -1), so its bounds are x: 0-3, y: -4 to -1
@@ -187,6 +189,12 @@ test.describe('021 - Exploration on Newly Placed Tiles', () => {
     // STEP 5: End hero phase to trigger SECOND exploration from the new tile's edge
     await page.locator('[data-testid="end-phase-button"]').click();
     await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Exploration Phase');
+
+    // Wait for the exploration auto-advance timer to place the second tile (~1s delay)
+    await expect(async () => {
+      const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(s.game.dungeon.tiles).toHaveLength(3);
+    }).toPass({ timeout: 5000 });
 
     await screenshots.capture(page, 'second-exploration-triggered', {
       programmaticCheck: async () => {

@@ -135,6 +135,50 @@ export async function dismissPendingEncounterCards(page: Page, maxDismissals = 1
 }
 
 /**
+ * Dismisses all blockers that prevent phases from auto-advancing.
+ * This includes encounter cards, monster attack results, monster move actions,
+ * and monster spawn cards (from exploration).
+ * Use this when waiting for the full turn cycle to complete back to Hero Phase.
+ *
+ * @param page - The Playwright page object
+ * @param maxDismissals - Safety limit on total dismissals (default 30)
+ */
+export async function dismissVillainPhaseBlockers(page: Page, maxDismissals = 30): Promise<void> {
+  for (let i = 0; i < maxDismissals; i++) {
+    const state = await page.evaluate(() => {
+      const s = (window as any).__REDUX_STORE__.getState();
+      return {
+        hasEncounter: s.game.drawnEncounter !== null,
+        hasMonsterAttack: s.game.monsterAttackResult !== null,
+        hasMonsterMove: s.game.monsterMoveActionId !== null,
+        hasMonsterSpawn: s.game.recentlySpawnedMonsterId !== null,
+      };
+    });
+    if (!state.hasEncounter && !state.hasMonsterAttack && !state.hasMonsterMove && !state.hasMonsterSpawn) break;
+    if (state.hasEncounter) {
+      await page.evaluate(() => {
+        (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissEncounterCard' });
+      });
+    }
+    if (state.hasMonsterAttack) {
+      await page.evaluate(() => {
+        (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterAttackResult' });
+      });
+    }
+    if (state.hasMonsterMove) {
+      await page.evaluate(() => {
+        (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterMoveAction' });
+      });
+    }
+    if (state.hasMonsterSpawn) {
+      await page.evaluate(() => {
+        (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterCard' });
+      });
+    }
+  }
+}
+
+/**
  * Default power card selections for each hero class.
  * These are used to quickly select power cards in tests that need to start the game.
  */
