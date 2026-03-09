@@ -137,7 +137,8 @@ export async function dismissPendingEncounterCards(page: Page, maxDismissals = 1
 /**
  * Dismisses all blockers that prevent phases from auto-advancing.
  * This includes encounter cards, monster attack results, monster move actions,
- * and monster spawn cards (from exploration).
+ * monster spawn cards (from exploration), and monster exploration events
+ * (triggered when a monster moves to an unexplored edge during villain phase).
  * Use this when waiting for the full turn cycle to complete back to Hero Phase.
  *
  * @param page - The Playwright page object
@@ -152,9 +153,10 @@ export async function dismissVillainPhaseBlockers(page: Page, maxDismissals = 30
         hasMonsterAttack: s.game.monsterAttackResult !== null,
         hasMonsterMove: s.game.monsterMoveActionId !== null,
         hasMonsterSpawn: s.game.recentlySpawnedMonsterId !== null,
+        hasMonsterExploration: s.game.monsterExplorationEvent !== null,
       };
     });
-    if (!state.hasEncounter && !state.hasMonsterAttack && !state.hasMonsterMove && !state.hasMonsterSpawn) break;
+    if (!state.hasEncounter && !state.hasMonsterAttack && !state.hasMonsterMove && !state.hasMonsterSpawn && !state.hasMonsterExploration) break;
     if (state.hasEncounter) {
       await page.evaluate(() => {
         (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissEncounterCard' });
@@ -173,6 +175,11 @@ export async function dismissVillainPhaseBlockers(page: Page, maxDismissals = 30
     if (state.hasMonsterSpawn) {
       await page.evaluate(() => {
         (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterCard' });
+      });
+    }
+    if (state.hasMonsterExploration) {
+      await page.evaluate(() => {
+        (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterExplorationEvent' });
       });
     }
   }

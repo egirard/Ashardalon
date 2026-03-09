@@ -77,7 +77,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 90;
+    z-index: 110;
     cursor: pointer;
   }
   

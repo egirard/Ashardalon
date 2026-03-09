@@ -139,6 +139,7 @@
   import DragonsTributeTreasureChoice from "./DragonsTributeTreasureChoice.svelte";
   import ThiefDiscardChoice from "./ThiefDiscardChoice.svelte";
   import MonsterChoiceModal from "./MonsterChoiceModal.svelte";
+  import HeroPlacementModal from "./HeroPlacementModal.svelte";
   import MonsterDecisionPrompt from "./MonsterDecisionPrompt.svelte";
   import PlayerCard from "./PlayerCard.svelte";
   import LogViewer from "./LogViewer.svelte";
@@ -3224,26 +3225,7 @@
           {/if}
         {/if}
 
-        <!-- Hero Placement Overlay (for cards like Tornado Strike) -->
-        {#if pendingHeroPlacement && validPlacementSquares.length > 0}
-          {@const placementTile = dungeon.tiles.find(t => t.id === pendingHeroPlacement.tileId)}
-          {#if placementTile}
-            {@const placementTilePos = getTilePixelPosition(placementTile, mapBounds)}
-            {@const placementTileDims = getTileDimensions(placementTile)}
-            <div
-              class="placement-overlay-container"
-              style="left: {placementTilePos.x}px; top: {placementTilePos.y}px; width: {placementTileDims.width}px; height: {placementTileDims.height}px;"
-            >
-              <MovementOverlay
-                validMoveSquares={validPlacementSquares}
-                tileOffsetX={TOKEN_OFFSET_X}
-                tileOffsetY={TOKEN_OFFSET_Y}
-                cellSize={TILE_CELL_SIZE}
-                onSquareClick={handleHeroPlacementSelect}
-              />
-            </div>
-          {/if}
-        {/if}
+        <!-- (Hero Placement Modal is rendered outside the dungeon map to avoid CSS transform issues) -->
 
         <!-- Blade Barrier Square Selection Overlay -->
         {#if pendingBladeBarrier && pendingBladeBarrier.step === 'square-selection' && pendingBladeBarrier.selectedTileId}
@@ -3791,6 +3773,8 @@
             onAttemptCageEscape={isHeroActive ? handleAttemptCageEscape : undefined}
             isCurrentHeroCaged={isHeroActive && turnState.currentPhase === "hero-phase" ? isCurrentHeroCaged() : false}
             onExpandedCardChange={isHeroActive ? (id) => { activeExpandedAttackCardId = id; } : undefined}
+            multiAttackState={isHeroActive ? multiAttackState : null}
+            onCancelMultiAttack={isHeroActive ? handleCancelMultiAttack : undefined}
           />
         </div>
       </div>
@@ -3817,6 +3801,22 @@
       monsterId={viewingMonsterId}
       onDismiss={handleDismissViewedMonster}
     />
+  {/if}
+
+  <!-- Hero Placement Modal (for cards like Tornado Strike - placed outside dungeon map to avoid CSS transform issues) -->
+  {#if pendingHeroPlacement && validPlacementSquares.length > 0}
+    {@const heroToken = heroTokens.find(t => t.heroId === pendingHeroPlacement.heroId)}
+    {#if heroToken}
+      <HeroPlacementModal
+        cardId={pendingHeroPlacement.cardId}
+        heroId={pendingHeroPlacement.heroId}
+        tileId={pendingHeroPlacement.tileId}
+        currentPosition={heroToken.position}
+        {dungeon}
+        onSelect={handleHeroPlacementSelect}
+        onCancel={handleCancelHeroPlacement}
+      />
+    {/if}
   {/if}
 
   <!-- Trap Disable Result Display (shown after trap disable attempt) -->
