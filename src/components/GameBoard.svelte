@@ -317,6 +317,10 @@
   let showScorchMarks: boolean = $state(false);
   let encounterCancelCost: number = $state(5);
   let pendingPowerCardFlips: Array<{ powerCardId: number; heroId: string }> = $state([]);
+  // Guard to prevent re-entrant processing of pendingPowerCardFlips inside the Redux subscriber.
+  // Without this, dispatch(usePowerCard) inside the subscriber triggers another subscriber call,
+  // which would loop infinitely because clearPendingPowerCardFlips hasn't run yet.
+  let processingPowerCardFlips = false;
 
   // Timer for auto-advancing exploration phase steps
   let explorationAutoAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -492,12 +496,19 @@
       logEntries = state.game.logEntries;
       showScorchMarks = state.ui.showScorchMarks;
       encounterCancelCost = state.game.encounterCancelCost;
-      // Process pending power card flips from event hooks
-      if (state.game.pendingPowerCardFlips.length > 0) {
-        for (const { powerCardId, heroId } of state.game.pendingPowerCardFlips) {
-          store.dispatch(usePowerCard({ heroId, cardId: powerCardId }));
+      // Process pending power card flips from event hooks.
+      // Guard prevents re-entrant processing: dispatch(usePowerCard) inside this block
+      // triggers another subscriber call before clearPendingPowerCardFlips runs.
+      if (!processingPowerCardFlips && state.game.pendingPowerCardFlips.length > 0) {
+        processingPowerCardFlips = true;
+        try {
+          for (const { powerCardId, heroId } of state.game.pendingPowerCardFlips) {
+            store.dispatch(usePowerCard({ heroId, cardId: powerCardId }));
+          }
+          store.dispatch(clearPendingPowerCardFlips());
+        } finally {
+          processingPowerCardFlips = false;
         }
-        store.dispatch(clearPendingPowerCardFlips());
       }
       
       // Force Svelte to process pending updates

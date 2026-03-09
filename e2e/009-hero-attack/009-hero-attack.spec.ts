@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame, dismissPendingEncounterCards } from '../helpers/screenshot-helper';
+import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntroduction, setupDeterministicGame, dismissPendingEncounterCards, dismissVillainPhaseBlockers } from '../helpers/screenshot-helper';
 
 test.describe('009 - Hero Attacks Monster', () => {
   test('Hero attacks adjacent monster and sees result', async ({ page }) => {
@@ -52,9 +52,9 @@ test.describe('009 - Hero Attacks Monster', () => {
 
     // STEP 4: Wait for the game to return to Hero Phase
     // Exploration phase auto-advances when complete; villain phase auto-ends after processing monsters.
-    // Dismiss any encounter cards that appear during villain phase processing.
+    // Dismiss any encounter cards or monster attack/move results during villain phase processing.
     await expect(async () => {
-      await dismissPendingEncounterCards(page);
+      await dismissVillainPhaseBlockers(page);
       await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
     }).toPass({ timeout: 15000 });
 
@@ -336,9 +336,9 @@ test.describe('009 - Hero Attacks Monster', () => {
     
     // Wait for the game to return to Hero Phase
     // Exploration phase auto-advances when complete; villain phase auto-ends after processing monsters.
-    // Dismiss any encounter cards that appear during villain phase processing.
+    // Dismiss any encounter cards or monster attack/move results during villain phase processing.
     await expect(async () => {
-      await dismissPendingEncounterCards(page);
+      await dismissVillainPhaseBlockers(page);
       await expect(page.locator('[data-testid="turn-phase"]')).toContainText('Hero Phase');
     }).toPass({ timeout: 15000 });
     
