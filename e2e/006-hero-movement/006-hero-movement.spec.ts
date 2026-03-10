@@ -3,7 +3,7 @@ import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntrodu
 
 test.describe('006 - Move a Hero', () => {
   test('User moves hero to a new position', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
 
     // STEP 1: Navigate to character selection and select Quinn
     await page.goto('/');

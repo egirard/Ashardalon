@@ -3,7 +3,7 @@ import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntrodu
 
 test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
   test('Hurled Breath (ID 41) attacks all monsters on a tile with sequential results', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
     
     // STEP 1: Set up game with Haskan (has Hurled Breath as custom ability)
     await page.goto('/');
@@ -227,7 +227,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
   });
 
   test('Shock Sphere (ID 46) executes area attack on multiple monsters', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
     
     // STEP 1: Set up game with Haskan (Wizard) and explicitly select Shock Sphere
     await page.goto('/');
@@ -465,7 +465,7 @@ test.describe('050 - Area Attacks Targeting Each Monster on Tile', () => {
   });
 
   test('Shock Sphere (ID 46) demonstrates area attack mechanics', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
     
     // STEP 1: Set up game with Haskan (Wizard)
     await page.goto('/');

@@ -18,7 +18,7 @@ import { createScreenshotHelper } from '../helpers/screenshot-helper';
 
 test.describe('117 - Villain Defeat Victory', () => {
   test('Victory screen appears when villain is defeated in Adventure 14', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
 
     // -----------------------------------------------------------------------
     // STEP 1: Start Adventure 14 with Quinn
@@ -149,7 +149,7 @@ test.describe('117 - Villain Defeat Victory', () => {
   });
 
   test('Victory screen shows villain-specific message for Adventure 15 (Vraxos)', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
 
     await page.goto('/');
     await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });

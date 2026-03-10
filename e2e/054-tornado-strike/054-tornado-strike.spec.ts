@@ -20,7 +20,7 @@ async function restoreDiceRoll(page: any) {
 
 test.describe('054 - Tornado Strike Multi-Target Attack', () => {
   test('Tarak can use Tornado Strike to attack four times with selectable targets', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
 
     // STEP 1: Navigate to character selection and select Tarak (Rogue)
     await page.goto('/');

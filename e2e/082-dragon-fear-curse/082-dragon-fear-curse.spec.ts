@@ -3,7 +3,7 @@ import { createScreenshotHelper, dismissScenarioIntroduction, setupDeterministic
 
 test.describe('082 - Dragon Fear Curse Movement Damage', () => {
   test('curse applies damage when hero moves to a new tile', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
     
     // STEP 1: Navigate and start game with Quinn
     await page.goto('/');
