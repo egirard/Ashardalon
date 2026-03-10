@@ -666,6 +666,10 @@
     // is still reviewing the attack result
     if (attackResult !== null) return;
     
+    // Don't auto-end if there's a pending move-after-attack (e.g. Righteous Advance)
+    // The player must complete or skip the movement before the turn can end
+    if (pendingMoveAfterAttack !== null) return;
+    
     if (shouldAutoEndHeroTurn(heroTurnActions)) {
       store.dispatch(endHeroPhase());
     }

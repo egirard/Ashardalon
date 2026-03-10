@@ -1961,6 +1961,12 @@ export const gameSlice = createSlice({
         return;
       }
       
+      // Don't end hero phase if a move-after-attack (e.g. Righteous Advance) is pending
+      // The player must complete or skip the movement before the phase can end
+      if (state.pendingMoveAfterAttack) {
+        return;
+      }
+      
       // Clear movement overlay when exiting hero phase
       state.validMoveSquares = [];
       state.showingMovement = false;
@@ -3218,7 +3224,9 @@ export const gameSlice = createSlice({
                   }
 
                   // Place a treasure token on the new tile
-                  const treasurePosition = { x: newTile.position.col * 4 + 1, y: newTile.position.row * 4 + 1 };
+                  // Use getTileBounds to get correct global coordinates (accounts for start tile height offset)
+                  const newTileBounds = getTileBounds(newTile);
+                  const treasurePosition = { x: newTileBounds.minX + 1, y: newTileBounds.minY + 1 };
                   const treasureToken = createTreasureTokenInstance('occupied-lair', treasurePosition, state.treasureTokenInstanceCounter);
                   state.treasureTokens.push(treasureToken);
                   state.treasureTokenInstanceCounter++;
