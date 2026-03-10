@@ -164,8 +164,11 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
 
     await screenshots.capture(page, 'target-selection-appears', {
       programmaticCheck: async () => {
-        // Check if target selection is visible
-        await expect(page.locator('[data-testid="target-selection"]')).toBeVisible();
+        // Check that the expanded attack card is visible with monster targets
+        // Note: Originally this checked for [data-testid="target-selection"] from AttackCardDetailPanel.svelte,
+        // but that component is no longer used in the current UI. The monster targets are now
+        // shown directly in the expanded card view (attack-card-expanded-{id}) in PlayerPowerCards.svelte.
+        await expect(page.locator('[data-testid="attack-card-expanded-3"]')).toBeVisible();
         
         // Check if attack button for the monster is visible
         await expect(page.locator('[data-testid="attack-target-kobold-adjacent"]')).toBeVisible();
@@ -341,7 +344,7 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
     await page.locator('[data-testid="power-card-3"]').click();
     await page.locator('[data-testid="attack-card-expanded-3"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="attack-target-kobold-cancel-test"]').waitFor({ state: 'visible', timeout: 5000 });
     
     // Seed random for attack
     await page.evaluate(() => {
@@ -427,12 +430,18 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
     
     // Select Vistra as well
     await page.locator('[data-testid="hero-vistra-bottom"]').click();
-    await selectDefaultPowerCards(page, 'vistra');
+    // When 2+ heroes are on the same edge, the selected hero cards are hidden by the UI
+    // (see CharacterSelect.svelte: {#if !(isSelectedOnEdge(hero.id, 'bottom') && getHeroesOnEdge('bottom').length >= 2)}).
+    // Power cards are auto-selected anyway, so no call to selectDefaultPowerCards is needed for vistra.
     
     await screenshots.capture(page, 'two-heroes-selected', {
       programmaticCheck: async () => {
-        await expect(page.locator('[data-testid="hero-quinn-bottom"]')).toHaveClass(/selected/);
-        await expect(page.locator('[data-testid="hero-vistra-bottom"]')).toHaveClass(/selected/);
+        // When 2+ heroes are on the same edge, hero cards are hidden from the DOM
+        // Verify selection via Redux store state instead
+        const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+        const selectedIds = s.heroes.selectedHeroes.map((h: any) => h.id);
+        expect(selectedIds).toContain('quinn');
+        expect(selectedIds).toContain('vistra');
         await expect(page.locator('[data-testid="start-game-button"]')).toBeEnabled();
       }
     });
@@ -523,11 +532,12 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
       }
     });
 
-    // Attack with Righteous Advance
-    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
-    await page.locator('[data-testid="power-card-3"]').click();
+    // Attack with Righteous Advance (Quinn is the active hero)
+    // Use Quinn's specific hero container to avoid ambiguity with Vistra's panel
+    await page.locator('[data-testid="hero-container-quinn"] [data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="hero-container-quinn"] [data-testid="power-card-3"]').click();
     await page.locator('[data-testid="attack-card-expanded-3"]').waitFor({ state: 'visible' });
-    await page.locator('[data-testid="target-selection"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="attack-target-kobold-multi-hero"]').waitFor({ state: 'visible', timeout: 5000 });
     
     // Seed random for attack
     await page.evaluate(() => {
@@ -627,6 +637,143 @@ test.describe('048 - Attack Then Move (Righteous Advance)', () => {
         // Verify Quinn didn't move
         const quinnToken = storeState.game.heroTokens.find((t: any) => t.heroId === 'quinn');
         expect(quinnToken.position).toEqual({ x: 3, y: 2 });
+      }
+    });
+  });
+
+  test('Hero phase blocked while move-after-attack is pending (second action)', async ({ page }) => {
+    const screenshots = createScreenshotHelper();
+
+    // This test verifies Bug Fix: When attack is the SECOND action (hero already moved),
+    // the hero phase should NOT auto-end while pendingMoveAfterAttack is set.
+    // Before the fix: endHeroPhase() would fire because shouldAutoEndHeroTurn() = true,
+    // advancing to villain phase and drawing an encounter card while movement UI was showing.
+
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await selectDefaultPowerCards(page, 'quinn');
+    await setupDeterministicGame(page);
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+    await dismissScenarioIntroduction(page);
+
+    // Place hero at known position
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroPosition',
+        payload: { heroId: 'quinn', position: { x: 3, y: 2 } }
+      });
+    });
+
+    await expect(async () => {
+      const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(s.game.heroTokens[0].position).toEqual({ x: 3, y: 2 });
+    }).toPass();
+
+    // Add monster adjacent to hero
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setMonsters',
+        payload: [{
+          monsterId: 'kobold',
+          instanceId: 'kobold-phase-block-test',
+          position: { x: 3, y: 3 },
+          currentHp: 2,
+          controllerId: 'quinn',
+          tileId: 'start-tile'
+        }]
+      });
+    });
+
+    await expect(async () => {
+      const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(s.game.monsters.length).toBe(1);
+    }).toPass();
+
+    // Simulate hero having already used their MOVE action (first action)
+    // This means after attacking, shouldAutoEndHeroTurn() would return true (move+attack=done)
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setHeroTurnActions',
+        payload: { actionsTaken: ['move'], canMove: false, canAttack: true }
+      });
+    });
+
+    await screenshots.capture(page, 'second-action-setup', {
+      programmaticCheck: async () => {
+        const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+        expect(s.game.heroTurnActions.actionsTaken).toContain('move');
+        expect(s.game.heroTurnActions.canMove).toBe(false);
+        expect(s.game.heroTurnActions.canAttack).toBe(true);
+      }
+    });
+
+    // Attack with Righteous Advance (this is the SECOND action: move+attack)
+    await page.locator('[data-testid="player-power-cards"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="power-card-3"]').click();
+    await page.locator('[data-testid="attack-card-expanded-3"]').waitFor({ state: 'visible' });
+    await page.locator('[data-testid="attack-target-kobold-phase-block-test"]').waitFor({ state: 'visible', timeout: 5000 });
+
+    await page.evaluate(() => {
+      (window as any).__originalRandom = Math.random;
+      Math.random = () => 0.75;
+    });
+
+    await page.locator('[data-testid="attack-target-kobold-phase-block-test"]').click();
+
+    await page.evaluate(() => {
+      if ((window as any).__originalRandom) {
+        Math.random = (window as any).__originalRandom;
+      }
+    });
+
+    // Wait for combat result and dismiss it
+    await page.locator('[data-testid="combat-result"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="dismiss-combat-result"]').click();
+
+    // CRITICAL VERIFICATION: After dismissing attack result, pendingMoveAfterAttack should be set
+    // AND the hero phase should NOT have auto-advanced.
+    // Before the fix: hero phase would auto-end here, drawing an encounter card.
+    await page.locator('[data-testid="move-after-attack-controls"]').waitFor({ state: 'visible', timeout: 5000 });
+
+    await screenshots.capture(page, 'phase-blocked-while-move-pending', {
+      programmaticCheck: async () => {
+        const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+
+        // pendingMoveAfterAttack must be set
+        expect(s.game.pendingMoveAfterAttack).not.toBeNull();
+
+        // Hero phase must still be active (NOT auto-advanced to exploration/villain)
+        expect(s.game.turnState.currentPhase).toBe('hero-phase');
+
+        // No encounter card should have been drawn
+        expect(s.game.drawnEncounter).toBeNull();
+
+        // Move-after-attack controls should be visible
+        await expect(page.locator('[data-testid="move-after-attack-controls"]')).toBeVisible();
+      }
+    });
+
+    // Complete the movement to allow the hero phase to end normally
+    await page.locator('[data-testid="complete-move-after-attack"]').click();
+
+    // After completing the move, pendingMoveAfterAttack should be cleared
+    // and the hero phase should proceed normally
+    await expect(async () => {
+      const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+      expect(s.game.pendingMoveAfterAttack).toBeNull();
+    }).toPass();
+
+    await screenshots.capture(page, 'phase-unblocked-after-complete', {
+      programmaticCheck: async () => {
+        const s = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
+
+        // pendingMoveAfterAttack should be cleared
+        expect(s.game.pendingMoveAfterAttack).toBeNull();
       }
     });
   });

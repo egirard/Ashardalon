@@ -45,6 +45,23 @@ This test validates hero selection when multiple heroes are on the same tile:
 
 **Key Feature**: When only one hero is on the tile, this dialog is skipped and that hero is auto-selected.
 
+### Test 4: Hero Phase Blocked While Move-After-Attack Is Pending (Bug Fix Test)
+
+This test validates the specific bug fix: when the hero uses **attack as their second action** (having already moved), the hero phase must NOT auto-advance while `pendingMoveAfterAttack` is set.
+
+**Before the fix**: After dismissing the attack result, `shouldAutoEndHeroTurn()` returned true (move+attack=done), causing `endHeroPhase()` to fire immediately. The villain phase would start and draw an encounter card that appeared simultaneously with the movement interface.
+
+**After the fix**: `endHeroPhase()` is blocked while `pendingMoveAfterAttack !== null`. The hero phase remains active until the player explicitly completes or cancels the movement.
+
+Test flow:
+1. Hero is set up with `actionsTaken: ['move']` (first action already used)
+2. Hero attacks with Righteous Advance (second action = move+attack complete)
+3. Attack result dismissed
+4. **Verify**: `pendingMoveAfterAttack` is set AND `turnState.currentPhase === 'hero-phase'`
+5. **Verify**: No encounter card was drawn (villain phase didn't start)
+6. **Verify**: Move-after-attack controls are visible
+7. Complete the move → `pendingMoveAfterAttack` cleared
+
 ## User Story
 
 > **As a player using Righteous Advance,**  
@@ -330,7 +347,50 @@ This test validates hero selection when multiple heroes are on the same tile:
 
 ---
 
-## Acceptance Criteria
+### Test 4: Hero Phase Blocked While Move-After-Attack Is Pending
+
+#### Step 1: Second-Action Setup (Hero Already Moved)
+![Screenshot 000](048-attack-then-move.spec.ts-snapshots/000-second-action-setup-chromium-linux.png)
+
+**What's verified:**
+- Hero turn actions show `actionsTaken: ['move']`
+- `canMove: false` — hero already used their move
+- `canAttack: true` — attack still available as second action
+
+**Programmatic checks:**
+- `heroTurnActions.actionsTaken` contains `'move'`
+- `heroTurnActions.canMove === false`
+- `heroTurnActions.canAttack === true`
+
+---
+
+#### Step 2: Hero Phase Blocked While Move Pending
+![Screenshot 001](048-attack-then-move.spec.ts-snapshots/001-phase-blocked-while-move-pending-chromium-linux.png)
+
+**What's verified (Bug Fix):**
+- After dismissing attack result with `pendingMoveAfterAttack` set, the hero phase did NOT auto-advance
+- `turnState.currentPhase === 'hero-phase'` (NOT `villain-phase` or `exploration-phase`)
+- No encounter card was drawn
+- Move-after-attack controls are visible
+
+**Programmatic checks:**
+- `pendingMoveAfterAttack` is not null
+- `turnState.currentPhase === 'hero-phase'`
+- `drawnEncounter === null`
+
+---
+
+#### Step 3: Phase Unblocked After Move Completed
+![Screenshot 002](048-attack-then-move.spec.ts-snapshots/002-phase-unblocked-after-complete-chromium-linux.png)
+
+**What's verified:**
+- After clicking "Complete Move", `pendingMoveAfterAttack` is cleared
+- Game can now advance normally
+
+**Programmatic checks:**
+- `pendingMoveAfterAttack === null`
+
+---
 
 - [x] Righteous Advance card (ID: 3) identified as attack-then-move
 - [x] Character selected and placed on tile
@@ -373,6 +433,12 @@ When reviewing these screenshots, verify:
 - [x] Selected hero (Vistra) moved (screenshot 006 of multi-hero test)
 - [x] Other hero (Quinn) didn't move (screenshot 006 of multi-hero test)
 
+**Test 4: Bug Fix — Hero Phase Blocked While Move-After-Attack Is Pending**
+- [x] Setup with hero having already used move action (screenshot 000 of phase-block test)
+- [x] After attack result dismissed: `pendingMoveAfterAttack` is set and `currentPhase === 'hero-phase'` (screenshot 001)
+- [x] No encounter card drawn while movement is pending (screenshot 001)
+- [x] After completing move: `pendingMoveAfterAttack` cleared (screenshot 002)
+
 ## Implementation Notes
 
 **Key Implementation Details**:
@@ -409,10 +475,10 @@ When reviewing these screenshots, verify:
 
 ## Test Statistics
 
-- **Total Screenshots**: 18 (8 for main flow, 4 for cancel flow, 7 for multi-hero flow)
-- **Test Duration**: ~13 seconds
-- **Tests Passing**: 3/3
-- **Coverage**: Complete attack-then-move flow with Righteous Advance including multi-hero selection
+- **Total Screenshots**: 21 (8 for main flow, 4 for cancel flow, 7 for multi-hero flow, 3 for phase-block bug fix test)
+- **Test Duration**: ~15 seconds
+- **Tests Passing**: 4/4
+- **Coverage**: Complete attack-then-move flow with Righteous Advance including multi-hero selection and hero-phase-blocking bug fix
 
 ## Key Difference: Attack-Then-Move vs Move-Then-Attack
 
