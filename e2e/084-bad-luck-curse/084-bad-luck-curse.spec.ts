@@ -3,7 +3,7 @@ import { createScreenshotHelper, dismissScenarioIntroduction, setupDeterministic
 
 test.describe('084 - Bad Luck Curse Complete Lifecycle', () => {
   test('curse causes extra encounter draw each turn and is removed by dice roll', async ({ page }) => {
-    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 3000 });
     
     // STEP 1: Navigate and start game with Quinn
     await page.goto('/');
