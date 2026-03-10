@@ -765,8 +765,8 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   // Long Hallway named tiles (E/W corridor in default orientation, draws an extra tile automatically on the unexplored end)
   // Image default: openings on West (entrance) and East (unexplored arrow), walls on North/South.
   // Rotated 90° CW when placed for N/S exploration, so arrow points toward entrance.
-  { tileType: 'tile-long-hallway-black', imagePath: 'assets/Tile_Named_LongHallwayBlack.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: true, isLongHallway: true, scorchMarkPosition: { x: 1, y: 2 } },  // E/W open, black arrow points east
-  { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 1, y: 1 } },  // E/W open, white arrow points east
+  { tileType: 'tile-long-hallway-black', imagePath: 'assets/Tile_Named_LongHallwayBlack.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: true, isLongHallway: true, scorchMarkPosition: { x: 2, y: 2 } },  // E/W open, black arrow points east
+  { tileType: 'tile-long-hallway-white', imagePath: 'assets/Tile_Named_LongHallway.png', defaultEdges: { north: 'wall', south: 'wall', east: 'open', west: 'open' }, isBlackTile: false, isLongHallway: true, scorchMarkPosition: { x: 2, y: 2 } },  // E/W open, white arrow points east
   // Chamber Entrance tile — marks the boundary of the final chamber; triggers chamber-reveal when placed
   // All four edges open (image analysis confirmed); scorch mark at (2,2) = east entrance arrow
   { tileType: 'tile-chamber-entrance', imagePath: 'assets/Tile_DireChamber_Entrance.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, isChamberEntrance: true, scorchMarkPosition: { x: 2, y: 2 } },

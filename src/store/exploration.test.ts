@@ -141,6 +141,43 @@ describe("exploration", () => {
       });
     });
 
+    describe("arrow direction for Long Hallway tiles (east-pointing default arrow)", () => {
+      // Both long hallway tiles have arrows pointing east in their default image orientation.
+      // scorchMarkPosition: { x: 2, y: 2 } → east.
+      // When the tile is placed, it should be rotated so the arrow faces back toward the hero.
+      const longHallwayTiles = ['tile-long-hallway-white', 'tile-long-hallway-black'];
+
+      for (const tileType of longHallwayTiles) {
+        it(`should rotate ${tileType} arrow to point west (180°) when exploring east`, () => {
+          const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType)!;
+          // Hero explores east → connecting edge is west → arrow must point west (toward hero)
+          const rotation = calculateTileRotation("east", tileDef);
+          expect(rotation).toBe(180);
+        });
+
+        it(`should rotate ${tileType} arrow to point east (0°) when exploring west`, () => {
+          const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType)!;
+          // Hero explores west → connecting edge is east → arrow must point east (toward hero)
+          const rotation = calculateTileRotation("west", tileDef);
+          expect(rotation).toBe(0);
+        });
+
+        it(`should rotate ${tileType} arrow to point south (90°) when exploring north`, () => {
+          const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType)!;
+          // Hero explores north → connecting edge is south → arrow must point south (toward hero)
+          const rotation = calculateTileRotation("north", tileDef);
+          expect(rotation).toBe(90);
+        });
+
+        it(`should rotate ${tileType} arrow to point north (270°) when exploring south`, () => {
+          const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType)!;
+          // Hero explores south → connecting edge is north → arrow must point north (toward hero)
+          const rotation = calculateTileRotation("south", tileDef);
+          expect(rotation).toBe(270);
+        });
+      }
+    });
+
     describe("arrow direction for tiles with south-pointing default arrow", () => {
       // These tiles previously had incorrect scorchMarkPosition: { x: 2, y: 1 } (north)
       // The actual tile images have their arrows pointing south, so scorchMarkPosition
