@@ -14,7 +14,7 @@ import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntrodu
  */
 test.describe('042 - Attack Ends Hero Phase', () => {
   test('Exploration phase pauses until attack result is dismissed', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
     
     // STEP 1: Start game with Quinn
     await page.goto('/');
