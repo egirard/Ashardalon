@@ -42,6 +42,7 @@ test.describe('109 - Occupied Lair Encounter Card', () => {
       const state = (window as any).__REDUX_STORE__.getState();
       return {
         tileCount: state.game.dungeon.tiles.length,
+        tileIds: state.game.dungeon.tiles.map((t: any) => t.id),
         tileDeckLength: state.game.dungeon.tileDeck.length,
         monsterCount: state.game.monsters.length,
         monsterDrawPileLength: state.game.monsterDeck.drawPile.length,
@@ -114,6 +115,51 @@ test.describe('109 - Occupied Lair Encounter Card', () => {
         // Verify the treasure token belongs to this encounter
         const lair_token = storeState.game.treasureTokens.find((t: { encounterId: string }) => t.encounterId === 'occupied-lair');
         expect(lair_token).toBeDefined();
+
+        // Verify Bug Fix: Treasure token is placed on the NEW tile, not the start tile.
+        // The start tile occupies global positions x: 0-3, y: 0-7.
+        // With the old code (col * 4 + 1, row * 4 + 1), tiles in the start column
+        // at row > 0 would get y positions inside the start tile (e.g. row=1 → y=5).
+        // With the fix (getTileBounds()), the position is correctly computed.
+        //
+        // Note: The tile bounds calculation below mirrors src/store/movement.ts:getTileBounds().
+        // It cannot be imported directly since E2E tests run in the browser context.
+        const newTile = storeState.game.dungeon.tiles.find((t: any) =>
+          !initialState.tileIds.includes(t.id)
+        );
+        if (newTile) {
+          const col = newTile.position.col;
+          const row = newTile.position.row;
+          const TILE_WIDTH = 4;
+          const NORMAL_TILE_HEIGHT = 4;
+          const START_TILE_HEIGHT = 8;
+          // Compute expected minX using getTileBounds logic
+          let expectedMinX: number;
+          if (col > 0) {
+            expectedMinX = TILE_WIDTH + (col - 1) * TILE_WIDTH;
+          } else if (col < 0) {
+            expectedMinX = col * TILE_WIDTH;
+          } else {
+            expectedMinX = 0;
+          }
+          // Compute expected minY using getTileBounds logic
+          let expectedMinY: number;
+          if (row > 0) {
+            if (col !== 0) {
+              expectedMinY = row * NORMAL_TILE_HEIGHT;
+            } else {
+              // col === 0 south tiles: offset past the full start tile height
+              expectedMinY = START_TILE_HEIGHT + (row - 1) * NORMAL_TILE_HEIGHT;
+            }
+          } else if (row < 0) {
+            expectedMinY = row * NORMAL_TILE_HEIGHT;
+          } else {
+            expectedMinY = 0;
+          }
+          // Treasure token must be at (minX+1, minY+1) — within the new tile's bounds
+          expect(lair_token.position.x).toBe(expectedMinX + 1);
+          expect(lair_token.position.y).toBe(expectedMinY + 1);
+        }
       }
     });
 

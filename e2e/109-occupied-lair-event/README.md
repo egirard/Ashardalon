@@ -45,6 +45,7 @@ The card is drawn, activated, and all three effects (tile placement, monster spa
 - Tile count increased by 1
 - Monster count increased by 1
 - Treasure token count increased by 1
+- **Bug Fix**: Treasure token position is verified to be on the new tile (not the start tile)
 
 #### Screenshot 004: Card Discarded and State Verified
 ![Card Discarded](109-occupied-lair-event.spec.ts-snapshots/004-card-discarded-and-state-verified-chromium-linux.png)
@@ -65,6 +66,7 @@ All screenshots include comprehensive programmatic checks:
 - Monster deck draw pile decreases
 - Treasure token count increases by 1
 - Treasure token has `encounterId === 'occupied-lair'`
+- **Bug Fix**: Treasure token position equals `(newTile.minX + 1, newTile.minY + 1)` using correct `getTileBounds()` coordinates, not `(col * 4 + 1, row * 4 + 1)` which was wrong for south-column tiles
 - Encounter card is in discard pile after resolution
 
 ## Manual Verification Checklist
