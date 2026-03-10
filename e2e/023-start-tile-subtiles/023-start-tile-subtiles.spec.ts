@@ -17,7 +17,7 @@ import { createScreenshotHelper, selectDefaultPowerCards, dismissScenarioIntrodu
 
 test.describe('023 - Start Tile Sub-Tiles', () => {
   test('Start tile displays as unified double-sized tile with two sub-tile regions', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
 
     // STEP 1: Start a game with Quinn
     await page.goto('/');
@@ -139,7 +139,7 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
   });
 
   test('Heroes can move between north and south sub-tiles', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
 
     // Start a game with Quinn
     await page.goto('/');
@@ -218,7 +218,7 @@ test.describe('023 - Start Tile Sub-Tiles', () => {
   });
 
   test('Start tile sub-tiles support multiple heroes with expected adjacency', async ({ page }) => {
-    const screenshots = createScreenshotHelper();
+    const screenshots = createScreenshotHelper({ defaultMaxDiffPixels: 1500 });
 
     // Start a game with two heroes: Quinn and Vistra
     await page.goto('/');

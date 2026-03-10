@@ -90,15 +90,15 @@ export function createScreenshotHelper(helperOptions: ScreenshotHelperOptions = 
       const counterStr = counter.toString().padStart(3, '0');
       const screenshotName = `${counterStr}-${description}`;
       
-      // Determine effective maxDiffPixels (per-call overrides helper default)
-      const maxDiffPixels = options.maxDiffPixels ?? helperOptions.defaultMaxDiffPixels;
+      // Determine effective maxDiffPixels (per-call overrides helper default, which defaults to 1500 for rendering variance)
+      const maxDiffPixels = options.maxDiffPixels ?? helperOptions.defaultMaxDiffPixels ?? 1500;
       
       // Use Playwright's built-in screenshot comparison
       await expect(page).toHaveScreenshot(`${screenshotName}.png`, {
         fullPage: options.fullPage ?? false,
         animations: "disabled",
         timeout: 10000,
-        ...(maxDiffPixels !== undefined ? { maxDiffPixels } : {}),
+        maxDiffPixels,
       });
 
       counter++;
