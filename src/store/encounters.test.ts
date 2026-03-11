@@ -566,9 +566,13 @@ describe("encounters", () => {
         );
         
         // Quinn should take 1 damage
-        expect(result[0].currentHp).toBe(7);
+        expect(result.heroHpList[0].currentHp).toBe(7);
         // Vistra is not the active hero, no damage
-        expect(result[1].currentHp).toBe(10);
+        expect(result.heroHpList[1].currentHp).toBe(10);
+        // Effects should record the damage
+        expect(result.effects).toHaveLength(1);
+        expect(result.effects[0].heroId).toBe('quinn');
+        expect(result.effects[0].damageTaken).toBe(1);
       });
 
       it("should not apply Hidden Snipers damage when hero is not alone on tile", () => {
@@ -601,8 +605,10 @@ describe("encounters", () => {
         );
         
         // No damage - hero is not alone
-        expect(result[0].currentHp).toBe(8);
-        expect(result[1].currentHp).toBe(10);
+        expect(result.heroHpList[0].currentHp).toBe(8);
+        expect(result.heroHpList[1].currentHp).toBe(10);
+        // No effects should be recorded
+        expect(result.effects).toHaveLength(0);
       });
 
       it("should apply Walls of Magma damage when hero is adjacent to wall", () => {
@@ -636,7 +642,11 @@ describe("encounters", () => {
         );
         
         // Quinn should take 1 damage
-        expect(result[0].currentHp).toBe(7);
+        expect(result.heroHpList[0].currentHp).toBe(7);
+        // Effects should record the damage
+        expect(result.effects).toHaveLength(1);
+        expect(result.effects[0].heroId).toBe('quinn');
+        expect(result.effects[0].damageTaken).toBe(1);
       });
 
       it("should not apply Walls of Magma damage when hero is not adjacent to wall", () => {
@@ -670,7 +680,9 @@ describe("encounters", () => {
         );
         
         // No damage - no walls nearby
-        expect(result[0].currentHp).toBe(8);
+        expect(result.heroHpList[0].currentHp).toBe(8);
+        // No effects should be recorded
+        expect(result.effects).toHaveLength(0);
       });
 
       it("should return unchanged HP list when no environment is active", () => {
@@ -692,7 +704,8 @@ describe("encounters", () => {
           dungeon
         );
         
-        expect(result[0].currentHp).toBe(8);
+        expect(result.heroHpList[0].currentHp).toBe(8);
+        expect(result.effects).toHaveLength(0);
       });
     });
   });

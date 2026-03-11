@@ -1,4 +1,4 @@
-import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory, HeroToken, Position, TileEdge, Direction } from './types';
+import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory, HeroToken, Position, TileEdge, Direction, EncounterResultTarget } from './types';
 import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK, ENCOUNTER_CANCEL_COST } from './types';
 import type { StatusEffectType } from './statusEffects';
 import { getTileBounds, findTileAtPosition, getSubTileIdAtPosition } from './movement';
@@ -577,7 +577,7 @@ export function getCurseStatusType(encounterId: string): StatusEffectType | null
 
 /**
  * Apply environment effects at the end of Hero Phase
- * Returns updated hero HP states after applying any environment effects
+ * Returns updated hero HP states and effect results after applying any environment effects
  * 
  * Environment effects that trigger at end of Hero Phase:
  * - Hidden Snipers: Active hero takes 1 damage if ending phase alone on tile
@@ -590,17 +590,18 @@ export function applyEndOfHeroPhaseEnvironmentEffects(
   heroPosition: { x: number; y: number },
   allHeroPositions: Array<{ heroId: string; position: { x: number; y: number } }>,
   dungeon: DungeonState
-): HeroHpState[] {
+): { heroHpList: HeroHpState[]; effects: EncounterResultTarget[] } {
   if (!environmentId) {
-    return heroHpList;
+    return { heroHpList, effects: [] };
   }
   
   const environment = getActiveEnvironment(environmentId);
   if (!environment) {
-    return heroHpList;
+    return { heroHpList, effects: [] };
   }
   
   let updatedHpList = [...heroHpList];
+  const effects: EncounterResultTarget[] = [];
   
   switch (environmentId) {
     case 'hidden-snipers': {
@@ -633,6 +634,11 @@ export function applyEndOfHeroPhaseEnvironmentEffects(
         // Hero is alone on tile, apply 1 damage
         updatedHpList = updatedHpList.map(hp => {
           if (hp.heroId === activeHeroId) {
+            effects.push({
+              heroId: hp.heroId,
+              heroName: formatHeroName(hp.heroId),
+              damageTaken: 1,
+            });
             return applyDamageToHero(hp, 1);
           }
           return hp;
@@ -649,6 +655,11 @@ export function applyEndOfHeroPhaseEnvironmentEffects(
         // Hero is adjacent to wall, apply 1 damage
         updatedHpList = updatedHpList.map(hp => {
           if (hp.heroId === activeHeroId) {
+            effects.push({
+              heroId: hp.heroId,
+              heroName: formatHeroName(hp.heroId),
+              damageTaken: 1,
+            });
             return applyDamageToHero(hp, 1);
           }
           return hp;
@@ -662,7 +673,7 @@ export function applyEndOfHeroPhaseEnvironmentEffects(
       break;
   }
   
-  return updatedHpList;
+  return { heroHpList: updatedHpList, effects };
 }
 
 /**
