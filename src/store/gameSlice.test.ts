@@ -2242,6 +2242,145 @@ describe("gameSlice", () => {
     });
   });
 
+  describe("selectMonsterTarget - defensive guards against stale decisions", () => {
+    const testDungeon = {
+      tiles: [
+        {
+          id: "start-tile",
+          tileType: "start",
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: "open", south: "open", east: "open", west: "open" },
+        },
+      ],
+      unexploredEdges: [],
+      tileDeck: [],
+    };
+
+    it("should increment villainPhaseMonsterIndex when monster no longer exists", () => {
+      // Monster was removed from state (e.g. defeated) before decision was resolved.
+      // Before the fix this left villainPhaseMonsterIndex unchanged → permanent lockup.
+      const state = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 5 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: testDungeon,
+        monsters: [], // Monster removed already
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+        pendingMonsterDecision: {
+          decisionId: "stale-monster-decision",
+          type: "choose-hero-target",
+          monsterId: "kobold-0", // no longer in state.monsters
+          options: { heroIds: ["quinn"] },
+          context: "movement",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterTarget({ decisionId: "stale-monster-decision", targetHeroId: "quinn" })
+      );
+
+      expect(afterSelect.pendingMonsterDecision).toBeNull();
+      expect(afterSelect.villainPhasePaused).toBe(false);
+      expect(afterSelect.villainPhaseMonsterIndex).toBe(1);
+    });
+
+    it("should increment villainPhaseMonsterIndex when selected hero no longer exists", () => {
+      // Hero was removed from play after the decision was issued.
+      // Before the fix this left villainPhaseMonsterIndex unchanged → permanent lockup.
+      const state = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 5 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: testDungeon,
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, removedFromPlay: true }],
+        villainPhaseMonsterIndex: 0,
+        pendingMonsterDecision: {
+          decisionId: "stale-hero-decision",
+          type: "choose-hero-target",
+          monsterId: "kobold-0",
+          options: { heroIds: ["quinn"] },
+          context: "movement",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterTarget({ decisionId: "stale-hero-decision", targetHeroId: "quinn" })
+      );
+
+      expect(afterSelect.pendingMonsterDecision).toBeNull();
+      expect(afterSelect.villainPhasePaused).toBe(false);
+      expect(afterSelect.villainPhaseMonsterIndex).toBe(1);
+    });
+  });
+
+  describe("selectMonsterPosition - defensive guard against stale decisions", () => {
+    const testDungeon = {
+      tiles: [
+        {
+          id: "start-tile",
+          tileType: "start",
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: "open", south: "open", east: "open", west: "open" },
+        },
+      ],
+      unexploredEdges: [],
+      tileDeck: [],
+    };
+
+    it("should increment villainPhaseMonsterIndex when monster no longer exists", () => {
+      // Monster was removed from state before the position was selected.
+      // Before the fix this left villainPhaseMonsterIndex unchanged → permanent lockup.
+      const state = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 5 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: testDungeon,
+        monsters: [], // Monster removed already
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+        pendingMonsterDecision: {
+          decisionId: "stale-position-decision",
+          type: "choose-move-destination",
+          monsterId: "kobold-0", // no longer in state.monsters
+          options: { positions: [{ x: 2, y: 3 }] },
+          context: "movement",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterPosition({ decisionId: "stale-position-decision", position: { x: 2, y: 3 } })
+      );
+
+      expect(afterSelect.pendingMonsterDecision).toBeNull();
+      expect(afterSelect.villainPhasePaused).toBe(false);
+      expect(afterSelect.villainPhaseMonsterIndex).toBe(1);
+    });
+  });
+
   describe("dismissMonsterAttackResult", () => {
     it("should clear monster attack result", () => {
       const initialState = createGameState({

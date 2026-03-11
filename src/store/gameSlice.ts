@@ -6803,7 +6803,10 @@ export const gameSlice = createSlice({
         // Re-execute the monster turn with the selected hero
         // This will allow the monster to continue its action using the selected target
         const monster = state.monsters.find(m => m.instanceId === decision.monsterId);
-        if (monster) {
+        if (!monster) {
+          // Monster was removed (defeated) before decision was resolved — skip and continue
+          state.villainPhaseMonsterIndex++;
+        } else {
           // Build hero HP and AC maps (AC includes item bonuses)
           const heroHpMap: Record<string, number> = {};
           const heroAcMap: Record<string, number> = {};
@@ -6833,7 +6836,10 @@ export const gameSlice = createSlice({
           // Get the selected hero token
           const selectedHeroToken = activeHeroTokens.find(h => h.heroId === targetHeroId);
           
-          if (selectedHeroToken) {
+          if (!selectedHeroToken) {
+            // Hero was removed from play before decision was resolved — skip and continue
+            state.villainPhaseMonsterIndex++;
+          } else {
             // Execute action based on decision context
             if (decision.context === 'attack' || decision.type === 'choose-adjacent-target') {
               // Adjacent attack - execute attack immediately
@@ -6946,7 +6952,10 @@ export const gameSlice = createSlice({
         
         // Execute the move action with the selected position
         const monster = state.monsters.find(m => m.instanceId === decision.monsterId);
-        if (monster) {
+        if (!monster) {
+          // Monster was removed (defeated) before decision was resolved — skip and continue
+          state.villainPhaseMonsterIndex++;
+        } else {
           // Find which tile the destination is on
           const newTileId = findTileForGlobalPosition(position, state.dungeon);
           if (newTileId) {
