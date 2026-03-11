@@ -35,7 +35,7 @@
   const customAbility = $derived(customAbilityId ? getPowerCardById(customAbilityId) : null);
 
   // Preview panel state – which card is shown in the detail panel
-  let previewCard: { card: PowerCard; type: 'utility' | 'atWill' | 'daily' } | null = $state(null);
+  let previewCard: { card: PowerCard; type: 'utility' | 'atWill' | 'daily' | 'custom' } | null = $state(null);
 
   // Power card type colors
   function getPowerCardColor(type: string): string {
@@ -58,11 +58,11 @@
     return `${ranged ? 'rng ' : ''}+${card.attackBonus} D${dmg}${twice ? '×2' : ''}`;
   }
 
-  function handleCardPreview(card: PowerCard, type: 'utility' | 'atWill' | 'daily') {
+  function handleCardPreview(card: PowerCard, type: 'utility' | 'atWill' | 'daily' | 'custom') {
     previewCard = previewCard?.card.id === card.id ? null : { card, type };
   }
 
-  function toggleCardSelection(cardId: number, type: 'utility' | 'atWill' | 'daily') {
+  function toggleCardSelection(cardId: number, type: 'utility' | 'atWill' | 'daily' | 'custom') {
     if (type === 'utility') {
       store.dispatch(selectUtilityCard({ heroId: hero.id, cardId }));
     } else if (type === 'atWill') {
@@ -70,9 +70,11 @@
     } else if (type === 'daily') {
       store.dispatch(selectDailyCard({ heroId: hero.id, cardId }));
     }
+    // 'custom' type is always auto-selected, no dispatch needed
   }
 
-  function isCardSelected(cardId: number, type: 'utility' | 'atWill' | 'daily'): boolean {
+  function isCardSelected(cardId: number, type: 'utility' | 'atWill' | 'daily' | 'custom'): boolean {
+    if (type === 'custom') return true;
     if (type === 'utility') return selection.utility === cardId;
     if (type === 'atWill') return selection.atWills.includes(cardId);
     if (type === 'daily') return selection.daily === cardId;
@@ -99,9 +101,20 @@
         <div class="card-col">
           {#if customAbility}
             <div class="section-label">Custom</div>
-            <div class="mini-card custom-ability" data-testid="custom-ability-card">
+            <div
+              class="mini-card custom-ability"
+              class:previewing={previewCard?.card.id === customAbility.id}
+              data-testid="custom-ability-card"
+            >
               <input type="checkbox" class="card-checkbox" checked disabled aria-label="Custom ability (auto-selected)" />
-              <span class="card-name">{customAbility.name}</span>
+              <button
+                class="card-info-btn"
+                onclick={() => handleCardPreview(customAbility, 'custom')}
+                aria-label="Details: {customAbility.name}"
+              >
+                <span class="card-name">{customAbility.name}</span>
+                {#if getStatSummary(customAbility)}<span class="card-stat">{getStatSummary(customAbility)}</span>{/if}
+              </button>
             </div>
           {/if}
 
@@ -218,15 +231,16 @@
             <strong>Rule:</strong> {pc.card.rule}
           </div>
 
-          <label class="detail-checkbox-label" data-testid="detail-select-button">
+          <label class="detail-checkbox-label" class:detail-checkbox-readonly={pc.type === 'custom'} data-testid="detail-select-button">
             <input
               type="checkbox"
               class="detail-checkbox"
               checked={isPreviewCardSelected()}
               onchange={() => toggleCardSelection(pc.card.id, pc.type)}
+              disabled={pc.type === 'custom'}
             />
             <span class="detail-checkbox-text">
-              {isPreviewCardSelected() ? 'Deselect Power' : 'Select Power'}
+              {pc.type === 'custom' ? 'Included (automatic)' : isPreviewCardSelected() ? 'Deselect Power' : 'Select Power'}
             </span>
           </label>
         </div>
@@ -571,6 +585,16 @@
     font-weight: bold;
     text-transform: uppercase;
     color: #fff;
+  }
+
+  .detail-checkbox-readonly {
+    cursor: default;
+    opacity: 0.75;
+    border-color: rgba(156, 39, 176, 0.5);
+  }
+
+  .detail-checkbox-readonly:hover {
+    background: rgba(0, 0, 0, 0.3);
   }
 
   /* Respect user's reduced motion preference */
