@@ -138,6 +138,11 @@ export interface MonsterCardTactics {
    */
   moveAttackRange?: number;
   /**
+   * The activation instructions from the official monster card, describing conditions in order.
+   * Monsters typically have 2-3 lines defining when to attack, explore, or move.
+   */
+  cardInstructions?: string[];
+  /**
    * Notes about unimplemented features (for documentation)
    */
   implementationNotes?: string;
@@ -163,22 +168,42 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   kobold: {
     type: 'explore-or-attack',
     adjacentAttack: { name: 'Sword', attackBonus: 7, damage: 1 },
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Sword (+7, 1 damage)',
+      'If on a tile with an unexplored edge (no Heroes on tile): Place a tile',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'If adjacent to hero, attack. If on tile with unexplored edge and no heroes, explore. Otherwise, move toward hero.',
   },
   snake: {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Bite', attackBonus: 7, damage: 1, statusEffect: 'poisoned' },
     moveAttackRange: 1,
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Bite (+7, 1 damage, Poisoned)',
+      'If within 1 tile of a Hero: Move adjacent and Attack with Bite',
+      'Otherwise: Move toward the closest Hero',
+    ],
   },
   cultist: {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Dagger', attackBonus: 6, damage: 1, statusEffect: 'poisoned' },
     moveAttackRange: 1,
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Dagger (+6, 1 damage, Poisoned)',
+      'If within 1 tile of a Hero: Move adjacent and Attack with Dagger',
+      'Otherwise: Move toward the closest Hero',
+    ],
   },
   'orc-smasher': {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Heavy Mace', attackBonus: 9, damage: 1 },
     moveAttackRange: 1,
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Heavy Mace (+9, 1 damage)',
+      'If within 1 tile of a Hero: Move adjacent and Attack with Heavy Mace',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'Move-and-attack within 1 tile. No special effects.',
   },
   grell: {
@@ -186,6 +211,11 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     adjacentAttack: { name: 'Venomous Bite', attackBonus: 7, damage: 1, statusEffect: 'poisoned', missDamage: 1 },
     moveAttack: { name: 'Tentacles', attackBonus: 7, damage: 1, statusEffect: 'dazed', range: 1 },
     moveAttackRange: 1,
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Venomous Bite (+7, 1 damage, Poisoned; miss: 1 damage)',
+      'If within 1 tile of a Hero: Attack with Tentacles (+7, 1 damage, Dazed)',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'Adjacent: Venomous Bite (poisoned, miss: 1 damage). Within 1 tile: Tentacles (dazed).',
   },
   'orc-archer': {
@@ -193,28 +223,51 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
     adjacentAttack: { name: 'Punch', attackBonus: 6, damage: 1, statusEffect: 'dazed' },
     moveAttack: { name: 'Arrow', attackBonus: 6, damage: 2, missDamage: 1, range: 2 },
     moveAttackRange: 2,
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Punch (+6, 1 damage, Dazed)',
+      'If within 2 tiles of a Hero: Attack with Arrow (+6, 2 damage; miss: 1 damage)',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'Adjacent: Punch (dazed). Within 2 tiles: Arrow (miss: 1 damage).',
   },
   'duergar-guard': {
     type: 'explore-or-attack',
     adjacentAttack: { name: 'Warhammer', attackBonus: 8, damage: 2 },
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Warhammer (+8, 2 damage)',
+      'If on a tile with an unexplored edge (no Heroes on tile): Place a tile',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'If adjacent to hero, attack. If on tile with unexplored edge and no heroes, explore. Otherwise, move toward hero.',
   },
   'legion-devil': {
     type: 'move-and-attack',
     adjacentAttack: { name: 'Claw', attackBonus: 6, damage: 1 },
     moveAttackRange: 1,
+    cardInstructions: [
+      'If adjacent to a Hero: Attack with Claw (+6, 1 damage)',
+      'If within 1 tile of a Hero: Move adjacent and Attack with Claw',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'Move-and-attack within 1 tile. Multi-spawn: Spawns 2 additional Legion Devils (3 total). XP: Awarded only when all 3 are defeated.',
   },
   'cave-bear': {
     type: 'area-attack',
     adjacentAttack: { name: 'Frenzy of Claws', attackBonus: 8, damage: 2, targetsAllOnTile: true, statusEffect: 'dazed' },
+    cardInstructions: [
+      'If any Heroes are on the same tile: Attack all with Frenzy of Claws (+8, 2 damage, Dazed)',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'Attacks all heroes on the same tile with Frenzy of Claws. Applies Dazed status on hit.',
   },
   'gibbering-mouther': {
     type: 'area-attack',
     adjacentAttack: { name: 'Gibbering', attackBonus: 7, damage: 1, range: 1, targetsAllInRange: true, statusEffect: 'dazed' },
     moveAttackRange: 1,
+    cardInstructions: [
+      'If any Heroes are within 1 tile: Attack all with Gibbering (+7, 1 damage, Dazed)',
+      'Otherwise: Move toward the closest Hero',
+    ],
     implementationNotes: 'Attacks all heroes within 1 tile with Gibbering. Applies Dazed status on hit.',
   },
 };

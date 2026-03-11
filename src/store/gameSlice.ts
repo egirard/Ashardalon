@@ -5122,12 +5122,15 @@ export const gameSlice = createSlice({
         const movingMonsterName = movingMonsterDef?.name ?? 'Monster';
         const fromPos = monsterPreMoveGlobal ? `(${monsterPreMoveGlobal.x}, ${monsterPreMoveGlobal.y})` : 'unknown';
         const toPos = `(${result.destination.x}, ${result.destination.y})`;
+        const moveDecisionLogText = result.decisionLog && result.decisionLog.length > 0
+          ? `\n\nDecision Log:\n${result.decisionLog.map((l, i) => `${i + 1}. ${l}`).join('\n')}`
+          : '';
         state.logEntries.push({
           id: state.logEntryCounter++,
           timestamp: Date.now(),
           type: 'combat',
           message: `${movingMonsterName} moves.`,
-          extendedDetails: `Monster: ${monster.instanceId} | From: ${fromPos} → To: ${toPos}`,
+          extendedDetails: `Monster: ${monster.instanceId} | From: ${fromPos} → To: ${toPos}${moveDecisionLogText}`,
         });
       } else if (result.type === 'attack') {
         // Store the attack result
@@ -5151,7 +5154,10 @@ export const gameSlice = createSlice({
         const attackTargetHeroToken = state.heroTokens.find(h => h.heroId === result.targetId);
         const attackMonsterPos = attackMonsterGlobal ? `(${attackMonsterGlobal.x}, ${attackMonsterGlobal.y})` : 'unknown';
         const attackTargetPos = attackTargetHeroToken ? `(${attackTargetHeroToken.position.x}, ${attackTargetHeroToken.position.y})` : 'unknown';
-        const attackExtendedDetails = `Monster: ${monster.instanceId} at ${attackMonsterPos} | Target ${result.targetId} at ${attackTargetPos}`;
+        const attackDecisionLogText = result.decisionLog && result.decisionLog.length > 0
+          ? `\n\nDecision Log:\n${result.decisionLog.map((l, i) => `${i + 1}. ${l}`).join('\n')}`
+          : '';
+        const attackExtendedDetails = `Monster: ${monster.instanceId} at ${attackMonsterPos} | Target ${result.targetId} at ${attackTargetPos}${attackDecisionLogText}`;
         
         let logDetails = `Roll: ${result.result.roll} + ${result.result.attackBonus} = ${result.result.total} vs AC ${result.result.targetAC}`;
         if (result.result.isHit && result.result.damage > 0) {
@@ -5340,7 +5346,10 @@ export const gameSlice = createSlice({
         const moveAttackToPos = `(${result.destination.x}, ${result.destination.y})`;
         const moveAttackTargetHeroToken = state.heroTokens.find(h => h.heroId === result.targetId);
         const moveAttackTargetPos = moveAttackTargetHeroToken ? `(${moveAttackTargetHeroToken.position.x}, ${moveAttackTargetHeroToken.position.y})` : 'unknown';
-        const moveAttackExtendedDetails = `Monster: ${monster.instanceId} | From: ${moveAttackFromPos} → To: ${moveAttackToPos} | Target ${result.targetId} at ${moveAttackTargetPos}`;
+        const moveAttackDecisionLogText = result.decisionLog && result.decisionLog.length > 0
+          ? `\n\nDecision Log:\n${result.decisionLog.map((l, i) => `${i + 1}. ${l}`).join('\n')}`
+          : '';
+        const moveAttackExtendedDetails = `Monster: ${monster.instanceId} | From: ${moveAttackFromPos} → To: ${moveAttackToPos} | Target ${result.targetId} at ${moveAttackTargetPos}${moveAttackDecisionLogText}`;
 
         // Apply damage to hero if hit
         if (result.result.isHit && result.result.damage > 0) {
@@ -5433,7 +5442,11 @@ export const gameSlice = createSlice({
           const areaAttackerPos = areaAttackerGlobal ? `(${areaAttackerGlobal.x}, ${areaAttackerGlobal.y})` : 'unknown';
           const areaTargetHeroToken = state.heroTokens.find(h => h.heroId === targetId);
           const areaTargetPos = areaTargetHeroToken ? `(${areaTargetHeroToken.position.x}, ${areaTargetHeroToken.position.y})` : 'unknown';
-          const areaExtendedDetails = `Monster: ${monster.instanceId} at ${areaAttackerPos} | Target ${targetId} at ${areaTargetPos}`;
+          // Include decision log only on the first target entry
+          const areaDecisionLogText = i === 0 && result.decisionLog && result.decisionLog.length > 0
+            ? `\n\nDecision Log:\n${result.decisionLog.map((l, idx) => `${idx + 1}. ${l}`).join('\n')}`
+            : '';
+          const areaExtendedDetails = `Monster: ${monster.instanceId} at ${areaAttackerPos} | Target ${targetId} at ${areaTargetPos}${areaDecisionLogText}`;
           
           state.logEntries.push({
             id: state.logEntryCounter++,
@@ -5501,6 +5514,9 @@ export const gameSlice = createSlice({
             const monsterDef = getMonsterById(monster.monsterId);
             const monsterName = monsterDef?.name ?? 'Monster';
             const directionName = result.edge.direction.toUpperCase();
+            const exploreDecisionLogText = result.decisionLog && result.decisionLog.length > 0
+              ? `\n\nDecision Log:\n${result.decisionLog.map((l, i) => `${i + 1}. ${l}`).join('\n')}`
+              : undefined;
             
             state.logEntries.push({
               id: state.logEntryCounter++,
@@ -5508,6 +5524,7 @@ export const gameSlice = createSlice({
               type: 'exploration',
               message: `${monsterName} explored ${directionName} edge`,
               details: `Tile: ${drawnTile} (${isBlackTile ? 'Black' : 'White'} arrow)`,
+              extendedDetails: exploreDecisionLogText,
             });
             
             // Draw monster from deck (monsters always spawn on explored tiles)
@@ -5566,6 +5583,17 @@ export const gameSlice = createSlice({
         }
       }
       // Note: For result.type === 'none', no visual feedback is needed - monster couldn't act
+      if (result.type === 'none' && result.decisionLog && result.decisionLog.length > 0) {
+        const noActionMonsterDef = getMonsterById(monster.monsterId);
+        const noActionMonsterName = noActionMonsterDef?.name ?? 'Monster';
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'combat',
+          message: `${noActionMonsterName} takes no action.`,
+          extendedDetails: `Decision Log:\n${result.decisionLog.map((l, i) => `${i + 1}. ${l}`).join('\n')}`,
+        });
+      }
 
       // Move to next monster
       state.villainPhaseMonsterIndex += 1;
