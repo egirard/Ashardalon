@@ -110,7 +110,8 @@
     return entries.map(entry => {
       const time = new Date(entry.timestamp).toISOString().split('T')[1].split('.')[0];
       const details = entry.details ? ` — ${entry.details}` : '';
-      return `- \`[${time}]\` **${entry.type}** — ${entry.message}${details}`;
+      const extendedDetails = entry.extendedDetails ? `\n  - ${entry.extendedDetails}` : '';
+      return `- \`[${time}]\` **${entry.type}** — ${entry.message}${details}${extendedDetails}`;
     }).join('\n');
   }
 

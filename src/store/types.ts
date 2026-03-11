@@ -1590,6 +1590,8 @@ export interface LogEntry {
   message: string;
   /** Optional detailed information (shown when expanded or in detail view) */
   details?: string;
+  /** Optional extended details with positional/movement data (hidden by default, shown on expand) */
+  extendedDetails?: string;
   /** Optional hero ID if this log is specific to a hero */
   heroId?: string;
 }
