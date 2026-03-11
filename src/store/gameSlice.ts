@@ -35,6 +35,7 @@ import {
   PendingMonsterDecision,
   VillainInstance,
   PlacedTile,
+  EncounterResultTarget,
 } from "./types";
 import {
   executeVillainTurn,
@@ -1337,6 +1338,26 @@ function globalToLocalForVillain(
   return { x: globalPos.x - b.minX, y: globalPos.y - b.minY };
 }
 
+/**
+ * Build a detailed per-target summary string for encounter effect log entries.
+ * Includes attack roll information (if applicable), damage taken, and status effects.
+ */
+function buildDetailedResultSummaries(results: EncounterResultTarget[]): string {
+  return results.map(r => {
+    const lines = [`${r.heroName}:`];
+    if (r.attackRoll !== undefined && r.attackTotal !== undefined && r.targetAC !== undefined) {
+      lines.push(`  Attack roll: ${r.attackRoll} (total ${r.attackTotal}) vs AC ${r.targetAC} → ${r.wasHit ? 'Hit' : 'Miss'}`);
+    }
+    if (r.damageTaken > 0) {
+      lines.push(`  Damage taken: ${r.damageTaken}`);
+    }
+    if (r.statusesApplied && r.statusesApplied.length > 0) {
+      lines.push(`  Status: ${r.statusesApplied.join(', ')}`);
+    }
+    return lines.join('\n');
+  }).join('\n');
+}
+
 export const gameSlice = createSlice({
   name: "game",
   initialState,
@@ -2085,15 +2106,19 @@ export const gameSlice = createSlice({
           // Log environment effect if it triggered
           if (envResult.effects.length > 0) {
             const envCard = getEncounterById(state.activeEnvironmentId);
-            const targetSummaries = envResult.effects.map(r => `${r.heroName}: ${r.damageTaken} dmg`);
-            state.logEntries.push({
-              id: state.logEntryCounter++,
-              timestamp: Date.now(),
-              type: 'encounter',
-              message: `Environment effect: ${envCard?.name ?? state.activeEnvironmentId} - ${targetSummaries.join('; ')}`,
-              details: envCard?.description,
-              extendedDetails: `Effect: ${envCard?.effect.description}`,
-            });
+            const targetSummaries = envResult.effects
+              .filter(r => r.damageTaken > 0)
+              .map(r => `${r.heroName}: ${r.damageTaken} dmg`);
+            if (targetSummaries.length > 0) {
+              state.logEntries.push({
+                id: state.logEntryCounter++,
+                timestamp: Date.now(),
+                type: 'encounter',
+                message: `Environment effect: ${envCard?.name ?? state.activeEnvironmentId} - ${targetSummaries.join('; ')}`,
+                details: envCard?.description,
+                extendedDetails: `Effect: ${envCard?.effect.description}`,
+              });
+            }
           }
           
           // Check for party defeat after environment effect
@@ -3091,16 +3116,7 @@ export const gameSlice = createSlice({
                 return `${r.heroName}: ${parts.join(', ')}`;
               });
               
-              const detailedSummaries = results.map(r => {
-                const lines = [`${r.heroName}:`];
-                if (r.attackRoll !== undefined && r.attackTotal !== undefined && r.targetAC !== undefined) {
-                  lines.push(`  Attack roll: ${r.attackRoll} (total ${r.attackTotal}) vs AC ${r.targetAC} → ${r.wasHit ? 'Hit' : 'Miss'}`);
-                }
-                if (r.damageTaken > 0) {
-                  lines.push(`  Damage taken: ${r.damageTaken}`);
-                }
-                return lines.join('\n');
-              });
+              const detailedSummaries = buildDetailedResultSummaries(results);
               
               state.logEntries.push({
                 id: state.logEntryCounter++,
@@ -3108,7 +3124,7 @@ export const gameSlice = createSlice({
                 type: 'encounter',
                 message: `Hazard: ${state.drawnEncounter.name} - ${targetSummaries.join('; ')}`,
                 details: state.drawnEncounter.description,
-                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}\n\n${detailedSummaries.join('\n')}`,
+                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}\n\n${detailedSummaries}`,
               });
             } else {
               state.logEntries.push({
@@ -3799,7 +3815,9 @@ export const gameSlice = createSlice({
                 
                 // Log curse application
                 const curseName = state.drawnEncounter.name;
-                const logExtendedDetails = isTimeLeap ? `${activeHeroId} removed from play until next turn\nEffect: ${state.drawnEncounter.effect.description}` : `Effect: ${state.drawnEncounter.effect.description}`;
+                const logExtendedDetails = isTimeLeap 
+                  ? `${activeHeroId} removed from play until next turn\nEffect: ${state.drawnEncounter.effect.description}` 
+                  : `Effect: ${state.drawnEncounter.effect.description}`;
                 state.logEntries.push({
                   id: state.logEntryCounter++,
                   timestamp: Date.now(),
@@ -3882,19 +3900,7 @@ export const gameSlice = createSlice({
                 return `${r.heroName}: ${parts.join(', ')}`;
               });
               
-              const detailedSummaries = results.map(r => {
-                const lines = [`${r.heroName}:`];
-                if (r.attackRoll !== undefined && r.attackTotal !== undefined && r.targetAC !== undefined) {
-                  lines.push(`  Attack roll: ${r.attackRoll} (total ${r.attackTotal}) vs AC ${r.targetAC} → ${r.wasHit ? 'Hit' : 'Miss'}`);
-                }
-                if (r.damageTaken > 0) {
-                  lines.push(`  Damage taken: ${r.damageTaken}`);
-                }
-                if (r.statusesApplied && r.statusesApplied.length > 0) {
-                  lines.push(`  Status: ${r.statusesApplied.join(', ')}`);
-                }
-                return lines.join('\n');
-              });
+              const detailedSummaries = buildDetailedResultSummaries(results);
               
               state.logEntries.push({
                 id: state.logEntryCounter++,
@@ -3902,7 +3908,7 @@ export const gameSlice = createSlice({
                 type: 'encounter',
                 message: `${state.drawnEncounter.name} - ${targetSummaries.join('; ')}`,
                 details: state.drawnEncounter.description,
-                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}\n\n${detailedSummaries.join('\n')}`,
+                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}\n\n${detailedSummaries}`,
               });
             } else {
               // No immediate effects (e.g., environment cards)
