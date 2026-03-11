@@ -123,19 +123,22 @@ test.describe('090 - Player Log Viewer', () => {
         const logEntries = page.locator('[data-testid="log-entry"]');
         await expect(logEntries).toHaveCount(1);
         
-        // Verify "Game Started" entry is visible
+        // Verify "Game Started" message is visible in the collapsed summary
         const firstEntry = logEntries.first();
         await expect(firstEntry).toContainText('Game Started');
-        await expect(firstEntry).toContainText('2 heroes begin their adventure');
         
-        // Verify timestamp is displayed
+        // Verify details are NOT visible by default (collapsed view)
         const timestamp = firstEntry.locator('.log-timestamp');
-        await expect(timestamp).toBeVisible();
+        await expect(timestamp).not.toBeVisible();
         
         // Verify game-event icon is displayed
         const icon = firstEntry.locator('.log-type-icon');
         await expect(icon).toBeVisible();
         await expect(icon).toContainText('🎮');
+        
+        // Verify the "..." expand indicator is visible (entry has details)
+        const expandButton = page.locator('button[aria-label="Show details"]').first();
+        await expect(expandButton).toBeVisible();
         
         // Verify entry count footer
         await expect(page.getByText('1 entry')).toBeVisible();
@@ -210,7 +213,7 @@ test.describe('090 - Player Log Viewer', () => {
     await page.locator('[data-testid="turn-indicator"] [data-testid="view-log-button"]').click();
     await page.locator('[data-testid="log-entries"]').waitFor({ state: 'visible' });
 
-    // STEP 8: Verify the "Show details" toggle appears on the combat entry with extendedDetails
+    // STEP 8: Verify the expand indicator appears on the combat entry with extendedDetails
     await screenshots.capture(page, 'log-entry-with-expand-toggle', {
       programmaticCheck: async () => {
         await expect(page.locator('[data-testid="log-entries"]')).toBeVisible();
@@ -218,7 +221,8 @@ test.describe('090 - Player Log Viewer', () => {
         // The newest entry (combat) is at the top; find it and check for the expand button
         const expandToggle = page.locator('button[aria-label="Show details"]').first();
         await expect(expandToggle).toBeVisible();
-        await expect(expandToggle).toContainText('▸ Show details');
+        // The button shows the message with "..." indicator (not a separate "Show details" label)
+        await expect(expandToggle).toContainText('...');
 
         // Verify extended details are NOT yet visible
         await expect(page.locator('[data-testid="log-extended-details"]')).not.toBeVisible();
@@ -237,10 +241,11 @@ test.describe('090 - Player Log Viewer', () => {
         await expect(expandedDetails).toContainText('From: (4, 2)');
         await expect(expandedDetails).toContainText('Target quinn at (3, 2)');
 
-        // Verify the toggle now shows "Hide details"
+        // Verify the toggle now shows "Hide details" (aria-label changed)
         const hideToggle = page.locator('button[aria-label="Hide details"]').first();
         await expect(hideToggle).toBeVisible();
-        await expect(hideToggle).toContainText('▾ Hide details');
+        // The button shows the message with "▾" indicator (not a separate label)
+        await expect(hideToggle).toContainText('▾');
       }
     });
 
@@ -255,7 +260,8 @@ test.describe('090 - Player Log Viewer', () => {
         // Verify toggle reverts to "Show details"
         const showToggle = page.locator('button[aria-label="Show details"]').first();
         await expect(showToggle).toBeVisible();
-        await expect(showToggle).toContainText('▸ Show details');
+        // The button shows the message with "..." indicator
+        await expect(showToggle).toContainText('...');
       }
     });
   });

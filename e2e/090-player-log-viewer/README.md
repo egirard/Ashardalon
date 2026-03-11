@@ -2,20 +2,20 @@
 
 ## User Story
 
-As a player, I want to view a scrollable history of game events so that I can review what happened during my adventure. The log should be accessible via a button on each player's card and display timestamped entries starting with a "Game Started" message. Entries with extended positional details (e.g. monster movement) can be expanded inline for deeper inspection.
+As a player, I want to view a scrollable history of game events so that I can review what happened during my adventure. The log should be accessible via a button on each player's card and display entries starting with a "Game Started" message. Each entry collapses to a single line; entries with additional details show a "..." indicator and can be expanded to reveal the timestamp and full details.
 
 ## Test Scenario
 
 This test verifies the player-visible logging system by:
 1. Selecting two heroes and starting a game
 2. Clicking the log button (📜) on the active player's card
-3. Verifying the log viewer displays with the "Game Started" entry
+3. Verifying the log viewer displays with the "Game Started" entry (collapsed to single line, timestamp hidden)
 4. Closing the log viewer
 5. Opening the log from the second player's card to verify shared log access
 6. Injecting a combat log entry with `extendedDetails` (positional data)
-7. Verifying the "▸ Show details" toggle appears on entries with extended info
-8. Clicking the toggle to expand and verify the positional details are shown
-9. Collapsing the entry and verifying it returns to the collapsed state
+7. Verifying the "..." expansion indicator appears on entries with extra info
+8. Clicking the entry to expand and verify the positional details and timestamp are shown
+9. Collapsing the entry and verifying it returns to the collapsed single-line state
 
 ## Screenshots
 
@@ -52,9 +52,10 @@ This test verifies the player-visible logging system by:
 
 **What this verifies:**
 - Log viewer overlay is displayed
-- "Game Started" log entry is visible with timestamp
+- "Game Started" log entry is visible as a collapsed single line
+- Timestamp is NOT visible in the collapsed view (moved to expanded view)
 - Game-event icon (🎮) is displayed
-- Log entry shows "2 heroes begin their adventure"
+- "..." expansion indicator is shown (entry has details)
 - Entry count footer shows "1 entry"
 
 ### 004 - Log Viewer Closed
@@ -80,27 +81,27 @@ This test verifies the player-visible logging system by:
 ![Screenshot 006](090-player-log-viewer.spec.ts-snapshots/006-log-entry-with-expand-toggle-chromium-linux.png)
 
 **What this verifies:**
-- A combat entry with `extendedDetails` shows a "▸ Show details" toggle
-- Extended details are hidden by default
-- The toggle button is accessible and visually distinct
+- A combat entry with `extendedDetails` shows a "..." expansion indicator on the single-line summary
+- Extended details and timestamp are hidden by default
+- The entry row is a clickable button (aria-label="Show details")
 
 ### 007 - Log Entry Expanded Details
 
 ![Screenshot 007](090-player-log-viewer.spec.ts-snapshots/007-log-entry-expanded-details-chromium-linux.png)
 
 **What this verifies:**
-- Clicking "▸ Show details" expands the positional info inline
+- Clicking the entry expands to reveal timestamp, details, and extended details inline
 - Extended details show monster instance ID, from/to positions, and target position
-- The toggle changes to "▾ Hide details" when expanded
+- The expansion indicator changes to "▾" when expanded
 
 ### 008 - Log Entry Details Collapsed
 
 ![Screenshot 008](090-player-log-viewer.spec.ts-snapshots/008-log-entry-details-collapsed-chromium-linux.png)
 
 **What this verifies:**
-- Clicking "▾ Hide details" collapses the extended info
-- The toggle reverts to "▸ Show details"
-- The entry returns to its default compact view
+- Clicking "▾" collapses the extended info back to single line
+- The expansion indicator reverts to "..."
+- The entry returns to its default compact single-line view
 
 ## Manual Verification Checklist
 
@@ -109,16 +110,18 @@ This test verifies the player-visible logging system by:
 - [ ] Game starts and displays both player cards
 - [ ] Log button (📜) is visible on each player card
 - [ ] Clicking log button opens the log viewer overlay
-- [ ] "Game Started" entry displays with timestamp
+- [ ] "Game Started" entry collapses to a single line with icon + message
+- [ ] Timestamp is NOT shown in the collapsed view
+- [ ] "..." indicator appears on entries with additional details
+- [ ] Clicking entry expands to show timestamp and details
 - [ ] Game-event icon (🎮) is shown on the entry
-- [ ] Entry details mention "2 heroes begin their adventure"
 - [ ] Entry count shows "1 entry"
 - [ ] Close button dismisses the log viewer
 - [ ] Log can be reopened from any player's card
 - [ ] All players see the same log entries
-- [ ] Combat entries with extended positional data show a "▸ Show details" toggle
-- [ ] Clicking the toggle expands inline to show monster position, from/to coords, and target
-- [ ] Clicking again collapses the details
+- [ ] Combat entries with extended positional data show "..." expansion indicator
+- [ ] Clicking the entry expands inline to show monster position, from/to coords, and target
+- [ ] Clicking again collapses the details back to single line
 
 ## Technical Notes
 
