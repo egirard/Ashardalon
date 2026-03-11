@@ -136,7 +136,16 @@
             <span class="tactics-label">Behavior</span>
             <span class="tactics-type">{formatTacticType(tactics.type)}</span>
           </div>
-          <p class="tactics-behavior">{describeBehavior(tactics.type)}</p>
+
+          {#if tactics.cardInstructions && tactics.cardInstructions.length > 0}
+            <ol class="card-instructions" data-testid="card-instructions">
+              {#each tactics.cardInstructions as instruction, i}
+                <li class="card-instruction">{instruction}</li>
+              {/each}
+            </ol>
+          {:else}
+            <p class="tactics-behavior">{describeBehavior(tactics.type)}</p>
+          {/if}
 
           <div class="tactics-attacks">
             <div class="attack-row" data-testid="monster-adjacent-attack">
@@ -345,6 +354,19 @@
     color: #ccc;
     margin: 0 0 0.6rem;
     line-height: 1.4;
+  }
+
+  .card-instructions {
+    margin: 0.2rem 0 0.6rem;
+    padding-left: 1.2rem;
+    list-style: decimal;
+  }
+
+  .card-instruction {
+    font-size: 0.65rem;
+    color: #ccc;
+    line-height: 1.5;
+    padding: 0.05rem 0;
   }
 
   .tactics-attacks {

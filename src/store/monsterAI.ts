@@ -10,16 +10,17 @@ import { getScorchMarkPosition, isPositionOccupiedByMonster, isPositionOccupiedB
 const SQUARES_PER_TILE = 4;
 
 /**
- * Result of a monster's turn - either move, attack, move-and-attack, area-attack, explore, needs-choice, or no action
+ * Result of a monster's turn - either move, attack, move-and-attack, area-attack, explore, needs-choice, or no action.
+ * Each result includes an optional decisionLog that records the AI's evaluation steps.
  */
 export type MonsterAction =
-  | { type: 'move'; destination: Position }
-  | { type: 'attack'; targetId: string; result: AttackResult }
-  | { type: 'move-and-attack'; destination: Position; targetId: string; result: AttackResult }
-  | { type: 'area-attack'; targetIds: string[]; results: AttackResult[] }
-  | { type: 'explore'; edge: TileEdge }
-  | { type: 'needs-choice'; decision: PendingMonsterDecision }
-  | { type: 'none' };
+  | { type: 'move'; destination: Position; decisionLog?: string[] }
+  | { type: 'attack'; targetId: string; result: AttackResult; decisionLog?: string[] }
+  | { type: 'move-and-attack'; destination: Position; targetId: string; result: AttackResult; decisionLog?: string[] }
+  | { type: 'area-attack'; targetIds: string[]; results: AttackResult[]; decisionLog?: string[] }
+  | { type: 'explore'; edge: TileEdge; decisionLog?: string[] }
+  | { type: 'needs-choice'; decision: PendingMonsterDecision; decisionLog?: string[] }
+  | { type: 'none'; decisionLog?: string[] };
 
 /**
  * Convert a monster's local tile position to global coordinates
@@ -595,20 +596,25 @@ export function executeMonsterTurn(
   const tactics = MONSTER_TACTICS[monster.monsterId];
   const tacticType = tactics?.type ?? 'attack-only';
   
+  // Accumulate the decision evaluation log
+  const decisionLog: string[] = [];
+  
   // Handle area-attack behavior first (Cave Bear, Gibbering Mouther)
   if (tacticType === 'area-attack') {
     const attackOption = tactics?.adjacentAttack;
-    if (!attackOption) return { type: 'none' };
+    if (!attackOption) return { type: 'none', decisionLog };
     let targetHeroes: HeroToken[] = [];
     
     // Determine which heroes to target based on attack properties
     if (attackOption.targetsAllOnTile) {
       // Attack all heroes on the same tile (Cave Bear)
       targetHeroes = findAllHeroesOnSameTile(monster, heroTokens, heroHpMap, dungeon);
+      decisionLog.push(`Checking for Heroes on same tile... ${targetHeroes.length > 0 ? `Found ${targetHeroes.length} Hero(es): ${targetHeroes.map(h => h.heroId).join(', ')}` : 'None found'}`);
     } else if (attackOption.targetsAllInRange) {
       // Attack all heroes within range (Gibbering Mouther)
       const range = attackOption.range ?? 1;
       targetHeroes = findAllHeroesWithinRange(monster, heroTokens, heroHpMap, dungeon, range);
+      decisionLog.push(`Checking for Heroes within ${range} tile(s)... ${targetHeroes.length > 0 ? `Found ${targetHeroes.length} Hero(es): ${targetHeroes.map(h => h.heroId).join(', ')}` : 'None found'}`);
     }
     
     // If we have targets, execute area attack
@@ -622,16 +628,19 @@ export function executeMonsterTurn(
         const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
         targetIds.push(hero.heroId);
         results.push(result);
+        decisionLog.push(`→ Area attack on ${hero.heroId}: Roll ${result.roll} + ${result.attackBonus} = ${result.total} vs AC ${result.targetAC} — ${result.isHit ? (result.isCritical ? 'Critical Hit!' : 'Hit') : 'Miss'}`);
       }
       
-      return { type: 'area-attack', targetIds, results };
+      return { type: 'area-attack', targetIds, results, decisionLog };
     }
     
+    decisionLog.push('No valid targets — moving toward closest Hero');
     // No valid targets, move toward closest hero
     const closest = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
     if (closest) {
       // Check if multiple heroes at same distance (needs player choice for targeting)
       if ('needsChoice' in closest && closest.needsChoice) {
+        decisionLog.push(`Multiple Heroes equidistant (${closest.heroes.map(h => h.heroId).join(', ')}) — player must choose target`);
         return {
           type: 'needs-choice',
           decision: {
@@ -642,7 +651,8 @@ export function executeMonsterTurn(
               heroIds: closest.heroes.map(h => h.heroId)
             },
             context: 'movement'
-          }
+          },
+          decisionLog,
         };
       }
       
@@ -650,6 +660,7 @@ export function executeMonsterTurn(
       if (moveTarget) {
         // Check if multiple move destinations (needs player choice)
         if ('needsChoice' in moveTarget && moveTarget.needsChoice) {
+          decisionLog.push('Multiple equidistant move destinations — player must choose');
           return {
             type: 'needs-choice',
             decision: {
@@ -660,23 +671,28 @@ export function executeMonsterTurn(
                 positions: moveTarget.positions
               },
               context: 'movement'
-            }
+            },
+            decisionLog,
           };
         }
         
-        return { type: 'move', destination: moveTarget };
+        decisionLog.push(`→ Moving toward ${closest.hero.heroId} at (${closest.hero.position.x}, ${closest.hero.position.y})`);
+        return { type: 'move', destination: moveTarget, decisionLog };
       }
     }
     
-    return { type: 'none' };
+    decisionLog.push('No reachable Hero — no action');
+    return { type: 'none', decisionLog };
   }
   
   // First, check if already adjacent to a hero
   const adjacentHero = findAdjacentHero(monster, heroTokens, heroHpMap, dungeon);
+  decisionLog.push(`Checking if adjacent to a Hero... ${adjacentHero ? ('needsChoice' in adjacentHero ? `Multiple Heroes adjacent: ${adjacentHero.heroes.map(h => h.heroId).join(', ')}` : `Adjacent to ${adjacentHero.heroId}`) : 'Not adjacent'}`);
   
   if (adjacentHero) {
     // Check if multiple adjacent heroes (needs player choice)
     if ('needsChoice' in adjacentHero && adjacentHero.needsChoice) {
+      decisionLog.push('Multiple adjacent Heroes — player must choose attack target');
       return {
         type: 'needs-choice',
         decision: {
@@ -687,16 +703,18 @@ export function executeMonsterTurn(
             heroIds: adjacentHero.heroes.map(h => h.heroId)
           },
           context: 'attack'
-        }
+        },
+        decisionLog,
       };
     }
     
     // Single adjacent hero - attack them
     const attackOption = tactics?.adjacentAttack;
-    if (!attackOption) return { type: 'none' };
+    if (!attackOption) return { type: 'none', decisionLog };
     const targetAC = heroAcMap[adjacentHero.heroId] ?? 10;
     const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
-    return { type: 'attack', targetId: adjacentHero.heroId, result };
+    decisionLog.push(`→ Attacking ${adjacentHero.heroId} with ${attackOption.name}: Roll ${result.roll} + ${result.attackBonus} = ${result.total} vs AC ${result.targetAC} — ${result.isHit ? (result.isCritical ? 'Critical Hit!' : 'Hit') : 'Miss'}`);
+    return { type: 'attack', targetId: adjacentHero.heroId, result, decisionLog };
   }
   
   // Handle explore-or-attack behavior
@@ -713,9 +731,16 @@ export function executeMonsterTurn(
         // If heroes can be reached (even on a different tile), move toward them instead.
         const closestHero = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
         if (!closestHero) {
-          return { type: 'explore', edge: unexploredEdge };
+          decisionLog.push(`No Heroes on tile and unexplored ${unexploredEdge} edge found — exploring`);
+          decisionLog.push(`→ Exploring ${unexploredEdge} edge`);
+          return { type: 'explore', edge: unexploredEdge, decisionLog };
         }
+        decisionLog.push(`Unexplored ${unexploredEdge} edge found but Heroes reachable — moving toward Hero instead`);
+      } else {
+        decisionLog.push('No Heroes on tile and no unexplored edges — moving toward Hero');
       }
+    } else {
+      decisionLog.push('Heroes present on tile — will not explore');
     }
   }
   
@@ -723,10 +748,12 @@ export function executeMonsterTurn(
   if (tacticType === 'move-and-attack' || tacticType === 'ranged-attack') {
     const range = tactics?.moveAttackRange ?? 1;
     const heroInRange = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, range);
+    decisionLog.push(`Checking for Hero within ${range} tile(s)... ${heroInRange ? ('needsChoice' in heroInRange ? `Multiple Heroes in range: ${heroInRange.heroes.map(h => h.heroId).join(', ')}` : `Found ${heroInRange.hero.heroId}`) : 'None in range'}`);
     
     if (heroInRange) {
       // Check if multiple heroes at same distance (needs player choice for targeting)
       if ('needsChoice' in heroInRange && heroInRange.needsChoice) {
+        decisionLog.push('Multiple Heroes in range at same distance — player must choose target');
         return {
           type: 'needs-choice',
           decision: {
@@ -737,7 +764,8 @@ export function executeMonsterTurn(
               heroIds: heroInRange.heroes.map(h => h.heroId)
             },
             context: 'move-and-attack'
-          }
+          },
+          decisionLog,
         };
       }
       
@@ -753,6 +781,7 @@ export function executeMonsterTurn(
       if (moveTarget) {
         // Check if multiple move destinations (needs player choice)
         if ('needsChoice' in moveTarget && moveTarget.needsChoice) {
+          decisionLog.push('Multiple equidistant adjacent positions — player must choose destination');
           return {
             type: 'needs-choice',
             decision: {
@@ -763,23 +792,27 @@ export function executeMonsterTurn(
                 positions: moveTarget.positions
               },
               context: 'move-and-attack'
-            }
+            },
+            decisionLog,
           };
         }
         
         // Can move adjacent and attack in the same turn
         const targetAC = heroAcMap[heroInRange.hero.heroId] ?? 10;
         const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack;
-        if (!attackOption) return { type: 'none' };
+        if (!attackOption) return { type: 'none', decisionLog };
         const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
+        decisionLog.push(`→ Moving adjacent to ${heroInRange.hero.heroId} and attacking with ${attackOption.name}: Roll ${result.roll} + ${result.attackBonus} = ${result.total} vs AC ${result.targetAC} — ${result.isHit ? (result.isCritical ? 'Critical Hit!' : 'Hit') : 'Miss'}`);
         return { 
           type: 'move-and-attack', 
           destination: moveTarget, 
           targetId: heroInRange.hero.heroId, 
-          result 
+          result,
+          decisionLog,
         };
       } else {
         // No adjacent position available, just move closer
+        decisionLog.push(`No adjacent position available next to ${heroInRange.hero.heroId} — moving closer`);
         const moveCloser = findMoveTowardHero(
           monster,
           heroInRange.hero.position,
@@ -790,6 +823,7 @@ export function executeMonsterTurn(
         if (moveCloser) {
           // Check if multiple move destinations (needs player choice)
           if ('needsChoice' in moveCloser && moveCloser.needsChoice) {
+            decisionLog.push('Multiple equidistant move destinations — player must choose');
             return {
               type: 'needs-choice',
               decision: {
@@ -800,25 +834,30 @@ export function executeMonsterTurn(
                   positions: moveCloser.positions
                 },
                 context: 'movement'
-              }
+              },
+              decisionLog,
             };
           }
           
-          return { type: 'move', destination: moveCloser };
+          decisionLog.push(`→ Moving toward ${heroInRange.hero.heroId}`);
+          return { type: 'move', destination: moveCloser, decisionLog };
         }
       }
     }
   }
   
   // Default behavior: Find closest hero and move toward them
+  decisionLog.push('No special condition met — moving toward closest Hero');
   const closest = findClosestHero(monster, heroTokens, heroHpMap, dungeon);
   
   if (!closest) {
-    return { type: 'none' };
+    decisionLog.push('No reachable Hero — no action');
+    return { type: 'none', decisionLog };
   }
   
   // Check if multiple heroes at same distance (needs player choice for targeting)
   if ('needsChoice' in closest && closest.needsChoice) {
+    decisionLog.push(`Multiple Heroes equidistant (${closest.heroes.map(h => h.heroId).join(', ')}) — player must choose target`);
     return {
       type: 'needs-choice',
       decision: {
@@ -829,7 +868,8 @@ export function executeMonsterTurn(
           heroIds: closest.heroes.map(h => h.heroId)
         },
         context: 'movement'
-      }
+      },
+      decisionLog,
     };
   }
   
@@ -837,11 +877,13 @@ export function executeMonsterTurn(
   const moveTarget = findMoveTowardHero(monster, closest.hero.position, heroTokens, monsters, dungeon);
   
   if (!moveTarget) {
-    return { type: 'none' };
+    decisionLog.push('No valid move toward closest Hero — no action');
+    return { type: 'none', decisionLog };
   }
   
   // Check if multiple move destinations (needs player choice)
   if ('needsChoice' in moveTarget && moveTarget.needsChoice) {
+    decisionLog.push('Multiple equidistant move destinations — player must choose');
     return {
       type: 'needs-choice',
       decision: {
@@ -852,11 +894,13 @@ export function executeMonsterTurn(
           positions: moveTarget.positions
         },
         context: 'movement'
-      }
+      },
+      decisionLog,
     };
   }
   
-  return { type: 'move', destination: moveTarget };
+  decisionLog.push(`→ Moving toward ${closest.hero.heroId} at (${closest.hero.position.x}, ${closest.hero.position.y})`);
+  return { type: 'move', destination: moveTarget, decisionLog };
 }
 
 /**
