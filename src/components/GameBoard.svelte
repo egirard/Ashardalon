@@ -725,6 +725,9 @@
     // Don't auto-advance while the villain activation notification is showing
     // (player must click to dismiss it)
     if (villainActivation !== null) return;
+
+    // Don't auto-activate while a monster decision is pending (player must resolve it)
+    if (pendingMonsterDecision !== null) return;
     
     const controlledMonsters = getControlledMonsters();
     

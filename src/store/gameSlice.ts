@@ -6882,26 +6882,41 @@ export const gameSlice = createSlice({
               // Movement targeting - find move toward selected hero
               const moveTarget = findMoveTowardHero(monster, selectedHeroToken.position, activeHeroTokens, state.monsters, state.dungeon);
               
-              if (moveTarget && !('needsChoice' in moveTarget)) {
-                // Execute the move
-                const newTileId = findTileForGlobalPosition(moveTarget, state.dungeon);
-                if (newTileId) {
-                  const localPos = globalToLocalPosition(moveTarget, newTileId, state.dungeon);
-                  if (localPos) {
-                    monster.position = localPos;
-                    monster.tileId = newTileId;
-                    
-                    // Check for Blade Barrier
-                    const bladeBarrierCheck = checkBladeBarrierDamage(moveTarget, state.boardTokens || []);
-                    if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
-                      monster.currentHp = Math.max(0, monster.currentHp - 1);
-                      state.boardTokens = state.boardTokens.filter(token => token.id !== bladeBarrierCheck.tokenToRemove);
+              if (moveTarget && 'needsChoice' in moveTarget && moveTarget.needsChoice) {
+                // Multiple equidistant destinations — ask player to choose
+                state.pendingMonsterDecision = {
+                  decisionId: `monster-${monster.instanceId}-move-${Date.now()}`,
+                  type: 'choose-move-destination',
+                  monsterId: monster.instanceId,
+                  options: {
+                    positions: moveTarget.positions,
+                  },
+                  context: 'movement',
+                };
+                state.villainPhasePaused = true;
+                // Do NOT increment villainPhaseMonsterIndex — will be done by selectMonsterPosition
+              } else {
+                // Either a valid single destination or no valid move (null) — advance past this monster
+                if (moveTarget && !('needsChoice' in moveTarget)) {
+                  // Execute the move
+                  const newTileId = findTileForGlobalPosition(moveTarget, state.dungeon);
+                  if (newTileId) {
+                    const localPos = globalToLocalPosition(moveTarget, newTileId, state.dungeon);
+                    if (localPos) {
+                      monster.position = localPos;
+                      monster.tileId = newTileId;
+                      
+                      // Check for Blade Barrier
+                      const bladeBarrierCheck = checkBladeBarrierDamage(moveTarget, state.boardTokens || []);
+                      if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
+                        monster.currentHp = Math.max(0, monster.currentHp - 1);
+                        state.boardTokens = state.boardTokens.filter(token => token.id !== bladeBarrierCheck.tokenToRemove);
+                      }
                     }
                   }
+                  state.monsterMoveActionId = monster.instanceId;
                 }
-                state.monsterMoveActionId = monster.instanceId;
-                
-                // Increment monster index to continue to next monster
+                // Increment in both sub-cases: after a successful move and when no valid move exists
                 state.villainPhaseMonsterIndex++;
               }
             }
