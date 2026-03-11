@@ -38,6 +38,8 @@ import gameReducer, {
   addExplorationMonster,
   registerEventHooks,
   clearPendingPowerCardFlips,
+  selectMonsterTarget,
+  selectMonsterPosition,
   GameState,
 } from "./gameSlice";
 import { START_TILE_POSITIONS, INITIAL_MONSTER_DECK, AttackResult, ENCOUNTER_CANCEL_COST } from "./types";
@@ -2086,6 +2088,157 @@ describe("gameSlice", () => {
       // monsterMoveActionId should be set (move) and monsterExplorationEvent should NOT be set
       expect(afterActivation.monsterMoveActionId).not.toBeNull();
       expect(afterActivation.monsterExplorationEvent).toBeFalsy();
+    });
+  });
+
+  describe("selectMonsterTarget - movement with unreachable or multiple destinations", () => {
+    const testDungeon = {
+      tiles: [
+        {
+          id: "start-tile",
+          tileType: "start",
+          position: { col: 0, row: 0 },
+          rotation: 0,
+          edges: { north: "open", south: "open", east: "open", west: "open" },
+        },
+      ],
+      unexploredEdges: [],
+      tileDeck: [],
+    };
+
+    it("should increment villainPhaseMonsterIndex when monster has no global position (null moveTarget)", () => {
+      // Monster has a tileId that doesn't exist in the dungeon, so
+      // getMonsterGlobalPosition returns null -> findMoveTowardHero returns null.
+      // Before the fix this would leave villainPhaseMonsterIndex unchanged and
+      // nothing would re-trigger the $effect, locking up the game.
+      const state = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 5 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: testDungeon,
+        monsters: [
+          // tileId points to a tile that is NOT in dungeon.tiles
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "missing-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+        pendingMonsterDecision: {
+          decisionId: "test-decision-null",
+          type: "choose-hero-target",
+          monsterId: "kobold-0",
+          options: { heroIds: ["quinn"] },
+          context: "movement",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterTarget({ decisionId: "test-decision-null", targetHeroId: "quinn" })
+      );
+
+      // Decision must be cleared so the game can progress
+      expect(afterSelect.pendingMonsterDecision).toBeNull();
+      expect(afterSelect.villainPhasePaused).toBe(false);
+      // Monster index incremented — game will auto-advance past this monster
+      expect(afterSelect.villainPhaseMonsterIndex).toBe(1);
+      // No move display should appear (monster couldn't move)
+      expect(afterSelect.monsterMoveActionId).toBeNull();
+    });
+
+    it("should create a choose-move-destination decision when multiple equidistant paths exist", () => {
+      // Monster at local {x:2,y:0} (global {x:2,y:0} on start tile), hero at {x:2,y:-3}.
+      // Adjacent positions to monster (on start tile): {x:1,y:0}, {x:3,y:0}, {x:2,y:1},
+      // {x:1,y:1}, {x:3,y:1} — all valid (no staircase at y=0 or y=1).
+      // Manhattan distance from each to hero at {x:2,y:-3}:
+      //   {x:1,y:0} → 1+3=4,  {x:3,y:0} → 1+3=4,  {x:2,y:1} → 0+4=4  ← all tied!
+      // Three positions at equal minimum distance → findMoveTowardHero returns needsChoice.
+      // Before the fix this would leave villainPhaseMonsterIndex unchanged and
+      // clear pendingMonsterDecision without showing any new prompt, locking the game.
+      const state = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: -3 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: testDungeon,
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 0 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+        pendingMonsterDecision: {
+          decisionId: "test-decision-needs-choice",
+          type: "choose-hero-target",
+          monsterId: "kobold-0",
+          options: { heroIds: ["quinn"] },
+          context: "movement",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterTarget({ decisionId: "test-decision-needs-choice", targetHeroId: "quinn" })
+      );
+
+      // A new choose-move-destination decision should be created for position selection
+      expect(afterSelect.pendingMonsterDecision).not.toBeNull();
+      expect(afterSelect.pendingMonsterDecision?.type).toBe("choose-move-destination");
+      expect(afterSelect.pendingMonsterDecision?.monsterId).toBe("kobold-0");
+      expect(afterSelect.pendingMonsterDecision?.options.positions?.length).toBeGreaterThanOrEqual(2);
+      // Villain phase remains paused waiting for position choice
+      expect(afterSelect.villainPhasePaused).toBe(true);
+      // Index NOT incremented yet (will be done by selectMonsterPosition)
+      expect(afterSelect.villainPhaseMonsterIndex).toBe(0);
+      expect(afterSelect.monsterMoveActionId).toBeNull();
+    });
+
+    it("should handle the normal movement path correctly after the bug fix", () => {
+      // Verifies that the existing single-path movement still works after changes.
+      // Monster at {x:2,y:2}, hero at {x:2,y:7} (far south, single clear path south).
+      const state = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 7 } }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: testDungeon,
+        monsters: [
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 2 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+        pendingMonsterDecision: {
+          decisionId: "test-decision-move",
+          type: "choose-hero-target",
+          monsterId: "kobold-0",
+          options: { heroIds: ["quinn"] },
+          context: "movement",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterTarget({ decisionId: "test-decision-move", targetHeroId: "quinn" })
+      );
+
+      // Decision cleared (moved OR new decision, not stuck)
+      // Either the monster moves (monsterMoveActionId set, index incremented)
+      // or a new position decision is created — but it must NOT be stuck.
+      const decisionOrMove =
+        afterSelect.monsterMoveActionId !== null ||
+        (afterSelect.pendingMonsterDecision?.type === "choose-move-destination");
+      expect(decisionOrMove).toBe(true);
     });
   });
 
