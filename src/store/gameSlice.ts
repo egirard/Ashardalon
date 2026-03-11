@@ -2072,7 +2072,7 @@ export const gameSlice = createSlice({
             position: t.position
           }));
           
-          state.heroHp = applyEndOfHeroPhaseEnvironmentEffects(
+          const envResult = applyEndOfHeroPhaseEnvironmentEffects(
             state.activeEnvironmentId,
             state.heroHp,
             activeHeroId,
@@ -2080,6 +2080,21 @@ export const gameSlice = createSlice({
             allHeroPositions,
             state.dungeon
           );
+          state.heroHp = envResult.heroHpList;
+          
+          // Log environment effect if it triggered
+          if (envResult.effects.length > 0) {
+            const envCard = getEncounterById(state.activeEnvironmentId);
+            const targetSummaries = envResult.effects.map(r => `${r.heroName}: ${r.damageTaken} dmg`);
+            state.logEntries.push({
+              id: state.logEntryCounter++,
+              timestamp: Date.now(),
+              type: 'encounter',
+              message: `Environment effect: ${envCard?.name ?? state.activeEnvironmentId} - ${targetSummaries.join('; ')}`,
+              details: envCard?.description,
+              extendedDetails: `Effect: ${envCard?.effect.description}`,
+            });
+          }
           
           // Check for party defeat after environment effect
           const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
@@ -2673,7 +2688,8 @@ export const gameSlice = createSlice({
               timestamp: Date.now(),
               type: 'encounter',
               message: `Encounter: ${encounter.name} (${encounter.type})${cancelInfo}`,
-              details: encounter.flavorText,
+              details: encounter.description,
+              extendedDetails: `Effect: ${encounter.effect.description}`,
             });
 
             // Fire encounter-draw event for scenario hooks (e.g. Adventure 15 Automated Defense)
@@ -2967,7 +2983,8 @@ export const gameSlice = createSlice({
             timestamp: Date.now(),
             type: 'encounter',
             message: `Environment active: ${state.drawnEncounter.name}`,
-            details: state.drawnEncounter.effect.description,
+            details: state.drawnEncounter.description,
+            extendedDetails: `Effect: ${state.drawnEncounter.effect.description}`,
           });
           
           // Environment cards are not discarded - they remain active
@@ -2995,7 +3012,8 @@ export const gameSlice = createSlice({
             message: trapPlaced 
               ? `Trap placed: ${state.drawnEncounter.name}` 
               : `Trap not placed (tile already has trap): ${state.drawnEncounter.name}`,
-            details: state.drawnEncounter.effect.description,
+            details: state.drawnEncounter.description,
+            extendedDetails: `Effect: ${state.drawnEncounter.effect.description}`,
           });
           
           // Discard the trap encounter card
@@ -3024,7 +3042,8 @@ export const gameSlice = createSlice({
                   timestamp: Date.now(),
                   type: 'encounter',
                   message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
-                  details: encounter.flavorText,
+                  details: encounter.description,
+                  extendedDetails: `Effect: ${encounter.effect.description}`,
                   heroId: currentHeroId,
                 });
                 return;
@@ -3072,12 +3091,24 @@ export const gameSlice = createSlice({
                 return `${r.heroName}: ${parts.join(', ')}`;
               });
               
+              const detailedSummaries = results.map(r => {
+                const lines = [`${r.heroName}:`];
+                if (r.attackRoll !== undefined && r.attackTotal !== undefined && r.targetAC !== undefined) {
+                  lines.push(`  Attack roll: ${r.attackRoll} (total ${r.attackTotal}) vs AC ${r.targetAC} → ${r.wasHit ? 'Hit' : 'Miss'}`);
+                }
+                if (r.damageTaken > 0) {
+                  lines.push(`  Damage taken: ${r.damageTaken}`);
+                }
+                return lines.join('\n');
+              });
+              
               state.logEntries.push({
                 id: state.logEntryCounter++,
                 timestamp: Date.now(),
                 type: 'encounter',
                 message: `Hazard: ${state.drawnEncounter.name} - ${targetSummaries.join('; ')}`,
-                details: state.drawnEncounter.effect.description,
+                details: state.drawnEncounter.description,
+                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}\n\n${detailedSummaries.join('\n')}`,
               });
             } else {
               state.logEntries.push({
@@ -3087,7 +3118,8 @@ export const gameSlice = createSlice({
                 message: hazardPlaced 
                   ? `Hazard placed: ${state.drawnEncounter.name}` 
                   : `Hazard not placed (tile already has hazard): ${state.drawnEncounter.name}`,
-                details: state.drawnEncounter.effect.description,
+                details: state.drawnEncounter.description,
+                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}`,
               });
             }
             
@@ -3134,7 +3166,8 @@ export const gameSlice = createSlice({
                   timestamp: Date.now(),
                   type: 'encounter',
                   message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
-                  details: encounter.flavorText,
+                  details: encounter.description,
+                  extendedDetails: `Effect: ${encounter.effect.description}`,
                   heroId: currentHeroId,
                 });
                 return;
@@ -3766,13 +3799,14 @@ export const gameSlice = createSlice({
                 
                 // Log curse application
                 const curseName = state.drawnEncounter.name;
-                const logDetails = isTimeLeap ? `${activeHeroId} removed from play until next turn` : state.drawnEncounter.effect.description;
+                const logExtendedDetails = isTimeLeap ? `${activeHeroId} removed from play until next turn\nEffect: ${state.drawnEncounter.effect.description}` : `Effect: ${state.drawnEncounter.effect.description}`;
                 state.logEntries.push({
                   id: state.logEntryCounter++,
                   timestamp: Date.now(),
                   type: 'encounter',
                   message: `Curse applied: ${curseName} on ${activeHeroId}`,
-                  details: logDetails,
+                  details: state.drawnEncounter.description,
+                  extendedDetails: logExtendedDetails,
                   heroId: activeHeroId,
                 });
                 
@@ -3809,7 +3843,8 @@ export const gameSlice = createSlice({
                   timestamp: Date.now(),
                   type: 'encounter',
                   message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
-                  details: encounter.flavorText,
+                  details: encounter.description,
+                  extendedDetails: `Effect: ${encounter.effect.description}`,
                   heroId: currentHeroId,
                 });
                 return;
@@ -3847,12 +3882,27 @@ export const gameSlice = createSlice({
                 return `${r.heroName}: ${parts.join(', ')}`;
               });
               
+              const detailedSummaries = results.map(r => {
+                const lines = [`${r.heroName}:`];
+                if (r.attackRoll !== undefined && r.attackTotal !== undefined && r.targetAC !== undefined) {
+                  lines.push(`  Attack roll: ${r.attackRoll} (total ${r.attackTotal}) vs AC ${r.targetAC} → ${r.wasHit ? 'Hit' : 'Miss'}`);
+                }
+                if (r.damageTaken > 0) {
+                  lines.push(`  Damage taken: ${r.damageTaken}`);
+                }
+                if (r.statusesApplied && r.statusesApplied.length > 0) {
+                  lines.push(`  Status: ${r.statusesApplied.join(', ')}`);
+                }
+                return lines.join('\n');
+              });
+              
               state.logEntries.push({
                 id: state.logEntryCounter++,
                 timestamp: Date.now(),
                 type: 'encounter',
                 message: `${state.drawnEncounter.name} - ${targetSummaries.join('; ')}`,
-                details: state.drawnEncounter.effect.description,
+                details: state.drawnEncounter.description,
+                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}\n\n${detailedSummaries.join('\n')}`,
               });
             } else {
               // No immediate effects (e.g., environment cards)
@@ -3861,7 +3911,8 @@ export const gameSlice = createSlice({
                 timestamp: Date.now(),
                 type: 'encounter',
                 message: `Resolved: ${state.drawnEncounter.name}`,
-                details: state.drawnEncounter.effect.description,
+                details: state.drawnEncounter.description,
+                extendedDetails: `Effect: ${state.drawnEncounter.effect.description}`,
               });
             }
             
@@ -3908,7 +3959,8 @@ export const gameSlice = createSlice({
                   timestamp: Date.now(),
                   type: 'encounter',
                   message: `Bad Luck: Extra encounter - ${encounter.name} (${encounter.type})${cancelInfo}`,
-                  details: encounter.flavorText,
+                  details: encounter.description,
+                  extendedDetails: `Effect: ${encounter.effect.description}`,
                   heroId: currentHeroId,
                 });
                 return;
