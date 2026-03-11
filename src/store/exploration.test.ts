@@ -187,7 +187,10 @@ describe("exploration", () => {
         'tile-white-2exit-d',
         'tile-white-2exit-e',
         'tile-black-2exit-b',
+        'tile-black-2exit-c',
         'tile-black-3exit-a',
+        'tile-black-3exit-c',
+        'tile-white-3exit-b',
         'tile-white-3exit-c',
         'tile-black-4exit-a',
       ];
@@ -203,6 +206,130 @@ describe("exploration", () => {
           expect(rotation).toBe(90);
         });
       }
+    });
+
+    describe("tile orientation for tile-black-3exit-c (S/E/W open, N wall, south arrow)", () => {
+      // This tile was reported as incorrectly oriented (GitHub issue: User Feedback - Tile orientation).
+      // Root cause: scorchMarkPosition was { x: 1, y: 1 } (west) but the tile image has the
+      // entrance arrow pointing south (▼ at bottom center), so the correct value is { x: 1, y: 2 }.
+      const tileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-black-3exit-c')!;
+
+      it("should open west edge and rotate 90° when placed via east exploration", () => {
+        // Reproduces the exact bug scenario from the issue report:
+        // Quinn explores east → new tile tile-black-3exit-c placed → must connect on west side
+        const rotation = calculateTileRotation("east", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(90);
+        expect(rotatedEdges.west).toBe('open');   // connecting edge
+        expect(rotatedEdges.east).toBe('wall');   // rotated north (wall) now faces east
+        expect(rotatedEdges.north).toBe('open');  // rotated west (open) now faces north
+        expect(rotatedEdges.south).toBe('open');  // rotated east (open) now faces south
+      });
+
+      it("should open south edge and rotate 0° when placed via north exploration", () => {
+        const rotation = calculateTileRotation("north", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(0);
+        expect(rotatedEdges.south).toBe('open');  // connecting edge
+        expect(rotatedEdges.north).toBe('wall');
+        expect(rotatedEdges.east).toBe('open');
+        expect(rotatedEdges.west).toBe('open');
+      });
+
+      it("should open north edge and rotate 180° when placed via south exploration", () => {
+        const rotation = calculateTileRotation("south", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(180);
+        expect(rotatedEdges.north).toBe('open');  // connecting edge
+        expect(rotatedEdges.south).toBe('wall');
+        expect(rotatedEdges.east).toBe('open');
+        expect(rotatedEdges.west).toBe('open');
+      });
+
+      it("should open east edge and rotate 270° when placed via west exploration", () => {
+        const rotation = calculateTileRotation("west", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(270);
+        expect(rotatedEdges.east).toBe('open');   // connecting edge
+        expect(rotatedEdges.west).toBe('wall');   // rotated north (wall) now faces west
+        expect(rotatedEdges.north).toBe('open');
+        expect(rotatedEdges.south).toBe('open');
+      });
+    });
+
+    describe("tile orientation for tile-white-3exit-b (S/E/W open, N wall, south arrow)", () => {
+      // Identical structure to tile-black-3exit-c; scorchMarkPosition was also wrong.
+      const tileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-white-3exit-b')!;
+
+      it("should open west edge and rotate 90° when placed via east exploration", () => {
+        const rotation = calculateTileRotation("east", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(90);
+        expect(rotatedEdges.west).toBe('open');
+      });
+
+      it("should open south edge and rotate 0° when placed via north exploration", () => {
+        const rotation = calculateTileRotation("north", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(0);
+        expect(rotatedEdges.south).toBe('open');
+      });
+
+      it("should open north edge and rotate 180° when placed via south exploration", () => {
+        const rotation = calculateTileRotation("south", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(180);
+        expect(rotatedEdges.north).toBe('open');
+      });
+
+      it("should open east edge and rotate 270° when placed via west exploration", () => {
+        const rotation = calculateTileRotation("west", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(270);
+        expect(rotatedEdges.east).toBe('open');
+      });
+    });
+
+    describe("tile orientation for tile-black-2exit-b and tile-black-2exit-c (S open, N wall)", () => {
+      // These tiles had north: 'open' in metadata but the tile images show north is a wall.
+      // Fixed to north: 'wall', making them proper 2-exit tiles (S+W and S+E respectively).
+      it("tile-black-2exit-b should have north as wall and only S/W open", () => {
+        const tileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-black-2exit-b')!;
+        expect(tileDef.defaultEdges.north).toBe('wall');
+        expect(tileDef.defaultEdges.south).toBe('open');
+        expect(tileDef.defaultEdges.east).toBe('wall');
+        expect(tileDef.defaultEdges.west).toBe('open');
+      });
+
+      it("tile-black-2exit-c should have north as wall and only S/E open", () => {
+        const tileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-black-2exit-c')!;
+        expect(tileDef.defaultEdges.north).toBe('wall');
+        expect(tileDef.defaultEdges.south).toBe('open');
+        expect(tileDef.defaultEdges.east).toBe('open');
+        expect(tileDef.defaultEdges.west).toBe('wall');
+      });
+
+      it("tile-black-2exit-b should open west edge and rotate 90° when placed via east exploration", () => {
+        const tileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-black-2exit-b')!;
+        const rotation = calculateTileRotation("east", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(90);
+        expect(rotatedEdges.west).toBe('open');   // connecting edge
+        expect(rotatedEdges.east).toBe('wall');
+        expect(rotatedEdges.north).toBe('open');
+        expect(rotatedEdges.south).toBe('wall');
+      });
+
+      it("tile-black-2exit-c should open west edge and rotate 90° when placed via east exploration", () => {
+        const tileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-black-2exit-c')!;
+        const rotation = calculateTileRotation("east", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(90);
+        expect(rotatedEdges.west).toBe('open');   // connecting edge
+        expect(rotatedEdges.east).toBe('wall');   // rotated north (wall) now faces east
+        expect(rotatedEdges.north).toBe('wall');  // rotated west (wall) now faces north
+        expect(rotatedEdges.south).toBe('open');  // rotated east (open) now faces south
+      });
     });
   });
 
