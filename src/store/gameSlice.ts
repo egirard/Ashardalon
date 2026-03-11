@@ -2380,12 +2380,14 @@ export const gameSlice = createSlice({
           const spawnPositions = spawnResult.monsters
             .map(m => `(${m.position.x}, ${m.position.y})`)
             .join(', ');
+          const spawnInstanceIds = spawnResult.monsters.map(m => m.instanceId).join(', ');
           state.logEntries.push({
             id: state.logEntryCounter++,
             timestamp: Date.now(),
             type: 'exploration',
             message: `${spawnedMonsterName}${spawnCount > 1 ? ` ×${spawnCount}` : ''} appeared on the new tile!`,
             details: `Spawned at position${spawnCount > 1 ? 's' : ''}: ${spawnPositions}`,
+            extendedDetails: `Instance${spawnCount > 1 ? 's' : ''}: ${spawnInstanceIds} | Tile: ${newTile.id}`,
           });
 
           // Trigger monster-spawn event for power card hooks (e.g., To Arms!)
@@ -4483,16 +4485,18 @@ export const gameSlice = createSlice({
         type: import('./types').LogMessageType;
         message: string;
         details?: string;
+        extendedDetails?: string;
         heroId?: string;
       }>,
     ) => {
-      const { type, message, details, heroId } = action.payload;
+      const { type, message, details, extendedDetails, heroId } = action.payload;
       const newEntry: import('./types').LogEntry = {
         id: state.logEntryCounter++,
         timestamp: Date.now(),
         type,
         message,
         details,
+        extendedDetails,
         heroId,
       };
       state.logEntries.push(newEntry);
@@ -4967,6 +4971,9 @@ export const gameSlice = createSlice({
       }
 
       if (result.type === 'move') {
+        // Capture monster's current global position before the move for logging
+        const monsterPreMoveGlobal = getMonsterGlobalPosition(monster, state.dungeon);
+
         // Update monster position
         const monsterToMove = state.monsters.find(m => m.instanceId === monster.instanceId);
         if (monsterToMove) {
@@ -5051,6 +5058,19 @@ export const gameSlice = createSlice({
         }
         // Store the monster ID to show "moved but could not attack" message
         state.monsterMoveActionId = monster.instanceId;
+
+        // Log the monster move
+        const movingMonsterDef = getMonsterById(monster.monsterId);
+        const movingMonsterName = movingMonsterDef?.name ?? 'Monster';
+        const fromPos = monsterPreMoveGlobal ? `(${monsterPreMoveGlobal.x}, ${monsterPreMoveGlobal.y})` : 'unknown';
+        const toPos = `(${result.destination.x}, ${result.destination.y})`;
+        state.logEntries.push({
+          id: state.logEntryCounter++,
+          timestamp: Date.now(),
+          type: 'combat',
+          message: `${movingMonsterName} moves.`,
+          extendedDetails: `Monster: ${monster.instanceId} | From: ${fromPos} → To: ${toPos}`,
+        });
       } else if (result.type === 'attack') {
         // Store the attack result
         state.monsterAttackResult = result.result;
@@ -5067,6 +5087,13 @@ export const gameSlice = createSlice({
         const hitOrMiss = result.result.isHit ? 'Hit' : 'Miss';
         const criticalText = result.result.isCritical ? ' (Critical!)' : '';
         const logMessage = `${monsterName} attacks ${targetName}: ${hitOrMiss}!${criticalText}`;
+
+        // Build extended position details
+        const attackMonsterGlobal = getMonsterGlobalPosition(monster, state.dungeon);
+        const attackTargetHeroToken = state.heroTokens.find(h => h.heroId === result.targetId);
+        const attackMonsterPos = attackMonsterGlobal ? `(${attackMonsterGlobal.x}, ${attackMonsterGlobal.y})` : 'unknown';
+        const attackTargetPos = attackTargetHeroToken ? `(${attackTargetHeroToken.position.x}, ${attackTargetHeroToken.position.y})` : 'unknown';
+        const attackExtendedDetails = `Monster: ${monster.instanceId} at ${attackMonsterPos} | Target ${result.targetId} at ${attackTargetPos}`;
         
         let logDetails = `Roll: ${result.result.roll} + ${result.result.attackBonus} = ${result.result.total} vs AC ${result.result.targetAC}`;
         if (result.result.isHit && result.result.damage > 0) {
@@ -5140,9 +5167,13 @@ export const gameSlice = createSlice({
           type: 'combat',
           message: logMessage,
           details: logDetails,
+          extendedDetails: attackExtendedDetails,
         });
       } else if (result.type === 'move-and-attack') {
         // Handle move-and-attack: monster moves adjacent AND attacks in same turn
+        // Capture monster's current global position before the move for logging
+        const moveAttackPreMoveGlobal = getMonsterGlobalPosition(monster, state.dungeon);
+
         // First, update monster position
         const monsterToMove = state.monsters.find(m => m.instanceId === monster.instanceId);
         if (monsterToMove) {
@@ -5246,6 +5277,13 @@ export const gameSlice = createSlice({
           logDetails += ` | Damage: ${result.result.damage}`;
         }
 
+        // Build extended position details for move-and-attack
+        const moveAttackFromPos = moveAttackPreMoveGlobal ? `(${moveAttackPreMoveGlobal.x}, ${moveAttackPreMoveGlobal.y})` : 'unknown';
+        const moveAttackToPos = `(${result.destination.x}, ${result.destination.y})`;
+        const moveAttackTargetHeroToken = state.heroTokens.find(h => h.heroId === result.targetId);
+        const moveAttackTargetPos = moveAttackTargetHeroToken ? `(${moveAttackTargetHeroToken.position.x}, ${moveAttackTargetHeroToken.position.y})` : 'unknown';
+        const moveAttackExtendedDetails = `Monster: ${monster.instanceId} | From: ${moveAttackFromPos} → To: ${moveAttackToPos} | Target ${result.targetId} at ${moveAttackTargetPos}`;
+
         // Apply damage to hero if hit
         if (result.result.isHit && result.result.damage > 0) {
           const heroHp = state.heroHp.find(h => h.heroId === result.targetId);
@@ -5290,6 +5328,7 @@ export const gameSlice = createSlice({
           type: 'combat',
           message: logMessage,
           details: logDetails,
+          extendedDetails: moveAttackExtendedDetails,
         });
       } else if (result.type === 'area-attack') {
         // Handle area attack: monster attacks all valid targets simultaneously
@@ -5298,6 +5337,8 @@ export const gameSlice = createSlice({
         const monsterName = monsterDef?.name ?? 'Monster';
         const tactics = MONSTER_TACTICS[monster.monsterId];
         const attackOption = tactics?.adjacentAttack;
+        // Capture area attacker position for extended details
+        const areaAttackerGlobal = getMonsterGlobalPosition(monster, state.dungeon);
         
         for (let i = 0; i < result.targetIds.length; i++) {
           const targetId = result.targetIds[i];
@@ -5330,6 +5371,11 @@ export const gameSlice = createSlice({
           if (attackResult.isHit && attackOption?.statusEffect) {
             logDetails += ` | Applied: ${attackOption.statusEffect}`;
           }
+
+          const areaAttackerPos = areaAttackerGlobal ? `(${areaAttackerGlobal.x}, ${areaAttackerGlobal.y})` : 'unknown';
+          const areaTargetHeroToken = state.heroTokens.find(h => h.heroId === targetId);
+          const areaTargetPos = areaTargetHeroToken ? `(${areaTargetHeroToken.position.x}, ${areaTargetHeroToken.position.y})` : 'unknown';
+          const areaExtendedDetails = `Monster: ${monster.instanceId} at ${areaAttackerPos} | Target ${targetId} at ${areaTargetPos}`;
           
           state.logEntries.push({
             id: state.logEntryCounter++,
@@ -5337,6 +5383,7 @@ export const gameSlice = createSlice({
             type: 'combat',
             message: logMessage,
             details: logDetails,
+            extendedDetails: areaExtendedDetails,
           });
         }
         
@@ -5442,6 +5489,7 @@ export const gameSlice = createSlice({
                   type: 'exploration',
                   message: `${spawnedMonsterName} spawned on new tile`,
                   details: `Spawned at position: (${spawnResult.monsters[0].position.x}, ${spawnResult.monsters[0].position.y})`,
+                  extendedDetails: `Instance: ${spawnResult.monsters[0].instanceId} | Tile: ${newTile.id}`,
                 });
               }
               
@@ -5586,14 +5634,19 @@ export const gameSlice = createSlice({
 
       switch (result.type) {
         case 'move': {
+          // Capture villain's current global position before the move for logging
+          const villainPreMoveGlobal = state.villain ? getVillainGlobalPosition(state.villain, state.dungeon) : null;
           // Update villain position
           state.villain.position = globalToLocalForVillain(result.destination, result.newTileId, state.dungeon);
           state.villain.tileId = result.newTileId;
+          const villainFromPos = villainPreMoveGlobal ? `(${villainPreMoveGlobal.x}, ${villainPreMoveGlobal.y})` : 'unknown';
+          const villainToPos = `(${result.destination.x}, ${result.destination.y})`;
           state.logEntries.push({
             id: state.logEntryCounter++,
             timestamp: Date.now(),
             type: 'combat',
             message: `${villainName} moves.`,
+            extendedDetails: `From: ${villainFromPos} → To: ${villainToPos} | Tile: ${result.newTileId}`,
           });
           // Show villain activation notification
           state.villainActivation = {
@@ -5727,6 +5780,7 @@ export const gameSlice = createSlice({
                   timestamp: Date.now(),
                   type: 'exploration',
                   message: `${villainName} summons a ${newMonsterId}!`,
+                  extendedDetails: `Instance: ${newMonster.instanceId} | Spawned at: (${spawnPos.x}, ${spawnPos.y}) | Tile: ${spawnTile.id}`,
                 });
                 // Show villain activation notification
                 state.villainActivation = {

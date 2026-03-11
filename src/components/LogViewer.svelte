@@ -12,6 +12,19 @@
   // Derive reversed log entries (most recent first)
   let reversedLogEntries = $derived([...logEntries].reverse());
 
+  // Track which entries have their extended details expanded
+  let expandedEntries = $state(new Set<number>());
+
+  function toggleExpanded(entryId: number): void {
+    const next = new Set(expandedEntries);
+    if (next.has(entryId)) {
+      next.delete(entryId);
+    } else {
+      next.add(entryId);
+    }
+    expandedEntries = next;
+  }
+
   // Function to format timestamp
   function formatTimestamp(timestamp: number): string {
     const date = new Date(timestamp);
@@ -74,6 +87,19 @@
             <div class="log-message">{entry.message}</div>
             {#if entry.details}
               <div class="log-details">{entry.details}</div>
+            {/if}
+            {#if entry.extendedDetails}
+              <button
+                class="expand-toggle"
+                onclick={() => toggleExpanded(entry.id)}
+                aria-expanded={expandedEntries.has(entry.id)}
+                aria-label={expandedEntries.has(entry.id) ? 'Hide details' : 'Show details'}
+              >
+                {expandedEntries.has(entry.id) ? '▾ Hide details' : '▸ Show details'}
+              </button>
+              {#if expandedEntries.has(entry.id)}
+                <div class="log-extended-details" data-testid="log-extended-details">{entry.extendedDetails}</div>
+              {/if}
             {/if}
           </div>
         {/each}
@@ -204,6 +230,31 @@
     font-style: italic;
     margin-top: 0.25rem;
     padding-left: 1.5rem;
+  }
+
+  .expand-toggle {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.15rem 0 0 1.5rem;
+    display: block;
+    text-align: left;
+    transition: color 0.15s;
+  }
+
+  .expand-toggle:hover {
+    color: #ffd700;
+  }
+
+  .log-extended-details {
+    color: #7ec8e3;
+    font-size: 0.75rem;
+    font-family: monospace;
+    margin-top: 0.25rem;
+    padding-left: 1.5rem;
+    white-space: pre-wrap;
   }
 
   /* Type-specific styling */
