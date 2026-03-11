@@ -179,5 +179,84 @@ test.describe('090 - Player Log Viewer', () => {
         await expect(page.getByText('1 entry')).toBeVisible();
       }
     });
+
+    // Close the log viewer before next steps
+    await page.locator('button[aria-label="Close log"]').click();
+    await page.locator('[data-testid="log-entries"]').waitFor({ state: 'hidden' });
+
+    // STEP 7: Inject a combat log entry with extendedDetails to test expanded view
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/addLogEntry',
+        payload: {
+          type: 'combat',
+          message: 'Cultist moves and attacks Quinn: Miss!',
+          details: 'Roll: 1 + 6 = 7 vs AC 19',
+          extendedDetails: 'Monster: monster-3 | From: (4, 2) → To: (3, 3) | Target quinn at (3, 2)',
+        }
+      });
+    });
+
+    // Wait for the new log entry to be in the store
+    await expect(async () => {
+      const storeState = await page.evaluate(() => {
+        return (window as any).__REDUX_STORE__.getState();
+      });
+      expect(storeState.game.logEntries.some((e: { extendedDetails?: string }) => e.extendedDetails !== undefined)).toBe(true);
+    }).toPass();
+
+    // Open the log viewer again
+    await page.locator('[data-testid="turn-indicator"] [data-testid="view-log-button"]').click();
+    await page.locator('[data-testid="log-entries"]').waitFor({ state: 'visible' });
+
+    // STEP 8: Verify the "Show details" toggle appears on the combat entry with extendedDetails
+    await screenshots.capture(page, 'log-entry-with-expand-toggle', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="log-entries"]')).toBeVisible();
+
+        // The newest entry (combat) is at the top; find it and check for the expand button
+        const expandToggle = page.locator('button[aria-label="Show details"]').first();
+        await expect(expandToggle).toBeVisible();
+        await expect(expandToggle).toContainText('▸ Show details');
+
+        // Verify extended details are NOT yet visible
+        await expect(page.locator('[data-testid="log-extended-details"]')).not.toBeVisible();
+      }
+    });
+
+    // STEP 9: Click the expand toggle to reveal the extended details
+    await page.locator('button[aria-label="Show details"]').first().click();
+
+    await screenshots.capture(page, 'log-entry-expanded-details', {
+      programmaticCheck: async () => {
+        // Verify the extended details are now visible
+        const expandedDetails = page.locator('[data-testid="log-extended-details"]').first();
+        await expect(expandedDetails).toBeVisible();
+        await expect(expandedDetails).toContainText('Monster: monster-3');
+        await expect(expandedDetails).toContainText('From: (4, 2)');
+        await expect(expandedDetails).toContainText('Target quinn at (3, 2)');
+
+        // Verify the toggle now shows "Hide details"
+        const hideToggle = page.locator('button[aria-label="Hide details"]').first();
+        await expect(hideToggle).toBeVisible();
+        await expect(hideToggle).toContainText('▾ Hide details');
+      }
+    });
+
+    // STEP 10: Collapse the extended details by clicking again
+    await page.locator('button[aria-label="Hide details"]').first().click();
+
+    await screenshots.capture(page, 'log-entry-details-collapsed', {
+      programmaticCheck: async () => {
+        // Verify extended details are hidden again
+        await expect(page.locator('[data-testid="log-extended-details"]')).not.toBeVisible();
+
+        // Verify toggle reverts to "Show details"
+        const showToggle = page.locator('button[aria-label="Show details"]').first();
+        await expect(showToggle).toBeVisible();
+        await expect(showToggle).toContainText('▸ Show details');
+      }
+    });
   });
 });
