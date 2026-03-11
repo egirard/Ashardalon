@@ -79,27 +79,37 @@
         </div>
       {:else}
         {#each reversedLogEntries as entry (entry.id)}
+          {@const hasExpandable = !!(entry.details || entry.extendedDetails)}
+          {@const isExpanded = expandedEntries.has(entry.id)}
           <div class="log-entry {getLogTypeClass(entry.type)}" data-testid="log-entry">
-            <div class="log-entry-header">
-              <span class="log-type-icon">{getLogTypeIcon(entry.type)}</span>
-              <span class="log-timestamp">{formatTimestamp(entry.timestamp)}</span>
-            </div>
-            <div class="log-message">{entry.message}</div>
-            {#if entry.details}
-              <div class="log-details">{entry.details}</div>
-            {/if}
-            {#if entry.extendedDetails}
+            {#if hasExpandable}
               <button
-                class="expand-toggle"
+                class="log-entry-summary expandable"
                 onclick={() => toggleExpanded(entry.id)}
-                aria-expanded={expandedEntries.has(entry.id)}
-                aria-label={expandedEntries.has(entry.id) ? 'Hide details' : 'Show details'}
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? 'Hide details' : 'Show details'}
               >
-                {expandedEntries.has(entry.id) ? '▾ Hide details' : '▸ Show details'}
+                <span class="log-type-icon">{getLogTypeIcon(entry.type)}</span>
+                <span class="log-message">{entry.message}</span>
+                <span class="log-expand-indicator">{isExpanded ? ' ▾' : ' ...'}</span>
               </button>
-              {#if expandedEntries.has(entry.id)}
-                <div class="log-extended-details" data-testid="log-extended-details">{entry.extendedDetails}</div>
-              {/if}
+            {:else}
+              <div class="log-entry-summary">
+                <span class="log-type-icon">{getLogTypeIcon(entry.type)}</span>
+                <span class="log-message">{entry.message}</span>
+              </div>
+            {/if}
+
+            {#if isExpanded}
+              <div class="log-entry-expanded">
+                <span class="log-timestamp">{formatTimestamp(entry.timestamp)}</span>
+                {#if entry.details}
+                  <div class="log-details">{entry.details}</div>
+                {/if}
+                {#if entry.extendedDetails}
+                  <div class="log-extended-details" data-testid="log-extended-details">{entry.extendedDetails}</div>
+                {/if}
+              </div>
             {/if}
           </div>
         {/each}
@@ -192,35 +202,66 @@
     background: rgba(0, 0, 0, 0.3);
     border-left: 3px solid #888;
     border-radius: 4px;
-    padding: 0.75rem;
-    transition: transform 0.2s;
+    overflow: hidden;
+    transition: background 0.2s;
   }
 
   .log-entry:hover {
-    transform: translateX(2px);
     background: rgba(0, 0, 0, 0.4);
   }
 
-  .log-entry-header {
+  .log-entry-summary {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .log-entry-summary.expandable {
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+  }
+
+  .log-entry-summary.expandable:hover {
+    background: rgba(255, 215, 0, 0.07);
   }
 
   .log-type-icon {
     font-size: 1rem;
-  }
-
-  .log-timestamp {
-    font-size: 0.7rem;
-    color: #888;
-    font-family: monospace;
+    flex-shrink: 0;
   }
 
   .log-message {
     color: #fff;
     font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .log-expand-indicator {
+    color: #888;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .log-entry-expanded {
+    padding: 0.25rem 0.75rem 0.5rem 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .log-timestamp {
+    display: block;
+    font-size: 0.7rem;
+    color: #888;
+    font-family: monospace;
     margin-bottom: 0.25rem;
   }
 
@@ -229,23 +270,6 @@
     font-size: 0.8rem;
     font-style: italic;
     margin-top: 0.25rem;
-    padding-left: 1.5rem;
-  }
-
-  .expand-toggle {
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 0.75rem;
-    cursor: pointer;
-    padding: 0.15rem 0 0 1.5rem;
-    display: block;
-    text-align: left;
-    transition: color 0.15s;
-  }
-
-  .expand-toggle:hover {
-    color: #ffd700;
   }
 
   .log-extended-details {
@@ -253,7 +277,6 @@
     font-size: 0.75rem;
     font-family: monospace;
     margin-top: 0.25rem;
-    padding-left: 1.5rem;
     white-space: pre-wrap;
   }
 
