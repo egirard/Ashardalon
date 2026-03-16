@@ -611,8 +611,9 @@ describe('monsterAI', () => {
       expect(result.type).toBe('move');
     });
 
-    it('kobold should move toward reachable heroes even when tile has unexplored edges', () => {
+    it('kobold should explore when tile has unexplored edges and no heroes on tile', () => {
       // Set up a two-tile dungeon: start tile (heroes) + new tile (kobold with unexplored east edge)
+      // Per card rule: if no heroes on tile AND unexplored edge exists → explore
       const startTile: PlacedTile = {
         id: 'start-tile',
         tileType: 'start',
@@ -647,9 +648,9 @@ describe('monsterAI', () => {
         tileId: 'tile-1',
       };
 
-      // Quinn on start tile at east edge
+      // Quinn on start tile — reachable but NOT on the kobold's tile
       const heroTokens: HeroToken[] = [
-        { heroId: 'quinn', position: { x: 3, y: 1 } }, // global position
+        { heroId: 'quinn', position: { x: 3, y: 1 } }, // global position on start-tile
       ];
 
       const heroHpMap = { quinn: 8 };
@@ -664,8 +665,8 @@ describe('monsterAI', () => {
         dungeon
       );
 
-      // Kobold should move toward Quinn (heroes are reachable), NOT explore the east edge
-      expect(result.type).toBe('move');
+      // Kobold should explore the east edge (no heroes on its tile), per card rule #2
+      expect(result.type).toBe('explore');
     });
 
     it('kobold should explore when no heroes are reachable', () => {

@@ -2027,9 +2027,9 @@ describe("gameSlice", () => {
     });
 
     it("should activate a newly placed monster after exploration", () => {
-      // Reproduce the bug: hero explores east, Kobold Dragonshield spawns on new tile,
-      // villain phase starts, Kobold should move toward the heroes, NOT explore the new tile's
-      // unexplored edge (heroes are reachable on the adjacent start tile).
+      // After exploration, a Kobold Dragonshield spawns on the new tile.
+      // Per card rule #2: if no heroes on the monster's tile AND there is an unexplored edge,
+      // the Kobold should EXPLORE the unexplored edge (not move toward heroes).
       const gameInProgress = createGameState({
         currentScreen: "game-board",
         heroTokens: [{ heroId: "quinn", position: { x: 3, y: 1 } }], // East edge, north sub-tile
@@ -2090,17 +2090,16 @@ describe("gameSlice", () => {
       // Kobold should still be in state.monsters
       expect(afterEndExploration.monsters).toHaveLength(1);
 
-      // Step 6: Activate next monster - Kobold should move toward Quinn (not explore)
+      // Step 6: Activate next monster - Kobold should EXPLORE (no heroes on its tile, has unexplored edge)
       const afterActivation = gameReducer(afterEndExploration, activateNextMonster({}));
 
       // Kobold was activated - villainPhaseMonsterIndex should have incremented
       expect(afterActivation.villainPhaseMonsterIndex).toBe(1);
 
-      // Kobold should move toward Quinn (heroes are reachable on the adjacent start tile),
-      // NOT explore the new tile's unexplored edge.
-      // monsterMoveActionId should be set (move) and monsterExplorationEvent should NOT be set
-      expect(afterActivation.monsterMoveActionId).not.toBeNull();
-      expect(afterActivation.monsterExplorationEvent).toBeFalsy();
+      // Kobold should explore the unexplored edge on its tile (no heroes on tile = card rule #2).
+      // monsterExplorationEvent should be set and monsterMoveActionId should NOT be set.
+      expect(afterActivation.monsterExplorationEvent).not.toBeFalsy();
+      expect(afterActivation.monsterMoveActionId).toBeFalsy();
     });
   });
 

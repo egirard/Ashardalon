@@ -153,7 +153,7 @@ export interface MonsterCardTactics {
  * Defines the AI behavior for each monster based on their card rules.
  * 
  * IMPLEMENTATION STATUS:
- * - kobold: ✅ FULLY IMPLEMENTED (attack-only behavior)
+ * - kobold: ✅ FULLY IMPLEMENTED (explore-or-attack behavior)
  * - snake: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * - cultist: ✅ FULLY IMPLEMENTED (move-and-attack with poisoned status on hit)
  * - orc-smasher: ✅ FULLY IMPLEMENTED (move-and-attack behavior)
