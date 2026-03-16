@@ -33,7 +33,7 @@ Each monster in Wrath of Ashardalon has a card that defines:
 | Rule | Status | Notes |
 |------|--------|-------|
 | If adjacent to Hero, attack with sword | ✅ | Working |
-| If on tile with unexplored edge and no heroes, explore | ❌ | Not implemented |
+| If on tile with unexplored edge and no heroes, explore | ✅ | Working |
 | Otherwise, move 1 tile toward closest Hero | ✅ | Working |
 
 ### Snake
