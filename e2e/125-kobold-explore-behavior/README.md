@@ -8,6 +8,14 @@ When a hero explores a new tile and a Kobold Dragonshield spawns on it, the play
 
 This test validates the fix for a bug where the Kobold would incorrectly move toward heroes even when card rule #2 required it to explore.
 
+### What happens when the Kobold explores
+
+When the Kobold explores an unexplored edge:
+1. A new tile is placed on the dungeon
+2. A monster (e.g. Gibbering Mouther) is **immediately spawned** on the new tile — visible in the monster panel
+3. The **exploration notification** banner is shown ("Kobold Dragonshield explored South edge")
+4. The **"monster added" interstitial card is NOT shown** for monster-triggered exploration — that card only appears for hero-triggered exploration. The spawned monster appears directly in the monster list panel.
+
 ## Card Rules (Official)
 1. If adjacent to a Hero: Attack with Sword (+7, 1 damage)
 2. If on a tile with an unexplored edge (no Heroes on tile): Place a tile
@@ -36,14 +44,14 @@ The board shows Kobold on the newly explored south tile; Quinn is on the start t
 ![Board with kobold on south tile](125-kobold-explore-behavior.spec.ts-snapshots/001-board-kobold-on-south-tile-chromium-linux.png)
 
 ### 002 - Kobold Explores South Edge
-During villain phase, the Kobold explores the south unexplored edge. The monster-exploration notification shows "Kobold Dragonshield explored South edge".
+During villain phase, the Kobold explores the south unexplored edge. The monster-exploration notification shows "Kobold Dragonshield explored South edge". A Gibbering Mouther (spawned on the new tile) is already visible in the left monster panel. No separate "monster added" interstitial appears — monster-triggered exploration spawns the new monster silently into the monster list.
 
 ![Kobold explores south edge notification](125-kobold-explore-behavior.spec.ts-snapshots/002-kobold-explores-south-edge-chromium-linux.png)
 
-### 003 - Expanded Dungeon After Exploration
-The dungeon has expanded with a new tile placed by the Kobold's exploration. The Kobold remains on its tile.
+### 003 - Expanded Dungeon with Spawned Monster
+The dungeon has expanded with a new tile placed by the Kobold's exploration. Both the Kobold and the newly spawned monster (e.g. Gibbering Mouther) are visible in the monster panel.
 
-![Expanded dungeon after kobold explored](125-kobold-explore-behavior.spec.ts-snapshots/003-expanded-dungeon-after-kobold-explored-chromium-linux.png)
+![Expanded dungeon with spawned monster](125-kobold-explore-behavior.spec.ts-snapshots/003-expanded-dungeon-with-spawned-monster-chromium-linux.png)
 
 ## Notes
 

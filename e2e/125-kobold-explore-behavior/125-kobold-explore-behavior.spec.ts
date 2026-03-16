@@ -180,7 +180,10 @@ test.describe('125 - Kobold Dragonshield Explore Behavior', () => {
       );
     }, { timeout: 5000 });
 
-    // SCREENSHOT 002: Monster exploration notification - Kobold explored the south edge
+    // SCREENSHOT 002: Monster exploration notification - Kobold explored the south edge.
+    // The notification shows Kobold explored. A new monster is also spawned on the new tile
+    // (visible in the monster panel), but no separate "monster added" interstitial appears
+    // for monster-triggered exploration — only hero-triggered exploration shows that card.
     await screenshots.capture(page, 'kobold-explores-south-edge', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -195,6 +198,17 @@ test.describe('125 - Kobold Dragonshield Explore Behavior', () => {
 
         // A new tile should have been placed (dungeon expanded)
         expect(state.game.dungeon.tiles.length).toBeGreaterThan(2);
+
+        // A new monster should have spawned on the new tile (appears in monster list, not as a separate overlay)
+        // Monster-triggered exploration spawns monsters directly without the "recentlySpawnedMonsterId" interstitial
+        expect(state.game.monsters.length).toBeGreaterThan(1);
+        expect(state.game.recentlySpawnedMonsterId).toBeNull();
+
+        // Log entry confirms a monster spawned
+        const spawnLogs = state.game.logEntries.filter(
+          (e: any) => e.message && e.message.toLowerCase().includes('spawned')
+        );
+        expect(spawnLogs.length).toBeGreaterThan(0);
       }
     });
 
@@ -206,15 +220,8 @@ test.describe('125 - Kobold Dragonshield Explore Behavior', () => {
       if (notification) (notification as HTMLElement).style.display = 'none';
     });
 
-    // Dismiss newly spawned monster card if present
-    const spawnedMonsterCard = page.locator('[data-testid="monster-card-overlay"]');
-    if (await spawnedMonsterCard.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await page.locator('[data-testid="dismiss-monster-card"]').click();
-      await spawnedMonsterCard.waitFor({ state: 'hidden' });
-    }
-
-    // SCREENSHOT 003: Expanded dungeon after Kobold explored
-    await screenshots.capture(page, 'expanded-dungeon-after-kobold-explored', {
+    // SCREENSHOT 003: Expanded dungeon after Kobold explored, with spawned monster visible in the panel
+    await screenshots.capture(page, 'expanded-dungeon-with-spawned-monster', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
 
@@ -225,11 +232,21 @@ test.describe('125 - Kobold Dragonshield Explore Behavior', () => {
         const kobold = state.game.monsters.find((m: any) => m.instanceId === 'kobold-explorer');
         expect(kobold).toBeDefined();
 
+        // New monster was spawned on the explored tile (e.g. Gibbering Mouther)
+        const spawnedMonster = state.game.monsters.find((m: any) => m.instanceId !== 'kobold-explorer');
+        expect(spawnedMonster).toBeDefined();
+
         // Exploration log entry created
         const exploreLogs = state.game.logEntries.filter(
           (e: any) => e.message && e.message.toLowerCase().includes('kobold') && e.message.toLowerCase().includes('explor')
         );
         expect(exploreLogs.length).toBeGreaterThan(0);
+
+        // Spawn log entry created (monster appeared on new tile)
+        const spawnLogs = state.game.logEntries.filter(
+          (e: any) => e.message && e.message.toLowerCase().includes('spawned')
+        );
+        expect(spawnLogs.length).toBeGreaterThan(0);
       }
     });
   });
