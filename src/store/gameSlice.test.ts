@@ -713,6 +713,19 @@ describe("gameSlice", () => {
       },
       validMoveSquares: [{ x: 3, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 1 }],
       showingMovement: true,
+      dungeon: {
+        tiles: [
+          {
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "unexplored", south: "unexplored", east: "unexplored", west: "unexplored" },
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      },
     });
 
     it("should move hero to a valid destination", () => {
@@ -5545,7 +5558,7 @@ describe("gameSlice", () => {
           currentPhase: "hero-phase",
           turnNumber: 1,
         },
-        validMoveSquares: [{ x: 2, y: 3 }],
+        validMoveSquares: [{ x: 3, y: 3 }],
         showingMovement: true,
         dungeon: {
           tiles: [
@@ -5561,13 +5574,13 @@ describe("gameSlice", () => {
           tileDeck: [],
         },
         monsters: [
-          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 2, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
+          { monsterId: "kobold", instanceId: "kobold-0", position: { x: 3, y: 3 }, currentHp: 1, controllerId: "quinn", tileId: "start-tile" },
         ],
         heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 }],
       });
 
       // Take a step
-      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 2, y: 3 }, speed: 5 }));
+      const stateAfterMove = gameReducer(initialState, moveHero({ heroId: "quinn", position: { x: 3, y: 3 }, speed: 5 }));
       expect(stateAfterMove.incrementalMovement?.inProgress).toBe(true);
       expect(stateAfterMove.undoSnapshot).not.toBeNull();
       

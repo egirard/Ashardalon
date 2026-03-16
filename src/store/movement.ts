@@ -566,6 +566,53 @@ export function getManhattanDistance(from: Position, to: Position): number {
 }
 
 /**
+ * Calculate the actual movement cost (number of steps) to reach a destination from a starting
+ * position using BFS through valid squares.
+ * 
+ * This correctly handles paths around corners and obstacles, unlike Chebyshev distance which
+ * only measures the straight-line king's-move distance and undercounts movement around corners.
+ * 
+ * @param from - Starting position
+ * @param to - Destination position
+ * @param dungeon - Dungeon state for multi-tile pathfinding
+ * @returns The number of BFS steps to reach the destination, or Infinity if unreachable
+ */
+export function calculateMoveCost(
+  from: Position,
+  to: Position,
+  dungeon?: DungeonState
+): number {
+  if (from.x === to.x && from.y === to.y) {
+    return 0;
+  }
+  
+  const visited = new Set<string>();
+  const queue: { pos: Position; distance: number }[] = [{ pos: from, distance: 0 }];
+  const targetKey = `${to.x},${to.y}`;
+  
+  visited.add(`${from.x},${from.y}`);
+  
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) break;
+    
+    const adjacent = getAdjacentPositions(current.pos, dungeon);
+    for (const adjPos of adjacent) {
+      const key = `${adjPos.x},${adjPos.y}`;
+      if (key === targetKey) {
+        return current.distance + 1;
+      }
+      if (!visited.has(key)) {
+        visited.add(key);
+        queue.push({ pos: adjPos, distance: current.distance + 1 });
+      }
+    }
+  }
+  
+  return Infinity;
+}
+
+/**
  * Get all valid movement squares within the hero's speed using BFS
  * @param heroPos - Current position of the hero
  * @param speed - Movement speed in squares

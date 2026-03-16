@@ -45,7 +45,7 @@ import {
   isVillainShielded,
 } from "./villainAI";
 import { applyDeckSetup, registerScenarioHooks, registerDynamicScenarioHook, createReflectNaturalOneHandler, evaluateWinConditions, evaluateLossConditions, getHeroDailyDamageBonus, getMonsterAcBonus } from "./scenarioEngine";
-import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition } from "./movement";
+import { getValidMoveSquares, isValidMoveDestination, getTileBounds, getTileOrSubTileId, findTileAtPosition, calculateMoveCost } from "./movement";
 import {
   initializeDungeon,
   initializeTileDeck,
@@ -1635,10 +1635,9 @@ export const gameSlice = createSlice({
       const oldPosition = { ...token.position };
       
       // Calculate distance moved (for incremental movement tracking)
-      const distance = Math.max(
-        Math.abs(position.x - token.position.x),
-        Math.abs(position.y - token.position.y)
-      );
+      // Use BFS path distance to correctly account for paths around corners and obstacles.
+      // Chebyshev distance (Math.max(|dx|, |dy|)) would undercount movement around corners.
+      const distance = calculateMoveCost(token.position, position, state.dungeon);
       
       // Create undo snapshot before the move (for reversible action)
       state.undoSnapshot = createUndoSnapshot(
