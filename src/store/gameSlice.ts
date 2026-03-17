@@ -392,6 +392,8 @@ export interface GameState {
   pendingTreasureDiscard: PendingTreasureDiscardState | null;
   /** Pending monster spawn: requires player to select tile for monster spawn (Wandering Monster) */
   pendingMonsterSpawn: PendingMonsterSpawnState | null;
+  /** Pending treasure item attack: hero is selecting a target monster to attack with a treasure item */
+  pendingTreasureItemAttack: { heroId: string; cardId: number } | null;
   /** Selected target ID (for attack actions) - can be monster, trap, treasure, etc. */
   selectedTargetId: string | null;
   /** Selected target type (to differentiate between different targetable entity types) */
@@ -822,6 +824,7 @@ const initialState: GameState = {
   pendingTreasurePlacement: null,
   pendingTreasureDiscard: null,
   pendingMonsterSpawn: null,
+  pendingTreasureItemAttack: null,
   selectedTargetId: null,
   selectedTargetType: null,
   showScenarioIntroduction: false,
@@ -4044,11 +4047,25 @@ export const gameSlice = createSlice({
      */
     setAttackResult: (
       state,
-      action: PayloadAction<{ result: AttackResult; targetInstanceId: string; attackName: string; cardId?: number }>
+      action: PayloadAction<{ result: AttackResult; targetInstanceId: string; attackName: string; cardId?: number; treasureItemCardId?: number; usesMoveAction?: boolean }>
     ) => {
-      // Only allow attack during hero phase and if hero can attack
-      if (state.turnState.currentPhase !== "hero-phase" || !state.heroTurnActions.canAttack) {
+      const { treasureItemCardId, usesMoveAction } = action.payload;
+      
+      // Only allow attack during hero phase
+      if (state.turnState.currentPhase !== "hero-phase") {
         return;
+      }
+      
+      // For treasure item attacks that use the move action, check canMove
+      // For regular attacks, check canAttack
+      if (usesMoveAction) {
+        if (!state.heroTurnActions.canMove) {
+          return;
+        }
+      } else {
+        if (!state.heroTurnActions.canAttack) {
+          return;
+        }
       }
       
       const { result, targetInstanceId, attackName, cardId } = action.payload;
@@ -4279,6 +4296,19 @@ export const gameSlice = createSlice({
                 if (treasureCard) {
                   state.drawnTreasure = treasureCard;
                   state.treasureDrawnThisTurn = true;
+                  
+                  // Log the treasure draw
+                  const treasureHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+                  const treasureHero = AVAILABLE_HEROES.find(h => h.id === treasureHeroId);
+                  const treasureHeroName = treasureHero?.name ?? treasureHeroId ?? 'Hero';
+                  state.logEntries.push({
+                    id: state.logEntryCounter++,
+                    timestamp: Date.now(),
+                    type: 'hero-action',
+                    message: `🎁 ${treasureHeroName} draws a treasure card: ${treasureCard.name}`,
+                    details: treasureCard.rule,
+                    heroId: treasureHeroId,
+                  });
                 }
               }
             }
@@ -4494,8 +4524,32 @@ export const gameSlice = createSlice({
         const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
         if (currentHeroId) {
           const heroStatuses = getHeroStatuses(state, currentHeroId);
-          state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack', heroStatuses);
+          // Treasure item attacks that say "instead of moving" consume the move action
+          const actionType = usesMoveAction ? 'move' : 'attack';
+          state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, actionType, heroStatuses);
         }
+      }
+      
+      // If this was a treasure item attack, flip/discard the item and clear pending state
+      if (treasureItemCardId !== undefined) {
+        const treasureCard = getTreasureById(treasureItemCardId);
+        if (treasureCard) {
+          const attackingHeroId = state.pendingTreasureItemAttack?.heroId ?? 
+            state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+          if (attackingHeroId && state.heroInventories[attackingHeroId]) {
+            if (treasureCard.discardAfterUse) {
+              state.heroInventories[attackingHeroId] = removeTreasureFromInventory(
+                state.heroInventories[attackingHeroId], treasureItemCardId
+              );
+              state.treasureDeck = discardTreasure(state.treasureDeck, treasureItemCardId);
+            } else {
+              state.heroInventories[attackingHeroId] = flipTreasureInInventory(
+                state.heroInventories[attackingHeroId], treasureItemCardId
+              );
+            }
+          }
+        }
+        state.pendingTreasureItemAttack = null;
       }
     },
     /**
@@ -6594,7 +6648,13 @@ export const gameSlice = createSlice({
       
       // Apply the item effect based on type
       const effect = card.effect;
-      const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
+      
+      // Handle attack-action effect - requires player to select a target monster
+      if (effect.type === 'attack-action') {
+        // Set pending state - player needs to select a target before the attack resolves
+        state.pendingTreasureItemAttack = { heroId, cardId };
+        return;
+      }
       
       // Handle healing effect
       if (effect.type === 'healing' && effect.value) {
@@ -6617,6 +6677,12 @@ export const gameSlice = createSlice({
         // Just flip the card (mark as used)
         state.heroInventories[heroId] = flipTreasureInInventory(inventory, cardId);
       }
+    },
+    /**
+     * Cancel a pending treasure item attack (e.g., player changed their mind)
+     */
+    cancelTreasureItemAttack: (state) => {
+      state.pendingTreasureItemAttack = null;
     },
     /**
      * Set treasure deck directly (for testing purposes)
@@ -7261,6 +7327,7 @@ export const {
   selectThiefDiscard,
   selectTileForMonsterSpawn,
   useTreasureItem,
+  cancelTreasureItemAttack,
   setTreasureDeck,
   setHeroInventories,
   setActiveEnvironment,

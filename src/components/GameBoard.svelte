@@ -58,6 +58,7 @@
     selectThiefDiscard,
     selectTileForMonsterSpawn,
     useTreasureItem,
+    cancelTreasureItemAttack,
     placeTreasureToken,
     applyHealing,
     selectMonsterForEncounter,
@@ -301,6 +302,7 @@
   let pendingTreasurePlacement: import('../store/gameSlice').PendingTreasurePlacementState | null = $state(null);
   let pendingTreasureDiscard: import('../store/gameSlice').PendingTreasureDiscardState | null = $state(null);
   let pendingMonsterSpawn: import('../store/gameSlice').PendingMonsterSpawnState | null = $state(null);
+  let pendingTreasureItemAttack: { heroId: string; cardId: number } | null = $state(null);
   let drawnTreasure: TreasureCardType | null = $state(null);
   let dragonsTributeSecondTreasure: TreasureCardType | null = $state(null);
   let heroInventories: Record<string, HeroInventory> = $state({});
@@ -483,6 +485,7 @@
       pendingTreasurePlacement = state.game.pendingTreasurePlacement;
       pendingTreasureDiscard = state.game.pendingTreasureDiscard;
       pendingMonsterSpawn = state.game.pendingMonsterSpawn;
+      pendingTreasureItemAttack = state.game.pendingTreasureItemAttack;
       drawnTreasure = state.game.drawnTreasure;
       dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
       heroInventories = state.game.heroInventories;
@@ -581,7 +584,7 @@
     pendingTreasurePlacement = state.game.pendingTreasurePlacement;
     pendingTreasureDiscard = state.game.pendingTreasureDiscard;
     pendingMonsterSpawn = state.game.pendingMonsterSpawn;
-    drawnTreasure = state.game.drawnTreasure;
+    pendingTreasureItemAttack = state.game.pendingTreasureItemAttack;
     dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
     heroInventories = state.game.heroInventories;
     incrementalMovement = state.game.incrementalMovement;
@@ -2111,6 +2114,12 @@
       return;
     }
     
+    // If a treasure item attack is pending, trigger the attack with this target
+    if (pendingTreasureItemAttack !== null && targetType === 'monster') {
+      handleAttackWithTreasureItem(pendingTreasureItemAttack.cardId, targetId);
+      return;
+    }
+    
     // If an attack card is expanded in the power cards panel, trigger the attack directly
     if (activeExpandedAttackCardId !== null && targetType === 'monster') {
       handleAttackWithCard(activeExpandedAttackCardId, targetId);
@@ -2133,7 +2142,42 @@
 
   // Handle using a treasure item (consumable or action)
   function handleUseTreasureItem(heroId: string, cardId: number) {
+    // For attack-action items, useTreasureItem sets pendingTreasureItemAttack
+    // and the player then selects a target monster to complete the attack
     store.dispatch(useTreasureItem({ heroId, cardId }));
+  }
+
+  // Handle performing an attack with a treasure item (e.g. Crossbow of Speed)
+  function handleAttackWithTreasureItem(itemCardId: number, targetInstanceId: string) {
+    const currentHeroId = getCurrentHeroId();
+    if (!currentHeroId) return;
+
+    const treasureCard = getTreasureById(itemCardId);
+    if (!treasureCard || treasureCard.effect.type !== 'attack-action') return;
+
+    const monster = monsters.find((m) => m.instanceId === targetInstanceId);
+    if (!monster) return;
+
+    const monsterAC = getMonsterAC(monster.monsterId);
+    if (monsterAC === undefined) return;
+
+    const { attackBonus = 0, damage = 1 } = treasureCard.effect;
+
+    const attack = {
+      name: treasureCard.name,
+      attackBonus,
+      damage,
+      range: treasureCard.effect.range ?? 1,
+    };
+
+    const result = resolveAttack(attack, monsterAC);
+    store.dispatch(setAttackResult({
+      result,
+      targetInstanceId,
+      attackName: treasureCard.name,
+      treasureItemCardId: itemCardId,
+      usesMoveAction: true,
+    }));
   }
 
   // Helper function to get tiles in range for Blade Barrier
@@ -3727,6 +3771,8 @@
             boardPosition={edge}
             treasurePlacementMessage={isHeroActive && pendingTreasurePlacement ? 'Choose a tile to place the treasure token' : undefined}
             monsterSpawnMessage={isHeroActive && pendingMonsterSpawn ? `Choose a tile to spawn ${pendingMonsterSpawn.monsterName}` : undefined}
+            treasureItemAttackMessage={isHeroActive && pendingTreasureItemAttack !== null ? `Select a monster to attack with ${getTreasureById(pendingTreasureItemAttack.cardId)?.name ?? 'item'} (click monster, or double-click item to cancel)` : undefined}
+            onCancelTreasureItemAttack={isHeroActive && pendingTreasureItemAttack !== null ? () => store.dispatch(cancelTreasureItemAttack()) : undefined}
             onOpenLog={() => showLogViewer = true}
           />
           <!-- Turn Progress Card (shown only for active player) -->

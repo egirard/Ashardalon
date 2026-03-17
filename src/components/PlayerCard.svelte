@@ -33,11 +33,15 @@
     treasurePlacementMessage?: string;
     /** Message to display for pending monster spawn */
     monsterSpawnMessage?: string;
+    /** Message to display when a treasure item attack is pending (player must select target) */
+    treasureItemAttackMessage?: string;
+    /** Callback to cancel a pending treasure item attack */
+    onCancelTreasureItemAttack?: () => void;
     /** Callback to open the game log viewer */
     onOpenLog?: () => void;
   }
 
-  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage, monsterSpawnMessage, onOpenLog }: Props = $props();
+  let { hero, heroHpState, heroInventory, isActive, turnPhase, turnNumber, conditions = [], onUseTreasureItem, controlledMonsters = [], activatingMonsterId = null, boardPosition = 'bottom', treasurePlacementMessage, monsterSpawnMessage, treasureItemAttackMessage, onCancelTreasureItemAttack, onOpenLog }: Props = $props();
   
   // Check if hero is knocked out (0 HP)
   let isKnockedOut = $derived(heroHpState.currentHp === 0);
@@ -250,6 +254,17 @@
     <div class="monster-spawn-prompt" data-testid="monster-spawn-prompt">
       <div class="prompt-icon">👹</div>
       <div class="prompt-text">{monsterSpawnMessage}</div>
+    </div>
+  {/if}
+
+  <!-- Treasure Item Attack Prompt (shown when player needs to select a target monster) -->
+  {#if treasureItemAttackMessage}
+    <div class="treasure-item-attack-prompt" data-testid="treasure-item-attack-prompt">
+      <div class="prompt-icon">🏹</div>
+      <div class="prompt-text">{treasureItemAttackMessage}</div>
+      {#if onCancelTreasureItemAttack}
+        <button class="prompt-cancel" onclick={onCancelTreasureItemAttack} data-testid="cancel-treasure-item-attack">✕ Cancel</button>
+      {/if}
     </div>
   {/if}
 
@@ -804,5 +819,34 @@
     font-weight: 600;
     font-size: calc(0.95rem * var(--ui-font-scale));
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .treasure-item-attack-prompt {
+    background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+    border: 2px solid #42a5f5;
+    border-radius: 8px;
+    padding: calc(0.85rem * var(--ui-font-scale));
+    margin: calc(0.6rem * var(--ui-font-scale)) 0;
+    display: flex;
+    align-items: center;
+    gap: calc(0.85rem * var(--ui-font-scale));
+    box-shadow: 0 4px 12px rgba(21, 101, 192, 0.4);
+    animation: pulse-prompt 2s ease-in-out infinite;
+  }
+
+  .prompt-cancel {
+    background: rgba(0, 0, 0, 0.3);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: calc(0.8rem * var(--ui-font-scale));
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+
+  .prompt-cancel:hover {
+    background: rgba(0, 0, 0, 0.5);
   }
 </style>
