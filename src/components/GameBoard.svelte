@@ -585,6 +585,7 @@
     pendingTreasureDiscard = state.game.pendingTreasureDiscard;
     pendingMonsterSpawn = state.game.pendingMonsterSpawn;
     pendingTreasureItemAttack = state.game.pendingTreasureItemAttack;
+    drawnTreasure = state.game.drawnTreasure;
     dragonsTributeSecondTreasure = state.game.dragonsTributeSecondTreasure;
     heroInventories = state.game.heroInventories;
     incrementalMovement = state.game.incrementalMovement;
@@ -3771,7 +3772,7 @@
             boardPosition={edge}
             treasurePlacementMessage={isHeroActive && pendingTreasurePlacement ? 'Choose a tile to place the treasure token' : undefined}
             monsterSpawnMessage={isHeroActive && pendingMonsterSpawn ? `Choose a tile to spawn ${pendingMonsterSpawn.monsterName}` : undefined}
-            treasureItemAttackMessage={isHeroActive && pendingTreasureItemAttack !== null ? `Select a monster to attack with ${getTreasureById(pendingTreasureItemAttack.cardId)?.name ?? 'item'} (click monster, or double-click item to cancel)` : undefined}
+            treasureItemAttackMessage={isHeroActive && pendingTreasureItemAttack !== null ? `Select a monster to attack with ${getTreasureById(pendingTreasureItemAttack.cardId)?.name ?? 'item'} (or click Cancel to abort)` : undefined}
             onCancelTreasureItemAttack={isHeroActive && pendingTreasureItemAttack !== null ? () => store.dispatch(cancelTreasureItemAttack()) : undefined}
             onOpenLog={() => showLogViewer = true}
           />
