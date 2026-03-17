@@ -255,7 +255,7 @@
   let encounterEffectMessage: string | null = $state(null);
   let explorationPhaseMessage: string | null = $state(null);
   let villainPhaseStepMessage: string | null = $state(null);
-  let monsterExplorationEvent: { monsterId: string; monsterName: string; direction: import('../store/types').Direction; tileType: string } | null = $state(null);
+  let monsterExplorationEvent: { monsterId: string; monsterName: string; direction: import('../store/types').Direction; tileType: string; spawnedMonsterInstanceId?: string } | null = $state(null);
   let explorationPhase: import('../store/gameSlice').ExplorationPhaseState = $state({ step: 'not-started', drawnTile: null, exploredEdge: null, drawnMonster: null });
   let recentlyPlacedTileId: string | null = $state(null);
   let recentlyPlacedRoomSetTileIds: string[] = $state([]);

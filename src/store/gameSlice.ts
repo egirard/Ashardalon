@@ -293,6 +293,8 @@ export interface GameState {
     direction: import('./types').Direction; 
     tileType: string;
     testDismiss?: boolean;
+    /** Instance ID of a monster spawned on the new tile, if any. Shown as modal after notification dismissed. */
+    spawnedMonsterInstanceId?: string;
   } | null;
   /** Hero turn actions tracking for enforcing valid turn structure */
   heroTurnActions: HeroTurnActions;
@@ -5527,6 +5529,7 @@ export const gameSlice = createSlice({
             });
             
             // Draw monster from deck (monsters always spawn on explored tiles)
+            let spawnedMonsterInstanceId: string | undefined;
             const { monster: drawnMonsterId, deck: newMonsterDeck } = drawMonster(
               state.monsterDeck,
               randomFn
@@ -5561,22 +5564,31 @@ export const gameSlice = createSlice({
                   id: state.logEntryCounter++,
                   timestamp: Date.now(),
                   type: 'exploration',
-                  message: `${spawnedMonsterName} spawned on new tile`,
+                  message: `${spawnedMonsterName} appeared on the new tile!`,
                   details: `Spawned at position: (${spawnResult.monsters[0].position.x}, ${spawnResult.monsters[0].position.y})`,
                   extendedDetails: `Instance: ${spawnResult.monsters[0].instanceId} | Tile: ${newTile.id}`,
                 });
+                
+                // Store the spawned monster id so it shows as a modal after the exploration notification is dismissed
+                spawnedMonsterInstanceId = spawnResult.monsters[0].instanceId;
               }
               
               state.monsterDeck = newMonsterDeck;
             }
             
-            // Store the monster exploration event for UI notification
+            // Highlight the newly placed tile (same as hero exploration)
+            state.recentlyPlacedTileId = newTile.id;
+            
+            // Store the monster exploration event for UI notification.
+            // spawnedMonsterInstanceId (if set) will be shown as the "monster appears" modal
+            // after the player dismisses this notification.
             state.monsterExplorationEvent = {
               monsterId: monster.instanceId,
               monsterName: monsterName,
               direction: result.edge.direction,
               tileType: drawnTile,
               testDismiss: state.testMode, // Use testMode to control auto-dismiss in E2E tests
+              spawnedMonsterInstanceId,
             };
           }
         }
@@ -5630,10 +5642,18 @@ export const gameSlice = createSlice({
       state.monsterMoveActionId = null;
     },
     /**
-     * Dismiss the monster exploration event display
+     * Dismiss the monster exploration event display.
+     * If a monster was spawned during the exploration, show it as a blocking modal afterwards.
      */
     dismissMonsterExplorationEvent: (state) => {
+      const spawnedId = state.monsterExplorationEvent?.spawnedMonsterInstanceId;
       state.monsterExplorationEvent = null;
+      // Clear the tile highlight now that the player has acknowledged the exploration
+      state.recentlyPlacedTileId = null;
+      // Show spawned monster card (blocks until player dismisses)
+      if (spawnedId) {
+        state.recentlySpawnedMonsterId = spawnedId;
+      }
     },
     /**
      * Set monster exploration event (for testing purposes)

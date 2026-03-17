@@ -11,10 +11,11 @@ This test validates the fix for a bug where the Kobold would incorrectly move to
 ### What happens when the Kobold explores
 
 When the Kobold explores an unexplored edge:
-1. A new tile is placed on the dungeon
-2. A monster (e.g. Gibbering Mouther) is **immediately spawned** on the new tile — visible in the monster panel
+1. A new tile is placed on the dungeon (highlighted as "newly placed")
+2. A monster (e.g. Gibbering Mouther) is spawned on the new tile
 3. The **exploration notification** banner is shown ("Kobold Dragonshield explored South edge")
-4. The **"monster added" interstitial card is NOT shown** for monster-triggered exploration — that card only appears for hero-triggered exploration. The spawned monster appears directly in the monster list panel.
+4. After the player dismisses the exploration notification, the **"monster appears" interstitial card** is shown (same as hero-triggered exploration)
+5. After the player dismisses the monster card, play continues
 
 ## Card Rules (Official)
 1. If adjacent to a Hero: Attack with Sword (+7, 1 damage)
@@ -28,8 +29,9 @@ When the Kobold explores an unexplored edge:
 3. Place a Kobold on the south tile — Quinn stays on the start tile
 4. Open the monster mini-card and verify it shows 3 numbered activation instructions
 5. Enter villain phase and activate the Kobold
-6. Verify the Kobold **explores** (not moves) — the `monster-exploration-notification` appears
-7. Verify the dungeon expanded with a new tile after exploration
+6. Verify the Kobold **explores** (not moves) — the `monster-exploration-notification` appears; new tile highlighted
+7. Dismiss the exploration notification → monster card interstitial appears for the spawned monster
+8. Dismiss the monster card → dungeon shows expanded state with both monsters
 
 ## Screenshots
 
@@ -43,17 +45,23 @@ The board shows Kobold on the newly explored south tile; Quinn is on the start t
 
 ![Board with kobold on south tile](125-kobold-explore-behavior.spec.ts-snapshots/001-board-kobold-on-south-tile-chromium-linux.png)
 
-### 002 - Kobold Explores South Edge
-During villain phase, the Kobold explores the south unexplored edge. The monster-exploration notification shows "Kobold Dragonshield explored South edge". A Gibbering Mouther (spawned on the new tile) is already visible in the left monster panel. No separate "monster added" interstitial appears — monster-triggered exploration spawns the new monster silently into the monster list.
+### 002 - Kobold Explores South Edge (Exploration Notification)
+During villain phase, the Kobold explores the south unexplored edge. The monster-exploration notification shows "Kobold Dragonshield explored South edge". The new tile is highlighted. The Gibbering Mouther is already added to state (visible in monster panel), but its interstitial card is shown after the player dismisses this notification.
 
 ![Kobold explores south edge notification](125-kobold-explore-behavior.spec.ts-snapshots/002-kobold-explores-south-edge-chromium-linux.png)
 
-### 003 - Expanded Dungeon with Spawned Monster
-The dungeon has expanded with a new tile placed by the Kobold's exploration. Both the Kobold and the newly spawned monster (e.g. Gibbering Mouther) are visible in the monster panel.
+### 003 - "Monster Appears" Interstitial
+After dismissing the exploration notification, the spawned monster's card is displayed as a blocking modal — the same interstitial shown during hero-triggered exploration. The player must acknowledge the new monster before play continues.
 
-![Expanded dungeon with spawned monster](125-kobold-explore-behavior.spec.ts-snapshots/003-expanded-dungeon-with-spawned-monster-chromium-linux.png)
+![Monster appears interstitial](125-kobold-explore-behavior.spec.ts-snapshots/003-monster-appears-after-kobold-explored-chromium-linux.png)
+
+### 004 - Expanded Dungeon with Spawned Monster
+After dismissing both interstitials, the dungeon shows the new expanded state. Both the Kobold and the newly spawned monster are visible in the monster panel.
+
+![Expanded dungeon with spawned monster](125-kobold-explore-behavior.spec.ts-snapshots/004-expanded-dungeon-with-spawned-monster-chromium-linux.png)
 
 ## Notes
 
 - Uses `setTestMode(true)` to prevent auto-dismiss of the exploration notification
 - The test directly validates `state.game.monsterExplorationEvent !== null` (explore happened) and `state.game.monsterMoveActionId === null` (no move)
+- Both `recentlyPlacedTileId` (tile highlight) and `recentlySpawnedMonsterId` (monster card) are verified in sequence
