@@ -532,6 +532,12 @@ describe('treasure', () => {
         expect(isEffectImplemented(card!)).toBe(true);
       });
 
+      it('should return true for attack-action cards', () => {
+        const card = getTreasureById(141); // Crossbow of Speed
+        expect(card).toBeDefined();
+        expect(isEffectImplemented(card!)).toBe(true);
+      });
+
       it('should return false for reroll cards', () => {
         const card = getTreasureById(147); // Lucky Charm
         expect(card).toBeDefined();
@@ -546,10 +552,10 @@ describe('treasure', () => {
     });
 
     describe('isEffectPartiallyImplemented', () => {
-      it('should return true for attack-action cards', () => {
+      it('should return false for attack-action cards (now fully implemented)', () => {
         const card = getTreasureById(141); // Crossbow of Speed
         expect(card).toBeDefined();
-        expect(isEffectPartiallyImplemented(card!)).toBe(true);
+        expect(isEffectPartiallyImplemented(card!)).toBe(false);
       });
 
       it('should return true for trap-disable cards', () => {
@@ -572,10 +578,10 @@ describe('treasure', () => {
         expect(getEffectImplementationStatus(card!)).toBe('implemented');
       });
 
-      it('should return "partial" for partially implemented cards', () => {
+      it('should return "implemented" for attack-action cards', () => {
         const card = getTreasureById(141); // Crossbow of Speed
         expect(card).toBeDefined();
-        expect(getEffectImplementationStatus(card!)).toBe('partial');
+        expect(getEffectImplementationStatus(card!)).toBe('implemented');
       });
 
       it('should return "not-implemented" for unimplemented cards', () => {
@@ -592,11 +598,11 @@ describe('treasure', () => {
         expect(getImplementationMessage(card!)).toBeNull();
       });
 
-      it('should return message for partially implemented attack-action cards', () => {
+      it('should return null for attack-action cards (now fully implemented)', () => {
         const card = getTreasureById(141); // Crossbow of Speed
         expect(card).toBeDefined();
         const message = getImplementationMessage(card!);
-        expect(message).toContain('Basic attack works');
+        expect(message).toBeNull();
       });
 
       it('should return message for partially implemented trap-disable cards', () => {

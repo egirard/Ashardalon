@@ -104,11 +104,9 @@ export interface TreasureDeck {
  * - speed-bonus: Boots of Striding
  * - damage-bonus: Gauntlets of Ogre Power
  * - healing: Potion of Healing (consumable, heals 2 HP)
- * 
- * ⚠️ PARTIALLY IMPLEMENTED (basic mechanics work, special effects pending):
  * - attack-action: Crossbow of Speed, Ring of Shooting Stars
- *   → Basic attack works, but "instead of moving" restriction not enforced
- *   → "Does not count as attack action" for Ring not implemented
+ *   → Uses hero's move action (instead of moving), player selects target monster
+ *   → Attack resolved with item's attackBonus and damage
  * 
  * ❌ NOT YET IMPLEMENTED (cards display but effects don't apply):
  * - reroll: Lucky Charm
@@ -617,13 +615,13 @@ const IMPLEMENTED_EFFECT_TYPES = [
   'speed-bonus',
   'damage-bonus',
   'healing',
+  'attack-action',
 ] as const;
 
 /**
  * Effect types that are partially implemented (some functionality works)
  */
 const PARTIALLY_IMPLEMENTED_EFFECT_TYPES = [
-  'attack-action',
   'trap-disable', // Data model only, trap system not implemented
 ] as const;
 
@@ -674,8 +672,6 @@ export function getImplementationMessage(card: TreasureCard): string | null {
   
   if (status === 'partial') {
     switch (card.effect.type) {
-      case 'attack-action':
-        return 'Basic attack works. Special restrictions not yet enforced.';
       case 'trap-disable':
         return 'Bonus tracked. Trap system not yet implemented.';
       default:

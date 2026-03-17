@@ -5373,8 +5373,8 @@ describe("gameSlice", () => {
         expect(state.heroInventories["quinn"].items[0].isFlipped).toBe(true);
       });
 
-      it("should flip reusable items instead of discarding", () => {
-        // Ring of Shooting Stars (157) is a flip-to-use item
+      it("should set pendingTreasureItemAttack for attack-action items instead of flipping directly", () => {
+        // Ring of Shooting Stars (157) is an attack-action item
         const initialState = createGameState({
           currentScreen: "game-board",
           heroTokens: [{ heroId: "quinn", position: { x: 2, y: 3 } }],
@@ -5392,10 +5392,11 @@ describe("gameSlice", () => {
 
         const state = gameReducer(initialState, useTreasureItem({ heroId: "quinn", cardId: 157 }));
 
-        // Item should be flipped, not removed
+        // Item should NOT be flipped yet - player needs to select a target first
         expect(state.heroInventories["quinn"].items).toHaveLength(1);
-        expect(state.heroInventories["quinn"].items[0].isFlipped).toBe(true);
-        expect(state.treasureDeck.discardPile).toHaveLength(0);
+        expect(state.heroInventories["quinn"].items[0].isFlipped).toBe(false);
+        // pendingTreasureItemAttack should be set
+        expect(state.pendingTreasureItemAttack).toEqual({ heroId: "quinn", cardId: 157 });
       });
 
       it("should do nothing if hero inventory does not exist", () => {
