@@ -4532,21 +4532,23 @@ export const gameSlice = createSlice({
       
       // If this was a treasure item attack, flip/discard the item and clear pending state
       if (treasureItemCardId !== undefined) {
+        const pendingAttack = state.pendingTreasureItemAttack;
+        if (!pendingAttack) {
+          // Should not happen - pendingTreasureItemAttack must be set before calling setAttackResult with treasureItemCardId
+          state.pendingTreasureItemAttack = null;
+          return;
+        }
         const treasureCard = getTreasureById(treasureItemCardId);
-        if (treasureCard) {
-          const attackingHeroId = state.pendingTreasureItemAttack?.heroId ?? 
-            state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
-          if (attackingHeroId && state.heroInventories[attackingHeroId]) {
-            if (treasureCard.discardAfterUse) {
-              state.heroInventories[attackingHeroId] = removeTreasureFromInventory(
-                state.heroInventories[attackingHeroId], treasureItemCardId
-              );
-              state.treasureDeck = discardTreasure(state.treasureDeck, treasureItemCardId);
-            } else {
-              state.heroInventories[attackingHeroId] = flipTreasureInInventory(
-                state.heroInventories[attackingHeroId], treasureItemCardId
-              );
-            }
+        if (treasureCard && state.heroInventories[pendingAttack.heroId]) {
+          if (treasureCard.discardAfterUse) {
+            state.heroInventories[pendingAttack.heroId] = removeTreasureFromInventory(
+              state.heroInventories[pendingAttack.heroId], treasureItemCardId
+            );
+            state.treasureDeck = discardTreasure(state.treasureDeck, treasureItemCardId);
+          } else {
+            state.heroInventories[pendingAttack.heroId] = flipTreasureInInventory(
+              state.heroInventories[pendingAttack.heroId], treasureItemCardId
+            );
           }
         }
         state.pendingTreasureItemAttack = null;
