@@ -183,6 +183,7 @@ describe("exploration", () => {
       // The actual tile images have their arrows pointing south, so scorchMarkPosition
       // should be { x: 1, y: 2 } (south). This suite verifies the fix.
       const southArrowTiles = [
+        'tile-white-2exit-b',
         'tile-white-2exit-c',
         'tile-white-2exit-d',
         'tile-white-2exit-e',
@@ -287,6 +288,56 @@ describe("exploration", () => {
         const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
         expect(rotation).toBe(270);
         expect(rotatedEdges.east).toBe('open');
+      });
+    });
+
+    describe("tile orientation for tile-white-2exit-b (S/W open, N/E walls, south arrow)", () => {
+      // This tile had scorchMarkPosition: { x: 1, y: 1 } (west) but the tile image has the
+      // entrance arrow pointing south (▼ at bottom center), matching tile-black-2exit-b.
+      // Root cause: same as previously fixed tiles — image analysis confirmed south arrow.
+      // Bug report: newly added tile arrow pointed down (south) instead of west toward hero.
+      const tileDef = TILE_DEFINITIONS.find(t => t.tileType === 'tile-white-2exit-b')!;
+
+      it("should open west edge and rotate 90° when placed via east exploration", () => {
+        // Reproduces the exact bug scenario from the issue report:
+        // Quinn explores east → new tile tile-white-2exit-b placed → arrow must point west toward hero
+        const rotation = calculateTileRotation("east", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(90);
+        expect(rotatedEdges.west).toBe('open');   // connecting edge
+        expect(rotatedEdges.east).toBe('wall');   // rotated north (wall) now faces east
+        expect(rotatedEdges.north).toBe('open');  // rotated west (open) now faces north
+        expect(rotatedEdges.south).toBe('wall');  // rotated east (wall) now faces south
+      });
+
+      it("should open south edge and rotate 0° when placed via north exploration", () => {
+        const rotation = calculateTileRotation("north", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(0);
+        expect(rotatedEdges.south).toBe('open');  // connecting edge
+        expect(rotatedEdges.north).toBe('wall');
+        expect(rotatedEdges.east).toBe('wall');
+        expect(rotatedEdges.west).toBe('open');
+      });
+
+      it("should open north edge and rotate 180° when placed via south exploration", () => {
+        const rotation = calculateTileRotation("south", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(180);
+        expect(rotatedEdges.north).toBe('open');  // connecting edge
+        expect(rotatedEdges.south).toBe('wall');
+        expect(rotatedEdges.east).toBe('open');   // rotated west (open) now faces east
+        expect(rotatedEdges.west).toBe('wall');   // rotated east (wall) now faces west
+      });
+
+      it("should open east edge and rotate 270° when placed via west exploration", () => {
+        const rotation = calculateTileRotation("west", tileDef);
+        const rotatedEdges = rotateEdges(tileDef.defaultEdges, rotation);
+        expect(rotation).toBe(270);
+        expect(rotatedEdges.east).toBe('open');   // connecting edge
+        expect(rotatedEdges.west).toBe('wall');   // rotated east (wall) now faces west
+        expect(rotatedEdges.north).toBe('wall');  // rotated south (wall) now faces north
+        expect(rotatedEdges.south).toBe('open');  // rotated west (open) now faces south
       });
     });
 
