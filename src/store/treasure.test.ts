@@ -412,7 +412,7 @@ describe('treasure', () => {
     });
 
     describe('action cards', () => {
-      it('should have correct properties for Crossbow of Speed', () => {
+      it('should have correct properties for Crossbow of Speed (reusable, uses move action)', () => {
         const card = getTreasureById(141);
         expect(card).toBeDefined();
         expect(card?.usage).toBe('action');
@@ -421,9 +421,11 @@ describe('treasure', () => {
         expect(card?.effect.attackBonus).toBe(4);
         expect(card?.effect.damage).toBe(1);
         expect(card?.effect.range).toBe(1);
+        expect(card?.effect.flipAfterUse).toBeFalsy(); // reusable - no flip
+        expect(card?.effect.consumesAction).toBe('move'); // instead of moving
       });
 
-      it('should have correct properties for Ring of Shooting Stars', () => {
+      it('should have correct properties for Ring of Shooting Stars (flip to use, free action)', () => {
         const card = getTreasureById(157);
         expect(card).toBeDefined();
         expect(card?.usage).toBe('action');
@@ -431,6 +433,8 @@ describe('treasure', () => {
         expect(card?.effect.attackBonus).toBe(8);
         expect(card?.effect.damage).toBe(1);
         expect(card?.effect.range).toBe(2);
+        expect(card?.effect.flipAfterUse).toBe(true); // flip this card after use
+        expect(card?.effect.consumesAction).toBeUndefined(); // free action - does not count as attack
       });
 
       it('should have correct properties for Tome of Experience', () => {

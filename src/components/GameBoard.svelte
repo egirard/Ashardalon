@@ -2162,7 +2162,7 @@
     const monsterAC = getMonsterAC(monster.monsterId);
     if (monsterAC === undefined) return;
 
-    const { attackBonus = 0, damage = 1 } = treasureCard.effect;
+    const { attackBonus = 0, damage = 1, consumesAction } = treasureCard.effect;
 
     const attack = {
       name: treasureCard.name,
@@ -2177,7 +2177,7 @@
       targetInstanceId,
       attackName: treasureCard.name,
       treasureItemCardId: itemCardId,
-      usesMoveAction: true,
+      usesMoveAction: consumesAction === 'move',
     }));
   }
 
