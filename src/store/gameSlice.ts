@@ -4056,17 +4056,22 @@ export const gameSlice = createSlice({
         return;
       }
       
-      // For treasure item attacks that use the move action, check canMove
-      // For regular attacks, check canAttack
-      if (usesMoveAction) {
+      // Determine which action slot this consumes, based on the treasure card's consumesAction
+      // field (for treasure items) or the regular attack slot (for power cards).
+      const treasureCardForAction = treasureItemCardId ? getTreasureById(treasureItemCardId) : null;
+      const treasureConsumesAction = treasureCardForAction?.effect.consumesAction;
+      
+      if (usesMoveAction || treasureConsumesAction === 'move') {
         if (!state.heroTurnActions.canMove) {
           return;
         }
-      } else {
+      } else if (!treasureItemCardId || treasureConsumesAction === 'attack') {
+        // Regular power card attack OR treasure attack that explicitly consumes the attack action
         if (!state.heroTurnActions.canAttack) {
           return;
         }
       }
+      // else: free-action treasure attack (e.g. Ring of Shooting Stars) — no action check needed
       
       const { result, targetInstanceId, attackName, cardId } = action.payload;
       state.attackTargetId = targetInstanceId;
@@ -4524,9 +4529,14 @@ export const gameSlice = createSlice({
         const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
         if (currentHeroId) {
           const heroStatuses = getHeroStatuses(state, currentHeroId);
-          // Treasure item attacks that say "instead of moving" consume the move action
-          const actionType = usesMoveAction ? 'move' : 'attack';
-          state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, actionType, heroStatuses);
+          if (usesMoveAction || treasureConsumesAction === 'move') {
+            // Treasure item attack that uses the move action (e.g. Crossbow of Speed: "instead of moving")
+            state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'move', heroStatuses);
+          } else if (!treasureItemCardId || treasureConsumesAction === 'attack') {
+            // Regular power card attack OR treasure attack that explicitly consumes the attack action
+            state.heroTurnActions = computeHeroTurnActions(state.heroTurnActions, 'attack', heroStatuses);
+          }
+          // else: free-action treasure attack (e.g. Ring of Shooting Stars) — no action consumed
         }
       }
       
@@ -4541,15 +4551,18 @@ export const gameSlice = createSlice({
         const treasureCard = getTreasureById(treasureItemCardId);
         if (treasureCard && state.heroInventories[pendingAttack.heroId]) {
           if (treasureCard.discardAfterUse) {
+            // Card says to discard after use
             state.heroInventories[pendingAttack.heroId] = removeTreasureFromInventory(
               state.heroInventories[pendingAttack.heroId], treasureItemCardId
             );
             state.treasureDeck = discardTreasure(state.treasureDeck, treasureItemCardId);
-          } else {
+          } else if (treasureCard.effect.flipAfterUse) {
+            // Card says to flip after use (e.g. Ring of Shooting Stars)
             state.heroInventories[pendingAttack.heroId] = flipTreasureInInventory(
               state.heroInventories[pendingAttack.heroId], treasureItemCardId
             );
           }
+          // else: card is reusable (e.g. Crossbow of Speed) — no state change needed
         }
         state.pendingTreasureItemAttack = null;
       }

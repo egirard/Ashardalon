@@ -44,6 +44,19 @@ export interface TreasureEffect {
   damage?: number;
   /** If this effect includes an attack, range in tiles */
   range?: number;
+  /**
+   * For attack-action cards: whether to flip the card after use.
+   * If false/undefined the card is reusable (e.g. Crossbow of Speed).
+   * If true the card is flipped (e.g. Ring of Shooting Stars).
+   */
+  flipAfterUse?: boolean;
+  /**
+   * For attack-action cards: which hero action slot this consumes when used.
+   * 'move'   — used instead of moving (e.g. Crossbow of Speed).
+   * 'attack' — counts as the attack action.
+   * undefined — free action; does not consume any action slot (e.g. Ring of Shooting Stars).
+   */
+  consumesAction?: 'move' | 'attack';
 }
 
 /**
@@ -215,7 +228,7 @@ export const TREASURE_CARDS: TreasureCard[] = [
     rule: 'Use during your Hero Phase. Instead of moving, you can attack a Monster within 1 tile. Attack: +4 / Damage: 1',
     usage: 'action',
     goldPrice: 2000,
-    effect: { type: 'attack-action', attackBonus: 4, damage: 1, range: 1, description: 'Attack within 1 tile instead of moving (+4 to hit, 1 damage)' },
+    effect: { type: 'attack-action', attackBonus: 4, damage: 1, range: 1, consumesAction: 'move', description: 'Attack within 1 tile instead of moving (+4 to hit, 1 damage, reusable)' },
     discardAfterUse: false,
   },
   {
@@ -335,7 +348,7 @@ export const TREASURE_CARDS: TreasureCard[] = [
     rule: 'Use during your Hero Phase. Attack 1 Monster within 2 tiles of you. This attack does not count as an attack action. Attack: +8 / Damage: 1. Flip this card over after you use the item.',
     usage: 'action',
     goldPrice: 2000,
-    effect: { type: 'attack-action', attackBonus: 8, damage: 1, range: 2, description: 'Free attack within 2 tiles (+8 to hit, 1 damage, flip to use)' },
+    effect: { type: 'attack-action', attackBonus: 8, damage: 1, range: 2, flipAfterUse: true, description: 'Free attack within 2 tiles (+8 to hit, 1 damage, flip to use)' },
     discardAfterUse: false,
   },
   {
