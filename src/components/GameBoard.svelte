@@ -722,6 +722,10 @@
     
     // Don't auto-activate while a monster exploration notification is showing
     if (monsterExplorationEvent !== null) return;
+
+    // Don't auto-activate while the newly spawned monster card is being presented
+    // (player must dismiss the card before the new monster takes its turn)
+    if (recentlySpawnedMonsterId !== null) return;
     
     // Don't auto-end if there's an encounter card being displayed
     if (drawnEncounter !== null) return;
