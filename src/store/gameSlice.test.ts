@@ -13,6 +13,7 @@ import gameReducer, {
   endExplorationPhase,
   endVillainPhase,
   dismissMonsterCard,
+  dismissMonsterExplorationEvent,
   dismissEncounterCard,
   cancelEncounterCard,
   setAttackResult,
@@ -2100,6 +2101,93 @@ describe("gameSlice", () => {
       // monsterExplorationEvent should be set and monsterMoveActionId should NOT be set.
       expect(afterActivation.monsterExplorationEvent).not.toBeFalsy();
       expect(afterActivation.monsterMoveActionId).toBeFalsy();
+    });
+
+    it("should show newly spawned monster card after villain-phase exploration, then allow new monster to activate", () => {
+      // Reproduces bug: monster explores during villain phase, spawning a new monster.
+      // The new monster's card must be dismissed before it activates.
+      // Verify: after dismissMonsterExplorationEvent, recentlySpawnedMonsterId is set
+      // (blocking the auto-activation effect), and after dismissMonsterCard, the new
+      // monster can activate next.
+      const gameInProgress = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 7 } }], // Far from monsters
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: {
+          tiles: [
+            {
+              id: "start-tile",
+              tileType: "start",
+              position: { col: 0, row: 0 },
+              rotation: 0,
+              edges: { north: "open", south: "open", east: "open", west: "wall" },
+            },
+            {
+              id: "tile-1",
+              tileType: "tile-white-3exit-b",
+              position: { col: 0, row: -1 },
+              rotation: 0,
+              edges: { north: "unexplored", south: "open", east: "unexplored", west: "wall" },
+            },
+          ],
+          unexploredEdges: [
+            { tileId: "tile-1", direction: "north" },
+            { tileId: "tile-1", direction: "east" },
+          ],
+          tileDeck: ["tile-black-2exit-a", "tile-white-2exit-c"],
+        },
+        monsterDeck: {
+          drawPile: ["gibbering-mouther", "snake"],
+          discardPile: [],
+        },
+        monsters: [
+          {
+            monsterId: "duergar-guard",
+            instanceId: "duergar-guard-0",
+            position: { x: 2, y: 3 },
+            currentHp: 2,
+            controllerId: "quinn",
+            tileId: "tile-1",
+          },
+        ],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        villainPhaseMonsterIndex: 0,
+        monsterInstanceCounter: 1,
+      });
+
+      // Step 1: Activate duergar-guard — it should explore (no heroes on tile, has unexplored edges)
+      const afterDuergarActivation = gameReducer(gameInProgress, activateNextMonster({}));
+
+      // Duergar guard explored and spawned a monster
+      expect(afterDuergarActivation.villainPhaseMonsterIndex).toBe(1);
+      expect(afterDuergarActivation.monsterExplorationEvent).not.toBeNull();
+      // A new monster was spawned (gibbering-mouther)
+      expect(afterDuergarActivation.monsters.length).toBe(2);
+      const spawnedMonster = afterDuergarActivation.monsters.find(m => m.monsterId === "gibbering-mouther");
+      expect(spawnedMonster).toBeDefined();
+
+      // Step 2: Dismiss the exploration notification
+      const afterDismissExploration = gameReducer(afterDuergarActivation, dismissMonsterExplorationEvent());
+
+      // monsterExplorationEvent should be cleared
+      expect(afterDismissExploration.monsterExplorationEvent).toBeNull();
+      // recentlySpawnedMonsterId should be set to the spawned monster
+      // This is what the $effect checks to block auto-activation until the card is dismissed
+      expect(afterDismissExploration.recentlySpawnedMonsterId).toBe(spawnedMonster!.instanceId);
+
+      // Step 3: Dismiss the monster card (player reads the new monster's stats)
+      const afterDismissCard = gameReducer(afterDismissExploration, dismissMonsterCard());
+      expect(afterDismissCard.recentlySpawnedMonsterId).toBeNull();
+
+      // Step 4: Activate next monster — should activate the newly spawned gibbering-mouther
+      const afterMoutherActivation = gameReducer(afterDismissCard, activateNextMonster({}));
+
+      // The gibbering-mouther was activated (index advanced to 2)
+      expect(afterMoutherActivation.villainPhaseMonsterIndex).toBe(2);
     });
   });
 
