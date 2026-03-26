@@ -164,25 +164,27 @@
     </div>
     
     <div class="button-row">
-      <button 
-        class="cancel-button"
-        onclick={handleCancel}
-        disabled={!canCancel}
-        data-testid="encounter-cancel"
-        title={canCancel ? `Spend ${cancelCost} XP to cancel this encounter` : `Not enough XP (need ${cancelCost})`}
-      >
-        Cancel ({cancelCost} XP)
-      </button>
+      {#if onCancel}
+        <button 
+          class="cancel-button"
+          onclick={handleCancel}
+          disabled={!canCancel}
+          data-testid="encounter-cancel"
+          title={canCancel ? `Spend ${cancelCost} XP to cancel this encounter` : `Not enough XP (need ${cancelCost})`}
+        >
+          Cancel ({cancelCost} XP)
+        </button>
+      {/if}
       <button 
         class="accept-button"
         onclick={handleDismiss}
         data-testid="encounter-continue"
       >
-        Accept
+        {onCancel ? 'Accept' : 'Close'}
       </button>
     </div>
     
-    <p class="card-hint">Press Enter to accept or use buttons above</p>
+    <p class="card-hint">Press Enter to {onCancel ? 'accept' : 'close'} or use buttons above</p>
   </div>
 </div>
 
