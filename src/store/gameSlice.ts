@@ -5743,7 +5743,13 @@ export const gameSlice = createSlice({
       tiles: PlacedTile[];
       unexploredEdges: Array<{ tileId: string; direction: Direction }>;
     }>) => {
-      state.dungeon.tiles = [...state.dungeon.tiles, ...action.payload.tiles];
+      // Replace existing tiles with the same ID (allows updating tile edges for testing),
+      // then append any new tiles not already present.
+      const newTileIds = new Set(action.payload.tiles.map(t => t.id));
+      state.dungeon.tiles = [
+        ...state.dungeon.tiles.filter(t => !newTileIds.has(t.id)),
+        ...action.payload.tiles,
+      ];
       state.dungeon.unexploredEdges = action.payload.unexploredEdges;
     },
     /**

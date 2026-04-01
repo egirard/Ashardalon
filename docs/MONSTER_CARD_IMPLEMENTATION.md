@@ -159,13 +159,22 @@ The following monsters have complex behaviors that require additional game syste
 | Explore when on tile with unexplored edge (no heroes) | High | Monster exploration trigger |
 | Move toward hero otherwise | Low | Already working |
 
-### Gibbering Mouther 📋
-**Requires**: Area attack, Dazed condition
+### Gibbering Mouther ✅
+**Status**: FULLY IMPLEMENTED
 
-| Tactic | Complexity | Required System |
-|--------|------------|-----------------|
-| Attack ALL heroes within 1 tile | High | Area attack within range |
-| Dazed on hit | Medium | Dazed condition |
+| Stat | Value | Implemented |
+|------|-------|-------------|
+| AC | 14 | ✅ |
+| HP | 2 | ✅ |
+| XP | 2 | ✅ |
+
+**Card Tactics**:
+| Rule | Status | Notes |
+|------|--------|-------|
+| If within 1 tile of a Hero: Attack ALL heroes within 1 tile with Gibbering (+8, 1 damage, Dazed) | ✅ | Working - area-attack with targetsAllInRange |
+| Otherwise: Move toward the closest Hero | ✅ | Working |
+
+**Implementation Notes**: Uses `area-attack` tactic type. Attacks all heroes within 1 tile simultaneously with Gibbering (+8, Dazed). Fixed attack bonus from +7 → +8 per official card (row 110).
 
 ### Grell 📋
 **Requires**: Multiple attack types, conditions, miss damage
@@ -176,14 +185,25 @@ The following monsters have complex behaviors that require additional game syste
 | Within 1 tile: Tentacles (Dazed) | Medium | Dazed condition |
 | Different attacks at different ranges | Medium | Attack selection by range |
 
-### Legion Devil 📋
-**Requires**: Spawn multiple monsters
+### Legion Devil ⚠️
+**Status**: PARTIALLY IMPLEMENTED (multi-spawn and XP tracking complete; attack stats corrected)
 
-| Tactic | Complexity | Required System |
-|--------|------------|-----------------|
-| Spawn 2 additional Legion Devils on placement | High | Multi-monster spawn |
-| XP only awarded when ALL are destroyed | Medium | Linked monster tracking |
-| Move-and-attack within 1 tile | Low | Already implemented |
+| Stat | Value | Implemented |
+|------|-------|-------------|
+| AC | 16 | ✅ |
+| HP | 1 | ✅ |
+| XP | 3 (per group) | ✅ |
+
+**Card Tactics**:
+| Rule | Status | Notes |
+|------|--------|-------|
+| If adjacent to Hero: Attack with Sword (+11, 1 damage) | ✅ | Working - corrected from Claw +6 |
+| If within 1 tile: Move adjacent and Attack | ✅ | Working |
+| Otherwise: Move toward closest Hero | ✅ | Working |
+| Spawn 2 additional Legion Devils on placement | ✅ | Working |
+| XP only awarded when all 3 are destroyed | ✅ | Working |
+
+**Implementation Notes**: Attack stats corrected per official card (row 122): Sword +11 (not Claw +6).
 
 ### Orc Archer 📋
 **Requires**: Ranged attacks, miss damage, conditions
