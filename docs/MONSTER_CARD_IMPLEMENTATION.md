@@ -132,14 +132,23 @@ The following monsters have complex behaviors that require additional game syste
 
 **Implementation Notes**: The Orc Archer's ranged attack system is now functional. It uses `adjacentAttack` for Punch when adjacent (with dazed status) and `moveAttack` for Arrow when within 2 tiles (with miss damage). The AI will automatically select the correct attack based on distance to hero.
 
-### Cave Bear 📋
-**Requires**: Area-of-effect attacks, Dazed condition
+### Cave Bear ✅
+**Status**: FULLY IMPLEMENTED
 
-| Tactic | Complexity | Required System |
-|--------|------------|-----------------|
-| Attack ALL heroes on same tile | High | Multi-target attack system |
-| Leaping strike (2 damage + Dazed) | Medium | Dazed condition |
-| Frenzy of claws on same tile | High | Same-tile area attack |
+| Stat | Value | Implemented |
+|------|-------|-------------|
+| AC | 14 | ✅ |
+| HP | 3 | ✅ |
+| XP | 2 | ✅ |
+
+**Card Tactics**:
+| Rule | Status | Notes |
+|------|--------|-------|
+| If on same tile as Hero: Attack each Hero on that tile with Frenzy of Claws (+6, 2 damage) | ✅ | Working - area attack on same tile |
+| If within 1 tile: Move adjacent to closest Hero and attack with Leaping Strike (+8, 2 damage, Dazed) | ✅ | Working - move-and-attack with moveAttack |
+| Otherwise: Move 1 tile toward closest Hero | ✅ | Working |
+
+**Implementation Notes**: Uses `area-attack` tactic type. When heroes are on the same tile, attacks all of them with Frenzy of Claws (+6). When heroes are within 1 tile but not on the same tile, moves adjacent and attacks with Leaping Strike (+8, Dazed). Otherwise moves toward closest hero.
 
 ### Duergar Guard 📋
 **Requires**: Monster-triggered exploration

@@ -716,6 +716,169 @@ describe('monsterAI', () => {
       // Kobold should explore since heroes are not reachable
       expect(result.type).toBe('explore');
     });
+
+    it('cave bear should area-attack all heroes on the same tile with Frenzy of Claws', () => {
+      const dungeon = createTestDungeon();
+      // Cave Bear at position (1, 1) on start tile (north sub-tile)
+      const monster: MonsterState = {
+        monsterId: 'cave-bear',
+        instanceId: 'cave-bear-0',
+        position: { x: 1, y: 1 },
+        currentHp: 3,
+        controllerId: 'quinn',
+        tileId: 'start-tile',
+      };
+
+      // Two heroes on the same start tile (north sub-tile)
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 3, y: 1 } },
+        { heroId: 'vistra', position: { x: 3, y: 2 } },
+      ];
+
+      const heroHpMap = { quinn: 8, vistra: 10 };
+      const heroAcMap = { quinn: 17, vistra: 16 };
+
+      // Always roll high to guarantee hits (roll = 20 = critical hit)
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon,
+        () => 0.99
+      );
+
+      // Cave Bear should area-attack both heroes with Frenzy of Claws
+      expect(result.type).toBe('area-attack');
+      if (result.type === 'area-attack') {
+        expect(result.targetIds).toHaveLength(2);
+        expect(result.targetIds).toContain('quinn');
+        expect(result.targetIds).toContain('vistra');
+        // Frenzy of Claws has attack bonus +6 per the official card
+        for (const attackResult of result.results) {
+          expect(attackResult.attackBonus).toBe(6);
+          expect(attackResult.damage).toBe(2);
+        }
+      }
+    });
+
+    it('cave bear should move-and-attack with Leaping Strike when hero is within 1 tile but not on same tile', () => {
+      // Two-tile dungeon: start tile (hero) + adjacent tile (cave bear)
+      const startTile: PlacedTile = {
+        id: 'start-tile',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        rotation: 0,
+        edges: { north: 'unexplored', south: 'unexplored', east: 'open', west: 'wall' },
+      };
+      const adjacentTile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-white-2exit-c',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+        edges: { north: 'wall', south: 'wall', east: 'unexplored', west: 'open' },
+      };
+      const dungeon: DungeonState = {
+        tiles: [startTile, adjacentTile],
+        unexploredEdges: [
+          { tileId: 'tile-1', direction: 'east' },
+        ],
+        tileDeck: [],
+      };
+
+      // Cave Bear at local position (0, 1) on tile-1 → global (4, 1)
+      const monster: MonsterState = {
+        monsterId: 'cave-bear',
+        instanceId: 'cave-bear-0',
+        position: { x: 0, y: 1 },
+        currentHp: 3,
+        controllerId: 'quinn',
+        tileId: 'tile-1',
+      };
+
+      // Hero at global (3, 1) on start tile — 1 square away from border (within 1 tile range)
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 3, y: 1 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+      const heroAcMap = { quinn: 17 };
+
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon,
+        () => 0.99
+      );
+
+      // Cave Bear should move adjacent and attack with Leaping Strike
+      expect(result.type).toBe('move-and-attack');
+      if (result.type === 'move-and-attack') {
+        expect(result.targetId).toBe('quinn');
+        // Leaping Strike has attack bonus +8 and Dazed
+        expect(result.result.attackBonus).toBe(8);
+        expect(result.result.damage).toBe(2);
+      }
+    });
+
+    it('cave bear should move toward hero when hero is more than 1 tile away', () => {
+      // Two-tile dungeon, cave bear far from hero
+      const startTile: PlacedTile = {
+        id: 'start-tile',
+        tileType: 'start',
+        position: { col: 0, row: 0 },
+        rotation: 0,
+        edges: { north: 'unexplored', south: 'unexplored', east: 'open', west: 'wall' },
+      };
+      const adjacentTile: PlacedTile = {
+        id: 'tile-1',
+        tileType: 'tile-white-2exit-c',
+        position: { col: 1, row: 0 },
+        rotation: 0,
+        edges: { north: 'wall', south: 'wall', east: 'unexplored', west: 'open' },
+      };
+      const dungeon: DungeonState = {
+        tiles: [startTile, adjacentTile],
+        unexploredEdges: [
+          { tileId: 'tile-1', direction: 'east' },
+        ],
+        tileDeck: [],
+      };
+
+      // Cave Bear at local position (3, 3) on tile-1 → global (7, 3) - far corner
+      const monster: MonsterState = {
+        monsterId: 'cave-bear',
+        instanceId: 'cave-bear-0',
+        position: { x: 3, y: 3 },
+        currentHp: 3,
+        controllerId: 'quinn',
+        tileId: 'tile-1',
+      };
+
+      // Hero at global (1, 1) on start tile - far side
+      const heroTokens: HeroToken[] = [
+        { heroId: 'quinn', position: { x: 1, y: 1 } },
+      ];
+
+      const heroHpMap = { quinn: 8 };
+      const heroAcMap = { quinn: 17 };
+
+      const result = executeMonsterTurn(
+        monster,
+        heroTokens,
+        heroHpMap,
+        heroAcMap,
+        [monster],
+        dungeon
+      );
+
+      // Cave Bear should just move (no heroes on tile, no heroes within 1 tile)
+      expect(result.type).toBe('move');
+    });
   });
 
   describe('findHeroWithinTileRange', () => {
