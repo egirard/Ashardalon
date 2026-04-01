@@ -634,6 +634,105 @@ export function executeMonsterTurn(
       return { type: 'area-attack', targetIds, results, decisionLog };
     }
     
+    // No heroes found for area attack — check if monster has a move-and-attack fallback (e.g., Cave Bear Leaping Strike)
+    const moveAttackOption = tactics?.moveAttack;
+    const moveAttackRange = tactics?.moveAttackRange ?? 0;
+    if (moveAttackOption && moveAttackRange > 0) {
+      const heroInRange = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, moveAttackRange);
+      decisionLog.push(`Checking for Hero within ${moveAttackRange} tile(s) for move-and-attack... ${heroInRange ? ('needsChoice' in heroInRange ? `Multiple Heroes in range: ${heroInRange.heroes.map(h => h.heroId).join(', ')}` : `Found ${heroInRange.hero.heroId}`) : 'None in range'}`);
+      
+      if (heroInRange) {
+        // Check if multiple heroes at same distance (needs player choice for targeting)
+        if ('needsChoice' in heroInRange && heroInRange.needsChoice) {
+          decisionLog.push('Multiple Heroes in range at same distance — player must choose target');
+          return {
+            type: 'needs-choice',
+            decision: {
+              decisionId: `monster-${monster.instanceId}-target-${Date.now()}`,
+              type: 'choose-hero-target',
+              monsterId: monster.instanceId,
+              options: {
+                heroIds: heroInRange.heroes.map(h => h.heroId)
+              },
+              context: 'move-and-attack'
+            },
+            decisionLog,
+          };
+        }
+        
+        // Find a position adjacent to the hero that we can move to
+        const moveTarget = findPositionAdjacentToHero(
+          monster,
+          heroInRange.hero,
+          heroTokens,
+          monsters,
+          dungeon
+        );
+        
+        if (moveTarget) {
+          // Check if multiple move destinations (needs player choice)
+          if ('needsChoice' in moveTarget && moveTarget.needsChoice) {
+            decisionLog.push('Multiple equidistant adjacent positions — player must choose destination');
+            return {
+              type: 'needs-choice',
+              decision: {
+                decisionId: `monster-${monster.instanceId}-move-${Date.now()}`,
+                type: 'choose-move-destination',
+                monsterId: monster.instanceId,
+                options: {
+                  positions: moveTarget.positions
+                },
+                context: 'move-and-attack'
+              },
+              decisionLog,
+            };
+          }
+          
+          // Move adjacent and attack with the move attack (e.g., Leaping Strike)
+          const targetAC = heroAcMap[heroInRange.hero.heroId] ?? 10;
+          const result = resolveMonsterAttackWithStats(moveAttackOption, targetAC, randomFn);
+          decisionLog.push(`→ Moving adjacent to ${heroInRange.hero.heroId} and attacking with ${moveAttackOption.name}: Roll ${result.roll} + ${result.attackBonus} = ${result.total} vs AC ${result.targetAC} — ${result.isHit ? (result.isCritical ? 'Critical Hit!' : 'Hit') : 'Miss'}`);
+          return {
+            type: 'move-and-attack',
+            destination: moveTarget,
+            targetId: heroInRange.hero.heroId,
+            result,
+            decisionLog,
+          };
+        } else {
+          // No adjacent position available, just move closer
+          decisionLog.push(`No adjacent position available next to ${heroInRange.hero.heroId} — moving closer`);
+          const moveCloser = findMoveTowardHero(
+            monster,
+            heroInRange.hero.position,
+            heroTokens,
+            monsters,
+            dungeon
+          );
+          if (moveCloser) {
+            if ('needsChoice' in moveCloser && moveCloser.needsChoice) {
+              decisionLog.push('Multiple equidistant move destinations — player must choose');
+              return {
+                type: 'needs-choice',
+                decision: {
+                  decisionId: `monster-${monster.instanceId}-move-${Date.now()}`,
+                  type: 'choose-move-destination',
+                  monsterId: monster.instanceId,
+                  options: {
+                    positions: moveCloser.positions
+                  },
+                  context: 'movement'
+                },
+                decisionLog,
+              };
+            }
+            decisionLog.push(`→ Moving toward ${heroInRange.hero.heroId}`);
+            return { type: 'move', destination: moveCloser, decisionLog };
+          }
+        }
+      }
+    }
+    
     decisionLog.push('No valid targets — moving toward closest Hero');
     // No valid targets, move toward closest hero
     const closest = findClosestHero(monster, heroTokens, heroHpMap, dungeon);

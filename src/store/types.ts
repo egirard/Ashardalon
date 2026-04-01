@@ -106,6 +106,16 @@ export interface MonsterAttackOption {
    * NOT YET IMPLEMENTED - documented for future use
    */
   missDamage?: number;
+  /**
+   * If true, attack targets all heroes on the same tile as the monster (area attack)
+   * Used for Cave Bear's Frenzy of Claws
+   */
+  targetsAllOnTile?: boolean;
+  /**
+   * If true, attack targets all heroes within the specified range (area attack)
+   * Used for Gibbering Mouther's Gibbering attack
+   */
+  targetsAllInRange?: boolean;
 }
 
 /**
@@ -159,7 +169,7 @@ export interface MonsterCardTactics {
  * - orc-smasher: ✅ FULLY IMPLEMENTED (move-and-attack behavior)
  * - grell: ✅ FULLY IMPLEMENTED (multi-range attacks: Venomous Bite adjacent, Tentacles within 1 tile)
  * - orc-archer: ✅ FULLY IMPLEMENTED (multi-range attacks: Punch adjacent, Arrow within 2 tiles)
- * - cave-bear: ✅ FULLY IMPLEMENTED (area attack: Frenzy of Claws attacks all heroes on same tile)
+ * - cave-bear: ✅ FULLY IMPLEMENTED (area attack on same tile: Frenzy of Claws; within 1 tile: move-and-attack with Leaping Strike)
  * - gibbering-mouther: ✅ FULLY IMPLEMENTED (area attack: Gibbering attacks all heroes within 1 tile)
  * 
  * See docs/MONSTER_CARD_IMPLEMENTATION.md for full implementation status and roadmap.
@@ -253,12 +263,15 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   },
   'cave-bear': {
     type: 'area-attack',
-    adjacentAttack: { name: 'Frenzy of Claws', attackBonus: 8, damage: 2, targetsAllOnTile: true, statusEffect: 'dazed' },
+    adjacentAttack: { name: 'Frenzy of Claws', attackBonus: 6, damage: 2, targetsAllOnTile: true },
+    moveAttack: { name: 'Leaping Strike', attackBonus: 8, damage: 2, statusEffect: 'dazed' },
+    moveAttackRange: 1,
     cardInstructions: [
-      'If any Heroes are on the same tile: Attack all with Frenzy of Claws (+8, 2 damage, Dazed)',
-      'Otherwise: Move toward the closest Hero',
+      'If the cave bear is on the same tile as a Hero: Attack each Hero on that tile with Frenzy of Claws (+6, 2 damage)',
+      'If the cave bear is within 1 tile of a Hero: Move adjacent to the closest Hero and attack with Leaping Strike (+8, 2 damage, Dazed)',
+      'Otherwise: Move 1 tile toward the closest Hero',
     ],
-    implementationNotes: 'Attacks all heroes on the same tile with Frenzy of Claws. Applies Dazed status on hit.',
+    implementationNotes: 'Attacks all heroes on the same tile with Frenzy of Claws. If within 1 tile, moves adjacent and attacks single target with Leaping Strike (Dazed).',
   },
   'gibbering-mouther': {
     type: 'area-attack',
