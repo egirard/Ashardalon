@@ -242,9 +242,9 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   },
   'duergar-guard': {
     type: 'explore-or-attack',
-    adjacentAttack: { name: 'Warhammer', attackBonus: 8, damage: 2 },
+    adjacentAttack: { name: 'Warhammer', attackBonus: 8, damage: 1 },
     cardInstructions: [
-      'If adjacent to a Hero: Attack with Warhammer (+8, 2 damage)',
+      'If adjacent to a Hero: Attack with Warhammer (+8, 1 damage)',
       'If on a tile with an unexplored edge (no Heroes on tile): Place a tile',
       'Otherwise: Move toward the closest Hero',
     ],
@@ -252,11 +252,11 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   },
   'legion-devil': {
     type: 'move-and-attack',
-    adjacentAttack: { name: 'Claw', attackBonus: 6, damage: 1 },
+    adjacentAttack: { name: 'Sword', attackBonus: 11, damage: 1 },
     moveAttackRange: 1,
     cardInstructions: [
-      'If adjacent to a Hero: Attack with Claw (+6, 1 damage)',
-      'If within 1 tile of a Hero: Move adjacent and Attack with Claw',
+      'If adjacent to a Hero: Attack with Sword (+11, 1 damage)',
+      'If within 1 tile of a Hero: Move adjacent and Attack with Sword',
       'Otherwise: Move toward the closest Hero',
     ],
     implementationNotes: 'Move-and-attack within 1 tile. Multi-spawn: Spawns 2 additional Legion Devils (3 total). XP: Awarded only when all 3 are defeated.',
@@ -275,10 +275,10 @@ export const MONSTER_TACTICS: Record<string, MonsterCardTactics> = {
   },
   'gibbering-mouther': {
     type: 'area-attack',
-    adjacentAttack: { name: 'Gibbering', attackBonus: 7, damage: 1, range: 1, targetsAllInRange: true, statusEffect: 'dazed' },
+    adjacentAttack: { name: 'Gibbering', attackBonus: 8, damage: 1, range: 1, targetsAllInRange: true, statusEffect: 'dazed' },
     moveAttackRange: 1,
     cardInstructions: [
-      'If any Heroes are within 1 tile: Attack all with Gibbering (+7, 1 damage, Dazed)',
+      'If any Heroes are within 1 tile: Attack all with Gibbering (+8, 1 damage, Dazed)',
       'Otherwise: Move toward the closest Hero',
     ],
     implementationNotes: 'Attacks all heroes within 1 tile with Gibbering. Applies Dazed status on hit.',
