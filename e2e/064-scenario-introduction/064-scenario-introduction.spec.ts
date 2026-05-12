@@ -165,4 +165,39 @@ test.describe('064 - Scenario Introduction Modal', () => {
     });
     expect(storeState.game.scenario.introductionShown).toBe(true);
   });
+
+  test('Adventure 14 displays correct objective text in the introduction modal (Issue #601)', async ({ page }) => {
+    // Navigate to character selection
+    await page.goto('/');
+    await page.locator('[data-testid="character-select"]').waitFor({ state: 'visible' });
+
+    // Select a hero (Quinn)
+    await page.locator('[data-testid="hero-quinn-bottom"]').click();
+    await selectDefaultPowerCards(page, 'quinn');
+
+    // Setup deterministic game state and select Adventure 14
+    await setupDeterministicGame(page);
+    
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/selectScenario', payload: 'adventure-14' });
+    });
+
+    await page.locator('[data-testid="start-game-button"]').click();
+    await page.locator('[data-testid="game-board"]').waitFor({ state: 'visible' });
+
+    // Wait for scenario introduction to appear
+    await page.locator('[data-testid="scenario-introduction-overlay"]').waitFor({ state: 'visible' });
+
+    // Verify the objective text for Adventure 14
+    const objectiveElement = page.locator('[data-testid="scenario-objective"]');
+    await expect(objectiveElement).toBeVisible();
+    
+    // Verify it contains the correct text from the scenario definition
+    await expect(objectiveElement).toContainText('Find the Obsidian Sanctum');
+    await expect(objectiveElement).toContainText('defeat Malphas, the Void-Caller');
+    
+    // Verify it is NOT the fallback text
+    await expect(objectiveElement).not.toContainText('Complete the scenario objective to win the game');
+  });
 });
