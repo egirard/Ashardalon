@@ -4388,8 +4388,8 @@ export const gameSlice = createSlice({
         state.leveledUpHeroId = currentHeroId;
         
         // Log level up
-        const levelUpHero = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
-        const heroName = levelUpHero?.name ?? currentHeroId;
+        const heroData = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
+        const heroName = heroData?.name ?? currentHeroId;
         state.logEntries.push({
           id: state.logEntryCounter++,
           timestamp: Date.now(),
