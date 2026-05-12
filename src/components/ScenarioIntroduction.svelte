@@ -95,7 +95,9 @@
         
         <div class="objective-section">
           <h2 class="section-label">Objective:</h2>
-          <p class="objective-text" data-testid="scenario-objective">{objective}</p>
+          <p class="objective-text" data-testid="scenario-objective">
+            {objective || "Complete the scenario objective to win the game."}
+          </p>
         </div>
         
         {#if instructions}

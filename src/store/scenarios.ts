@@ -72,6 +72,8 @@ export interface ScenarioDefinition {
   goal: string;
   /** Longer introductory paragraph */
   intro: string;
+  /** Optional specific instructions for this scenario */
+  instructions?: string;
   /** Villain name */
   villain: string;
   /** Path to the splash/hero-screen image (relative to public folder) */
