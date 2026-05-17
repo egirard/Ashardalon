@@ -106,7 +106,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
       );
     });
 
-    // SCREENSHOT 001: Board state before villain phase — Cultist on east tile
+    // SCREENSHOT 000: Board state before villain phase — Cultist on east tile
     await screenshots.capture(page, 'board-before-villain-phase', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -175,7 +175,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
       }, { timeout: 5000 });
     }
 
-    // SCREENSHOT 002: Attack result — Cultist attacked Quinn (move-and-attack)
+    // SCREENSHOT 001: Attack result — Cultist attacked Quinn (move-and-attack)
     await screenshots.capture(page, 'cultist-move-and-attack-result', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -205,7 +205,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
       return state.game.monsterAttackResult === null;
     }, { timeout: 3000 });
 
-    // SCREENSHOT 003: Quinn's HP reduced after cultist move-and-attack
+    // SCREENSHOT 002: Quinn's HP reduced after cultist move-and-attack
     await screenshots.capture(page, 'cultist-move-and-attack-complete', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -359,7 +359,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
       );
     }, { timeout: 5000 });
 
-    // SCREENSHOT 002: Decision prompt (if scorch mark was occupied) OR attack result
+    // SCREENSHOT 000: Decision prompt (if scorch mark was occupied) OR attack result
     await screenshots.capture(page, 'after-cultist-activation', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -394,7 +394,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
       }, { timeout: 5000 });
     }
 
-    // SCREENSHOT 003: Attack result — cultist attacked a hero
+    // SCREENSHOT 001: Attack result — cultist attacked a hero
     await screenshots.capture(page, 'cultist-attack-after-tile-entry', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -419,7 +419,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
       return state.game.monsterAttackResult === null;
     }, { timeout: 3000 });
 
-    // SCREENSHOT 004: HP was reduced (confirming the attack actually dealt damage)
+    // SCREENSHOT 002: HP was reduced (confirming the attack actually dealt damage)
     await screenshots.capture(page, 'cultist-tile-entry-attack-complete', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
