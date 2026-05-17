@@ -26,54 +26,59 @@ In `gameSlice.ts`, the `activateNextMonster` handler correctly identified the mo
 
 3. **`gameSlice.ts`** — `selectMonsterPosition`: After moving the monster to the chosen position, check if `decision.options.pendingAttack` is set (and context is `'move-and-attack'`). If so, apply the attack: deal damage, apply status effects, log the event.
 
-## Screenshots
+---
 
-### Step 1: Board Before Villain Phase
+## Test 1: Standard Move-and-Attack (Scorch Mark Free)
 
-![Board before villain phase](128-cultist-move-and-attack.spec.ts-snapshots/001-board-before-villain-phase-chromium-linux.png)
+### Screenshot 000: Board Before Villain Phase
+
+![Board before villain phase](128-cultist-move-and-attack.spec.ts-snapshots/000-board-before-villain-phase-chromium-linux.png)
 
 **Verification**:
 - Cultist is on the east tile (adjacent to start tile)
 - Quinn is on the start tile
 
-### Step 2: Cultist Move-and-Attack Result
+### Screenshot 001: Cultist Move-and-Attack Result
 
-![Cultist move-and-attack result](128-cultist-move-and-attack.spec.ts-snapshots/002-cultist-move-and-attack-result-chromium-linux.png)
+![Cultist move-and-attack result](128-cultist-move-and-attack.spec.ts-snapshots/001-cultist-move-and-attack-result-chromium-linux.png)
 
 **Verification**:
 - `monsterAttackResult` is not null (attack fired)
 - Attack bonus is +6 (Dagger)
-- Attack is a hit (roll 19 + 6 = 25 vs typical AC)
 - Target is Quinn
 
-### Step 3: Move-and-Attack Complete
+### Screenshot 002: Move-and-Attack Complete
 
-![Cultist move-and-attack complete](128-cultist-move-and-attack.spec.ts-snapshots/003-cultist-move-and-attack-complete-chromium-linux.png)
+![Cultist move-and-attack complete](128-cultist-move-and-attack.spec.ts-snapshots/002-cultist-move-and-attack-complete-chromium-linux.png)
 
 **Verification**:
 - Quinn's HP reduced by 1 (Dagger damage)
 - Cultist moved to start tile
 - Combat log contains "moves and attacks"
 
-### Step 4 (Bug Fix Path): After Cultist Activation with Tile-Entry Decision
+---
 
-![After cultist activation](128-cultist-move-and-attack.spec.ts-snapshots/002-after-cultist-activation-chromium-linux.png)
+## Test 2: Bug-Fix Path — Attack After Tile-Entry Decision (Occupied Scorch Mark)
 
-**Verification**:
-- Either a tile-entry decision is shown OR attack result already displayed
+### Screenshot 000: After Cultist Activation
 
-### Step 5 (Bug Fix Path): Attack After Tile-Entry Choice
-
-![Cultist attack after tile entry](128-cultist-move-and-attack.spec.ts-snapshots/003-cultist-attack-after-tile-entry-chromium-linux.png)
+![After cultist activation](128-cultist-move-and-attack.spec.ts-snapshots/000-after-cultist-activation-chromium-linux.png)
 
 **Verification**:
-- `monsterAttackResult` is not null (attack fired after tile entry)
+- Either a tile-entry decision is pending OR attack result already shown
+
+### Screenshot 001: Attack After Tile-Entry Choice
+
+![Cultist attack after tile entry](128-cultist-move-and-attack.spec.ts-snapshots/001-cultist-attack-after-tile-entry-chromium-linux.png)
+
+**Verification**:
+- `monsterAttackResult` is not null (attack fired after tile entry — the bug fix)
 - Attack bonus is +6 (Dagger)
 - Cultist is now on the hero's tile
 
-### Step 6 (Bug Fix Path): HP Reduced
+### Screenshot 002: HP Reduced
 
-![Tile entry attack complete](128-cultist-move-and-attack.spec.ts-snapshots/004-cultist-tile-entry-attack-complete-chromium-linux.png)
+![Tile entry attack complete](128-cultist-move-and-attack.spec.ts-snapshots/002-cultist-tile-entry-attack-complete-chromium-linux.png)
 
 **Verification**:
 - At least one hero has HP reduced (confirming attack dealt damage)
