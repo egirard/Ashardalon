@@ -5340,6 +5340,7 @@ export const gameSlice = createSlice({
                   );
                   
                   // Create a pending decision for position selection
+                  // Store attack info so it can be executed after the player picks a tile entry position
                   state.pendingMonsterDecision = {
                     decisionId: `monster-${monster.instanceId}-tile-entry-${Date.now()}`,
                     type: 'choose-tile-entry-position',
@@ -5347,6 +5348,10 @@ export const gameSlice = createSlice({
                     options: {
                       tileId: newTileId,
                       positions: validPositions,
+                      pendingAttack: {
+                        targetId: result.targetId,
+                        attackResult: result.result,
+                      },
                     },
                     context: 'move-and-attack'
                   };
@@ -7229,6 +7234,62 @@ export const gameSlice = createSlice({
             }
           }
           state.monsterMoveActionId = monster.instanceId;
+
+          // If this was a move-and-attack tile entry, execute the deferred attack
+          const pendingAttack = decision.options.pendingAttack;
+          if (decision.context === 'move-and-attack' && pendingAttack) {
+            const { targetId, attackResult } = pendingAttack;
+
+            // Store the attack result for display
+            state.monsterAttackResult = attackResult;
+            state.monsterAttackTargetId = targetId;
+            state.monsterAttackerId = monster.instanceId;
+            state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.moveAttack?.name ?? MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? null;
+
+            // Apply damage to hero if hit
+            if (attackResult.isHit && attackResult.damage > 0) {
+              const heroHp = state.heroHp.find(h => h.heroId === targetId);
+              if (heroHp) {
+                heroHp.currentHp = Math.max(0, heroHp.currentHp - attackResult.damage);
+
+                // Check for party defeat (all heroes at 0 HP)
+                const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+                if (allHeroesDefeated) {
+                  state.currentScreen = "defeat";
+                }
+              }
+            }
+
+            // Apply status effect if hit
+            if (attackResult.isHit) {
+              applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, targetId, 'move');
+            }
+
+            // Apply miss damage if missed
+            if (!attackResult.isHit) {
+              applyMonsterMissDamage(state, monster.monsterId, targetId, 'move');
+            }
+
+            // Log the deferred move-and-attack
+            const monsterDef = getMonsterById(monster.monsterId);
+            const monsterName = monsterDef?.name ?? 'Monster';
+            const targetHero = AVAILABLE_HEROES.find(h => h.id === targetId);
+            const targetName = targetHero?.name ?? targetId;
+            const hitOrMiss = attackResult.isHit ? 'Hit' : 'Miss';
+            const criticalText = attackResult.isCritical ? ' (Critical!)' : '';
+            const logMessage = `${monsterName} moves and attacks ${targetName}: ${hitOrMiss}!${criticalText}`;
+            let logDetails = `Roll: ${attackResult.roll} + ${attackResult.attackBonus} = ${attackResult.total} vs AC ${attackResult.targetAC}`;
+            if (attackResult.isHit && attackResult.damage > 0) {
+              logDetails += ` | Damage: ${attackResult.damage}`;
+            }
+            state.logEntries.push({
+              id: state.logEntryCounter++,
+              timestamp: Date.now(),
+              type: 'combat',
+              message: logMessage,
+              details: logDetails,
+            });
+          }
           
           // Increment monster index to continue to next monster
           state.villainPhaseMonsterIndex++;

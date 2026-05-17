@@ -2479,6 +2479,180 @@ describe("gameSlice", () => {
       expect(afterSelect.villainPhasePaused).toBe(false);
       expect(afterSelect.villainPhaseMonsterIndex).toBe(1);
     });
+
+    it("should execute the deferred attack when context is 'move-and-attack' and pendingAttack is set", () => {
+      // Reproduces the bug: Cultist monster crosses to a new tile with an occupied scorch mark.
+      // A choose-tile-entry-position decision is created with context 'move-and-attack' and
+      // a pendingAttack payload. When the player selects a position, the attack must fire too.
+      const twoTileDungeon = {
+        tiles: [
+          {
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "open", south: "open", east: "open", west: "open" },
+          },
+          {
+            id: "east-tile",
+            tileType: "tile-white-2exit-c",
+            position: { col: 1, row: 0 },
+            rotation: 0,
+            edges: { north: "wall", south: "wall", east: "unexplored", west: "open" },
+          },
+        ],
+        unexploredEdges: [{ tileId: "east-tile", direction: "east" }],
+        tileDeck: [],
+      };
+
+      const state = createGameState({
+        currentScreen: "game-board",
+        // Hero on start tile (AC 14)
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: twoTileDungeon,
+        // Cultist on east tile — scorch mark on start-tile was occupied, so
+        // a choose-tile-entry-position decision was issued.
+        monsters: [
+          {
+            monsterId: "cultist",
+            instanceId: "cultist-0",
+            position: { x: 1, y: 1 },
+            currentHp: 2,
+            controllerId: "quinn",
+            tileId: "east-tile",
+          },
+        ],
+        villainPhaseMonsterIndex: 0,
+        // This decision simulates what activateNextMonster emits for a move-and-attack
+        // tile entry where the scorch mark is occupied.
+        pendingMonsterDecision: {
+          decisionId: "cultist-tile-entry-decision",
+          type: "choose-tile-entry-position",
+          monsterId: "cultist-0",
+          options: {
+            tileId: "start-tile",
+            positions: [{ x: 2, y: 3 }],
+            // The attack was pre-rolled: a definite hit (total 20 vs AC 14)
+            pendingAttack: {
+              targetId: "quinn",
+              attackResult: {
+                roll: 14,
+                attackBonus: 6,
+                total: 20,
+                targetAC: 14,
+                isHit: true,
+                damage: 1,
+                isCritical: false,
+              },
+            },
+          },
+          context: "move-and-attack",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterPosition({ decisionId: "cultist-tile-entry-decision", position: { x: 2, y: 3 } })
+      );
+
+      // Decision cleared and villain phase resumed
+      expect(afterSelect.pendingMonsterDecision).toBeNull();
+      expect(afterSelect.villainPhasePaused).toBe(false);
+
+      // Monster must have moved to the chosen position on the start tile
+      const cultist = afterSelect.monsters.find(m => m.instanceId === "cultist-0");
+      expect(cultist?.tileId).toBe("start-tile");
+
+      // The attack must have fired: hero HP reduced by 1
+      const quinn = afterSelect.heroHp.find(h => h.heroId === "quinn");
+      expect(quinn?.currentHp).toBe(7); // 8 - 1 damage
+
+      // Attack result stored for display
+      expect(afterSelect.monsterAttackResult).not.toBeNull();
+      expect(afterSelect.monsterAttackResult?.isHit).toBe(true);
+      expect(afterSelect.monsterAttackTargetId).toBe("quinn");
+      expect(afterSelect.monsterAttackerId).toBe("cultist-0");
+
+      // Monster index advanced
+      expect(afterSelect.villainPhaseMonsterIndex).toBe(1);
+    });
+
+    it("should NOT execute attack when context is 'movement' (regular tile entry)", () => {
+      // Regression check: a normal movement tile-entry decision must NOT trigger an attack.
+      const twoTileDungeon = {
+        tiles: [
+          {
+            id: "start-tile",
+            tileType: "start",
+            position: { col: 0, row: 0 },
+            rotation: 0,
+            edges: { north: "open", south: "open", east: "open", west: "open" },
+          },
+          {
+            id: "east-tile",
+            tileType: "tile-white-2exit-c",
+            position: { col: 1, row: 0 },
+            rotation: 0,
+            edges: { north: "wall", south: "wall", east: "unexplored", west: "open" },
+          },
+        ],
+        unexploredEdges: [],
+        tileDeck: [],
+      };
+
+      const state = createGameState({
+        currentScreen: "game-board",
+        heroTokens: [{ heroId: "quinn", position: { x: 2, y: 2 } }],
+        heroHp: [{ heroId: "quinn", currentHp: 8, maxHp: 8 }],
+        turnState: {
+          currentHeroIndex: 0,
+          currentPhase: "villain-phase",
+          turnNumber: 1,
+        },
+        dungeon: twoTileDungeon,
+        monsters: [
+          {
+            monsterId: "kobold",
+            instanceId: "kobold-0",
+            position: { x: 1, y: 1 },
+            currentHp: 1,
+            controllerId: "quinn",
+            tileId: "east-tile",
+          },
+        ],
+        villainPhaseMonsterIndex: 0,
+        pendingMonsterDecision: {
+          decisionId: "kobold-tile-entry-decision",
+          type: "choose-tile-entry-position",
+          monsterId: "kobold-0",
+          options: {
+            tileId: "start-tile",
+            positions: [{ x: 2, y: 3 }],
+            // No pendingAttack — this is just a movement
+          },
+          context: "movement",
+        },
+        villainPhasePaused: true,
+      });
+
+      const afterSelect = gameReducer(
+        state,
+        selectMonsterPosition({ decisionId: "kobold-tile-entry-decision", position: { x: 2, y: 3 } })
+      );
+
+      // No attack should fire — hero HP unchanged
+      const quinn = afterSelect.heroHp.find(h => h.heroId === "quinn");
+      expect(quinn?.currentHp).toBe(8);
+      expect(afterSelect.monsterAttackResult).toBeNull();
+      expect(afterSelect.monsterAttackTargetId).toBeNull();
+    });
   });
 
   describe("dismissMonsterAttackResult", () => {

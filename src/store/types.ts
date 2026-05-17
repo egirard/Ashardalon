@@ -1690,6 +1690,11 @@ export interface PendingMonsterDecision {
     positions?: Position[];
     /** Tile ID if choosing entry position on a specific tile */
     tileId?: string;
+    /** Pending attack to execute after resolving a move-and-attack tile entry */
+    pendingAttack?: {
+      targetId: string;
+      attackResult: AttackResult;
+    };
   };
   /** Context for the decision (e.g., "attack", "movement", "spawn") */
   context: string;
