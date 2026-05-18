@@ -497,6 +497,39 @@ describe("encounters", () => {
       expect(result[0].currentHp).toBe(7);
       expect(result[1].currentHp).toBe(9);
     });
+
+    it("should apply encounter attack status effects on hit", () => {
+      const encounter: EncounterCard = {
+        id: 'earthquake',
+        name: 'Earthquake!',
+        type: 'event',
+        description: 'Attack +6 vs each Hero. Hit: 2 damage and Dazed. Miss: 1 damage.',
+        effect: { type: 'attack', attackBonus: 6, damage: 2, missDamage: 1, target: 'all-heroes', statusEffect: 'dazed' },
+        imagePath: 'assets/Encounter_Earthquake.png',
+      };
+
+      const heroHpList: HeroHpState[] = [
+        { heroId: 'quinn', currentHp: 8, maxHp: 8, level: 1, ac: 17, surgeValue: 4, attackBonus: 6 },
+        { heroId: 'vistra', currentHp: 10, maxHp: 10, level: 1, ac: 18, surgeValue: 5, attackBonus: 8 },
+      ];
+
+      const highRollRandom = () => 0.95; // roll 20, guaranteed hit
+      const { heroHpList: result, results } = resolveEncounterEffect(
+        encounter,
+        heroHpList,
+        'quinn',
+        [],
+        null,
+        highRollRandom,
+        3
+      );
+
+      expect(result[0].statuses?.some(s => s.type === 'dazed')).toBe(true);
+      expect(result[0].statuses?.find(s => s.type === 'dazed')?.appliedOnTurn).toBe(3);
+      expect(result[1].statuses?.some(s => s.type === 'dazed')).toBe(true);
+      expect(results[0].statusesApplied).toContain('dazed');
+      expect(results[1].statusesApplied).toContain('dazed');
+    });
   });
 
   describe("ENCOUNTER_CARDS", () => {

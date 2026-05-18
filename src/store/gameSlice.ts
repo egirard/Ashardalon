@@ -3103,7 +3103,9 @@ export const gameSlice = createSlice({
               state.heroHp,
               activeHeroId,
               state.heroTokens,
-              state.dungeon
+              state.dungeon,
+              Math.random,
+              state.turnState.turnNumber
             );
             state.heroHp = heroHpList;
             
@@ -3884,7 +3886,9 @@ export const gameSlice = createSlice({
               state.heroHp,
               activeHeroId,
               state.heroTokens,
-              state.dungeon
+              state.dungeon,
+              Math.random,
+              state.turnState.turnNumber
             );
             state.heroHp = heroHpList;
             

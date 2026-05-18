@@ -138,12 +138,25 @@ This comprehensive E2E test demonstrates the complete encounter card system func
 - Encounter discarded without resolving
 - **Verification**: Party XP reduced by 5, encounter dismissed
 
+### Step 19: Earthquake! - Attack + Dazed Status
+![Screenshot 018](038-encounter-cards-comprehensive.spec.ts-snapshots/018-earthquake-dazed-encounter-card-chromium-linux.png)
+- "Earthquake!" encounter card displayed
+- Effect includes "Hit: 2 damage and Dazed"
+- **Verification**: Attack encounter clearly indicates Dazed condition on hit
+
+### Step 20: Dazed Applied to Hero
+![Screenshot 019](038-encounter-cards-comprehensive.spec.ts-snapshots/019-earthquake-dazed-applied-chromium-linux.png)
+- Encounter resolves and applies Dazed status to Quinn
+- Dazed condition badge (😵) is visible on the hero card
+- **Verification**: Quinn's statuses array includes `dazed`
+
 ## Encounter Card Types Tested
 
 | Type | Card | Implementation Status |
 |------|------|----------------------|
 | **Event (Damage)** | Frenzied Leap | ✅ Fully Implemented |
 | **Event (Attack)** | Bull's Eye! | ✅ Fully Implemented |
+| **Event (Attack + Status)** | Earthquake! | ✅ Fully Implemented (applies Dazed on hit) |
 | **Curse** | A Gap in the Armor | ✅ Fully Implemented (applies status) |
 | **Environment** | Hidden Snipers | ✅ Fully Implemented (tracked in state) |
 | **Trap** | Poisoned Dart Trap | ⚠️ Display Only |
@@ -166,6 +179,7 @@ This comprehensive E2E test demonstrates the complete encounter card system func
 - Attack roll made against hero's AC
 - Damage applied on successful hit
 - Attack bonus and damage values displayed
+- Status effects (like Dazed) applied on hit when defined by encounter card
 
 ### ✅ Curse System
 - Curses applied as status effects to heroes
