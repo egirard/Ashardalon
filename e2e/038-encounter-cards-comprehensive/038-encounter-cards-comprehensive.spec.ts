@@ -323,5 +323,51 @@ test.describe('038 - Encounter Cards Comprehensive System Test', () => {
         await expect(page.locator('[data-testid="encounter-card"]')).not.toBeVisible();
       }
     });
+
+    // STEP 10: Test Attack + Status Effect (Dazed)
+    // Draw "Earthquake!" (Attack +6 vs each Hero. Hit: 2 damage and Dazed. Miss: 1 damage)
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({
+        type: 'game/setDrawnEncounter',
+        payload: 'earthquake'
+      });
+    });
+
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'visible' });
+
+    await screenshots.capture(page, 'earthquake-dazed-encounter-card', {
+      programmaticCheck: async () => {
+        await expect(page.locator('[data-testid="encounter-name"]')).toContainText('Earthquake!');
+        await expect(page.locator('[data-testid="encounter-effect"]')).toContainText('dazed');
+      }
+    });
+
+    // Force a high roll so Earthquake reliably hits and applies Dazed
+    await page.evaluate(() => {
+      (window as any).__originalMathRandom = Math.random;
+      Math.random = () => 0.95;
+    });
+
+    await page.locator('[data-testid="encounter-continue"]').click();
+    await page.locator('[data-testid="encounter-card"]').waitFor({ state: 'hidden' });
+
+    await page.evaluate(() => {
+      if ((window as any).__originalMathRandom) {
+        Math.random = (window as any).__originalMathRandom;
+      }
+    });
+
+    await screenshots.capture(page, 'earthquake-dazed-applied', {
+      programmaticCheck: async () => {
+        const state = await page.evaluate(() => {
+          return (window as any).__REDUX_STORE__.getState();
+        });
+        const quinnStatuses = state.game.heroHp.find((h: any) => h.heroId === 'quinn')?.statuses || [];
+        const hasDazed = quinnStatuses.some((s: any) => s.type === 'dazed');
+        expect(hasDazed).toBe(true);
+        await expect(page.locator('[data-testid="condition-dazed"]')).toBeVisible();
+      }
+    });
   });
 });

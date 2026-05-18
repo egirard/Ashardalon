@@ -1,6 +1,6 @@
 import type { EncounterDeck, EncounterCard, TurnState, HeroHpState, PartyResources, DungeonState, PlacedTile, MonsterCategory, HeroToken, Position, TileEdge, Direction, EncounterResultTarget } from './types';
 import { ENCOUNTER_CARDS, INITIAL_ENCOUNTER_DECK, ENCOUNTER_CANCEL_COST } from './types';
-import type { StatusEffectType } from './statusEffects';
+import { applyStatusEffect, STATUS_EFFECT_DEFINITIONS, type StatusEffectType } from './statusEffects';
 import { getTileBounds, findTileAtPosition, getSubTileIdAtPosition } from './movement';
 
 /**
@@ -323,7 +323,8 @@ export function resolveEncounterEffect(
   activeHeroId: string,
   heroTokens: HeroToken[] = [],
   dungeon: DungeonState | null = null,
-  randomFn: () => number = Math.random
+  randomFn: () => number = Math.random,
+  turnNumber: number = 1
 ): { heroHpList: HeroHpState[]; results: EncounterResultTarget[] } {
   const effect = encounter.effect;
   const results: EncounterResultTarget[] = [];
@@ -387,10 +388,12 @@ export function resolveEncounterEffect(
     
     case 'attack': {
       // Make attack rolls against heroes
-      // Note: Status effects (dazed, poisoned) are NOT YET IMPLEMENTED
-      if (effect.statusEffect) {
-        console.warn(`Status effect '${effect.statusEffect}' from '${encounter.name}' is not yet implemented`);
-      }
+      const parsedStatusEffects: StatusEffectType[] = effect.statusEffect
+        ? effect.statusEffect
+            .split(',')
+            .map(status => status.trim())
+            .filter((status): status is StatusEffectType => status in STATUS_EFFECT_DEFINITIONS)
+        : [];
       
       const getTargetHeroes = (): string[] => {
         switch (effect.target) {
@@ -439,9 +442,6 @@ export function resolveEncounterEffect(
         const isHit = total >= hp.ac;
         
         const statusesApplied: string[] = [];
-        if (isHit && effect.statusEffect) {
-          statusesApplied.push(effect.statusEffect);
-        }
         
         let damageTaken = 0;
         let updatedHp = hp;
@@ -449,6 +449,18 @@ export function resolveEncounterEffect(
         if (isHit) {
           damageTaken = effect.damage;
           updatedHp = applyDamageToHero(hp, effect.damage);
+          for (const statusEffect of parsedStatusEffects) {
+            updatedHp = {
+              ...updatedHp,
+              statuses: applyStatusEffect(
+                updatedHp.statuses ?? [],
+                statusEffect,
+                encounter.id,
+                turnNumber
+              ),
+            };
+            statusesApplied.push(statusEffect);
+          }
         } else if (effect.missDamage !== undefined && effect.missDamage > 0) {
           damageTaken = effect.missDamage;
           updatedHp = applyDamageToHero(hp, effect.missDamage);
