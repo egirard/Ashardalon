@@ -133,7 +133,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
     await advanceToVillainPhase(page);
 
     // STEP 4: Activate Cultist with a guaranteed critical hit (roll = 20)
-    // Math.random = () => 0.95 → floor(0.95 * 20) + 1 = floor(19) + 1 = 20
+    // Math.random = () => 0.95 → 0.95 * 20 = 19.0 → floor(19.0) + 1 = 20 (critical)
     await page.evaluate(() => {
       Math.random = () => 0.95;
       (window as any).__REDUX_STORE__.dispatch({ type: 'game/activateNextMonster', payload: {} });
@@ -251,7 +251,7 @@ test.describe('128 - Cultist Move and Attack Behavior', () => {
     await advanceToVillainPhase(page);
 
     // STEP 4: Activate the Cultist (it's first, at villainPhaseMonsterIndex=0)
-    // Use a guaranteed critical hit (roll = 20 with Math.random = () => 0.95)
+    // Math.random = () => 0.95 → 0.95 * 20 = 19.0 → floor(19.0) + 1 = 20 (critical)
     await page.evaluate(() => {
       Math.random = () => 0.95;
       (window as any).__REDUX_STORE__.dispatch({ type: 'game/activateNextMonster', payload: {} });
