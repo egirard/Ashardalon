@@ -129,6 +129,15 @@ test.describe('027 - Treasure Cards', () => {
         await expect(page.locator('[data-testid="treasure-type"]')).toContainText('Play Immediately');
         await expect(page.locator('[data-testid="treasure-effect"]')).toContainText('+1 Attack');
         await expect(page.locator('[data-testid="treasure-rule"]')).toBeVisible();
+
+        const modalBackground = await page.locator('[data-testid="treasure-card-modal"]').evaluate(
+          (el) => getComputedStyle(el).backgroundColor
+        );
+        const modalBackdropFilter = await page.locator('[data-testid="treasure-card-modal"]').evaluate(
+          (el) => getComputedStyle(el).backdropFilter
+        );
+        expect(modalBackground).toBe('rgba(0, 0, 0, 0.7)');
+        expect(modalBackdropFilter).toContain('blur');
         
         // Verify assign button exists
         await expect(page.locator('[data-testid="assign-to-quinn"]')).toBeVisible();
