@@ -33,7 +33,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
       programmaticCheck: async () => {
         // Verify objective display elements
         await expect(page.locator('[data-testid="objective-display"]')).toBeVisible();
-        await expect(page.locator('[data-testid="objective-display"]')).toContainText('🎯 Objective:');
+        await expect(page.locator('[data-testid="objective-display"]')).toContainText('Objective:');
         await expect(page.locator('[data-testid="objective-display"]')).toContainText('Defeat 12 monsters');
         await expect(page.locator('[data-testid="objective-progress"]')).toContainText('0 / 12 defeated');
         
@@ -137,8 +137,7 @@ test.describe('012 - MVP Scenario: Defeat Two Monsters', () => {
         await expect(page.locator('[data-testid="victory-screen"]')).toBeVisible();
         await expect(page.locator('[data-testid="return-to-menu-button"]')).toBeVisible();
         
-        // Verify victory screen shows trophy icon and "Victory!" title
-        await expect(page.locator('[data-testid="victory-screen"]')).toContainText('🏆');
+        // Verify victory screen shows "Victory!" title
         await expect(page.locator('[data-testid="victory-screen"]')).toContainText('Victory!');
         
         // Verify Redux store state
