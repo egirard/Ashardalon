@@ -10,7 +10,9 @@ When a Long Hallway tile is drawn during exploration:
 1. Place the Long Hallway tile normally (with a monster)
 2. Automatically draw an additional tile from the deck
 3. Place the additional tile on the hallway's unexplored end
-4. During the Villain Phase, draw an encounter card if **either** tile has a black arrow — skip if **both** tiles have white arrows
+4. Ensure both tile arrows face back toward their connecting edge
+5. Spawn a monster on each newly revealed tile
+6. During the Villain Phase, draw an encounter card if **either** tile has a black arrow — skip if **both** tiles have white arrows
 
 ## Test Scenarios
 
@@ -26,6 +28,8 @@ Feature: Long Hallway draws second tile
     When Quinn ends the hero phase
     Then the Long Hallway tile is placed to the north
     And a second tile is automatically placed on the hallway's far end
+    And both tile arrows point back toward the connecting edge
+    And each revealed tile has at least one spawned monster
     And the tile deck decreases by 2 (both tiles drawn)
     And during the Villain Phase an encounter card is drawn
 ```
@@ -40,6 +44,8 @@ Feature: Long Hallway draws second tile
     When Quinn ends the hero phase
     Then the white Long Hallway tile is placed to the north
     And a white second tile is automatically placed on the hallway's far end
+    And both tile arrows point back toward the connecting edge
+    And each revealed tile has at least one spawned monster
     And the tile deck decreases by 2
     And during the Villain Phase NO encounter card is drawn
 ```

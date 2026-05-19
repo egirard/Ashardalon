@@ -2362,7 +2362,7 @@ export const gameSlice = createSlice({
         return;
       }
       
-      const { drawnMonster } = state.explorationPhase;
+      const { drawnMonster, drawnTile, exploredEdge } = state.explorationPhase;
       const currentToken = state.heroTokens[state.turnState.currentHeroIndex];
       
       if (!drawnMonster || !currentToken) {
@@ -2375,67 +2375,117 @@ export const gameSlice = createSlice({
       const newTile = state.dungeon.tiles.find(t => t.id === state.recentlyPlacedTileId);
       
       if (newTile) {
-        // Use spawn function to handle multi-monster spawns
-        const spawnResult = spawnMonstersWithBehavior(
-          drawnMonster,
-          newTile,
-          currentToken.heroId,
-          state.monsters,
-          state.monsterInstanceCounter,
-          state.monsterGroupCounter
-        );
-        
-        if (spawnResult.monsters.length > 0) {
-          state.monsters.push(...spawnResult.monsters);
-          state.monsterInstanceCounter = spawnResult.monsterInstanceCounter;
-          state.monsterGroupCounter = spawnResult.monsterGroupCounter;
-          
-          // Add group if multiple monsters spawned
-          if (spawnResult.group) {
-            state.monsterGroups.push(spawnResult.group);
+        const spawnTiles: PlacedTile[] = [newTile];
+        const firstTileDef = drawnTile ? getTileDefinition(drawnTile) : undefined;
+
+        // Long Hallway special rule: spawn a monster on BOTH newly revealed tiles
+        if (firstTileDef?.isLongHallway && exploredEdge) {
+          const connectingEdgeByExplorationDirection = {
+            north: 'south',
+            south: 'north',
+            east: 'west',
+            west: 'east',
+          } as const;
+          const connectingEdge = connectingEdgeByExplorationDirection[exploredEdge.direction];
+          const hallwayOutgoingDirection = (['north', 'south', 'east', 'west'] as const).find(
+            direction => newTile.edges[direction] === 'open' && direction !== connectingEdge
+          );
+
+          if (hallwayOutgoingDirection) {
+            const offsetByDirection = {
+              north: { col: 0, row: -1 },
+              south: { col: 0, row: 1 },
+              east: { col: 1, row: 0 },
+              west: { col: -1, row: 0 },
+            } as const;
+            const offset = offsetByDirection[hallwayOutgoingDirection];
+            const secondTileCol = newTile.position.col + offset.col;
+            const secondTileRow = newTile.position.row + offset.row;
+            const secondTile = state.dungeon.tiles.find(
+              tile => tile.id !== newTile.id && tile.position.col === secondTileCol && tile.position.row === secondTileRow
+            );
+
+            if (secondTile) {
+              spawnTiles.push(secondTile);
+            }
           }
-          
+        }
+
+        let monsterInstanceCounter = state.monsterInstanceCounter;
+        let monsterGroupCounter = state.monsterGroupCounter;
+        const spawnedMonsters: MonsterState[] = [];
+
+        for (const spawnTile of spawnTiles) {
+          // Use spawn function to handle multi-monster spawns
+          const spawnResult = spawnMonstersWithBehavior(
+            drawnMonster,
+            spawnTile,
+            currentToken.heroId,
+            [...state.monsters, ...spawnedMonsters],
+            monsterInstanceCounter,
+            monsterGroupCounter
+          );
+
+          monsterInstanceCounter = spawnResult.monsterInstanceCounter;
+          monsterGroupCounter = spawnResult.monsterGroupCounter;
+
+          if (spawnResult.monsters.length > 0) {
+            spawnedMonsters.push(...spawnResult.monsters);
+
+            // Add group if multiple monsters spawned
+            if (spawnResult.group) {
+              state.monsterGroups.push(spawnResult.group);
+            }
+          }
+        }
+
+        if (spawnedMonsters.length > 0) {
+          state.monsters.push(...spawnedMonsters);
+          state.monsterInstanceCounter = monsterInstanceCounter;
+          state.monsterGroupCounter = monsterGroupCounter;
+
           // Show monster card immediately as a blocking modal
-          state.recentlySpawnedMonsterId = spawnResult.monsters[0].instanceId;
-          
+          state.recentlySpawnedMonsterId = spawnedMonsters[0].instanceId;
+
           // Check for Blade Barrier tokens at spawn position of first monster
           const bladeBarrierCheck = checkBladeBarrierDamage(
-            spawnResult.monsters[0].position,
+            spawnedMonsters[0].position,
             state.boardTokens || []
           );
-          
+
           if (bladeBarrierCheck.shouldDamage && bladeBarrierCheck.tokenToRemove) {
             // Deal 1 damage to the monster
-            const monster = state.monsters.find(m => m.instanceId === spawnResult.monsters[0].instanceId);
+            const monster = state.monsters.find(m => m.instanceId === spawnedMonsters[0].instanceId);
             if (monster) {
               monster.currentHp = Math.max(0, monster.currentHp - 1);
             }
-            
+
             // Remove the blade barrier token
             state.boardTokens = state.boardTokens.filter(
               token => token.id !== bladeBarrierCheck.tokenToRemove
             );
           }
-          
+
           // Log monster spawn
           const spawnedMonsterDef = getMonsterById(drawnMonster);
           const spawnedMonsterName = spawnedMonsterDef?.name ?? drawnMonster;
-          const spawnCount = spawnResult.monsters.length;
-          const spawnPositions = spawnResult.monsters
+          const spawnCount = spawnedMonsters.length;
+          const spawnPositions = spawnedMonsters
             .map(m => `(${m.position.x}, ${m.position.y})`)
             .join(', ');
-          const spawnInstanceIds = spawnResult.monsters.map(m => m.instanceId).join(', ');
+          const spawnInstanceIds = spawnedMonsters.map(m => m.instanceId).join(', ');
+          const spawnTileIds = [...new Set(spawnedMonsters.map(m => m.tileId))];
           state.logEntries.push({
             id: state.logEntryCounter++,
             timestamp: Date.now(),
             type: 'exploration',
             message: `${spawnedMonsterName}${spawnCount > 1 ? ` ×${spawnCount}` : ''} appeared on the new tile!`,
             details: `Spawned at position${spawnCount > 1 ? 's' : ''}: ${spawnPositions}`,
-            extendedDetails: `Instance${spawnCount > 1 ? 's' : ''}: ${spawnInstanceIds} | Tile: ${newTile.id}`,
+            extendedDetails: `Instance${spawnCount > 1 ? 's' : ''}: ${spawnInstanceIds} | Tile${spawnTileIds.length > 1 ? 's' : ''}: ${spawnTileIds.join(', ')}`,
           });
 
           // Trigger monster-spawn event for power card hooks (e.g., To Arms!)
-          const firstMonster = spawnResult.monsters[0];
+          const firstMonster = spawnedMonsters[0];
           if (firstMonster) {
             const monsterSpawnEvent: MonsterSpawnEvent = {
               type: 'monster-spawn',
@@ -2444,7 +2494,7 @@ export const gameSlice = createSlice({
               monsterInstanceId: firstMonster.instanceId,
               monsterId: drawnMonster,
               position: firstMonster.position,
-              tileId: newTile.id,
+              tileId: firstMonster.tileId,
             };
             const spawnEventResult = triggerGameEvent(state.eventHooks, monsterSpawnEvent);
             // Queue power card flips and unregister used hooks
