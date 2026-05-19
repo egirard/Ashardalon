@@ -123,8 +123,6 @@ test.describe('027 - Treasure Cards', () => {
 
     await screenshots.capture(page, 'treasure-card-modal-displayed', {
       programmaticCheck: async () => {
-        const treasureModal = page.locator('[data-testid="treasure-card-modal"]');
-
         // Verify the treasure card UI
         await expect(page.locator('[data-testid="treasure-title"]')).toContainText('Treasure');
         await expect(page.locator('[data-testid="treasure-name"]')).toContainText('+1 Magic Sword');
@@ -132,6 +130,7 @@ test.describe('027 - Treasure Cards', () => {
         await expect(page.locator('[data-testid="treasure-effect"]')).toContainText('+1 Attack');
         await expect(page.locator('[data-testid="treasure-rule"]')).toBeVisible();
 
+        const treasureModal = page.locator('[data-testid="treasure-card-modal"]');
         const modalBackground = await treasureModal.evaluate(
           (el) => getComputedStyle(el).backgroundColor
         );
