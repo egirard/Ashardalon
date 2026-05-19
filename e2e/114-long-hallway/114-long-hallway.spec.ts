@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createScreenshotHelper } from '../helpers/screenshot-helper';
+import { TILE_DEFINITIONS } from '../../src/store/types';
+import type { Direction } from '../../src/store/types';
 
 /**
  * Test 114 - Long Hallway Special Rule
@@ -17,6 +19,40 @@ import { createScreenshotHelper } from '../helpers/screenshot-helper';
 
 const SEED_LONG_HALLWAY_BLACK = 51;  // First tile is tile-long-hallway-black
 const SEED_LONG_HALLWAY_WHITE = 16;  // First tile is tile-long-hallway-white, second is white
+
+function canonicalArrowDirection(tileType: string): Direction {
+  const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType);
+  if (!tileDef) {
+    throw new Error(`Tile definition not found for ${tileType}`);
+  }
+  const { x, y } = tileDef.scorchMarkPosition;
+  if (x === 2 && y === 1) return 'north';
+  if (x === 1 && y === 1) return 'west';
+  if (x === 2 && y === 2) return 'east';
+  return 'south';
+}
+
+function rotateDirectionClockwise(direction: Direction, rotation: number): Direction {
+  const normalized = ((rotation % 360) + 360) % 360;
+  const order: Direction[] = ['north', 'east', 'south', 'west'];
+  const index = order.indexOf(direction);
+  const steps = normalized / 90;
+  return order[(index + steps) % 4];
+}
+
+function getArrowDirection(tileType: string, rotation: number): Direction {
+  return rotateDirectionClockwise(canonicalArrowDirection(tileType), rotation);
+}
+
+function directionFromTileToTile(fromTile: any, toTile: any): Direction {
+  const colDiff = toTile.position.col - fromTile.position.col;
+  const rowDiff = toTile.position.row - fromTile.position.row;
+  if (colDiff === 1 && rowDiff === 0) return 'east';
+  if (colDiff === -1 && rowDiff === 0) return 'west';
+  if (colDiff === 0 && rowDiff === 1) return 'south';
+  if (colDiff === 0 && rowDiff === -1) return 'north';
+  throw new Error(`Tiles are not adjacent: ${fromTile.id} -> ${toTile.id}`);
+}
 
 function startGameWithSeed(seed: number) {
   return async (page: import('@playwright/test').Page) => {
@@ -91,6 +127,12 @@ test.describe('114 - Long Hallway Special Rule', () => {
       expect(state.game.dungeon.tiles.length).toBeGreaterThanOrEqual(3);
     }).toPass({ timeout: 5000 });
 
+    // Ensure monster spawn step runs before validating monster placement
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/addExplorationMonster' });
+    });
+
     await screenshots.capture(page, 'long-hallway-black-and-second-tile-placed', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -109,6 +151,25 @@ test.describe('114 - Long Hallway Special Rule', () => {
           (t: any) => t.id !== 'start-tile' && t.tileType !== 'tile-long-hallway-black'
         );
         expect(secondTile).toBeDefined();
+
+        const startTile = state.game.dungeon.tiles.find((t: any) => t.id === 'start-tile');
+        expect(startTile).toBeDefined();
+
+        // Long hallway arrow should face back toward the tile it connected to
+        const longHallwayArrowDirection = getArrowDirection(longHallway.tileType, longHallway.rotation);
+        const longHallwayToStartDirection = directionFromTileToTile(longHallway, startTile);
+        expect(longHallwayArrowDirection).toBe(longHallwayToStartDirection);
+
+        // Second tile arrow should face back toward the hallway tile
+        const secondTileArrowDirection = getArrowDirection(secondTile.tileType, secondTile.rotation);
+        const secondTileToHallwayDirection = directionFromTileToTile(secondTile, longHallway);
+        expect(secondTileArrowDirection).toBe(secondTileToHallwayDirection);
+
+        // Long Hallway special rule: one monster on each revealed tile
+        const monstersOnHallway = state.game.monsters.filter((m: any) => m.tileId === longHallway.id);
+        const monstersOnSecondTile = state.game.monsters.filter((m: any) => m.tileId === secondTile.id);
+        expect(monstersOnHallway.length).toBeGreaterThan(0);
+        expect(monstersOnSecondTile.length).toBeGreaterThan(0);
 
         // Tile deck should have decreased by 2 (long hallway + second tile)
         expect(state.game.dungeon.tileDeck).toHaveLength(16);
@@ -202,6 +263,12 @@ test.describe('114 - Long Hallway Special Rule', () => {
       expect(state.game.dungeon.tiles.length).toBeGreaterThanOrEqual(3);
     }).toPass({ timeout: 5000 });
 
+    // Ensure monster spawn step runs before validating monster placement
+    await page.evaluate(() => {
+      const store = (window as any).__REDUX_STORE__;
+      store.dispatch({ type: 'game/addExplorationMonster' });
+    });
+
     await screenshots.capture(page, 'white-long-hallway-and-white-second-tile', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
@@ -213,6 +280,30 @@ test.describe('114 - Long Hallway Special Rule', () => {
           (t: any) => t.tileType === 'tile-long-hallway-white'
         );
         expect(longHallway).toBeDefined();
+
+        const secondTile = state.game.dungeon.tiles.find(
+          (t: any) => t.id !== 'start-tile' && t.tileType !== 'tile-long-hallway-white'
+        );
+        expect(secondTile).toBeDefined();
+
+        const startTile = state.game.dungeon.tiles.find((t: any) => t.id === 'start-tile');
+        expect(startTile).toBeDefined();
+
+        // Long hallway arrow should face back toward the tile it connected to
+        const longHallwayArrowDirection = getArrowDirection(longHallway.tileType, longHallway.rotation);
+        const longHallwayToStartDirection = directionFromTileToTile(longHallway, startTile);
+        expect(longHallwayArrowDirection).toBe(longHallwayToStartDirection);
+
+        // Second tile arrow should face back toward the hallway tile
+        const secondTileArrowDirection = getArrowDirection(secondTile.tileType, secondTile.rotation);
+        const secondTileToHallwayDirection = directionFromTileToTile(secondTile, longHallway);
+        expect(secondTileArrowDirection).toBe(secondTileToHallwayDirection);
+
+        // Long Hallway special rule: one monster on each revealed tile
+        const monstersOnHallway = state.game.monsters.filter((m: any) => m.tileId === longHallway.id);
+        const monstersOnSecondTile = state.game.monsters.filter((m: any) => m.tileId === secondTile.id);
+        expect(monstersOnHallway.length).toBeGreaterThan(0);
+        expect(monstersOnSecondTile.length).toBeGreaterThan(0);
 
         // Both tiles are white → drewOnlyWhiteTilesThisTurn should be true
         expect(state.game.turnState.drewOnlyWhiteTilesThisTurn).toBe(true);
