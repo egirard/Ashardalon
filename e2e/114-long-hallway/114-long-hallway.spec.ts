@@ -20,16 +20,26 @@ import type { Direction } from '../../src/store/types';
 const SEED_LONG_HALLWAY_BLACK = 51;  // First tile is tile-long-hallway-black
 const SEED_LONG_HALLWAY_WHITE = 16;  // First tile is tile-long-hallway-white, second is white
 
+const SCORCH_MARK_TO_DIRECTION: Record<string, Direction> = {
+  '2,1': 'north',
+  '1,1': 'west',
+  '2,2': 'east',
+};
+
+type DungeonTileSnapshot = {
+  id: string;
+  tileType: string;
+  rotation: number;
+  position: { col: number; row: number };
+};
+
 function canonicalArrowDirection(tileType: string): Direction {
   const tileDef = TILE_DEFINITIONS.find(t => t.tileType === tileType);
   if (!tileDef) {
     throw new Error(`Tile definition not found for ${tileType}`);
   }
   const { x, y } = tileDef.scorchMarkPosition;
-  if (x === 2 && y === 1) return 'north';
-  if (x === 1 && y === 1) return 'west';
-  if (x === 2 && y === 2) return 'east';
-  return 'south';
+  return SCORCH_MARK_TO_DIRECTION[`${x},${y}`] ?? 'south';
 }
 
 function rotateDirectionClockwise(direction: Direction, rotation: number): Direction {
@@ -44,7 +54,7 @@ function getArrowDirection(tileType: string, rotation: number): Direction {
   return rotateDirectionClockwise(canonicalArrowDirection(tileType), rotation);
 }
 
-function directionFromTileToTile(fromTile: any, toTile: any): Direction {
+function directionFromTileToTile(fromTile: DungeonTileSnapshot, toTile: DungeonTileSnapshot): Direction {
   const colDiff = toTile.position.col - fromTile.position.col;
   const rowDiff = toTile.position.row - fromTile.position.row;
   if (colDiff === 1 && rowDiff === 0) return 'east';

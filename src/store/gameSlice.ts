@@ -2375,7 +2375,7 @@ export const gameSlice = createSlice({
       const newTile = state.dungeon.tiles.find(t => t.id === state.recentlyPlacedTileId);
       
       if (newTile) {
-        const spawnTiles: PlacedTile[] = [newTile];
+        const tilesToSpawnOn: PlacedTile[] = [newTile];
         const firstTileDef = drawnTile ? getTileDefinition(drawnTile) : undefined;
 
         // Long Hallway special rule: spawn a monster on BOTH newly revealed tiles
@@ -2406,7 +2406,7 @@ export const gameSlice = createSlice({
             );
 
             if (secondTile) {
-              spawnTiles.push(secondTile);
+              tilesToSpawnOn.push(secondTile);
             }
           }
         }
@@ -2415,7 +2415,7 @@ export const gameSlice = createSlice({
         let monsterGroupCounter = state.monsterGroupCounter;
         const spawnedMonsters: MonsterState[] = [];
 
-        for (const spawnTile of spawnTiles) {
+        for (const spawnTile of tilesToSpawnOn) {
           // Use spawn function to handle multi-monster spawns
           const spawnResult = spawnMonstersWithBehavior(
             drawnMonster,
