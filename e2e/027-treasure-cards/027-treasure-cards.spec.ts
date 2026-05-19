@@ -135,11 +135,18 @@ test.describe('027 - Treasure Cards', () => {
         const modalBackground = await treasureModal.evaluate(
           (el) => getComputedStyle(el).backgroundColor
         );
-        const modalBackdropFilter = await treasureModal.evaluate(
-          (el) => getComputedStyle(el).backdropFilter
-        );
+        const modalBackdropStyles = await treasureModal.evaluate((el) => {
+          const styles = getComputedStyle(el);
+          return {
+            backdropFilter: styles.backdropFilter,
+            webkitBackdropFilter: styles.getPropertyValue('-webkit-backdrop-filter')
+          };
+        });
         expect(modalBackground).toBe('rgba(0, 0, 0, 0.7)');
-        expect(modalBackdropFilter).toContain('blur');
+        expect(modalBackdropStyles.backdropFilter).toContain('blur');
+        if (modalBackdropStyles.webkitBackdropFilter) {
+          expect(modalBackdropStyles.webkitBackdropFilter).toContain('blur');
+        }
 
         // Verify assign button exists
         await expect(page.locator('[data-testid="assign-to-quinn"]')).toBeVisible();
