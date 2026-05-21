@@ -169,7 +169,7 @@
   import { getTreasureById } from "../store/treasure";
   import { getStatusDisplayData, isDazed, STATUS_EFFECT_DEFINITIONS, getModifiedAttackBonusWithCurses } from "../store/statusEffects";
   import { areOnSameTile } from "../store/encounters";
-  import { getScorchMarkPosition } from "../store/monsters";
+  import { getScorchMarkPosition, getVillainPhaseActivationList } from "../store/monsters";
 
   // Tile dimension constants (based on 140px grid cells)
   const TILE_CELL_SIZE = 140; // Size of each grid square in pixels
@@ -1108,7 +1108,9 @@
   function getControlledMonsters(): MonsterState[] {
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return [];
-    return monsters.filter((m) => m.controllerId === currentHeroId);
+    // Use the full villain-phase activation list: hero's own monsters + same-type monsters
+    // from other heroes (cross-player shared activation rule).
+    return getVillainPhaseActivationList(currentHeroId, monsters);
   }
 
   // Get monsters controlled by a specific hero
@@ -1122,7 +1124,7 @@
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return null;
     
-    const controlledMonsters = getMonstersForHero(currentHeroId);
+    const controlledMonsters = getVillainPhaseActivationList(currentHeroId, monsters);
     if (villainPhaseMonsterIndex >= controlledMonsters.length) return null;
     
     return controlledMonsters[villainPhaseMonsterIndex]?.instanceId ?? null;
@@ -3786,7 +3788,7 @@
               currentPhase={turnState.currentPhase}
               turnNumber={turnState.turnNumber}
               heroTurnActions={heroTurnActions}
-              monstersToActivate={getMonstersForHero(hero.id).length}
+              monstersToActivate={getVillainPhaseActivationList(hero.id, monsters).length}
               monstersActivated={villainPhaseMonsterIndex}
               onEndPhase={handleEndPhase}
               endPhaseButtonText={getEndPhaseButtonText()}

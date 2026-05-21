@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   initializeMonsterDeck,
   drawMonster,
+  drawMonsterForHero,
   discardMonster,
   getMonsterById,
   createMonsterInstance,
@@ -17,6 +18,7 @@ import {
   getMonsterMoveToTilePosition,
   getScorchMarkPosition,
   getValidTilePositions,
+  getVillainPhaseActivationList,
 } from './monsters';
 import { getTileBounds } from './movement';
 import type { MonsterDeck, MonsterState, PlacedTile } from './types';
@@ -780,6 +782,179 @@ describe('monsters', () => {
       
       // Should return 15 positions (16 - 1 occupied by hero)
       expect(result).toHaveLength(15);
+    });
+  });
+
+  describe('drawMonsterForHero', () => {
+    it('should draw a monster when the hero has no existing monsters', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'cultist'],
+        discardPile: [],
+      };
+      const result = drawMonsterForHero(deck, 'quinn', []);
+      expect(result.monster).toBe('kobold');
+      expect(result.deck.drawPile).toEqual(['snake', 'cultist']);
+    });
+
+    it('should skip a monster type the hero already controls and draw the next', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'cultist'],
+        discardPile: [],
+      };
+      const existingMonsters: MonsterState[] = [
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-0',
+          position: { x: 0, y: 0 },
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'tile-1',
+          statuses: [],
+        },
+      ];
+      const result = drawMonsterForHero(deck, 'quinn', existingMonsters);
+      // kobold is a duplicate for quinn — should skip to snake
+      expect(result.monster).toBe('snake');
+      // kobold should have been put in the discard pile
+      expect(result.deck.discardPile).toContain('kobold');
+    });
+
+    it('should return null when all cards in the deck are duplicates of the hero\'s types', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'kobold'],
+        discardPile: ['kobold'],
+      };
+      const existingMonsters: MonsterState[] = [
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-0',
+          position: { x: 0, y: 0 },
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'tile-1',
+          statuses: [],
+        },
+      ];
+      const result = drawMonsterForHero(deck, 'quinn', existingMonsters);
+      expect(result.monster).toBeNull();
+    });
+
+    it('should allow a different hero to draw the same monster type', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake'],
+        discardPile: [],
+      };
+      // vistra does NOT have kobold yet, so it is not a duplicate for vistra
+      const existingMonsters: MonsterState[] = [
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-0',
+          position: { x: 0, y: 0 },
+          currentHp: 1,
+          controllerId: 'quinn', // kobold is owned by quinn, not vistra
+          tileId: 'tile-1',
+          statuses: [],
+        },
+      ];
+      const result = drawMonsterForHero(deck, 'vistra', existingMonsters);
+      // vistra doesn't own a kobold yet — should draw kobold without skipping
+      expect(result.monster).toBe('kobold');
+    });
+
+    it('should skip multiple duplicate types and find a valid card', () => {
+      const deck: MonsterDeck = {
+        drawPile: ['kobold', 'snake', 'orc-archer'],
+        discardPile: [],
+      };
+      const existingMonsters: MonsterState[] = [
+        {
+          monsterId: 'kobold',
+          instanceId: 'kobold-0',
+          position: { x: 0, y: 0 },
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'tile-1',
+          statuses: [],
+        },
+        {
+          monsterId: 'snake',
+          instanceId: 'snake-0',
+          position: { x: 1, y: 0 },
+          currentHp: 1,
+          controllerId: 'quinn',
+          tileId: 'tile-1',
+          statuses: [],
+        },
+      ];
+      const result = drawMonsterForHero(deck, 'quinn', existingMonsters);
+      expect(result.monster).toBe('orc-archer');
+      // Both skipped duplicates should be in the discard pile
+      expect(result.deck.discardPile).toContain('kobold');
+      expect(result.deck.discardPile).toContain('snake');
+    });
+
+    it('should return null when deck is empty', () => {
+      const deck: MonsterDeck = { drawPile: [], discardPile: [] };
+      const result = drawMonsterForHero(deck, 'quinn', []);
+      expect(result.monster).toBeNull();
+    });
+  });
+
+  describe('getVillainPhaseActivationList', () => {
+    it('should return only the hero\'s own monsters when no other heroes share a type', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 0, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 't1', statuses: [] },
+        { monsterId: 'snake', instanceId: 'snake-0', position: { x: 1, y: 0 }, currentHp: 1, controllerId: 'vistra', tileId: 't1', statuses: [] },
+      ];
+      const list = getVillainPhaseActivationList('quinn', monsters);
+      expect(list).toHaveLength(1);
+      expect(list[0].instanceId).toBe('kobold-0');
+    });
+
+    it('should include same-type monsters from other heroes', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 0, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 't1', statuses: [] },
+        { monsterId: 'kobold', instanceId: 'kobold-1', position: { x: 1, y: 0 }, currentHp: 1, controllerId: 'vistra', tileId: 't1', statuses: [] },
+        { monsterId: 'snake', instanceId: 'snake-0', position: { x: 2, y: 0 }, currentHp: 1, controllerId: 'vistra', tileId: 't1', statuses: [] },
+      ];
+      const list = getVillainPhaseActivationList('quinn', monsters);
+      // quinn has kobold-0, and vistra also has kobold-1 (same type) — both should be in the list
+      // vistra's snake should NOT be included (different type)
+      expect(list).toHaveLength(2);
+      expect(list.map((m: MonsterState) => m.instanceId)).toContain('kobold-0');
+      expect(list.map((m: MonsterState) => m.instanceId)).toContain('kobold-1');
+    });
+
+    it('should place own monsters before shared monsters from other heroes', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-vistra', position: { x: 1, y: 0 }, currentHp: 1, controllerId: 'vistra', tileId: 't1', statuses: [] },
+        { monsterId: 'kobold', instanceId: 'kobold-quinn', position: { x: 0, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 't1', statuses: [] },
+      ];
+      const list = getVillainPhaseActivationList('quinn', monsters);
+      expect(list[0].instanceId).toBe('kobold-quinn'); // own monster first
+      expect(list[1].instanceId).toBe('kobold-vistra'); // shared second
+    });
+
+    it('should return empty list when hero has no monsters', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'snake', instanceId: 'snake-0', position: { x: 0, y: 0 }, currentHp: 1, controllerId: 'vistra', tileId: 't1', statuses: [] },
+      ];
+      const list = getVillainPhaseActivationList('quinn', monsters);
+      expect(list).toHaveLength(0);
+    });
+
+    it('should handle hero controlling multiple monsters of different types', () => {
+      const monsters: MonsterState[] = [
+        { monsterId: 'kobold', instanceId: 'kobold-q1', position: { x: 0, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 't1', statuses: [] },
+        { monsterId: 'kobold', instanceId: 'kobold-q2', position: { x: 1, y: 0 }, currentHp: 1, controllerId: 'quinn', tileId: 't1', statuses: [] },
+        { monsterId: 'kobold', instanceId: 'kobold-v', position: { x: 2, y: 0 }, currentHp: 1, controllerId: 'vistra', tileId: 't1', statuses: [] },
+      ];
+      const list = getVillainPhaseActivationList('quinn', monsters);
+      expect(list).toHaveLength(3);
+      const ownIds = list.filter((m: MonsterState) => m.controllerId === 'quinn').map((m: MonsterState) => m.instanceId);
+      const sharedIds = list.filter((m: MonsterState) => m.controllerId === 'vistra').map((m: MonsterState) => m.instanceId);
+      expect(ownIds).toHaveLength(2);
+      expect(sharedIds).toHaveLength(1);
     });
   });
 });
