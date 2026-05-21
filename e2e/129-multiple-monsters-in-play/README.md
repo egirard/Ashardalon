@@ -10,30 +10,27 @@ Validates three core rules about monster cards:
 
 ## Screenshots
 
-### Test 1: Hero re-draws duplicate monster types and shared types activate together
+### Test 1: Hero re-draws duplicate monster types; different players may share types; shared types activate together
 
 #### Step 1: Game started with two players
-000-game-started-two-players.png
+129-multiple-monsters-in-play.spec.ts-snapshots/000-game-started-two-players-chromium-linux.png
 
 #### Step 2: Quinn has kobold; deck rigged with kobold on top
-001-quinn-has-kobold-deck-rigged.png
+129-multiple-monsters-in-play.spec.ts-snapshots/001-quinn-has-kobold-deck-rigged-chromium-linux.png
 
 #### Step 3: Exploration triggered; kobold skipped (duplicate), snake drawn instead
-002-exploration-triggered-no-kobold-duplicate.png
+129-multiple-monsters-in-play.spec.ts-snapshots/002-exploration-triggered-no-kobold-duplicate-chromium-linux.png
 
 #### Step 4: Quinn now has kobold + snake (no duplicates)
-003-quinn-has-kobold-and-snake.png
+129-multiple-monsters-in-play.spec.ts-snapshots/003-quinn-has-kobold-and-snake-chromium-linux.png
 
 #### Step 5: Both players have a kobold — different players sharing a type is allowed
-004-both-players-have-kobold.png
+129-multiple-monsters-in-play.spec.ts-snapshots/004-both-players-have-kobold-chromium-linux.png
 
-#### Step 6: Quinn's villain phase starts
-005-quinn-villain-phase-starts.png
-
-#### Step 7: After villain phase — all activations complete
-006-villain-phase-complete.png
+#### Step 6: Quinn's villain phase — cross-player kobold activation list verified
+129-multiple-monsters-in-play.spec.ts-snapshots/005-quinn-villain-phase-cross-player-kobolds-chromium-linux.png
 
 ### Test 2: Hero skips multiple duplicates to find a new type
 
 #### Skipped kobold×2 and snake, drew orc-archer
-000-skipped-duplicates-drew-orc-archer.png
+129-multiple-monsters-in-play.spec.ts-snapshots/000-skipped-duplicates-drew-orc-archer-chromium-linux.png
