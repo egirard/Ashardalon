@@ -61,6 +61,7 @@ import {
 import {
   initializeMonsterDeck,
   drawMonster,
+  drawMonsterForHero,
   createMonsterInstance,
   getMonsterSpawnPosition,
   discardMonster,
@@ -76,6 +77,7 @@ import {
   removeMonsterFromGroup,
   getMonsterMoveToTilePosition,
   getValidTilePositions,
+  getVillainPhaseActivationList,
 } from "./monsters";
 import {
   executeMonsterTurn,
@@ -1009,19 +1011,24 @@ function handleScreamOfSentryEffect(state: GameState, chosenMonster: MonsterStat
         // Update unexplored edges
         state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
         
-        // Draw a monster from the deck
-        const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+        // Draw a monster from the deck, avoiding duplicates for the controlling hero
+        const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
+        const heroIdForSpawn = activeHeroToken?.heroId || state.heroTokens[0].heroId;
+        const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonsterForHero(
+          state.monsterDeck,
+          heroIdForSpawn,
+          state.monsters
+        );
         state.monsterDeck = updatedMonsterDeck;
         
         if (newMonsterId) {
           const newMonsterDef = getMonsterById(newMonsterId);
           
           // Use spawn function to handle multi-monster spawns
-          const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
           const spawnResult = spawnMonstersWithBehavior(
             newMonsterId,
             newTile,
-            activeHeroToken?.heroId || state.heroTokens[0].heroId,
+            heroIdForSpawn,
             state.monsters,
             state.monsterInstanceCounter,
             state.monsterGroupCounter
@@ -2031,8 +2038,12 @@ export const gameSlice = createSlice({
         const { drawnTile, remainingDeck } = drawTile(state.dungeon.tileDeck);
         
         if (drawnTile) {
-          // Draw a monster from the deck for later placement
-          const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+          // Draw a monster from the deck for later placement, avoiding duplicates for this hero
+          const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonsterForHero(
+            state.monsterDeck,
+            currentToken.heroId,
+            state.monsters
+          );
           
           // Set up exploration phase state
           state.explorationPhase = {
@@ -2553,8 +2564,12 @@ export const gameSlice = createSlice({
                 const edgeTile = state.dungeon.tiles.find(t => t.id === closestEdge.tileId);
                 
                 if (edgeTile) {
-                  // Draw a monster from the deck
-                  const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+                  // Draw a monster from the deck, avoiding duplicates for this hero
+                  const { monster: drawnMonsterId, deck: updatedMonsterDeck } = drawMonsterForHero(
+                    state.monsterDeck,
+                    activeHeroId,
+                    state.monsters
+                  );
                   
                   if (drawnMonsterId) {
                     // Use spawn function to handle multi-monster spawns
@@ -3295,15 +3310,19 @@ export const gameSlice = createSlice({
                   state.dungeon.tiles.push(newTile);
                   state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
 
-                  // Draw and spawn a monster on the new tile
-                  const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+                  // Draw and spawn a monster on the new tile, avoiding duplicates for the controlling hero
+                  const controllerHeroId = activeHeroToken?.heroId || (state.heroTokens.length > 0 ? state.heroTokens[0].heroId : 'quinn');
+                  const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonsterForHero(
+                    state.monsterDeck,
+                    controllerHeroId,
+                    state.monsters
+                  );
                   state.monsterDeck = updatedMonsterDeck;
 
                   let effectMessage = 'Tile placed';
 
                   if (newMonsterId) {
                     const newMonsterDef = getMonsterById(newMonsterId);
-                    const controllerHeroId = activeHeroToken?.heroId || (state.heroTokens.length > 0 ? state.heroTokens[0].heroId : 'quinn');
 
                     const spawnResult = spawnMonstersWithBehavior(
                       newMonsterId,
@@ -3409,15 +3428,18 @@ export const gameSlice = createSlice({
                     // Update unexplored edges
                     state.dungeon = updateDungeonAfterExploration(state.dungeon, closestEdge, newTile);
                     
-                    // Part 4: Draw and spawn a monster on the new tile
-                    const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+                    // Part 4: Draw and spawn a monster on the new tile, avoiding duplicates for the controlling hero
+                    // Determine controller hero ID with fallback
+                    const controllerHeroId = activeHeroToken?.heroId || (state.heroTokens.length > 0 ? state.heroTokens[0].heroId : 'quinn');
+                    const { monster: newMonsterId, deck: updatedMonsterDeck } = drawMonsterForHero(
+                      state.monsterDeck,
+                      controllerHeroId,
+                      state.monsters
+                    );
                     state.monsterDeck = updatedMonsterDeck;
                     
                     if (newMonsterId) {
                       const newMonsterDef = getMonsterById(newMonsterId);
-                      
-                      // Determine controller hero ID with fallback
-                      const controllerHeroId = activeHeroToken?.heroId || (state.heroTokens.length > 0 ? state.heroTokens[0].heroId : 'quinn');
                       
                       // Use spawn function to handle multi-monster spawns
                       const spawnResult = spawnMonstersWithBehavior(
@@ -3621,8 +3643,12 @@ export const gameSlice = createSlice({
           else if (encounterId === 'wandering-monster') {
             const activeHeroToken = state.heroTokens[state.turnState.currentHeroIndex];
             if (activeHeroToken) {
-              // Draw a monster
-              const { monster: monsterId, deck: updatedMonsterDeck } = drawMonster(state.monsterDeck);
+              // Draw a monster, avoiding duplicates for this hero
+              const { monster: monsterId, deck: updatedMonsterDeck } = drawMonsterForHero(
+                state.monsterDeck,
+                activeHeroToken.heroId,
+                state.monsters
+              );
               state.monsterDeck = updatedMonsterDeck;
               
               if (monsterId) {
@@ -5075,11 +5101,13 @@ export const gameSlice = createSlice({
         return;
       }
 
-      // Get monsters controlled by the current hero
+      // Get the full list of monsters to activate for this hero's villain phase.
+      // This includes the hero's own monsters first, then any same-type monsters
+      // controlled by other heroes (cross-player shared monster activation).
       const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId;
       if (!currentHeroId) return;
 
-      const controlledMonsters = state.monsters.filter(m => m.controllerId === currentHeroId);
+      const controlledMonsters = getVillainPhaseActivationList(currentHeroId, state.monsters);
       
       if (state.villainPhaseMonsterIndex >= controlledMonsters.length) {
         // All monsters have been activated
@@ -5656,10 +5684,12 @@ export const gameSlice = createSlice({
               extendedDetails: exploreDecisionLogText,
             });
             
-            // Draw monster from deck (monsters always spawn on explored tiles)
+            // Draw monster from deck (monsters always spawn on explored tiles), avoiding duplicates for this hero
             let spawnedMonsterInstanceId: string | undefined;
-            const { monster: drawnMonsterId, deck: newMonsterDeck } = drawMonster(
+            const { monster: drawnMonsterId, deck: newMonsterDeck } = drawMonsterForHero(
               state.monsterDeck,
+              currentHeroId,
+              state.monsters,
               randomFn
             );
             
@@ -5996,15 +6026,19 @@ export const gameSlice = createSlice({
           state.villain.position = globalToLocalForVillain(result.destination, result.newTileId, state.dungeon);
           state.villain.tileId = result.newTileId;
 
-          // Draw a monster from the deck and spawn it adjacent to the villain
-          const { monster: newMonsterId, deck: updatedDeck } = drawMonster(state.monsterDeck);
+          // Draw a monster from the deck and spawn it adjacent to the villain, avoiding duplicates for this hero
+          const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId ?? 'unknown';
+          const { monster: newMonsterId, deck: updatedDeck } = drawMonsterForHero(
+            state.monsterDeck,
+            currentHeroId,
+            state.monsters
+          );
           state.monsterDeck = updatedDeck;
           if (newMonsterId) {
             const spawnTile = state.dungeon.tiles.find(t => t.id === result.newTileId);
             if (spawnTile) {
               const spawnPos = getMonsterSpawnPosition(spawnTile, state.monsters);
               if (spawnPos) {
-                const currentHeroId = state.heroTokens[state.turnState.currentHeroIndex]?.heroId ?? 'unknown';
                 const newMonster: MonsterState = createMonsterInstance(
                   newMonsterId,
                   spawnPos,

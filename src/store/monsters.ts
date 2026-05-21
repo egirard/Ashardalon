@@ -735,3 +735,91 @@ export function removeMonsterFromGroup(
     memberIds: group.memberIds.filter(id => id !== monsterId),
   };
 }
+
+/**
+ * Draw a monster from the deck for a specific hero, ensuring no duplicate monster types.
+ * 
+ * A hero cannot have two monsters of the same type in their list. If the drawn monster
+ * is already controlled by the hero, it is discarded and another is drawn. This repeats
+ * until a unique monster type is found or the deck is exhausted.
+ * 
+ * It is valid for different heroes to share the same monster type.
+ * 
+ * @param deck - The current monster deck
+ * @param heroId - The hero who will control the drawn monster
+ * @param existingMonsters - All current monster instances on the board
+ * @param randomFn - Random function for deck reshuffling
+ * @returns The drawn (non-duplicate) monster ID and updated deck, or null if all remaining
+ *          cards are duplicates of types already controlled by this hero
+ */
+export function drawMonsterForHero(
+  deck: MonsterDeck,
+  heroId: string,
+  existingMonsters: MonsterState[],
+  randomFn: () => number = Math.random
+): { monster: string | null; deck: MonsterDeck } {
+  // Determine the set of monster types already controlled by this hero
+  const heroMonsterTypes = new Set(
+    existingMonsters
+      .filter(m => m.controllerId === heroId)
+      .map(m => m.monsterId)
+  );
+
+  // Quick check: does any non-duplicate type exist anywhere in the deck?
+  const allCards = [...deck.drawPile, ...deck.discardPile];
+  if (allCards.length === 0) {
+    return { monster: null, deck };
+  }
+  if (!allCards.some(m => !heroMonsterTypes.has(m))) {
+    return { monster: null, deck };
+  }
+
+  // Draw cards one at a time; discard duplicates until a valid card is found.
+  // The (allCards.length + 1) * 2 bound ensures termination even after one reshuffle cycle.
+  const maxAttempts = (allCards.length + 1) * 2;
+  let currentDeck = deck;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const { monster, deck: updatedDeck } = drawMonster(currentDeck, randomFn);
+    currentDeck = updatedDeck;
+
+    if (!monster) break; // Deck unexpectedly empty
+
+    if (!heroMonsterTypes.has(monster)) {
+      return { monster, deck: currentDeck };
+    }
+
+    // Duplicate type — discard it and continue drawing
+    currentDeck = discardMonster(currentDeck, monster);
+  }
+
+  return { monster: null, deck: currentDeck };
+}
+
+/**
+ * Build the ordered list of monsters that the current hero must activate during the villain phase.
+ *
+ * The list starts with the monsters directly controlled by `heroId`. It then appends any
+ * monsters of the SAME TYPE that are controlled by OTHER heroes — because when two players
+ * share a monster card, activating one player's named monster activates ALL matching monsters
+ * on the board at the same time.
+ *
+ * The combined list is used by `activateNextMonster` (and by the UI) so that
+ * `villainPhaseMonsterIndex` correctly advances through every monster that should activate
+ * during this hero's villain phase.
+ *
+ * @param heroId - The hero whose villain phase is active
+ * @param monsters - All current monster instances
+ * @returns Ordered list: hero's own monsters first, then same-type monsters from other heroes
+ */
+export function getVillainPhaseActivationList(
+  heroId: string,
+  monsters: MonsterState[]
+): MonsterState[] {
+  const ownMonsters = monsters.filter(m => m.controllerId === heroId);
+  const ownTypes = new Set(ownMonsters.map(m => m.monsterId));
+  const sharedMonsters = monsters.filter(
+    m => m.controllerId !== heroId && ownTypes.has(m.monsterId)
+  );
+  return [...ownMonsters, ...sharedMonsters];
+}
