@@ -194,230 +194,170 @@ test.describe('129 - Multiple Monsters in Play', () => {
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // STEP 6: Position heroes and monsters predictably so all three monsters
-    //         produce visible move results during the villain phase.
-    //         Then advance to Quinn's villain phase.
-    // ─────────────────────────────────────────────────────────────────────────
-
-    // Place heroes at the top of the start tile and monsters at the bottom.
-    // Valid start-tile walkable positions: x: 1-3, y: 0-7 (x=0 is wall column).
-    // Staircase blocks: {1,3}, {2,3}, {1,4}, {2,4}.
+    // STEP 6: Reposition heroes and monsters for a fully deterministic villain
+    //         phase where every activation produces a visible attack overlay.
     //
-    // Quinn at {3,0} is closer than Vistra at {1,0} for ALL three monsters by BFS:
-    //   kobold at {1,6} → Quinn {3,0}: 8 hops (via {3,5}→{3,2}→{3,0})
-    //                  → Vistra {1,0}: 10 hops (must detour around staircase)
-    //   snake  at {2,6} → Quinn {3,0}: 7 hops
-    //                  → Vistra {1,0}: 9 hops
-    //   kobold at {3,6} → Quinn {3,0}: 6 hops
-    //                  → Vistra {1,0}: 8 hops
-    // This prevents equidistant "needs-choice" pauses for all three monsters.
-    // Also empty the encounter deck so no encounter card blocks monster activation.
+    //   Start-tile walkable: x: 1-3, y: 0-7.  Staircase blocks: {1,3},{2,3},{1,4},{2,4}.
+    //
+    //   Quinn  at {3,1} — unique closest hero for all three monsters.
+    //   Vistra at {1,7} — far away (≥6 BFS hops) from all monsters.
+    //
+    //   kobold-existing  at {3,0}: 1 hop north of Quinn → adjacent → ATTACKS.
+    //   snake            at {3,3}: 2 BFS hops from Quinn (≤ 4-hop move-and-attack
+    //                              range) → teleports to {3,2}, ATTACKS Quinn.
+    //   kobold-vistra    at {2,2}: diagonally adjacent to Quinn (dx=1, dy=1)
+    //                              → ATTACKS Quinn directly (cross-player!).
+    //
+    //   All three activations produce a 'combat-result-overlay' (attack result).
+    //   Math.random is patched to 0.7 before entering the villain phase so that
+    //   attack rolls are deterministic:
+    //     d20 = floor(0.7 × 20) + 1 = 15  →  15 + 7 = 22 vs Quinn AC 17 → HIT
+    //   Quinn starts with 8 HP; 3 hits deal 3 damage → 5 HP remaining (survives).
+    // ─────────────────────────────────────────────────────────────────────────
     await page.evaluate(() => {
       const store = (window as any).__REDUX_STORE__;
       const state = store.getState();
 
-      // Heroes: Quinn top-right (closer to monsters by BFS), Vistra top-left (further)
-      store.dispatch({ type: 'game/setHeroPosition', payload: { heroId: 'quinn', position: { x: 3, y: 0 } } });
-      store.dispatch({ type: 'game/setHeroPosition', payload: { heroId: 'vistra', position: { x: 1, y: 0 } } });
+      // Reposition heroes
+      store.dispatch({ type: 'game/setHeroPosition', payload: { heroId: 'quinn',  position: { x: 3, y: 1 } } });
+      store.dispatch({ type: 'game/setHeroPosition', payload: { heroId: 'vistra', position: { x: 1, y: 7 } } });
 
-      // Monsters: spread across the bottom of the start tile, all non-adjacent to any hero.
-      // Kobold (Quinn's): x=1, y=6  →  BFS to Quinn = 8 hops (> 1, will move)
-      // Snake  (Quinn's): x=2, y=6  →  BFS to Quinn = 7 hops (> 1, will move)
-      // Kobold (Vistra's): x=3, y=6 →  BFS to Quinn = 6 hops (> 1, will move)
+      // Reposition all three monsters on the start tile
       const repositioned = state.game.monsters.map((m: any) => {
-        if (m.controllerId === 'quinn' && m.monsterId === 'kobold') {
-          return { ...m, tileId: 'start-tile', position: { x: 1, y: 6 } };
+        if (m.instanceId === 'kobold-existing') {
+          // 1 hop north of Quinn {3,1} → adjacent → attacks immediately
+          return { ...m, tileId: 'start-tile', position: { x: 3, y: 0 } };
         }
         if (m.controllerId === 'quinn' && m.monsterId === 'snake') {
-          return { ...m, tileId: 'start-tile', position: { x: 2, y: 6 } };
+          // Exactly 2 BFS hops from Quinn (within 4-hop move-and-attack range)
+          // → teleports to {3,2} (the unique closest free square adjacent to Quinn)
+          return { ...m, tileId: 'start-tile', position: { x: 3, y: 3 } };
         }
-        if (m.controllerId === 'vistra' && m.monsterId === 'kobold') {
-          return { ...m, tileId: 'start-tile', position: { x: 3, y: 6 } };
+        if (m.instanceId === 'kobold-vistra') {
+          // Diagonally adjacent to Quinn {3,1} (dx=1, dy=1) → attacks immediately
+          return { ...m, tileId: 'start-tile', position: { x: 2, y: 2 } };
         }
         return m;
       });
       store.dispatch({ type: 'game/setMonsters', payload: repositioned });
 
-      // Empty the encounter deck so no encounter card delays monster activation
+      // Empty the encounter deck so no card interrupts villain-phase activation
       store.dispatch({ type: 'game/setEncounterDeck', payload: { drawPile: [], discardPile: [] } });
-    });
 
-    // Advance to villain phase
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      const state = store.getState();
+      // Patch Math.random for deterministic attack rolls throughout villain phase.
+      // Math.random() = 0.7 → d20 = floor(0.7×20)+1 = 15 → 15+7 = 22 vs AC 17 → HIT.
+      (window as any).__origMathRandom = Math.random;
+      Math.random = () => 0.7;
+
+      // Advance to villain phase; Svelte $effect auto-activates the first monster.
       if (state.game.turnState.currentPhase === 'exploration-phase') {
         store.dispatch({ type: 'game/endExplorationPhase' });
       }
     });
 
-    // Wait for villain phase
-    await page.waitForFunction(() => {
-      const state = (window as any).__REDUX_STORE__.getState();
-      return state.game.turnState.currentPhase === 'villain-phase';
-    }, { timeout: 10000 });
+    // ─────────────────────────────────────────────────────────────────────────
+    // STEP 7: Monster 1 of 3 activates — Quinn's Kobold attacks Quinn.
+    //         Kobold at {3,0} is adjacent to Quinn at {3,1}; it attacks immediately.
+    //         The Svelte villain-phase $effect fires automatically.
+    // ─────────────────────────────────────────────────────────────────────────
+    await page.locator('[data-testid="combat-result-overlay"]').waitFor({ state: 'visible', timeout: 10000 });
 
-    await screenshots.capture(page, 'quinn-villain-phase-cross-player-kobolds', {
+    await screenshots.capture(page, 'villain-phase-kobold-1-attacks-quinn', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
         expect(state.game.turnState.currentPhase).toBe('villain-phase');
-
-        // Quinn is current hero (index 0)
+        // Quinn is the active hero
         const currentHeroId = state.game.heroTokens[state.game.turnState.currentHeroIndex]?.heroId;
         expect(currentHeroId).toBe('quinn');
-
-        // Verify that the shared activation rule is reflected in state:
-        // Both Quinn's and Vistra's kobolds are present on the board.
-        const quinnKobolds = state.game.monsters.filter(
-          (m: any) => m.monsterId === 'kobold' && m.controllerId === 'quinn'
-        );
-        const vistraKobolds = state.game.monsters.filter(
-          (m: any) => m.monsterId === 'kobold' && m.controllerId === 'vistra'
-        );
-        expect(quinnKobolds.length).toBeGreaterThan(0);
-        expect(vistraKobolds.length).toBeGreaterThan(0);
-
-        // Total activation list = 3 (Quinn's 2 + Vistra's shared kobold)
-        const quinnOwnMonsters = state.game.monsters.filter(
-          (m: any) => m.controllerId === 'quinn'
-        );
-        const quinnOwnTypes = new Set(quinnOwnMonsters.map((m: any) => m.monsterId as string));
-        const sharedMonsters = state.game.monsters.filter(
-          (m: any) => m.controllerId !== 'quinn' && quinnOwnTypes.has(m.monsterId)
-        );
-        expect(quinnOwnMonsters.length + sharedMonsters.length).toBe(3);
-      },
-    });
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // STEP 7: Monster 1 of 3 activates — Quinn's Kobold.
-    //         Directly dispatch activateNextMonster (the Svelte auto-activation
-    //         $effect is not reliable in headless E2E; direct dispatch mirrors
-    //         the same Redux action the $effect would fire).
-    // ─────────────────────────────────────────────────────────────────────────
-    // ─────────────────────────────────────────────────────────────────────────
-    // STEP 7: Monster 1 of 3 activates — Quinn's Kobold.
-    //         The Svelte villain-phase $effect may have already fired and set a
-    //         pendingMonsterDecision (when the $effect ran before our test code).
-    //         If it has, we resolve it by selecting Quinn as the hero target.
-    //         Otherwise we dispatch activateNextMonster directly.
-    //         Either way, a monster-move-overlay must appear.
-    // ─────────────────────────────────────────────────────────────────────────
-    await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      const state = store.getState();
-      if (state.game.pendingMonsterDecision) {
-        // $effect already fired; a needs-choice was produced.
-        // Select Quinn (the closest hero by BFS) to resume.
-        store.dispatch({
-          type: 'game/selectMonsterTarget',
-          payload: { decisionId: state.game.pendingMonsterDecision.decisionId, targetHeroId: 'quinn' },
-        });
-      } else {
-        // $effect has not fired yet; activate the first monster directly.
-        store.dispatch({ type: 'game/activateNextMonster', payload: {} });
-      }
-    });
-    await page.locator('[data-testid="monster-move-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
-
-    await screenshots.capture(page, 'villain-phase-monster-1-kobold-activates', {
-      programmaticCheck: async () => {
-        const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
-        expect(state.game.turnState.currentPhase).toBe('villain-phase');
-        // Index advanced to 1 after the first monster activated
+        // villainPhaseMonsterIndex advances to 1 after the first monster activates
         expect(state.game.villainPhaseMonsterIndex).toBe(1);
-        // Move overlay is visible — Quinn's kobold moved toward the nearest hero
-        expect(state.game.monsterMoveActionId).not.toBeNull();
-        const movingMonster = state.game.monsters.find(
-          (m: any) => m.instanceId === state.game.monsterMoveActionId
+        // Attack overlay is showing
+        expect(state.game.monsterAttackResult).not.toBeNull();
+        // The attacker is Quinn's kobold
+        const attacker = state.game.monsters.find(
+          (m: any) => m.instanceId === state.game.monsterAttackerId
         );
-        expect(movingMonster?.monsterId).toBe('kobold');
-        expect(movingMonster?.controllerId).toBe('quinn');
+        expect(attacker?.monsterId).toBe('kobold');
+        expect(attacker?.controllerId).toBe('quinn');
+        // Deterministic roll: 15+7=22 vs AC 17 → hit
+        expect(state.game.monsterAttackResult.isHit).toBe(true);
       },
     });
 
-    // Dismiss monster 1 and immediately activate monster 2 in the same evaluate call
-    // so the Svelte villain-phase $effect cannot fire between the two actions.
+    // Dismiss the first attack result; $effect auto-activates the snake.
     await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/dismissMonsterMoveAction' });
-      store.dispatch({ type: 'game/activateNextMonster', payload: {} });
+      (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterAttackResult' });
     });
 
-    // DEBUG: check state after step 7 batch
-    const debugStep8 = await page.evaluate(() => {
-      const state = (window as any).__REDUX_STORE__.getState();
-      return {
-        phase: state.game.turnState.currentPhase,
-        index: state.game.villainPhaseMonsterIndex,
-        monsterMoveActionId: state.game.monsterMoveActionId,
-        monsterAttackResult: !!state.game.monsterAttackResult,
-        pendingMonsterDecision: state.game.pendingMonsterDecision,
-        villainPhasePaused: state.game.villainPhasePaused,
-        monsters: state.game.monsters.map((m: any) => ({ id: m.instanceId, pos: m.position })),
-      };
-    });
-    console.log('DEBUG STATE after batch dismiss+activate for step 8:', JSON.stringify(debugStep8, null, 2));
-
     // ─────────────────────────────────────────────────────────────────────────
-    // STEP 8: Monster 2 of 3 activates — Quinn's Snake.
+    // STEP 8: Monster 2 of 3 activates — Quinn's Snake (move-and-attack).
+    //         Snake at {3,3} is within 4 BFS hops of Quinn → teleports to the
+    //         closest free adjacent square {3,2} and attacks Quinn.
     // ─────────────────────────────────────────────────────────────────────────
-    await page.locator('[data-testid="monster-move-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="combat-result-overlay"]').waitFor({ state: 'visible', timeout: 10000 });
 
-    await screenshots.capture(page, 'villain-phase-monster-2-snake-activates', {
+    await screenshots.capture(page, 'villain-phase-snake-attacks-quinn', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
         expect(state.game.turnState.currentPhase).toBe('villain-phase');
         expect(state.game.villainPhaseMonsterIndex).toBe(2);
-        expect(state.game.monsterMoveActionId).not.toBeNull();
-        const movingMonster = state.game.monsters.find(
-          (m: any) => m.instanceId === state.game.monsterMoveActionId
+        expect(state.game.monsterAttackResult).not.toBeNull();
+        // The attacker is Quinn's snake
+        const attacker = state.game.monsters.find(
+          (m: any) => m.instanceId === state.game.monsterAttackerId
         );
-        expect(movingMonster?.monsterId).toBe('snake');
-        expect(movingMonster?.controllerId).toBe('quinn');
+        expect(attacker?.monsterId).toBe('snake');
+        expect(attacker?.controllerId).toBe('quinn');
+        // Snake has teleported adjacent to Quinn at {3,2}
+        expect(attacker?.position).toEqual({ x: 3, y: 2 });
+        expect(state.game.monsterAttackResult.isHit).toBe(true);
       },
     });
 
-    // Dismiss monster 2 and immediately activate monster 3 in the same evaluate call.
+    // Dismiss the second attack result; $effect auto-activates Vistra's kobold.
     await page.evaluate(() => {
-      const store = (window as any).__REDUX_STORE__;
-      store.dispatch({ type: 'game/dismissMonsterMoveAction' });
-      store.dispatch({ type: 'game/activateNextMonster', payload: {} });
+      (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterAttackResult' });
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // STEP 9: Monster 3 of 3 activates — Vistra's Kobold (cross-player!).
-    //         This is the key screenshot: Quinn's villain phase activates
-    //         Vistra's kobold because they share the same monster type.
+    // STEP 9: Monster 3 of 3 activates — Vistra's Kobold attacks Quinn.
+    //         This is the cross-player activation: because Vistra's kobold
+    //         shares the 'kobold' type with Quinn's kobold, it activates
+    //         during Quinn's villain phase even though Vistra is not active.
     // ─────────────────────────────────────────────────────────────────────────
-    await page.locator('[data-testid="monster-move-overlay"]').waitFor({ state: 'visible', timeout: 5000 });
+    await page.locator('[data-testid="combat-result-overlay"]').waitFor({ state: 'visible', timeout: 10000 });
 
-    await screenshots.capture(page, 'villain-phase-monster-3-vistra-kobold-activates', {
+    await screenshots.capture(page, 'villain-phase-vistra-kobold-cross-player-attacks-quinn', {
       programmaticCheck: async () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
         expect(state.game.turnState.currentPhase).toBe('villain-phase');
+        // All three monsters have now activated
         expect(state.game.villainPhaseMonsterIndex).toBe(3);
-        expect(state.game.monsterMoveActionId).not.toBeNull();
-        // The activating monster is VISTRA's kobold — cross-player shared activation
-        const movingMonster = state.game.monsters.find(
-          (m: any) => m.instanceId === state.game.monsterMoveActionId
+        expect(state.game.monsterAttackResult).not.toBeNull();
+        // CROSS-PLAYER: the attacker is VISTRA's kobold, not Quinn's
+        const attacker = state.game.monsters.find(
+          (m: any) => m.instanceId === state.game.monsterAttackerId
         );
-        expect(movingMonster?.monsterId).toBe('kobold');
-        expect(movingMonster?.controllerId).toBe('vistra');
+        expect(attacker?.monsterId).toBe('kobold');
+        expect(attacker?.controllerId).toBe('vistra');
+        expect(state.game.monsterAttackResult.isHit).toBe(true);
+        // Quinn should have taken 3 hits (from 8 HP → 5 HP)
+        const quinnHp = state.game.heroHp.find((hp: any) => hp.heroId === 'quinn')?.currentHp;
+        expect(quinnHp).toBe(5);
       },
     });
 
+    // Dismiss the third attack result and restore Math.random.
+    // $effect auto-ends villain phase (all 3 monsters activated, no villain).
     await page.evaluate(() => {
-      (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterMoveAction' });
+      (window as any).__REDUX_STORE__.dispatch({ type: 'game/dismissMonsterAttackResult' });
+      Math.random = (window as any).__origMathRandom;
+      delete (window as any).__origMathRandom;
     });
-    await page.locator('[data-testid="monster-move-overlay"]').waitFor({ state: 'hidden', timeout: 3000 });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // STEP 10: All 3 monsters have taken their turn — end villain phase.
+    // STEP 10: All 3 monsters have taken their turn — villain phase ends.
     // ─────────────────────────────────────────────────────────────────────────
-    await page.evaluate(() => {
-      (window as any).__REDUX_STORE__.dispatch({ type: 'game/endVillainPhase' });
-    });
     await page.waitForFunction(() => {
       const state = (window as any).__REDUX_STORE__.getState();
       return state.game.turnState.currentPhase !== 'villain-phase';
@@ -428,6 +368,8 @@ test.describe('129 - Multiple Monsters in Play', () => {
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
         // Villain phase is over — all 3 monsters (own + shared) have taken their turns
         expect(state.game.turnState.currentPhase).not.toBe('villain-phase');
+        // Verify all 3 monsters are still on the board
+        expect(state.game.monsters).toHaveLength(3);
       },
     });
   });
