@@ -5285,11 +5285,19 @@ export const gameSlice = createSlice({
           extendedDetails: `Monster: ${monster.instanceId} | From: ${fromPos} → To: ${toPos}${moveDecisionLogText}`,
         });
       } else if (result.type === 'attack') {
+        // Determine attack option: ranged-attack tactic uses moveAttack; adjacent attack uses adjacentAttack.
+        // 'move' selects tactics.moveAttack in applyMonsterAttackStatusEffect/applyMonsterMissDamage helpers.
+        const attackOptionType: 'move' | 'adjacent' = result.isRanged ? 'move' : 'adjacent';
+        const attackTactics = MONSTER_TACTICS[monster.monsterId];
+        const attackOptionForName = result.isRanged
+          ? (attackTactics?.moveAttack ?? attackTactics?.adjacentAttack)
+          : attackTactics?.adjacentAttack;
+
         // Store the attack result
         state.monsterAttackResult = result.result;
         state.monsterAttackTargetId = result.targetId;
         state.monsterAttackerId = monster.instanceId;
-        state.monsterAttackName = MONSTER_TACTICS[monster.monsterId]?.adjacentAttack?.name ?? null;
+        state.monsterAttackName = attackOptionForName?.name ?? null;
 
         // Log the monster attack
         const monsterDef = getMonsterById(monster.monsterId);
@@ -5355,25 +5363,21 @@ export const gameSlice = createSlice({
         
         // Apply status effect if the attack has one and hit
         if (result.result.isHit) {
-          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId, 'adjacent');
+          applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, result.targetId, attackOptionType);
           
           // Check if status effect was applied for logging
-          const tactics = MONSTER_TACTICS[monster.monsterId];
-          const attackOption = tactics?.adjacentAttack;
-          if (attackOption?.statusEffect) {
-            logDetails += ` | Applied: ${attackOption.statusEffect}`;
+          if (attackOptionForName?.statusEffect) {
+            logDetails += ` | Applied: ${attackOptionForName.statusEffect}`;
           }
         }
         
         // Apply miss damage if the attack missed but has miss damage
         if (!result.result.isHit) {
-          applyMonsterMissDamage(state, monster.monsterId, result.targetId, 'adjacent');
+          applyMonsterMissDamage(state, monster.monsterId, result.targetId, attackOptionType);
           
           // Check if miss damage was applied for logging
-          const tactics = MONSTER_TACTICS[monster.monsterId];
-          const attackOption = tactics?.adjacentAttack;
-          if (attackOption?.missDamage && attackOption.missDamage > 0) {
-            logDetails += ` | Miss damage: ${attackOption.missDamage}`;
+          if (attackOptionForName?.missDamage && attackOptionForName.missDamage > 0) {
+            logDetails += ` | Miss damage: ${attackOptionForName.missDamage}`;
           }
         }
         
@@ -7221,6 +7225,49 @@ export const gameSlice = createSlice({
                 applyMonsterMissDamage(state, monster.monsterId, targetHeroId, 'adjacent');
               }
               
+              // Increment monster index to continue to next monster
+              state.villainPhaseMonsterIndex++;
+            } else if (decision.context === 'ranged-attack') {
+              // Ranged attack - attack in place with ranged weapon (no movement)
+              const targetAC = heroAcMap[targetHeroId] ?? 10;
+              const tactics = MONSTER_TACTICS[monster.monsterId];
+              const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack;
+              if (!attackOption) {
+                state.villainPhaseMonsterIndex++;
+                return;
+              }
+              const attackResult = resolveMonsterAttackWithStats(attackOption, targetAC, Math.random);
+
+              // Store the attack result
+              state.monsterAttackResult = attackResult;
+              state.monsterAttackTargetId = targetHeroId;
+              state.monsterAttackerId = monster.instanceId;
+              state.monsterAttackName = attackOption.name;
+
+              // Apply damage if hit
+              if (attackResult.isHit && attackResult.damage > 0) {
+                const heroHp = state.heroHp.find(h => h.heroId === targetHeroId);
+                if (heroHp) {
+                  heroHp.currentHp = Math.max(0, heroHp.currentHp - attackResult.damage);
+
+                  // Check for party defeat
+                  const allHeroesDefeated = state.heroHp.every(h => h.currentHp <= 0);
+                  if (allHeroesDefeated) {
+                    state.currentScreen = "defeat";
+                  }
+                }
+              }
+
+              // Apply status effect if hit ('move' selects moveAttack option in the helper)
+              if (attackResult.isHit) {
+                applyMonsterAttackStatusEffect(state, monster.monsterId, monster.instanceId, targetHeroId, 'move');
+              }
+
+              // Apply miss damage if missed ('move' selects moveAttack option in the helper)
+              if (!attackResult.isHit) {
+                applyMonsterMissDamage(state, monster.monsterId, targetHeroId, 'move');
+              }
+
               // Increment monster index to continue to next monster
               state.villainPhaseMonsterIndex++;
             } else {

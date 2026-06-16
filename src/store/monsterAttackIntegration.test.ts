@@ -145,9 +145,9 @@ describe('Monster Attack Integration', () => {
         () => 0.9 // Will hit
       );
 
-      // Should move and attack
-      expect(action.type).toBe('move-and-attack');
-      if (action.type === 'move-and-attack') {
+      // Should attack in place (no movement) with ranged weapon
+      expect(action.type).toBe('attack');
+      if (action.type === 'attack') {
         expect(action.targetId).toBe('quinn');
         // Should use Tentacles (moveAttack)
         const tactics = MONSTER_TACTICS['grell'];
@@ -286,7 +286,7 @@ describe('Monster Attack Integration', () => {
       }
     });
 
-    it('orc-archer should move and attack with arrow when within 2 tiles', () => {
+    it('orc-archer should attack in place with arrow when within 2 tiles', () => {
       const dungeon = createTestDungeon();
       const monster: MonsterState = {
         monsterId: 'orc-archer',
@@ -315,9 +315,9 @@ describe('Monster Attack Integration', () => {
         () => 0.9 // Will hit
       );
 
-      // Should move and attack with arrow
-      expect(action.type).toBe('move-and-attack');
-      if (action.type === 'move-and-attack') {
+      // Should attack in place (no movement) with arrow
+      expect(action.type).toBe('attack');
+      if (action.type === 'attack') {
         expect(action.targetId).toBe('quinn');
         expect(action.result.isHit).toBe(true);
         // Arrow does 2 damage

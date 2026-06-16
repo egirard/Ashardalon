@@ -15,7 +15,7 @@ const SQUARES_PER_TILE = 4;
  */
 export type MonsterAction =
   | { type: 'move'; destination: Position; decisionLog?: string[] }
-  | { type: 'attack'; targetId: string; result: AttackResult; decisionLog?: string[] }
+  | { type: 'attack'; targetId: string; result: AttackResult; /** True when from ranged-attack tactic (attacks in place with moveAttack, not adjacentAttack) */ isRanged?: boolean; decisionLog?: string[] }
   | { type: 'move-and-attack'; destination: Position; targetId: string; result: AttackResult; decisionLog?: string[] }
   | { type: 'area-attack'; targetIds: string[]; results: AttackResult[]; decisionLog?: string[] }
   | { type: 'explore'; edge: TileEdge; decisionLog?: string[] }
@@ -837,8 +837,45 @@ export function executeMonsterTurn(
     }
   }
   
-  // Handle move-and-attack and ranged-attack tactics
-  if (tacticType === 'move-and-attack' || tacticType === 'ranged-attack') {
+  // Handle ranged-attack tactics (e.g., Orc Archer, Grell)
+  // These monsters attack in place with their ranged weapon when a hero is within range,
+  // without moving — unlike move-and-attack which moves adjacent before attacking.
+  if (tacticType === 'ranged-attack') {
+    const range = tactics?.moveAttackRange ?? 1;
+    const heroInRange = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, range);
+    decisionLog.push(`Checking for Hero within ${range} tile(s)... ${heroInRange ? ('needsChoice' in heroInRange ? `Multiple Heroes in range: ${heroInRange.heroes.map(h => h.heroId).join(', ')}` : `Found ${heroInRange.hero.heroId}`) : 'None in range'}`);
+
+    if (heroInRange) {
+      // Check if multiple heroes at same distance (needs player choice for targeting)
+      if ('needsChoice' in heroInRange && heroInRange.needsChoice) {
+        decisionLog.push('Multiple Heroes in range at same distance — player must choose target');
+        return {
+          type: 'needs-choice',
+          decision: {
+            decisionId: `monster-${monster.instanceId}-target-${Date.now()}`,
+            type: 'choose-hero-target',
+            monsterId: monster.instanceId,
+            options: {
+              heroIds: heroInRange.heroes.map(h => h.heroId)
+            },
+            context: 'ranged-attack'
+          },
+          decisionLog,
+        };
+      }
+
+      // Attack in place with ranged weapon (no movement)
+      const targetAC = heroAcMap[heroInRange.hero.heroId] ?? 10;
+      const attackOption = tactics?.moveAttack ?? tactics?.adjacentAttack;
+      if (!attackOption) return { type: 'none', decisionLog };
+      const result = resolveMonsterAttackWithStats(attackOption, targetAC, randomFn);
+      decisionLog.push(`→ Attacking ${heroInRange.hero.heroId} with ${attackOption.name} (ranged, no move): Roll ${result.roll} + ${result.attackBonus} = ${result.total} vs AC ${result.targetAC} — ${result.isHit ? (result.isCritical ? 'Critical Hit!' : 'Hit') : 'Miss'}`);
+      return { type: 'attack', targetId: heroInRange.hero.heroId, result, isRanged: true, decisionLog };
+    }
+  }
+
+  // Handle move-and-attack tactics
+  if (tacticType === 'move-and-attack') {
     const range = tactics?.moveAttackRange ?? 1;
     const heroInRange = findHeroWithinTileRange(monster, heroTokens, heroHpMap, dungeon, range);
     decisionLog.push(`Checking for Hero within ${range} tile(s)... ${heroInRange ? ('needsChoice' in heroInRange ? `Multiple Heroes in range: ${heroInRange.heroes.map(h => h.heroId).join(', ')}` : `Found ${heroInRange.hero.heroId}`) : 'None in range'}`);
