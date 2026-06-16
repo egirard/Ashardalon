@@ -125,7 +125,7 @@ export type MonsterTacticType =
   | 'attack-only'           // If adjacent, attack. Otherwise move toward closest hero.
   | 'move-and-attack'       // If within range, move adjacent AND attack. Otherwise move.
   | 'explore-or-attack'     // If adjacent, attack. If on tile with unexplored edge and no heroes, explore. Otherwise move.
-  | 'ranged-attack'         // Same as move-and-attack but used for monsters with different attacks at different ranges (e.g., Grell, Orc Archer)
+  | 'ranged-attack'         // If adjacent, use adjacent attack. If within range (but not adjacent), attack in place with ranged weapon (no movement). Otherwise move toward hero.
   | 'area-attack';          // Attacks all valid targets (heroes on tile or within range) simultaneously
 
 /**
