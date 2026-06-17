@@ -1473,9 +1473,10 @@ export const gameSlice = createSlice({
         scenarioId: state.selectedScenarioId,
         monstersDefeated: 0,
         monstersToDefeat: scenarioDef.monstersToDefeat,
-        objective: scenarioDef.goal,
+        objective: scenarioDef.goal || "Complete the objective",
         title: scenarioDef.title,
         description: scenarioDef.intro,
+        instructions: scenarioDef.instructions || DEFAULT_SCENARIO_STATE.instructions,
         introductionShown: false,
         chamberRevealed: false,
         villainInstanceId: null,
@@ -4467,8 +4468,8 @@ export const gameSlice = createSlice({
         state.leveledUpHeroId = currentHeroId;
         
         // Log level up
-        const levelUpHero = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
-        const heroName = levelUpHero?.name ?? currentHeroId;
+        const heroData = AVAILABLE_HEROES.find(h => h.id === currentHeroId);
+        const heroName = heroData?.name ?? currentHeroId;
         state.logEntries.push({
           id: state.logEntryCounter++,
           timestamp: Date.now(),
