@@ -25,6 +25,8 @@ export interface PowerCard {
   rule: string;
   attackBonus?: number;
   damage?: number;
+  /** Bonus to attack per adjacent monster when making this attack */
+  adjacentMonsterAttackBonus?: number;
   /** Whether this is a custom hero ability (race-based) */
   isCustomAbility?: boolean;
 }
@@ -84,7 +86,7 @@ export const POWER_CARDS: PowerCard[] = [
   { id: 21, name: 'Lay On Hands', type: 'utility', heroClass: 'Paladin', description: 'Your divine touch instantly heals wounds.', rule: 'One adjacent Hero regains 2 hit points.', isCustomAbility: true },
   { id: 22, name: 'Divine Challenge', type: 'at-will', heroClass: 'Paladin', description: 'You boldly confront a nearby enemy.', rule: 'Choose one Monster within 1 tile of you. Place that Monster adjacent to your Hero.\nAttack one adjacent Monster.', attackBonus: 8, damage: 1 },
   { id: 23, name: 'Holy Strike', type: 'at-will', heroClass: 'Paladin', description: 'You strike an enemy, igniting it with holy light.', rule: 'Attack one adjacent Monster.\nIf you started your Hero Phase adjacent to the Monster, deal +1 damage if you hit.', attackBonus: 8, damage: 1 },
-  { id: 24, name: 'Valiant Strike', type: 'at-will', heroClass: 'Paladin', description: 'The odds against you add strength to your attack.', rule: 'Attack one adjacent Monster.\nWhen making this attack, you get a +1 bonus to attack for each Monster adjacent to your Hero.', attackBonus: 8, damage: 1 },
+  { id: 24, name: 'Valiant Strike', type: 'at-will', heroClass: 'Paladin', description: 'The odds against you add strength to your attack.', rule: 'Attack one adjacent Monster.\nWhen making this attack, you get a +1 bonus to attack for each Monster adjacent to your Hero.', attackBonus: 8, damage: 1, adjacentMonsterAttackBonus: 1 },
   { id: 25, name: 'Arcing Strike', type: 'daily', heroClass: 'Paladin', description: 'You swing your weapon in a wide arc.', rule: 'Attack one or two adjacent Monsters.', attackBonus: 9, damage: 3 },
   { id: 26, name: 'Benign Transposition', type: 'daily', heroClass: 'Paladin', description: 'You call upon divine power to switch places with an ally to strike a foe.', rule: 'Choose 1 Hero within 2 tiles of you. You swap positions with that Hero.\nAfter swapping positions, attack one adjacent Monster.', attackBonus: 8, damage: 3 },
   { id: 27, name: 'Righteous Smite', type: 'daily', heroClass: 'Paladin', description: 'Your righteous attack fills your party with preternatural resolve.', rule: 'Attack one adjacent Monster.\nHit or Miss: All Heroes on your tile regain 1 Hit Point.', attackBonus: 9, damage: 3 },

@@ -2,6 +2,7 @@ import type { HeroAttack, AttackResult, Position, MonsterState, DungeonState, Pl
 import { HERO_LEVELS, LEVEL_UP_COST } from './types';
 import { getMonsterById } from './monsters';
 import { getTileBounds, findTileAtPosition } from './movement';
+import type { PowerCard } from './powerCards';
 import {
   getAttackBonusFromItems,
   getAcBonusFromItems,
@@ -272,6 +273,26 @@ export function getAdjacentMonsters(
     // Check if the hero and monster are adjacent in global coordinates
     return arePositionsAdjacent(position, monsterGlobalPos);
   });
+}
+
+/**
+ * Calculate a power card's attack bonus, including situational per-adjacent-monster bonuses.
+ */
+export function calculatePowerCardAttackBonus(
+  powerCard: PowerCard,
+  position: Position,
+  monsters: MonsterState[],
+  tileId: string,
+  dungeon?: DungeonState
+): number {
+  const baseAttackBonus = powerCard.attackBonus ?? 0;
+  const adjacentMonsterAttackBonus = powerCard.adjacentMonsterAttackBonus ?? 0;
+
+  if (adjacentMonsterAttackBonus === 0) {
+    return baseAttackBonus;
+  }
+
+  return baseAttackBonus + (getAdjacentMonsters(position, monsters, tileId, dungeon).length * adjacentMonsterAttackBonus);
 }
 
 /**

@@ -5,10 +5,12 @@
   import type { GameState, MultiAttackState } from '../store/gameSlice';
   import type { MonsterState, Position } from '../store/types';
   import { MONSTERS } from '../store/types';
+  import { calculatePowerCardAttackBonus } from '../store/combat';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
   import PowerCardDetailsPanel from './PowerCardDetailsPanel.svelte';
   import type { PendingFlamingSphereState, PendingMonsterRelocationState } from './PowerCardDetailsPanel.svelte';
   import { parseActionCard, requiresMovementFirst } from '../store/actionCardParser';
+  import { findTileAtPosition } from '../store/movement';
 
   // Card ID constants
   const BLADE_BARRIER_CARD_ID = 5;
@@ -482,6 +484,20 @@
     }
   }
 
+  function getDisplayedAttackBonus(card: PowerCard): number {
+    if (card.attackBonus === undefined || !gameState || !heroPowerCards) {
+      return card.attackBonus ?? 0;
+    }
+
+    const heroToken = gameState.heroTokens.find(token => token.heroId === heroPowerCards.heroId);
+    if (!heroToken) {
+      return card.attackBonus;
+    }
+
+    const heroTileId = findTileAtPosition(heroToken.position, gameState.dungeon)?.id ?? 'tile-1';
+    return calculatePowerCardAttackBonus(card, heroToken.position, gameState.monsters, heroTileId, gameState.dungeon);
+  }
+
 </script>
 
 {#if powerCards.length > 0 || cagedAllyInfo}
@@ -559,7 +575,7 @@
           </div>
           {#if isAttackCard}
             <div class="card-stats-mini">
-              <span class="attack-bonus-mini">+{card.attackBonus}</span>
+              <span class="attack-bonus-mini">+{getDisplayedAttackBonus(card)}</span>
               <span class="damage-mini">{card.damage || 1} dmg</span>
             </div>
           {/if}
@@ -570,7 +586,7 @@
           <div class="attack-card-expanded" data-testid="attack-card-expanded-{card.id}">
             <div class="attack-stats">
               <span class="stat-item">
-                <strong>Bonus:</strong> +{card.attackBonus}
+                <strong>Bonus:</strong> +{getDisplayedAttackBonus(card)}
               </span>
               <span class="stat-item">
                 <strong>Damage:</strong> {card.damage || 1}
@@ -640,6 +656,7 @@
         : ''}
       <PowerCardDetailsPanel
         card={selectedCardForDetailsPanel}
+        attackBonusDisplay={getDisplayedAttackBonus(selectedCardForDetailsPanel)}
         isFlipped={isFlipped}
         isClickable={highlightState === 'eligible'}
         ineligibilityReason={ineligibilityReason}
