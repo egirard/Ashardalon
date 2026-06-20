@@ -310,7 +310,8 @@ export function calculatePowerCardAttackBonusForHero(
     return powerCard.attackBonus ?? 0;
   }
 
-  return calculatePowerCardAttackBonus(powerCard, heroToken.position, monsters, '', dungeon);
+  const heroTileId = findTileAtPosition(heroToken.position, dungeon)?.id ?? '';
+  return calculatePowerCardAttackBonus(powerCard, heroToken.position, monsters, heroTileId, dungeon);
 }
 
 /**
