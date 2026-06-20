@@ -21,8 +21,8 @@
 
   interface Props {
     card: PowerCard;
-    attackBonusDisplay?: number;
-    attackBonusText?: string;
+    attackBonusText: string;
+    attackBonusAriaLabel?: string;
     isFlipped?: boolean;
     isClickable?: boolean;
     ineligibilityReason?: string;
@@ -45,8 +45,8 @@
 
   let {
     card,
-    attackBonusDisplay,
     attackBonusText,
+    attackBonusAriaLabel,
     isFlipped = false,
     isClickable = false,
     ineligibilityReason,
@@ -127,9 +127,6 @@
     }
   }
 
-  const displayedAttackBonusText = $derived(
-    attackBonusText ?? `+${attackBonusDisplay ?? card.attackBonus ?? 0}`
-  );
 </script>
 
 <div 
@@ -150,7 +147,8 @@
     {#if card.attackBonus !== undefined}
       <div class="power-stats">
         <div class="stat-item">
-          <strong>Attack Bonus:</strong> {displayedAttackBonusText}
+          <strong>Attack Bonus:</strong>
+          <span aria-label={attackBonusAriaLabel}>{attackBonusText}</span>
         </div>
         <div class="stat-item">
           <strong>Damage:</strong> {card.damage || 1}

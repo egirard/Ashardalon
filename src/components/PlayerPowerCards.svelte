@@ -505,6 +505,10 @@
     return value >= 0 ? `+${value}` : `${value}`;
   }
 
+  function formatBonusLabelText(value: number): string {
+    return value >= 0 ? `${value}` : `minus ${Math.abs(value)}`;
+  }
+
   function getDisplayedAttackBonusText(card: PowerCard): string {
     const displayedAttackBonus = getDisplayedAttackBonus(card);
     const baseAttackBonus = card.attackBonus ?? 0;
@@ -515,6 +519,19 @@
     }
 
     return `${formatSignedBonus(baseAttackBonus)} ${formatSignedBonus(variableBonus)} = ${formatSignedBonus(displayedAttackBonus)}`;
+  }
+
+  function getDisplayedAttackBonusAriaLabel(card: PowerCard): string {
+    const displayedAttackBonus = getDisplayedAttackBonus(card);
+    const baseAttackBonus = card.attackBonus ?? 0;
+    const variableBonus = displayedAttackBonus - baseAttackBonus;
+
+    if (!card.adjacentMonsterAttackBonus || variableBonus === 0) {
+      return `Attack bonus ${formatBonusLabelText(displayedAttackBonus)}`;
+    }
+
+    const operator = variableBonus >= 0 ? 'plus' : 'minus';
+    return `Attack bonus ${formatBonusLabelText(baseAttackBonus)} ${operator} ${Math.abs(variableBonus)} equals ${formatBonusLabelText(displayedAttackBonus)}`;
   }
 
 </script>
@@ -605,7 +622,8 @@
           <div class="attack-card-expanded" data-testid="attack-card-expanded-{card.id}">
             <div class="attack-stats">
               <span class="stat-item">
-                <strong>Bonus:</strong> {getDisplayedAttackBonusText(card)}
+                <strong>Bonus:</strong>
+                <span aria-label={getDisplayedAttackBonusAriaLabel(card)}>{getDisplayedAttackBonusText(card)}</span>
               </span>
               <span class="stat-item">
                 <strong>Damage:</strong> {card.damage || 1}
@@ -675,8 +693,8 @@
         : ''}
       <PowerCardDetailsPanel
         card={selectedCardForDetailsPanel}
-        attackBonusDisplay={getDisplayedAttackBonus(selectedCardForDetailsPanel)}
         attackBonusText={getDisplayedAttackBonusText(selectedCardForDetailsPanel)}
+        attackBonusAriaLabel={getDisplayedAttackBonusAriaLabel(selectedCardForDetailsPanel)}
         isFlipped={isFlipped}
         isClickable={highlightState === 'eligible'}
         ineligibilityReason={ineligibilityReason}
