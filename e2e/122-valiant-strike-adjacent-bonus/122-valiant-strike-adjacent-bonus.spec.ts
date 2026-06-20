@@ -102,8 +102,8 @@ test.describe('122 - Valiant Strike Adjacent Bonus', () => {
 
         expect(adjacentMonsterCount).toBe(2);
         await expect(page.locator('[data-testid="power-card-24"] .attack-bonus-mini')).toHaveText('+10');
-        await expect(page.locator('[data-testid="attack-card-expanded-24"]')).toContainText('Bonus: +10');
-        await expect(page.locator('[data-testid="power-card-details-panel"]')).toContainText('Attack Bonus: +10');
+        await expect(page.locator('[data-testid="attack-card-expanded-24"]')).toContainText('Bonus: +8 +2 = +10');
+        await expect(page.locator('[data-testid="power-card-details-panel"]')).toContainText('Attack Bonus: +8 +2 = +10');
         await expect(page.locator('[data-testid="attack-target-valiant-orc-archer"]')).toBeVisible();
         await expect(page.locator('[data-testid="attack-target-valiant-kobold"]')).toBeVisible();
       }

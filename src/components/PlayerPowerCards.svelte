@@ -501,6 +501,22 @@
     );
   }
 
+  function formatSignedBonus(value: number): string {
+    return value >= 0 ? `+${value}` : `${value}`;
+  }
+
+  function getDisplayedAttackBonusText(card: PowerCard): string {
+    const displayedAttackBonus = getDisplayedAttackBonus(card);
+    const baseAttackBonus = card.attackBonus ?? 0;
+    const variableBonus = displayedAttackBonus - baseAttackBonus;
+
+    if (!card.adjacentMonsterAttackBonus || variableBonus === 0) {
+      return formatSignedBonus(displayedAttackBonus);
+    }
+
+    return `${formatSignedBonus(baseAttackBonus)} ${formatSignedBonus(variableBonus)} = ${formatSignedBonus(displayedAttackBonus)}`;
+  }
+
 </script>
 
 {#if powerCards.length > 0 || cagedAllyInfo}
@@ -589,7 +605,7 @@
           <div class="attack-card-expanded" data-testid="attack-card-expanded-{card.id}">
             <div class="attack-stats">
               <span class="stat-item">
-                <strong>Bonus:</strong> +{getDisplayedAttackBonus(card)}
+                <strong>Bonus:</strong> {getDisplayedAttackBonusText(card)}
               </span>
               <span class="stat-item">
                 <strong>Damage:</strong> {card.damage || 1}
@@ -660,6 +676,7 @@
       <PowerCardDetailsPanel
         card={selectedCardForDetailsPanel}
         attackBonusDisplay={getDisplayedAttackBonus(selectedCardForDetailsPanel)}
+        attackBonusText={getDisplayedAttackBonusText(selectedCardForDetailsPanel)}
         isFlipped={isFlipped}
         isClickable={highlightState === 'eligible'}
         ineligibilityReason={ineligibilityReason}
