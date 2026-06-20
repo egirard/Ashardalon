@@ -484,12 +484,12 @@
   }
 
   function getDisplayedAttackBonus(card: PowerCard): number {
-    if (card.attackBonus === undefined) {
+    if (card.attackBonus === undefined && !card.adjacentMonsterAttackBonus) {
       return 0;
     }
 
     if (!gameState || !heroPowerCards) {
-      return card.attackBonus;
+      return card.attackBonus ?? 0;
     }
 
     return calculatePowerCardAttackBonusForHero(
