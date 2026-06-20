@@ -905,34 +905,6 @@ describe('applyItemBonusesToAttack', () => {
     expect(result).toEqual(baseAttack);
   });
 
-  describe('calculatePowerCardAttackBonus', () => {
-    it('adds +1 per adjacent monster for Valiant Strike', () => {
-      const valiantStrike = getPowerCardById(24);
-      expect(valiantStrike).toBeDefined();
-
-      const heroPos = { x: 2, y: 2 };
-      const monsters: MonsterState[] = [
-        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'cultist', instanceId: 'cultist-0', position: { x: 3, y: 2 }, currentHp: 2, controllerId: 'quinn', tileId: 'tile-1' },
-        { monsterId: 'snake', instanceId: 'snake-0', position: { x: 5, y: 5 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-      ];
-
-      expect(calculatePowerCardAttackBonus(valiantStrike!, heroPos, monsters, 'tile-1')).toBe(10);
-    });
-
-    it('leaves other power cards at their printed attack bonus', () => {
-      const holyStrike = getPowerCardById(23);
-      expect(holyStrike).toBeDefined();
-
-      const heroPos = { x: 2, y: 2 };
-      const monsters: MonsterState[] = [
-        { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
-      ];
-
-      expect(calculatePowerCardAttackBonus(holyStrike!, heroPos, monsters, 'tile-1')).toBe(8);
-    });
-  });
-
   it('should return base attack when inventory has no items', () => {
     const baseAttack: HeroAttack = { attackBonus: 6, damage: 1 };
     const inventory: HeroInventory = { heroId: 'quinn', items: [] };
@@ -990,6 +962,34 @@ describe('applyItemBonusesToAttack', () => {
     const result = applyItemBonusesToAttack(baseAttack, inventory);
     expect(result.attackBonus).toBe(6);
     expect(result.damage).toBe(1);
+  });
+});
+
+describe('calculatePowerCardAttackBonus', () => {
+  it('adds +1 per adjacent monster for Valiant Strike', () => {
+    const valiantStrike = getPowerCardById(24);
+    expect(valiantStrike).toBeDefined();
+
+    const heroPos = { x: 2, y: 2 };
+    const monsters: MonsterState[] = [
+      { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+      { monsterId: 'cultist', instanceId: 'cultist-0', position: { x: 3, y: 2 }, currentHp: 2, controllerId: 'quinn', tileId: 'tile-1' },
+      { monsterId: 'snake', instanceId: 'snake-0', position: { x: 5, y: 5 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+    ];
+
+    expect(calculatePowerCardAttackBonus(valiantStrike!, heroPos, monsters, 'tile-1')).toBe(10);
+  });
+
+  it('leaves other power cards at their printed attack bonus', () => {
+    const holyStrike = getPowerCardById(23);
+    expect(holyStrike).toBeDefined();
+
+    const heroPos = { x: 2, y: 2 };
+    const monsters: MonsterState[] = [
+      { monsterId: 'kobold', instanceId: 'kobold-0', position: { x: 2, y: 1 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
+    ];
+
+    expect(calculatePowerCardAttackBonus(holyStrike!, heroPos, monsters, 'tile-1')).toBe(8);
   });
 });
 

@@ -485,8 +485,12 @@
   }
 
   function getDisplayedAttackBonus(card: PowerCard): number {
-    if (card.attackBonus === undefined || !gameState || !heroPowerCards) {
-      return card.attackBonus ?? 0;
+    if (card.attackBonus === undefined) {
+      return 0;
+    }
+
+    if (!gameState || !heroPowerCards) {
+      return card.attackBonus;
     }
 
     const heroToken = gameState.heroTokens.find(token => token.heroId === heroPowerCards.heroId);
