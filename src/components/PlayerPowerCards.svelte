@@ -506,7 +506,7 @@
   }
 
   function formatBonusLabelText(value: number): string {
-    return value >= 0 ? `${value}` : `minus ${Math.abs(value)}`;
+    return value >= 0 ? `plus ${value}` : `minus ${Math.abs(value)}`;
   }
 
   function getDisplayedAttackBonusText(card: PowerCard): string {
