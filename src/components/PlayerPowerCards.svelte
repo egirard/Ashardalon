@@ -5,12 +5,11 @@
   import type { GameState, MultiAttackState } from '../store/gameSlice';
   import type { MonsterState, Position } from '../store/types';
   import { MONSTERS } from '../store/types';
-  import { calculatePowerCardAttackBonus } from '../store/combat';
+  import { calculatePowerCardAttackBonusForHero } from '../store/combat';
   import { getPowerCardHighlightState, getPowerCardIneligibilityReason } from '../store/powerCardEligibility';
   import PowerCardDetailsPanel from './PowerCardDetailsPanel.svelte';
   import type { PendingFlamingSphereState, PendingMonsterRelocationState } from './PowerCardDetailsPanel.svelte';
   import { parseActionCard, requiresMovementFirst } from '../store/actionCardParser';
-  import { findTileAtPosition } from '../store/movement';
 
   // Card ID constants
   const BLADE_BARRIER_CARD_ID = 5;
@@ -493,13 +492,13 @@
       return card.attackBonus;
     }
 
-    const heroToken = gameState.heroTokens.find(token => token.heroId === heroPowerCards.heroId);
-    if (!heroToken) {
-      return card.attackBonus;
-    }
-
-    const heroTileId = findTileAtPosition(heroToken.position, gameState.dungeon)?.id ?? 'tile-1';
-    return calculatePowerCardAttackBonus(card, heroToken.position, gameState.monsters, heroTileId, gameState.dungeon);
+    return calculatePowerCardAttackBonusForHero(
+      card,
+      heroPowerCards.heroId,
+      gameState.heroTokens,
+      gameState.monsters,
+      gameState.dungeon
+    );
   }
 
 </script>

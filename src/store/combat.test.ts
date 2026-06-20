@@ -977,7 +977,8 @@ describe('calculatePowerCardAttackBonus', () => {
       { monsterId: 'snake', instanceId: 'snake-0', position: { x: 5, y: 5 }, currentHp: 1, controllerId: 'quinn', tileId: 'tile-1' },
     ];
 
-    expect(calculatePowerCardAttackBonus(valiantStrike!, heroPos, monsters, 'tile-1')).toBe(10);
+    const expectedAttackBonus = (valiantStrike?.attackBonus ?? 0) + 2;
+    expect(calculatePowerCardAttackBonus(valiantStrike!, heroPos, monsters, 'tile-1')).toBe(expectedAttackBonus);
   });
 
   it('leaves other power cards at their printed attack bonus', () => {
