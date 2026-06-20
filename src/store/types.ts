@@ -817,7 +817,7 @@ export const TILE_DEFINITIONS: TileDefinition[] = [
   { tileType: 'tile-black-3exit-c', imagePath: 'assets/Tile_Black_x3_03.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, scorchMarkPosition: { x: 1, y: 2 } },  // S/E/W open, N wall
   // Black 4-exit tiles (spawn monsters, trigger encounter)
   { tileType: 'tile-black-4exit-a', imagePath: 'assets/Tile_Black_x4_01.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, scorchMarkPosition: { x: 1, y: 2 } },  // All open
-  { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, scorchMarkPosition: { x: 1, y: 1 } },  // All open
+  { tileType: 'tile-black-4exit-b', imagePath: 'assets/Tile_Black_x4_02.png', defaultEdges: { north: 'open', south: 'open', east: 'open', west: 'open' }, isBlackTile: true, scorchMarkPosition: { x: 1, y: 2 } },  // All open
   // White 2-exit tiles (spawn monsters, prevent encounter if only white tiles drawn)
   { tileType: 'tile-white-2exit-a', imagePath: 'assets/Tile_White_x2_01.png', defaultEdges: { north: 'wall', south: 'open', east: 'open', west: 'wall' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 2 } },  // S/E open, N/W walls
   { tileType: 'tile-white-2exit-b', imagePath: 'assets/Tile_White_x2_02.png', defaultEdges: { north: 'wall', south: 'open', east: 'wall', west: 'open' }, isBlackTile: false, scorchMarkPosition: { x: 1, y: 2 } },  // S/W open, N/E walls

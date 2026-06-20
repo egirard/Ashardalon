@@ -194,6 +194,7 @@ describe("exploration", () => {
         'tile-white-3exit-b',
         'tile-white-3exit-c',
         'tile-black-4exit-a',
+        'tile-black-4exit-b',
       ];
 
       for (const tileType of southArrowTiles) {
