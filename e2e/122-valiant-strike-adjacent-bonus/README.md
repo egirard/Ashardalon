@@ -26,5 +26,4 @@ Confirms the attack roll breakdown uses the same `+10` bonus during combat resol
 
 - [ ] Keyleth has Valiant Strike available in the active power card list
 - [ ] Two adjacent monsters raise Valiant Strike bonus, showing `+8 +2 = +10` in the expanded attack view and details panel while the mini card shows `+10`
-- [ ] The expanded attack view and details panel both show the `+8 +2 = +10` breakdown while the mini card shows `+10`
 - [ ] The combat result popup shows the same `+10` bonus after the attack
