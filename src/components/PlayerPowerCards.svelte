@@ -530,8 +530,7 @@
       return `Attack bonus ${formatBonusLabelText(displayedAttackBonus)}`;
     }
 
-    const operator = variableBonus >= 0 ? 'plus' : 'minus';
-    return `Attack bonus ${formatBonusLabelText(baseAttackBonus)} ${operator} ${Math.abs(variableBonus)} equals ${formatBonusLabelText(displayedAttackBonus)}`;
+    return `Attack bonus ${formatBonusLabelText(baseAttackBonus)} ${formatBonusLabelText(variableBonus)} equals ${formatBonusLabelText(displayedAttackBonus)}`;
   }
 
 </script>
