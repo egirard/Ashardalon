@@ -154,6 +154,7 @@
     getAdjacentMonsters,
     getMonsterAC,
     applyItemBonusesToAttack,
+    calculatePowerCardAttackBonus,
     calculateTotalSpeed,
     getMonstersWithinRange,
     getMonstersOnSameTile,
@@ -1624,6 +1625,8 @@
   function handleAttackWithCard(cardId: number, targetInstanceId: string) {
     const currentHeroId = getCurrentHeroId();
     if (!currentHeroId) return;
+    const currentToken = heroTokens.find((t) => t.heroId === currentHeroId);
+    if (!currentToken) return;
 
     const powerCard = getPowerCardById(cardId);
     if (!powerCard || powerCard.attackBonus === undefined) return;
@@ -1672,7 +1675,13 @@
     // Create base attack from power card
     const baseAttack = {
       name: powerCard.name,
-      attackBonus: powerCard.attackBonus,
+      attackBonus: calculatePowerCardAttackBonus(
+        powerCard,
+        currentToken.position,
+        monsters,
+        getCurrentHeroTileId(),
+        dungeon
+      ),
       damage: powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE,
       range: 1,
     };
@@ -1731,6 +1740,8 @@
       // Get the power card and current hero
       const currentHeroId = getCurrentHeroId();
       if (!currentHeroId) return;
+      const currentToken = heroTokens.find((t) => t.heroId === currentHeroId);
+      if (!currentToken) return;
       
       const powerCard = getPowerCardById(multiAttackState.cardId);
       if (!powerCard || powerCard.attackBonus === undefined) return;
@@ -1741,7 +1752,13 @@
       // Create base attack from power card
       const baseAttack = {
         name: powerCard.name,
-        attackBonus: powerCard.attackBonus,
+        attackBonus: calculatePowerCardAttackBonus(
+          powerCard,
+          currentToken.position,
+          monsters,
+          getCurrentHeroTileId(),
+          dungeon
+        ),
         damage: powerCard.damage ?? DEFAULT_POWER_CARD_DAMAGE,
         range: 1,
       };
