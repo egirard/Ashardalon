@@ -1,4 +1,4 @@
-import type { HeroAttack, AttackResult, Position, MonsterState, DungeonState, PlacedTile, HeroHpState, PartyResources, HeroLevel } from './types';
+import type { HeroAttack, AttackResult, Position, MonsterState, DungeonState, PlacedTile, HeroHpState, PartyResources, HeroLevel, HeroToken } from './types';
 import { HERO_LEVELS, LEVEL_UP_COST } from './types';
 import { getMonsterById } from './monsters';
 import { getTileBounds, findTileAtPosition } from './movement';
@@ -293,6 +293,24 @@ export function calculatePowerCardAttackBonus(
   }
 
   return baseAttackBonus + (getAdjacentMonsters(position, monsters, tileId, dungeon).length * adjacentMonsterAttackBonus);
+}
+
+/**
+ * Calculate a power card's attack bonus for a hero on the board.
+ */
+export function calculatePowerCardAttackBonusForHero(
+  powerCard: PowerCard,
+  heroId: string,
+  heroTokens: HeroToken[],
+  monsters: MonsterState[],
+  dungeon: DungeonState
+): number {
+  const heroToken = heroTokens.find(token => token.heroId === heroId);
+  if (!heroToken) {
+    return powerCard.attackBonus ?? 0;
+  }
+
+  return calculatePowerCardAttackBonus(powerCard, heroToken.position, monsters, '', dungeon);
 }
 
 /**
