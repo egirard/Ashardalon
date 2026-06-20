@@ -2,7 +2,7 @@
 
 ## User story
 
-A player selects Keyleth, starts a game, becomes adjacent to two monsters, confirms that Valiant Strike updates from its printed `+8` to the live `+10` bonus in the dashboard/details UI, and then attacks to verify the combat result uses the same bonus.
+A player selects Keyleth, starts a game, becomes adjacent to two monsters, confirms that Valiant Strike shows its live bonus breakdown as `+8 +2 = +10` in the dashboard/details UI, and then attacks to verify the combat result uses the same total bonus.
 
 ## Screenshot 000 - Hero selected
 
@@ -14,7 +14,7 @@ Confirms Keyleth is selected from the bottom edge and the game is ready to start
 
 ![Valiant Strike bonus scaled](122-valiant-strike-adjacent-bonus.spec.ts-snapshots/001-valiant-strike-bonus-scaled-chromium-linux.png)
 
-Confirms two adjacent monsters make Valiant Strike display `+10` in the mini card, expanded attack section, and details panel.
+Confirms two adjacent monsters make Valiant Strike display `+10` in the mini card and the explicit `+8 +2 = +10` breakdown in the expanded attack section and details panel.
 
 ## Screenshot 002 - Valiant Strike attack result
 
@@ -25,6 +25,6 @@ Confirms the attack roll breakdown uses the same `+10` bonus during combat resol
 ## Manual verification checklist
 
 - [ ] Keyleth has Valiant Strike available in the active power card list
-- [ ] Two adjacent monsters raise Valiant Strike from `+8` to `+10`
+- [ ] Two adjacent monsters raise Valiant Strike from `+8` to `+8 +2 = +10`
 - [ ] The details panel and expanded attack view match the mini-card bonus
 - [ ] The combat result popup shows the same `+10` bonus after the attack

@@ -22,6 +22,7 @@
   interface Props {
     card: PowerCard;
     attackBonusDisplay?: number;
+    attackBonusText?: string;
     isFlipped?: boolean;
     isClickable?: boolean;
     ineligibilityReason?: string;
@@ -45,6 +46,7 @@
   let {
     card,
     attackBonusDisplay,
+    attackBonusText,
     isFlipped = false,
     isClickable = false,
     ineligibilityReason,
@@ -144,7 +146,7 @@
     {#if card.attackBonus !== undefined}
       <div class="power-stats">
         <div class="stat-item">
-          <strong>Attack Bonus:</strong> +{attackBonusDisplay ?? card.attackBonus}
+          <strong>Attack Bonus:</strong> {attackBonusText ?? `+${attackBonusDisplay ?? card.attackBonus ?? 0}`}
         </div>
         <div class="stat-item">
           <strong>Damage:</strong> {card.damage || 1}
