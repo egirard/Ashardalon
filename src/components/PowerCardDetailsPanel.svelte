@@ -126,6 +126,10 @@
       onCancelMonsterRelocation();
     }
   }
+
+  const displayedAttackBonusText = $derived(
+    attackBonusText ?? `+${attackBonusDisplay ?? card.attackBonus ?? 0}`
+  );
 </script>
 
 <div 
@@ -146,7 +150,7 @@
     {#if card.attackBonus !== undefined}
       <div class="power-stats">
         <div class="stat-item">
-          <strong>Attack Bonus:</strong> {attackBonusText ?? `+${attackBonusDisplay ?? card.attackBonus ?? 0}`}
+          <strong>Attack Bonus:</strong> {displayedAttackBonusText}
         </div>
         <div class="stat-item">
           <strong>Damage:</strong> {card.damage || 1}
