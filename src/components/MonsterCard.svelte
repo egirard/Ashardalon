@@ -161,9 +161,16 @@
               {/if}
             </div>
 
+            {#if tactics.adjacentAttack.targetsAllOnTile}
+              <p class="attack-note" data-testid="attack-note-all-on-tile">Hits all heroes on same tile</p>
+            {/if}
+            {#if tactics.adjacentAttack.targetsAllInRange}
+              <p class="attack-note" data-testid="attack-note-all-in-range">Hits all heroes within {tactics.moveAttackRange ?? 1} tile(s)</p>
+            {/if}
+
             {#if tactics.moveAttack}
               <div class="attack-row" data-testid="monster-move-attack">
-                <span class="attack-label">🏹 Range {tactics.moveAttackRange ?? 1}</span>
+                <span class="attack-label">{tactics.type === 'ranged-attack' ? `🏹 Range ${tactics.moveAttackRange ?? 1}` : `⚔ Move+Atk`}</span>
                 <span class="attack-name">{tactics.moveAttack.name}</span>
                 <span class="attack-bonus">+{tactics.moveAttack.attackBonus}</span>
                 <span class="attack-damage">{tactics.moveAttack.damage} dmg</span>
@@ -174,13 +181,6 @@
                   <span class="attack-status">{formatStatus(tactics.moveAttack.statusEffect)}</span>
                 {/if}
               </div>
-            {/if}
-
-            {#if tactics.adjacentAttack.targetsAllOnTile}
-              <p class="attack-note">Hits all heroes on same tile</p>
-            {/if}
-            {#if tactics.adjacentAttack.targetsAllInRange}
-              <p class="attack-note">Hits all heroes within {tactics.moveAttackRange ?? 1} tile(s)</p>
             {/if}
           </div>
         </div>
