@@ -183,23 +183,8 @@ ${screenshotMessage}
     const labels = 'UserGenerated';
 
     const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
-
-    // Check if URL is within reasonable length limits (most browsers support ~8000 characters)
-    // If too long, try again with the same content to keep behavior stable.
-    if (githubIssueUrl.length > 8000) {
-      console.warn('Issue body too large, trying with compact payload');
-      const compactIssueBody = createIssueBody(
-        timestamp,
-        screenshotMessage,
-        userAgent
-      );
-      const compactIssueBodyEncoded = encodeURIComponent(compactIssueBody);
-      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${compactIssueBodyEncoded}&labels=${labels}`;
-      window.open(fallbackUrl, '_blank');
-    } else {
-      // Open the GitHub issue page in a new tab
-      window.open(githubIssueUrl, '_blank');
-    }
+    // Open the GitHub issue page in a new tab
+    window.open(githubIssueUrl, '_blank');
   }
 
   /**
