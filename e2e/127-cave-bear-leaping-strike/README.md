@@ -30,7 +30,8 @@ After the fix, it correctly has **3 conditions** matching the official card:
 - Instruction 1: "same tile" + "Frenzy of Claws"
 - Instruction 2: "within 1 tile" + "Leaping Strike"  
 - Instruction 3: "closest Hero" (move)
-- Attack panel shows: Adjacent = Frenzy of Claws (+6, 2 dmg), Range 1 = Leaping Strike (+8, 2 dmg, Dazed)
+- Attack panel shows: Adjacent = Frenzy of Claws (+6, 2 dmg), **⚔ Move+Atk** = Leaping Strike (+8, 2 dmg, Dazed)
+- "Hits all heroes on same tile" note appears **only** under Frenzy of Claws (not under Leaping Strike)
 
 ### Step 2: Board — Cave Bear on East Tile, Quinn on Start Tile
 
