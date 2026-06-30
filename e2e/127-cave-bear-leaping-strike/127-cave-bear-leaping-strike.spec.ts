@@ -140,6 +140,18 @@ test.describe('127 - Cave Bear Leaping Strike Behavior', () => {
         // NOT after the move-attack row (Leaping Strike)
         await expect(page.locator('[data-testid="attack-note-all-on-tile"]')).toBeVisible();
 
+        // Verify DOM order: note must appear after adjacent-attack row but BEFORE move-attack row.
+        // compareDocumentPosition bit 4 (0x4) means "follows" (the argument precedes the node).
+        const noteBeforeMoveAttack = await page.evaluate(() => {
+          const note = document.querySelector('[data-testid="attack-note-all-on-tile"]');
+          const moveAttack = document.querySelector('[data-testid="monster-move-attack"]');
+          if (!note || !moveAttack) return false;
+          // note.compareDocumentPosition(moveAttack) returns DOCUMENT_POSITION_FOLLOWING (4)
+          // if moveAttack comes after note in the DOM
+          return !!(note.compareDocumentPosition(moveAttack) & Node.DOCUMENT_POSITION_FOLLOWING);
+        });
+        expect(noteBeforeMoveAttack).toBe(true);
+
         // The note should appear between the two attack rows — verify the move-attack label
         // shows "⚔ Move+Atk" (not a ranged attack icon "🏹 Range 1")
         const moveAttackRow = page.locator('[data-testid="monster-move-attack"]');
