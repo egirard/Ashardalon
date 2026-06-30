@@ -116,19 +116,14 @@
   }
 
   /**
-   * Creates an issue body with screenshot instructions or thumbnail.
+   * Creates an issue body with screenshot instructions.
    */
   function createIssueBody(
     timestamp: string, 
     screenshotMessage: string, 
     userAgent: string,
-    logEntriesSection: string,
-    thumbnailDataUrl?: string
+    logEntriesSection: string
   ): string {
-    const screenshotSection = thumbnailDataUrl
-      ? `${screenshotMessage}\n\n_Low-resolution preview:_\n![Screenshot Preview](${thumbnailDataUrl})`
-      : screenshotMessage;
-
     return `
 ## Feedback / Bug Report
 
@@ -139,7 +134,7 @@
 
 
 ### Screenshot
-${screenshotSection}
+${screenshotMessage}
 
 ### Recent Game Log (Last 10 Events)
 ${logEntriesSection}
@@ -150,29 +145,6 @@ ${logEntriesSection}
 - **Screen Resolution:** ${window.screen.width}x${window.screen.height}
 - **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
     `.trim();
-  }
-  
-  /**
-   * Generates a lower resolution thumbnail from a canvas.
-   */
-  function generateThumbnail(sourceCanvas: HTMLCanvasElement, maxWidth: number = 800, maxHeight: number = 600): string {
-    const scale = Math.min(maxWidth / sourceCanvas.width, maxHeight / sourceCanvas.height, 1);
-    
-    if (scale >= 1) {
-      return sourceCanvas.toDataURL('image/jpeg', 0.7);
-    }
-
-    const thumbnailCanvas = document.createElement('canvas');
-    thumbnailCanvas.width = sourceCanvas.width * scale;
-    thumbnailCanvas.height = sourceCanvas.height * scale;
-    
-    const ctx = thumbnailCanvas.getContext('2d');
-    if (!ctx) {
-      return sourceCanvas.toDataURL('image/jpeg', 0.7);
-    }
-    
-    ctx.drawImage(sourceCanvas, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
-    return thumbnailCanvas.toDataURL('image/jpeg', 0.7);
   }
   
   /**
@@ -271,7 +243,6 @@ ${logEntriesSection}
     const logEntriesSection = formatLogEntries(recentLogs);
 
     const copiedToClipboard = await copyCanvasToClipboard(canvas);
-    const thumbnailDataUrl = generateThumbnail(canvas, 800, 600);
 
     let screenshotMessage: string;
     if (copiedToClipboard) {
@@ -284,8 +255,7 @@ ${logEntriesSection}
       timestamp,
       screenshotMessage,
       userAgent,
-      logEntriesSection,
-      thumbnailDataUrl
+      logEntriesSection
     );
 
     const issueTitle = encodeURIComponent('User Feedback - ' + humanReadableTimestamp);
@@ -295,15 +265,15 @@ ${logEntriesSection}
     const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
 
     if (githubIssueUrl.length > 8000) {
-      console.warn('Issue body with thumbnail too large, trying without thumbnail');
-      const bodyWithoutThumbnail = createIssueBody(
+      console.warn('Issue body too large, using a reduced payload');
+      const compactIssueBody = createIssueBody(
         timestamp,
         screenshotMessage,
         userAgent,
         logEntriesSection
       );
-      const bodyWithoutThumbnailEncoded = encodeURIComponent(bodyWithoutThumbnail);
-      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${bodyWithoutThumbnailEncoded}&labels=${labels}`;
+      const compactIssueBodyEncoded = encodeURIComponent(compactIssueBody);
+      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${compactIssueBodyEncoded}&labels=${labels}`;
       window.open(fallbackUrl, '_blank');
     } else {
       window.open(githubIssueUrl, '_blank');

@@ -72,10 +72,10 @@ To manually verify this feature:
    - A new tab/window opens with the GitHub issue creation page
    - The issue form is pre-filled with:
      - A title including "User Feedback" and timestamp
-     - A screenshot of the game board in the issue body
+     - Instructions to paste the screenshot (copied to clipboard when supported)
      - System information (browser, game version, screen resolution)
      - The "UserGenerated" label is applied
-   - The screenshot clearly shows all game elements including newly-placed tiles (no faint/partial rendering)
+   - Pasting the screenshot clearly shows all game elements including newly-placed tiles (no faint/partial rendering)
    - The game continues running in the original tab (no interruption)
 
 ## Test Implementation Notes

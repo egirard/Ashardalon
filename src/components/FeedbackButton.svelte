@@ -26,23 +26,17 @@
   }
 
   /**
-   * Creates an issue body with screenshot instructions or thumbnail.
+   * Creates an issue body with screenshot instructions.
    * @param timestamp - ISO timestamp string
    * @param screenshotMessage - Message explaining screenshot status
    * @param userAgent - Browser user agent string
-   * @param thumbnailDataUrl - Optional low-res thumbnail data URL
    * @returns Formatted issue body markdown
    */
   function createIssueBody(
     timestamp: string, 
     screenshotMessage: string, 
-    userAgent: string, 
-    thumbnailDataUrl?: string
+    userAgent: string
   ): string {
-    const screenshotSection = thumbnailDataUrl
-      ? `${screenshotMessage}\n\n_Low-resolution preview:_\n![Screenshot Preview](${thumbnailDataUrl})`
-      : screenshotMessage;
-
     return `
 ## Feedback / Bug Report
 
@@ -53,7 +47,7 @@
 
 
 ### Screenshot
-${screenshotSection}
+${screenshotMessage}
 
 ### System Information
 - **Browser/User Agent:** ${userAgent}
@@ -61,35 +55,6 @@ ${screenshotSection}
 - **Screen Resolution:** ${window.screen.width}x${window.screen.height}
 - **Viewport Size:** ${window.innerWidth}x${window.innerHeight}
     `.trim();
-  }
-
-  /**
-   * Generates a lower resolution thumbnail from a canvas.
-   * @param sourceCanvas - The original canvas
-   * @param maxWidth - Maximum width for the thumbnail
-   * @param maxHeight - Maximum height for the thumbnail
-   * @returns Data URL of the thumbnail
-   */
-  function generateThumbnail(sourceCanvas: HTMLCanvasElement, maxWidth: number = 800, maxHeight: number = 600): string {
-    const scale = Math.min(maxWidth / sourceCanvas.width, maxHeight / sourceCanvas.height, 1);
-    
-    if (scale >= 1) {
-      // No need to downscale
-      return sourceCanvas.toDataURL('image/jpeg', 0.7);
-    }
-
-    const thumbnailCanvas = document.createElement('canvas');
-    thumbnailCanvas.width = sourceCanvas.width * scale;
-    thumbnailCanvas.height = sourceCanvas.height * scale;
-    
-    const ctx = thumbnailCanvas.getContext('2d');
-    if (!ctx) {
-      // If we can't get a 2D context, return the original canvas as JPEG
-      return sourceCanvas.toDataURL('image/jpeg', 0.7);
-    }
-    
-    ctx.drawImage(sourceCanvas, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
-    return thumbnailCanvas.toDataURL('image/jpeg', 0.7);
   }
 
   /**
@@ -151,7 +116,7 @@ ${screenshotSection}
 
   /**
    * Captures a screenshot of the current game screen and opens a pre-filled GitHub issue.
-   * Attempts to copy full-resolution screenshot to clipboard and includes a low-res thumbnail.
+   * Attempts to copy full-resolution screenshot to clipboard.
    */
   async function handleFeedbackClick() {
     try {
@@ -197,9 +162,6 @@ ${screenshotSection}
     // Try to copy full-resolution screenshot to clipboard
     const copiedToClipboard = await copyCanvasToClipboard(canvas);
 
-    // Generate a low-resolution thumbnail for the issue body
-    const thumbnailDataUrl = generateThumbnail(canvas, 800, 600);
-
     // Determine the screenshot message based on clipboard success
     let screenshotMessage: string;
     if (copiedToClipboard) {
@@ -208,12 +170,11 @@ ${screenshotSection}
       screenshotMessage = '_Screenshot could not be copied to clipboard automatically. Please attach manually if needed._';
     }
 
-    // Create the issue body with thumbnail
+    // Create the issue body
     const issueBody = createIssueBody(
       timestamp,
       screenshotMessage,
-      userAgent,
-      thumbnailDataUrl
+      userAgent
     );
 
     // Create the GitHub issue URL with pre-filled content
@@ -224,16 +185,16 @@ ${screenshotSection}
     const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
 
     // Check if URL is within reasonable length limits (most browsers support ~8000 characters)
-    // If too long, try without thumbnail
+    // If too long, try again with the same content to keep behavior stable.
     if (githubIssueUrl.length > 8000) {
-      console.warn('Issue body with thumbnail too large, trying without thumbnail');
-      const bodyWithoutThumbnail = createIssueBody(
+      console.warn('Issue body too large, trying with compact payload');
+      const compactIssueBody = createIssueBody(
         timestamp,
         screenshotMessage,
         userAgent
       );
-      const bodyWithoutThumbnailEncoded = encodeURIComponent(bodyWithoutThumbnail);
-      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${bodyWithoutThumbnailEncoded}&labels=${labels}`;
+      const compactIssueBodyEncoded = encodeURIComponent(compactIssueBody);
+      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${compactIssueBodyEncoded}&labels=${labels}`;
       window.open(fallbackUrl, '_blank');
     } else {
       // Open the GitHub issue page in a new tab
