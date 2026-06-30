@@ -2,7 +2,7 @@
 
 ## User Story
 
-As a player seated at a specific edge of the table, when a monster I control moves but cannot attack during the villain phase, I want the "Moved but could not attack" dialog to rotate and face me so I can easily read it without craning my neck.
+As a player seated at a specific edge of the table, when a monster I control moves but cannot attack during the villain phase, I want the "Moved without attacking" dialog to rotate and face me so I can easily read it without craning my neck.
 
 ## Test Scenario
 
@@ -15,7 +15,7 @@ This test verifies that the monster move action dialog correctly rotates to face
 
 ### Verification
 - Monster move dialog appears when monster moves but cannot attack
-- Dialog displays "Moved but could not attack" message
+- Dialog displays "Moved without attacking" message
 - **Dialog rotation**: Card rotates 180° for top edge (Vistra)
 - Hero edge map confirms Vistra is at 'top' position
 - Monster controllerId confirms ownership by Vistra
@@ -37,7 +37,7 @@ This test verifies that the monster move action dialog correctly rotates to face
 
 **Verifies:**
 - Monster move dialog visible
-- "Moved but could not attack" message shown
+- "Moved without attacking" message shown
 - Monster controlled by Vistra (confirmed in state)
 - **Dialog faces Vistra**: 180° rotation for top edge
 - Dialog is upside-down relative to standard orientation, demonstrating the rotation feature
@@ -82,7 +82,7 @@ The test validates the core functionality (rotation logic) programmatically, whi
 
 - [ ] Dialog appears when monster moves but cannot attack
 - [ ] Dialog shows correct monster name
-- [ ] Dialog displays "Moved but could not attack" message
+- [ ] Dialog displays "Moved without attacking" message
 - [ ] Dialog rotates correctly for top edge (180° - upside down)
 - [ ] Dialog rotates correctly for left edge (90° - rotated left)
 - [ ] Dialog rotates correctly for right edge (-90° - rotated right)

@@ -60,7 +60,7 @@
     <div class="move-content">
       <span class="move-icon">🏃</span>
       <p class="move-text" data-testid="move-text">
-        Moved but could not attack
+        Moved without attacking
       </p>
     </div>
     

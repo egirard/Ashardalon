@@ -98,7 +98,7 @@ test.describe('043 - Monster Move Dialog Orientation', () => {
       programmaticCheck: async () => {
         // Verify dialog is visible
         await expect(page.locator('[data-testid="monster-move-overlay"]')).toBeVisible();
-        await expect(page.locator('[data-testid="move-text"]')).toContainText('Moved but could not attack');
+        await expect(page.locator('[data-testid="move-text"]')).toContainText('Moved without attacking');
         
         // Verify monster is controlled by Vistra
         const state = await page.evaluate(() => (window as any).__REDUX_STORE__.getState());
