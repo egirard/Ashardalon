@@ -263,21 +263,7 @@ ${logEntriesSection}
     const labels = 'UserGenerated';
 
     const githubIssueUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${issueBodyEncoded}&labels=${labels}`;
-
-    if (githubIssueUrl.length > 8000) {
-      console.warn('Issue body too large, using a reduced payload');
-      const compactIssueBody = createIssueBody(
-        timestamp,
-        screenshotMessage,
-        userAgent,
-        logEntriesSection
-      );
-      const compactIssueBodyEncoded = encodeURIComponent(compactIssueBody);
-      const fallbackUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${issueTitle}&body=${compactIssueBodyEncoded}&labels=${labels}`;
-      window.open(fallbackUrl, '_blank');
-    } else {
-      window.open(githubIssueUrl, '_blank');
-    }
+    window.open(githubIssueUrl, '_blank');
   }
 
   /**
