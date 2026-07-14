@@ -80,7 +80,7 @@
     <div 
       class="scenario-modal"
       class:rotating={isRotating}
-      style="transform: rotate({rotation}deg);"
+      style={rotation !== 0 ? `transform: rotate(${rotation}deg);` : ""}
       onclick={(e) => e.stopPropagation()}
       onkeydown={handleDialogKeydown}
       role="document"
@@ -91,19 +91,23 @@
       </div>
       
       <div class="modal-content">
-        <p id="scenario-description" class="scenario-description" data-testid="scenario-description">{description}</p>
-        
-        <div class="objective-section">
-          <h2 class="section-label">Objective:</h2>
-          <p class="objective-text" data-testid="scenario-objective">{objective}</p>
-        </div>
-        
-        {#if instructions}
-          <div class="instructions-section">
-            <h2 class="section-label">Instructions:</h2>
-            <p class="instructions-text" data-testid="scenario-instructions">{instructions}</p>
+        <div class="scroll-container">
+          <p id="scenario-description" class="scenario-description" data-testid="scenario-description">{description}</p>
+          
+          <div class="objective-section">
+            <h2 class="section-label">Objective:</h2>
+            <p class="objective-text" data-testid="scenario-objective">
+              {objective || "Complete the scenario objective to win the game."}
+            </p>
           </div>
-        {/if}
+          
+          {#if instructions}
+            <div class="instructions-section">
+              <h2 class="section-label">Instructions:</h2>
+              <p class="instructions-text" data-testid="scenario-instructions">{instructions}</p>
+            </div>
+          {/if}
+        </div>
       </div>
       
       <div class="modal-actions">
@@ -160,11 +164,12 @@
     width: 100%;
     max-height: 85vh;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 20px rgba(184, 134, 11, 0.3), 0 0 0 20px rgba(0, 0, 0, 0.9); /* Extra shadow to visually cover arrows */
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
     animation: slideIn 0.4s ease-out;
     transition: transform 0.3s ease-out;
     position: relative;
+    overflow: hidden;
   }
   
   .scenario-modal.rotating {
@@ -200,9 +205,17 @@
   }
   
   .modal-content {
+    overflow: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .scroll-container {
     padding: 2rem;
     overflow-y: auto;
     flex: 1;
+    min-height: 0;
   }
   
   .scenario-description {
@@ -276,21 +289,21 @@
   }
   
   /* Scrollbar styling */
-  .modal-content::-webkit-scrollbar {
+  .scroll-container::-webkit-scrollbar {
     width: 8px;
   }
   
-  .modal-content::-webkit-scrollbar-track {
+  .scroll-container::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
   }
   
-  .modal-content::-webkit-scrollbar-thumb {
+  .scroll-container::-webkit-scrollbar-thumb {
     background: rgba(184, 134, 11, 0.5);
     border-radius: 4px;
   }
   
-  .modal-content::-webkit-scrollbar-thumb:hover {
+  .scroll-container::-webkit-scrollbar-thumb:hover {
     background: rgba(184, 134, 11, 0.7);
   }
 </style>
