@@ -33,3 +33,12 @@ export function getEdgeRotation(edge: EdgePosition | undefined): number {
       return 0;
   }
 }
+
+/**
+ * Determine whether a number is even.
+ * @param n - The number to test
+ * @returns True when n is divisible by 2, false otherwise
+ */
+export function isEven(n: number): boolean {
+  return n % 2 === 0;
+}
