@@ -1,0 +1,13 @@
+Number,Name,Type,AC,HP,Tactics,Extra,Attacks,Attack,Damage
+185,Alek (1-5),Villager,15,2,"• If Alek is within 1 tile of a Hero, he moves adjacent to the Hero.
+• If Alek is adjacent to a Monster, he attacks with a fist.
+• Otherwise, Alek moves 1 tile toward the closest Hero.",Alek counts as a Hero for the purpose of Monster tactics.,Punch,+1,1
+186,Brandis (6-8),Villager,13,2,"• If Brandis is within 1 tile of a Hero, he moves adjacent to the Hero.
+• If Brandis is on a tile with an unexplored edge, draw a tile from the bottom of the stack and place a Monster on that tile.
+• Otherwise, Brandis moves 1 tile toward the closest tile with an unexplored edge.",Brandis counts as a Hero for the purpose of Monster tactics.,,,
+187,Cassi (9-12),Villager,14,1,"• If Cassi is within 1 tile of a Hero, she moves adjacent to the closest Hero.
+• Otherwise, Cassi moves 1 tile toward the closest Exit or Start tile.",Cassi counts as a Hero for the purpose of Monster tactics.,,,
+188,Donnel (13-16),Villager,15,2,"• If Donnel is within 1 tile of a Monster, he moves adjacent to the closest Monster and attacks with a wild punch.
+• Otherwise, Donnel moves 1 tile toward the closest Hero.",Donnel counts as a Hero for the purpose of Monster tactics.,Punch,+2,1
+189,Elizar (17-20),Villager,,,"• If Elizar is within 1 tile of a Monster, she cowers in fear and does nothing.
+• Otherwise, Elizar moves 1 tile toward the closest Hero.",Elizar counts as a Hero for the purpose of Monster tactics.,,,

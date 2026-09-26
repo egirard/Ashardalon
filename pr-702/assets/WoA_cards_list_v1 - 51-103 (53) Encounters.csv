@@ -1,0 +1,110 @@
+Number,Name,Type,Extra information,Rule,Attack,Damage,Disable
+51,A Gap in the Armor,Curse,"The last fight damaged your armor, and you must spend a few moments to repair it. ","You are cursed! Place this card on your Hero Card as a reminder.
+You have a -4 penalty to AC while this curse is active.
+If you do not move during your Hero Phase, discard this card.",,,
+52,Bad Luck,Curse,A curse brings misfortune to you and your allies. ,"You are cursed! Place this card on your Hero Card as a reminder.
+At the start of your Villain Phase, draw 1 additional Encounter Card.
+Roll at the end of your Villain Phase: 10+ discard this card.",,,
+53,Bloodlust,Curse,The furious need for destruction fills your mind. ,"You are cursed! Place this card on your Hero Card as a reminder.
+At the start of your Hero Phase, you take 1 damage.
+Discard this card when you defeat a Monster.",,,
+54,Cage,Curse,Stepping on a pressure plate causes a cage to drop on top of you!,"You are cursed! Place this card on your Hero Card as a reminder.
+You take a -2 penalty to AC and you cannot move while this curse is active.
+Instead of attacking, you or a Hero on your tile can attempt to open the cage.
+OPEN THE CAGE: Roll 10+
+Discard this card when the cage is opened.",,,
+55,Dragon Fear,Curse,The very presence of the red dragon in the dungeon fills you with an unrelenting sense of fear.,"You are cursed! Place this card on your Hero Card as a reminder.
+Paralyzing fear overcomes you. Whenever you move to a new tile, take 1 damage.
+Roll a die at the end of your Hero Phase: 10+ discard this card.",,,
+56,Terrifying Roar,Curse,"The distant sound of a roaring dragon fills you with fear, causing you to uncontrollably shake.","You are cursed! Place this card on your Hero Card as a reminder.
+You take a -4 penalty to attack rolls while this curse is active.
+Roll a die and the end of your Hero Phase: 10+ discard this card.",,,
+57,Time Leap,Curse,You fall through a rift in reality as unfathomable energies warp the space around you.,"You are cursed! Place this card on your Hero Card as a reminder.
+Remove your Hero from play. Draw a Monster Card and place its figure in the square your Hero disappeared from.
+At the start of your next Hero Phase, place your Hero on any tile.
+When your Hero returns, discard this card.",,,
+58,Wrath of the Enemy,Curse,The monsters single you out for attack.,"You are cursed! Place this card on your Hero Card as a reminder.
+At the end of your Exploration Phase, find the Monster closest to your Hero that is not on your Hero's tile. Place that Monster adjacent to your Hero.
+Roll a die at the end of your Exploration Phase: 10+ discard this card.",,,
+59,Dragon's Tribute,Environment,Ashardalon demands a tribute in gold from all those who take shelter under the mountain.,"If there is an Environment Card already in play, discard it. This Environment remains in play until a new Environment Card is drawn.
+When drawing a Treasure token, draw two and discard the one with the highest value.
+(If one of the treasures is an item, discard the item.)",,,
+60,Hidden Snipers,Environment,Arrows and darts fly from the shadows.,"If there is an Environment Card already in play, discard it. This Environment remains in play until a new Environment Card is drawn.
+Whenever the active Hero ends his or her Hero Phase on a tile that does not have another Hero on it, the active Hero takes 1 damage.",,,
+61,High Alert,Environment,The monsters rally to defend the dungeon from invading adventurers.,"If there is an Environment Card already in play, discard it. This Environment remains in play until a new Environment Card is drawn.
+At the end of each Villain Phase, the active Hero passes one Monster Card (if he or she has one) to the player on the right.",,,
+62,Kobold Trappers,Environment,Traps set by kobolds are hard to overcome.,"If there is an Environment Card already in play, discard it. This Environment remains in play until a new Environment Card is drawn.
+You take a -4 penalty to diable trap rolls while this Environment is active.",,,
+63,Surrounded!,Environment,The beat of a distant drum warns you of the approaching hordes.,"If there is an Environment Card already in play, discard it. This Environment remains in play until a new Environment Card is drawn.
+At the end of each Exploration Phase, if a Hero does not control at least one Monster, he or she draws a Monster Card and places its figure on the closest unexplored edge.",,,
+64,Walls of Magma,Environment,The heat radiating from the magma-covered walls threatens to overcome you.,"If there is an Environment Card already in play, discard it. This Environment remains in play until a new Environment Card is drawn.
+Whenever the active Hero ends his or her Hero Phase adjacent to a wall, that Hero takes 1 damage.",,,
+65,Ancient Spirit's Blessing,Event,An ancient dwarf spirit assists you on your quest to rid the mountain of evil.,"The active Hero flips up a used Daily Power belonging to any Hero.
+Draw another Encounter Card.",,,
+66,Deadly Poison,Event,The toxin infecting you is unnaturally potent.,"Each Hero that is currently Poisoned takes 1 damage.
+Draw another Encounter Card.",,,
+67,Duergar Outpost,Event,The duergar maintain a small outpost in the mountain.,Draw 5 Monster Cards. Discard any Monster that is not a Devil. Shuffle the remaining cards and put them on top of the Monster Card deck.,,,
+68,Frenzied Leap,Event,A monster leaps at you with supernatural speed!,"If a Monster is on the same tile as the active Hero, that Hero takes 2 damage.
+Otherwise, draw a Monster Card and place its figure on the closest tile with an unexplored edge.",,,
+69, Hall of the Orcs,Event,The crude holy symbols of Gruumsh painted on the walls hint at the nature of this sections inhabitants.,Draw 5 Monster Cards. Discard any Monster that is not an Orc. Shuffle the remaining cards and put them on top of the Monster Card deck.,,,
+70,Hidden Treasure,Event,You spot a hidden cache of treasure a short distance away.,"Place 1 Treasure token on any tile that does not have a Hero on it.
+Draw another Encounter Card.",,,
+71,Kobold Warren,Event,The kobolds under the mountain tend to Ashardalon's every whim.,Draw 5 Monster Cards. Discard any Monster that is not a Reptile. Shuffle the remaining cards and put them on top of the Monster Card deck.,,,
+72, Lost,Event,"""All these tunnels look the same!""","Without looking at it, take the bottom Dungeon Tile from the stack and place it on top.",,,
+73,Occupied Lair,Event,Many creatures call the place below the mountain home.,"Draw a tile from the bottom of the tile stack. Place the tile next to the closest unexplored edge.
+Draw a Monster Card and place its figure on that tile. Place 1 Treasure token on that tile.",,,
+74,Quick Advance,Event,Your foes advance with unnatural speed.,"Choose a Monster not on any Hero's tile. That Monster moves 1 tile closer to the active Hero.
+Draw another Encounter Card.",,,
+75,Revel in Destruction,Event,"As you tire, your foe grows stronger!",Choose a damaged Monster. That Monster regains 1 Hit Point.,,,
+76,Scream of the Sentry,Event,"""Intruders!""","If no Monster is in play, discard this card.
+Choose a Monster. Draw a tile from the bottom of the Dungeon Tile stack. Place the tile next to the unexplored edge closest to that Monster. Draw a Monster Card and place its figure on the new tile.",,,
+77,Spotted!,Event,"Uneven ground causes you to scramble, alerting a nearby guard to your presence.","Draw 5 Monster Cards. Discard any Monster that is not a Sentry. Shuffle the remaining cards and put them on top of the Monster Card deck.
+Place the bottom tile from the Dungeon Tile stack next to the unexplored edge closest to the active Hero. Draw a Monster Card and place its figure on the new tile.",,,
+78,Thief in the Dark,Event,You check your pack to discover one of your prized possessions has been stolen!,"The active Hero discards a Treasure Card. If the active Hero has no Treasure Card, discard a Treasure token instead. If the active Hero has neither, the thief in the dark gets nothing.",,,
+79,Unbearable Heat,Event,The volcanic vapors that fill the tunnels slowly wear down your endurance.,Each Hero takes 1 damage.,,,
+80,Unnatural Corruption,Event,The Far Realm has an unnatural effect on the dungeon.,Draw 5 Monster Cards. Discard any Monster that is not an Aberrant. Shuffle the remaining cards and put them on top of the Monster Card deck.,,,
+81,Wandering Monster,Event,"A terrible monster wanders into view, attracted to your presence.",Draw a Monster Card and place its figure on any tile with an unexplored edge.,,,
+82,Warp in Time,Event,Your thoughts are clouded as a pocket of corrupted time washes through the dungeon.,"Each player passes one Monster Card (if he or she has one) to the player on the right.
+Draw another Encounter Card.",,,
+83,Blinding Bomb,Event,The ceramic sphere explodes as it shatters against the nearby wall.,"Attack each Hero within 1 tile of the active Hero.
+After the attack, each Sentry Monster in play moves 1 tile toward the closest tile wtih an unexplored edge.",+8,Dazed,
+84,Bull's Eye!,Event,An arrow flies from the shadows!,Attack the active Hero.,+10,1,
+85,Concussive Blast,Event,An ingenious trap releases a blast of massive pressure from the volcano below.,"Attack each Hero on the active Hero's tile.
+After the attack, move each Hero on the active Hero's tile to an adjacent tile.",+8,"2
+Miss: 1 Damage",
+86,Deep Tremor,Event,A deep tremor shakes the dungeon as rocks fall from the ceiling.,Attack each Hero.,+8,1,
+87,Earthquake!,Event,The entire mountain shakes and rumbles.,Attack each Hero.,+6,"2 and Dazed
+Miss: 1 Damage",
+88,Fungal Bloom,Event,"An enormous puffball explodes, filling the air with poisonous spores.",Attack the active Hero and each Hero within 1 tile of the active Hero.,+8,Dazed and Poisoned,
+89,Lurker's Strike,Event,A poisonous dart heralds the advance of a hidden foe.,"Attack the active Hero.
+Draw a Monster Card and place its figure on the active Hero's tile.",+8,1 and Poisoned,
+90,Phalagar's Lair,Event,You wander into the lair of an Underdark horror that strikes with a mass of tentacles!,Attack each Hero on the active Hero's tile.,+4,"3 and Dazed
+Miss: 1 Damage",
+91,Poisoned Arrow,Event,"A disguised pressure plate triggers a trap, firing a poisoned arrow.",Attack the active Hero.,+8,"2 and Poisoned
+Miss: 1 Damage",
+92,Steam Vent,Event,The floor disintegrates as superheated steam gushes into the passage.,Attack each Hero on the active Hero's tile.,+8,"2
+Miss: 1 Damage",
+93,Sulphurous Cloud,Event,A slight rumble precedes a blast of noxious gas from a crack in the wall.,Attack each Hero on the active Hero's tile.,+8,"1 and Poisoned
+Miss: Poisoned",
+94,Trip Wire,Event,"A careless step breaks a thin wire, firing a poisoned dart while sounding a distant alarm.","Attack the active Hero.
+Draw a Monster Card and place its figure on the closest unexplored edge.",+10,Poisoned,
+95,Volcanic Burst,Event,"A nearby wall explodes, spraying droplets of lava throughout the area.",Attack each Hero on the active Hero's tile.,+6,"3
+Miss: 1 Damage",
+96,Waking Dream,Event,A corrupting influence from the Far Realm unleashes a waking nightmare.,Attack the active Hero.,+8,1 and Dazed,
+97,Cave In,Hazard,"The ceiling above you collapses, choking the passage with rubble.","Place the Cave In marker on the active Hero's tile. If that tile already has a marker, discard this card and draw a new Encounter Card.
+Attack each Hero on the active Hero's tile.",+9,"2
+Miss: 1 Damage",
+98,Pit,Hazard,"A pit opens beneath you, dropping you into the darkness.","Place the Pit marker on the active Hero's tile. If that tile already has a marker, discard this card and draw a new Encounter Card.
+Attack each Hero on the active Hero's tile.",+10,2 and place the Hero on this card.,
+99,Volcanic Vapors,Hazard,Cracks in the floor expel poisonous vapors from the magma pools below.,A Hero that moves onto this tile or starts his or her turn there is Poisoned.,,,
+100,Lava Flow,Trap,Red hot lava flows from a pipe in the wall.,"Place the Lava Flow marker on the active Hero's tile. If that tile already has a marker, discard this card and draw a new Encounter Card.
+Trigger the Trap during your Villain Phase: Place one Lava Flow marker on any tile adjacent to a tile with a Lava Flow marker, if possible. Each Hero on a tile with a Lava Flow marker then takes 1 damage.
+Remove all Lava Flow markers when successfully disabled.",,,Roll 10+
+101,Poisoned Dart Trap,Trap,The trap launches darts coated in snake venom from holes in the wall.,"Place the Poisoned Dart Trap marker on the active Hero's tile. If that tile already has a marker, discard this card and draw a new Encounter Card.
+Trigger the trap during your Villain Phase: Attack each Hero on this tile.",+8,"2 and Poisoned
+Miss: 1 Damage",Roll 10+
+102,Rolling Boulder,Trap,"A giant boulder rolls down the corridor, crushing everything in its way! A giant boulder rolls down the corridor, crushing everything in its way!","Place the Rolling Boulder marker on the active Hero's tile. If that tile already has a marker, discard this card and draw a new Encounter Card.
+Trigger the trap during your Villain Phase: Move the Rolling Boulder marker one tile toward the closest Hero. Each Hero on the new tile takes 2 damage.",,,Roll 10+
+103,Whirling Blades,Trap,A blade-covered top rises out of a small hidden compartment and spins wildly across the dungeon floor.,"Place the Whirling Blades marker on the active Hero's tile. If that tile already has a marker, discard this card and draw a new Encounter Card.
+Trigger the trap during your Villain Phase: Move the Whirling Blades marker one tile toward the closest Hero, then attack each Hero on that tile.",+8,"2
+Miss: 1 Damage",Roll 10+
